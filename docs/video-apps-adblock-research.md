@@ -5,7 +5,7 @@
 ## 选型结论
 
 - 红果优先使用 **FanqieHook v0.8.5**；完整 MIT Kotlin 源码、Modern libxposed API 102，作用域限定红果/番茄主进程。官方最新版红果目前比模块列出的已审计版本新，必须查看运行日志中 installed/skipped/lost 后再判断去广告覆盖范围。
-- 通用广告域名阻断使用 **bindhosts v2.1.5**；KernelSU 模块执行自己的 bind mount，不启动 VpnService。这样不会增加 VPN 路由或接管远程串流。只拦独立广告域名，不能推导同域视频广告已消除。
+- 通用广告域名阻断使用 **bindhosts v2.1.5**；本部署优先采用 mode 2 普通 bind mount，因为去广告不需要 root 隐藏，避免 mode 10 的默认 umount 让普通 App 看不到过滤规则。必须在普通 App 内验证 DNS 与播放。KernelSU 模块执行自己的 bind mount，不启动 VpnService。这样不会增加 VPN 路由或接管远程串流。只拦独立广告域名，不能推导同域视频广告已消除。
 - YouTube 已有官方客户端；**NewPipe v0.29.1** 是开源轻量前端备选。安装成功不代表外网网络和平台接口一定可播放。
 - 未找到同时满足“仍维护、完整源码可审计、当前 App 版本、Android 17/Vector API102、只去广告”的优酷/爱奇艺/腾讯视频专用模块，不能承诺三家视频插播全部消除。
 

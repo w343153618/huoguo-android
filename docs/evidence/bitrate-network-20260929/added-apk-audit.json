@@ -1,0 +1,38 @@
+[
+  {
+    "file": "qishui-official.apk",
+    "package": "com.luna.music",
+    "version": "21.1.0",
+    "version_code": "100211030",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "arm64_compatible": true,
+    "signer_sha256": "6491ec50293dd3dee7a03b74800e09af118fdd0f008725d08b911f850b7d79f4",
+    "sha256": "4b3615c90b5e4262de7bd023c0d7c68e0149bfb81b40f75d91c4d20f57c85076"
+  },
+  {
+    "file": "xifan-official.apk",
+    "package": "com.kwai.theater",
+    "version": "3.9.4.4",
+    "version_code": "1000380",
+    "abis": [
+      "armeabi-v7a"
+    ],
+    "arm64_compatible": false,
+    "signer_sha256": "11932a20288420b0bfe4b38815745eb41d62f023710f777ce9cf833e62aa925a",
+    "sha256": "4eb1338f16f66c6cad181d5bb87b8458fcdd7fdff4c752d6237262406edf95bb"
+  },
+  {
+    "file": "douyin-lite-official.apk",
+    "package": "com.ss.android.ugc.aweme.lite",
+    "version": "40.6.0",
+    "version_code": "400601",
+    "abis": [
+      "arm64-v8a"
+    ],
+    "arm64_compatible": true,
+    "signer_sha256": "5182ae3b1b85337bb182cf24882449f84447ded18e296a747a9f6a0a2622512e",
+    "sha256": "622f96510a571b7187328fda4fe93e434cb5636c05f243f505fdacb6afea78f7"
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "package": "com.lemon.lv",
+  "version": "21.6.1",
+  "version_code": 216101600,
+  "sha256": "8c0ee208c292a9e6dd9ae6197491b7366aabd0bd38a53908c39abb97a05b66d5",
+  "official_md5": "56F95060E0F0F91D3514B6D03F3332F6",
+  "signer_sha256": "9c73eb6548209f24aa0fca09eb463ac42777ca9734151a31a17935fe2b640b9c",
+  "abis": [
+    "arm64-v8a",
+    "armeabi-v7a"
+  ],
+  "install_success": true
+}

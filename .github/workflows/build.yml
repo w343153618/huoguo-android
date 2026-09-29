@@ -27,9 +27,11 @@ jobs:
           ./gradlew assembleRelease lintRelease
       - name: Check gateway syntax and endpoint parser
         run: |
-          python3 -m py_compile gateway.py media_transfer.py lan_interfaces.py add-user.py scripts/*.py
+          python3 -m py_compile gateway.py media_transfer.py stream_settings.py npc_physical_relay.py lan_interfaces.py add-user.py scripts/*.py
           python3 -m unittest discover -s tests -p "test_*.py"
           mkdir -p /tmp/endpoint-check
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Endpoint.java tests/EndpointCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.EndpointCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Bitrate.java tests/BitrateCheck.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.BitrateCheck
 # This job never publishes its temporary CI-signed APK. Upgrade signing stays on the owner's Mac.

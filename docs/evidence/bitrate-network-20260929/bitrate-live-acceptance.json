@@ -1,0 +1,44 @@
+[
+  {
+    "host": "192.168.9.99",
+    "video_bit_rate": 4000000,
+    "size": [
+      720,
+      1600
+    ],
+    "initial_avc_packets": [
+      32,
+      102117
+    ],
+    "actual_stream_received": true
+  },
+  {
+    "host": "146.56.249.175",
+    "video_bit_rate": 3750000,
+    "size": [
+      720,
+      1600
+    ],
+    "initial_avc_packets": [
+      32,
+      102251
+    ],
+    "actual_stream_received": true
+  },
+  {
+    "host": "146.56.249.175",
+    "video_bit_rate": 12000000,
+    "size": [
+      720,
+      1600
+    ],
+    "initial_avc_packets": [
+      32,
+      102327
+    ],
+    "actual_stream_received": true
+  },
+  {
+    "invalid_bitrate_rejected": true
+  }
+]

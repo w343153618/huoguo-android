@@ -1,0 +1,16 @@
+[
+  {
+    "package": "com.luna.music",
+    "version": "21.1.0",
+    "activity": "com.luna.music/com.luna.biz.main.main.MainActivity",
+    "resumed_contains_package": true,
+    "fatal_crash": false
+  },
+  {
+    "package": "com.ss.android.ugc.aweme.lite",
+    "version": "40.6.0",
+    "activity": "com.ss.android.ugc.aweme.lite/com.ss.android.ugc.aweme.splash.SplashActivity",
+    "resumed_contains_package": true,
+    "fatal_crash": false
+  }
+]

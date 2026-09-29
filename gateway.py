@@ -3,6 +3,7 @@
 import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socket, ssl, subprocess, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from media_transfer import MediaStore, MediaError
+from stream_settings import parse_settings
 BASE = pathlib.Path(__file__).resolve().parent
 SDK = pathlib.Path.home() / 'Library/Android/sdk'
 ADB = str(SDK / 'platform-tools/adb')
@@ -151,11 +152,9 @@ class Handler(BaseHTTPRequestHandler):
             body=self.rfile.read(length) if length else b''
             if len(body)!=length:raise ValueError('Incomplete settings')
             settings=json.loads(body) if body else {}
-            if not isinstance(settings,dict):raise ValueError('Invalid settings object')
-            max_size=settings.get('max_size',VIDEO_MAX_SIZE)
-            if type(max_size) is not int or max_size not in (960,1200,1600,2400):raise ValueError('Invalid resolution')
+            max_size, bit_rate = parse_settings(settings, VIDEO_MAX_SIZE)
         except (ValueError,OSError):
-            self.reply(400,{'error':'Invalid resolution settings'}); return
+            self.reply(400,{'error':'Invalid resolution or bitrate settings'}); return
         port=None
         proc=None
         try:
@@ -167,7 +166,7 @@ class Handler(BaseHTTPRequestHandler):
                 port=int(adb('forward','tcp:0','localabstract:scrcpy_'+format(scid,'08x')).stdout.strip())
                 cmd='CLASSPATH=/data/local/tmp/remoteandroid-scrcpy.jar app_process / com.genymobile.scrcpy.Server 4.1 '+ ' '.join([
                     'scid='+format(scid,'x'),'tunnel_forward=true','send_device_meta=false','send_dummy_byte=false',
-                    'video_codec=h264','audio_codec=aac','video_bit_rate=2500000','max_fps=60','max_size='+str(max_size),
+                    'video_codec=h264','audio_codec=aac','video_bit_rate='+str(bit_rate),'max_fps=60','max_size='+str(max_size),
                     'control=true','cleanup=true'])
                 log=open(BASE/'server.log','ab',buffering=0)
                 proc=subprocess.Popen([ADB,'-s',SERIAL,'shell',cmd],stdout=log,stderr=log)
@@ -180,7 +179,7 @@ class Handler(BaseHTTPRequestHandler):
                 sid=secrets.token_hex(16)
                 sessions[sid]={'port':port,'proc':proc,'sockets':[],'roles':[],'created':time.monotonic()}
                 threading.Timer(30,lambda: self.expire(sid)).start()
-            self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':60})
+            self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':60,'video_bit_rate':bit_rate})
         except Exception as e:
             if proc and proc.poll() is None: proc.terminate()
             if port:

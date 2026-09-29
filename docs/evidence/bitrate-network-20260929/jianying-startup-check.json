@@ -1,0 +1,7 @@
+{
+  "package": "com.lemon.lv",
+  "component": "com.lemon.lv/com.vega.main.MainActivity",
+  "process_and_activity_response": true,
+  "fatal_in_bounded_crash_read": false,
+  "bounded_log_returncode": 0
+}
