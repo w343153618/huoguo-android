@@ -16,6 +16,6 @@ apk = args.apk.read_bytes()
 metadata = dict(version_code=code, version_name=version,
     apk_url=args.base_url.rstrip('/')+'/HuoguoAndroid-v'+version+'.apk',
     sha256=hashlib.sha256(apk).hexdigest(), apk_size=len(apk),
-    changelog='新增 540p 清晰度，支持 App 内检查更新；保留服务器地址和清晰度设置。')
+    changelog=pathlib.Path('release-notes.md').read_text()[:4000])
 args.output.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + '\n')
 print('Release metadata created; package digest and size recorded')
