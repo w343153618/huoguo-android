@@ -1,0 +1,57 @@
+{
+  "label": "physical-540-cap60",
+  "run_id": "4e039955-9484-4fd3-9a35-0ca108bd370b",
+  "physical_size": "Physical size: 540x1200",
+  "physical_density": "Physical density: 210",
+  "encoder": "c2.android.avc.encoder (guest software)",
+  "settings": {
+    "max_size": 1200,
+    "fps": 60,
+    "bitrate_bps": 4000000,
+    "mode": "VBR",
+    "audio": false,
+    "network": "localhost ADB"
+  },
+  "samples": [
+    {
+      "source": "fixed 30 FPS synthetic scene; no private screen content",
+      "stream_size": [
+        540,
+        1200
+      ],
+      "duration_seconds": 10.004,
+      "frames": 264,
+      "encoded_fps": 26.39,
+      "arrival_gap_p50_ms": 27.898,
+      "arrival_gap_p95_ms": 107.112,
+      "arrival_gap_p99_ms": 130.809,
+      "arrival_gaps_over_50ms": 67,
+      "pts_gap_p50_ms": 30.72,
+      "pts_gap_p95_ms": 100,
+      "actual_mbps": 1.721,
+      "guest_cpu_busy_percent_of_8_vcpus": 13.698,
+      "host_qemu_cpu_percent_one_core_equals_100": 89.266,
+      "errors": []
+    },
+    {
+      "source": "fixed 30 FPS synthetic scene; no private screen content",
+      "stream_size": [
+        540,
+        1200
+      ],
+      "duration_seconds": 10.01,
+      "frames": 230,
+      "encoded_fps": 22.977,
+      "arrival_gap_p50_ms": 32.696,
+      "arrival_gap_p95_ms": 108.804,
+      "arrival_gap_p99_ms": 127.562,
+      "arrival_gaps_over_50ms": 72,
+      "pts_gap_p50_ms": 33.978,
+      "pts_gap_p95_ms": 100,
+      "actual_mbps": 1.503,
+      "guest_cpu_busy_percent_of_8_vcpus": 13.419,
+      "host_qemu_cpu_percent_one_core_equals_100": 86.313,
+      "errors": []
+    }
+  ]
+}

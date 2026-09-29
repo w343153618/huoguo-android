@@ -4,6 +4,7 @@ import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socke
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from media_transfer import MediaStore, MediaError
 from idle_power import IdleScreen
+from display_profile import apply_540_profile
 from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
 from diagnostics_reports import DiagnosticSource, DiagnosticsError, ReportStore, read_json
 BASE = pathlib.Path(__file__).resolve().parent
@@ -31,10 +32,14 @@ idle_screen = IdleScreen(lock, lambda: bool(sessions), lambda: adb('shell','inpu
 def ensure_android():
     global vm_proc
     device_present=False
+    boot_ready=False
     try:
         device_present=adb('get-state').stdout.strip() == 'device'
-        if device_present and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1': return
+        boot_ready=device_present and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1'
     except Exception: pass
+    if boot_ready:
+        apply_540_profile(adb)
+        return
     if not os.environ.get('DIRECT_EXTERNAL_VM') and not device_present and (vm_proc is None or vm_proc.poll() is not None):
         log=open(BASE/'emulator.log','ab',buffering=0)
         args=[EMULATOR,'@'+AVD,'-port','5554','-gpu','host','-no-window','-no-snapshot','-no-boot-anim','-no-metrics']
@@ -43,9 +48,13 @@ def ensure_android():
         log.close()
     for attempt in range(120):
         if vm_proc is not None and vm_proc.poll() is not None: raise RuntimeError('Android VM exited during startup')
+        boot_ready=False
         try:
-            if adb('get-state').stdout.strip() == 'device' and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1': return
+            boot_ready=adb('get-state').stdout.strip() == 'device' and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1'
         except Exception: pass
+        if boot_ready:
+            apply_540_profile(adb)
+            return
         time.sleep(1)
     raise TimeoutError('Android VM boot timed out')
 
@@ -260,6 +269,11 @@ class Handler(BaseHTTPRequestHandler):
         threading.Thread(target=pump,args=(self.connection,upstream),daemon=True).start()
         pump(upstream,self.connection); self.close_connection=True
 if __name__=='__main__':
+    if os.environ.get('DIRECT_PHYSICAL_DISPLAY') == '540x1200':
+        def prepare_display():
+            try: ensure_android()
+            except Exception as error: print('Physical display preparation: '+type(error).__name__,flush=True)
+        threading.Thread(target=prepare_display,daemon=True).start()
     idle_screen.schedule()
     host=os.environ.get('DIRECT_HOST','192.168.9.125'); port=int(os.environ.get('DIRECT_PORT','15556'))
     context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); context.minimum_version=ssl.TLSVersion.TLSv1_2

@@ -1,0 +1,125 @@
+{
+  "probe": "videotoolbox-synthetic-v1",
+  "results": [
+    {
+      "bitrate_target_bps": 4000000,
+      "callback_errors": {},
+      "callbacks_measured": 180,
+      "codec": "H264",
+      "dropped_or_failed_measured": 0,
+      "encode_api_call_ms": {
+        "count": 180,
+        "max": 0.742375,
+        "p50": 0.544583,
+        "p95": 0.638834
+      },
+      "encoded_bitrate_bps": 176699.9861116049,
+      "encoded_fps": 29.976247361163466,
+      "encoded_measured": 180,
+      "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+      "final_drain_ms": 0.307959,
+      "fps_target": 30,
+      "frame_reordering_readback": false,
+      "height": 1200,
+      "input_format": "NV12 video range",
+      "input_schedule_lateness_ms": {
+        "count": 180,
+        "max": 10.153064,
+        "p50": 6.575349,
+        "p95": 10.106429
+      },
+      "keyframes_measured": 3,
+      "low_latency_rate_control_requested": false,
+      "measurement_seconds_actual": 6.004754292,
+      "measurement_seconds_requested": 6,
+      "output_gap_ms": {
+        "count": 179,
+        "max": 41.71325,
+        "p50": 33.661167,
+        "p95": 40.270584
+      },
+      "pending_at_end": 0,
+      "pending_peak_including_warmup": 1,
+      "process_cpu_percent_of_one_core_including_synthetic_fill": 1.306614662060847,
+      "required_hardware": true,
+      "scope": "Synthetic NV12 only; excludes emulator capture, color conversion, audio, transport, decoding and display.",
+      "submission_errors": {},
+      "submit_to_output_callback_ms": {
+        "count": 180,
+        "max": 5.569916,
+        "p50": 5.008167,
+        "p95": 5.441916
+      },
+      "submitted_measured": 180,
+      "synthetic_fill_and_pool_ms": {
+        "count": 180,
+        "max": 0.169084,
+        "p50": 0.098042,
+        "p95": 0.127875
+      },
+      "using_hardware": true,
+      "warmup_seconds": 1,
+      "width": 540
+    },
+    {
+      "bitrate_target_bps": 4000000,
+      "callback_errors": {},
+      "callbacks_measured": 360,
+      "codec": "H264",
+      "dropped_or_failed_measured": 0,
+      "encode_api_call_ms": {
+        "count": 360,
+        "max": 0.801458,
+        "p50": 0.421042,
+        "p95": 0.575375
+      },
+      "encoded_bitrate_bps": 348211.919533855,
+      "encoded_fps": 60.045740262965495,
+      "encoded_measured": 360,
+      "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+      "final_drain_ms": 0.550458,
+      "fps_target": 60,
+      "frame_reordering_readback": false,
+      "height": 1200,
+      "input_format": "NV12 video range",
+      "input_schedule_lateness_ms": {
+        "count": 360,
+        "max": 8.137733,
+        "p50": 4.512163,
+        "p95": 6.301711
+      },
+      "keyframes_measured": 3,
+      "low_latency_rate_control_requested": false,
+      "measurement_seconds_actual": 5.995429458,
+      "measurement_seconds_requested": 6,
+      "output_gap_ms": {
+        "count": 359,
+        "max": 26.197417,
+        "p50": 16.470833,
+        "p95": 22.208792
+      },
+      "pending_at_end": 0,
+      "pending_peak_including_warmup": 1,
+      "process_cpu_percent_of_one_core_including_synthetic_fill": 2.128721568555899,
+      "required_hardware": true,
+      "scope": "Synthetic NV12 only; excludes emulator capture, color conversion, audio, transport, decoding and display.",
+      "submission_errors": {},
+      "submit_to_output_callback_ms": {
+        "count": 360,
+        "max": 5.384167,
+        "p50": 4.827041,
+        "p95": 5.195458
+      },
+      "submitted_measured": 360,
+      "synthetic_fill_and_pool_ms": {
+        "count": 360,
+        "max": 0.227834,
+        "p50": 0.078667,
+        "p95": 0.116708
+      },
+      "using_hardware": true,
+      "warmup_seconds": 1,
+      "width": 540
+    }
+  ]
+}

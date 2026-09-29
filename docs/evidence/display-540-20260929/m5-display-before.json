@@ -1,0 +1,77 @@
+{
+  "label": "physical-1080-baseline",
+  "run_id": "54e6599a-d5d7-4208-9f8c-1339dfdfc134",
+  "physical_size": "Physical size: 1080x2400",
+  "physical_density": "Physical density: 420",
+  "encoder": "c2.android.avc.encoder (guest software)",
+  "settings": {
+    "max_size": 1200,
+    "fps": 30,
+    "bitrate_bps": 4000000,
+    "mode": "VBR",
+    "audio": false,
+    "network": "localhost ADB"
+  },
+  "samples": [
+    {
+      "source": "fixed 30 FPS synthetic scene; no private screen content",
+      "stream_size": [
+        540,
+        1200
+      ],
+      "duration_seconds": 10.004,
+      "frames": 221,
+      "encoded_fps": 22.09,
+      "arrival_gap_p50_ms": 36.844,
+      "arrival_gap_p95_ms": 104.425,
+      "arrival_gap_p99_ms": 130.293,
+      "arrival_gaps_over_50ms": 79,
+      "pts_gap_p50_ms": 37.641,
+      "pts_gap_p95_ms": 100,
+      "actual_mbps": 1.541,
+      "guest_cpu_busy_percent_of_8_vcpus": 13.611,
+      "host_qemu_cpu_percent_one_core_equals_100": 88.262,
+      "errors": []
+    },
+    {
+      "source": "fixed 30 FPS synthetic scene; no private screen content",
+      "stream_size": [
+        540,
+        1200
+      ],
+      "duration_seconds": 10.001,
+      "frames": 217,
+      "encoded_fps": 21.698,
+      "arrival_gap_p50_ms": 37.093,
+      "arrival_gap_p95_ms": 108.831,
+      "arrival_gap_p99_ms": 123.092,
+      "arrival_gaps_over_50ms": 75,
+      "pts_gap_p50_ms": 36.821,
+      "pts_gap_p95_ms": 100,
+      "actual_mbps": 1.53,
+      "guest_cpu_busy_percent_of_8_vcpus": 13.798,
+      "host_qemu_cpu_percent_one_core_equals_100": 92.892,
+      "errors": []
+    },
+    {
+      "source": "fixed 30 FPS synthetic scene; no private screen content",
+      "stream_size": [
+        540,
+        1200
+      ],
+      "duration_seconds": 10.003,
+      "frames": 207,
+      "encoded_fps": 20.694,
+      "arrival_gap_p50_ms": 39.904,
+      "arrival_gap_p95_ms": 115.558,
+      "arrival_gap_p99_ms": 122.535,
+      "arrival_gaps_over_50ms": 77,
+      "pts_gap_p50_ms": 40.229,
+      "pts_gap_p95_ms": 106.028,
+      "actual_mbps": 1.461,
+      "guest_cpu_busy_percent_of_8_vcpus": 12.656,
+      "host_qemu_cpu_percent_one_core_equals_100": 88.476,
+      "errors": []
+    }
+  ]
+}

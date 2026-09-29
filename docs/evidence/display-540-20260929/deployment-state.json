@@ -1,0 +1,24 @@
+{
+  "verified_at": "2026-09-29",
+  "host": "Apple M5 Max",
+  "android_release": "17",
+  "physical_size": [
+    540,
+    1200
+  ],
+  "physical_density_dpi": 210,
+  "physical_configuration_cold_boot_verified": true,
+  "root_uid_zero_verified": true,
+  "avd_user_data_wiped": false,
+  "production_encoder": "c2.android.avc.encoder",
+  "gpu_mode": "host",
+  "local_grpc_bearer_authenticated": true,
+  "local_grpc_loopback_only": true,
+  "production_hardware_backend_enabled": false,
+  "npc_physical_lan_socket_verified": true,
+  "npc_destination": "146.56.249.175:8024",
+  "npc_source_interface_address": "192.168.9.99",
+  "clash_routing_modified_this_optimization": false,
+  "m1_isolated_test_vm_stopped": true,
+  "real_phone_wan_hardware_backend_validated": false
+}

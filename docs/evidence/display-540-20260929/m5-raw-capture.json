@@ -1,0 +1,257 @@
+[
+  {
+    "authorization": "discovery_bearer",
+    "format": "RGBA8888",
+    "ok": true,
+    "pixel_persistence": false,
+    "probe": "emulator_grpc_raw_capture",
+    "reflection": {
+      "available": false,
+      "error": {
+        "code": "PERMISSION_DENIED",
+        "details": "Reflection endpoint is excluded by the installed SDK allowlist."
+      },
+      "native_rtc_v2_present": null,
+      "services": null
+    },
+    "requested_size": [
+      540,
+      1200
+    ],
+    "scene": "local.remoteandroid.benchmark/.DiagnosticSourceActivity",
+    "scene_target_fps": 30,
+    "schema": 1,
+    "scope": "localhost capture only; no encoder, WAN, phone decoder, or touch measurement",
+    "screenshot": {
+      "pixel_bytes": 2592000,
+      "rgba_bytes_match_dimensions": true,
+      "rpc_ms": 7.79,
+      "sequence": 0,
+      "size": [
+        540,
+        1200
+      ],
+      "timestamp_age_ms": 7.251,
+      "timestamp_present": true
+    },
+    "sequence_note": "gaps are emulator screenshot sequence gaps, not measured Internet packet loss",
+    "stream": {
+      "arrival_gap_ms": {
+        "max": 185.071,
+        "p50": 53.635,
+        "p95": 125.876
+      },
+      "capture_fps": 17.1,
+      "empty_frames": 0,
+      "end_reason": "deadline",
+      "errors": [],
+      "first_frame_ms": 23.252,
+      "frames": 171,
+      "invalid_rgba_frames": 0,
+      "observation_seconds": 10,
+      "pixel_bytes": 443232000,
+      "pixel_megabytes_per_second": 44.323,
+      "requested_duration_seconds": 10,
+      "sequence": {
+        "duplicates": 0,
+        "first": 1,
+        "gap_events": 0,
+        "last": 171,
+        "missing_numbers": 0,
+        "resets": 0
+      },
+      "sizes": [
+        [
+          540,
+          1200
+        ]
+      ],
+      "source_timestamp_gap_ms": {
+        "p50": 52.752,
+        "p95": 126.477
+      },
+      "timestamp_age_ms": {
+        "max": 13.025,
+        "negative_samples": 0,
+        "p50": 4.371,
+        "p95": 7.017,
+        "samples": 171
+      },
+      "wall_seconds": 10.007247
+    },
+    "synthetic_foreground_after": true,
+    "synthetic_foreground_before": true,
+    "target": "127.0.0.1:8554",
+    "timestamp_age_note": "host wall-clock minus emulator estimated production timestamp; not end-to-end latency"
+  },
+  {
+    "authorization": "discovery_bearer",
+    "format": "RGBA8888",
+    "ok": true,
+    "pixel_persistence": false,
+    "probe": "emulator_grpc_raw_capture",
+    "reflection": {
+      "available": false,
+      "error": {
+        "code": "PERMISSION_DENIED",
+        "details": "Reflection endpoint is excluded by the installed SDK allowlist."
+      },
+      "native_rtc_v2_present": null,
+      "services": null
+    },
+    "requested_size": [
+      540,
+      1200
+    ],
+    "scene": "local.remoteandroid.benchmark/.DiagnosticSourceActivity",
+    "scene_target_fps": 30,
+    "schema": 1,
+    "scope": "localhost capture only; no encoder, WAN, phone decoder, or touch measurement",
+    "screenshot": {
+      "pixel_bytes": 2592000,
+      "rgba_bytes_match_dimensions": true,
+      "rpc_ms": 3.16,
+      "sequence": 0,
+      "size": [
+        540,
+        1200
+      ],
+      "timestamp_age_ms": 2.993,
+      "timestamp_present": true
+    },
+    "sequence_note": "gaps are emulator screenshot sequence gaps, not measured Internet packet loss",
+    "stream": {
+      "arrival_gap_ms": {
+        "max": 153.39,
+        "p50": 49.321,
+        "p95": 125.989
+      },
+      "capture_fps": 18.3,
+      "empty_frames": 0,
+      "end_reason": "deadline",
+      "errors": [],
+      "first_frame_ms": 84.303,
+      "frames": 183,
+      "invalid_rgba_frames": 0,
+      "observation_seconds": 10,
+      "pixel_bytes": 474336000,
+      "pixel_megabytes_per_second": 47.434,
+      "requested_duration_seconds": 10,
+      "sequence": {
+        "duplicates": 0,
+        "first": 1,
+        "gap_events": 0,
+        "last": 183,
+        "missing_numbers": 0,
+        "resets": 0
+      },
+      "sizes": [
+        [
+          540,
+          1200
+        ]
+      ],
+      "source_timestamp_gap_ms": {
+        "p50": 49.183,
+        "p95": 126.803
+      },
+      "timestamp_age_ms": {
+        "max": 15.999,
+        "negative_samples": 0,
+        "p50": 4.416,
+        "p95": 7.221,
+        "samples": 183
+      },
+      "wall_seconds": 10.012284
+    },
+    "synthetic_foreground_after": true,
+    "synthetic_foreground_before": true,
+    "target": "127.0.0.1:8554",
+    "timestamp_age_note": "host wall-clock minus emulator estimated production timestamp; not end-to-end latency"
+  },
+  {
+    "authorization": "discovery_bearer",
+    "format": "RGBA8888",
+    "ok": true,
+    "pixel_persistence": false,
+    "probe": "emulator_grpc_raw_capture",
+    "reflection": {
+      "available": false,
+      "error": {
+        "code": "PERMISSION_DENIED",
+        "details": "Reflection endpoint is excluded by the installed SDK allowlist."
+      },
+      "native_rtc_v2_present": null,
+      "services": null
+    },
+    "requested_size": [
+      540,
+      1200
+    ],
+    "scene": "local.remoteandroid.benchmark/.DiagnosticSourceActivity",
+    "scene_target_fps": 30,
+    "schema": 1,
+    "scope": "localhost capture only; no encoder, WAN, phone decoder, or touch measurement",
+    "screenshot": {
+      "pixel_bytes": 2592000,
+      "rgba_bytes_match_dimensions": true,
+      "rpc_ms": 5.018,
+      "sequence": 0,
+      "size": [
+        540,
+        1200
+      ],
+      "timestamp_age_ms": 4.855,
+      "timestamp_present": true
+    },
+    "sequence_note": "gaps are emulator screenshot sequence gaps, not measured Internet packet loss",
+    "stream": {
+      "arrival_gap_ms": {
+        "max": 170.256,
+        "p50": 56.549,
+        "p95": 120.418
+      },
+      "capture_fps": 17.5,
+      "empty_frames": 0,
+      "end_reason": "deadline",
+      "errors": [],
+      "first_frame_ms": 55.887,
+      "frames": 175,
+      "invalid_rgba_frames": 0,
+      "observation_seconds": 10,
+      "pixel_bytes": 453600000,
+      "pixel_megabytes_per_second": 45.36,
+      "requested_duration_seconds": 10,
+      "sequence": {
+        "duplicates": 0,
+        "first": 1,
+        "gap_events": 0,
+        "last": 175,
+        "missing_numbers": 0,
+        "resets": 0
+      },
+      "sizes": [
+        [
+          540,
+          1200
+        ]
+      ],
+      "source_timestamp_gap_ms": {
+        "p50": 55.891,
+        "p95": 119.22
+      },
+      "timestamp_age_ms": {
+        "max": 17.678,
+        "negative_samples": 0,
+        "p50": 4.491,
+        "p95": 7.157,
+        "samples": 175
+      },
+      "wall_seconds": 10.010065
+    },
+    "synthetic_foreground_after": true,
+    "synthetic_foreground_before": true,
+    "target": "127.0.0.1:8554",
+    "timestamp_age_note": "host wall-clock minus emulator estimated production timestamp; not end-to-end latency"
+  }
+]

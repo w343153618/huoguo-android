@@ -1,0 +1,230 @@
+[
+  {
+    "probe": "emulator-real-capture-hardware-v1",
+    "video_size": [
+      540,
+      1200
+    ],
+    "source_scene_fps": 30,
+    "hardware_encoder_expected_fps": 30,
+    "warmup_seconds": 2,
+    "measurement_seconds": 10.0,
+    "capture_frames": 300,
+    "capture_fps": 30.0,
+    "unique_captured_images": 300,
+    "duplicate_capture_timestamps": 0,
+    "encoded_frames": 300,
+    "encoded_fps": 30.0,
+    "capture_age_p50_ms": 2.771,
+    "capture_age_p95_ms": 5.059,
+    "estimated_source_to_h264_pipe_age_p50_ms": 12.953,
+    "estimated_source_to_h264_pipe_age_p95_ms": 15.719,
+    "encoded_gap_p50_ms": 33.2,
+    "encoded_gap_p95_ms": 38.517,
+    "encoded_gaps_over_50ms": 2,
+    "actual_mbps": 4.182,
+    "native_encoder_metrics_include_warmup": {
+      "bitrate_target_bps": 4000000,
+      "complete_rgba_to_callback_ms": {
+        "count": 334,
+        "max": 199.631041,
+        "p50": 9.219792,
+        "p95": 9.760333
+      },
+      "dropped_or_failed": 0,
+      "elapsed_seconds": 11.164296458,
+      "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+      "final_drain_ms": 0.413916,
+      "finish_reason": "EOF",
+      "fps_expected": 30,
+      "frame_reordering_readback": false,
+      "height": 1200,
+      "host_capture_timestamp_age_at_submit_ms": {
+        "count": 334,
+        "max": 960.908,
+        "p50": 3.672,
+        "p95": 7.278
+      },
+      "input_frames": 334,
+      "keyframes": 7,
+      "max_frame_delay_applied": false,
+      "max_frame_delay_count_readback": null,
+      "max_frame_delay_raw_readback": 0,
+      "max_frame_delay_read_status": 0,
+      "max_frame_delay_set_status": {
+        "0": -12900,
+        "1": -12900
+      },
+      "output_bitrate_bps": 4190927.7647739793,
+      "output_callback_gap_ms": {
+        "count": 333,
+        "max": 73.244666,
+        "p50": 33.196667,
+        "p95": 38.770792
+      },
+      "output_fps": 29.916797825685254,
+      "output_frames": 334,
+      "pending_at_end": 0,
+      "pending_peak": 3,
+      "probe": "emulator-hardware-rgba-v1",
+      "process_cpu_percent_of_one_core": 3.8149828930313054,
+      "required_hardware": true,
+      "scope": "complete_rgba_to_callback_ms starts after stdin delivered the complete RGBA payload. It measures pool/conversion/VT work and excludes gRPC capture delivery, RGBA pipe delivery, network transport, phone decode and display. Capture timestamp age is a separate estimated upstream observation.",
+      "stdout_write_ms": {
+        "count": 334,
+        "max": 0.033416,
+        "p50": 0.012125,
+        "p95": 0.01775
+      },
+      "submit_to_callback_ms": {
+        "count": 334,
+        "max": 76.317708,
+        "p50": 9.101458,
+        "p95": 9.592916
+      },
+      "using_hardware": true,
+      "vimage_and_pool_ms": {
+        "count": 334,
+        "max": 1.957542,
+        "p50": 0.111042,
+        "p95": 0.180084
+      },
+      "width": 540
+    },
+    "pixel_or_video_persistence": false,
+    "scope": "local raw capture and hardware encode only; excludes audio, network transit, phone decoding and display",
+    "cpu_observation_seconds_including_drain": 10.024,
+    "guest_cpu_busy_percent_all_vcpus": 9.225,
+    "host_qemu_cpu_percent_one_core_equals_100": 41.699,
+    "capture_process_cpu_percent_one_core_equals_100": 18.064,
+    "ffprobe_decode_exit": 0,
+    "decoded_stream": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 540,
+          "height": 1200
+        }
+      ]
+    },
+    "ffmpeg_decode_exit": 0,
+    "host": "Apple M1 Max",
+    "guest_vcpu_count": 4
+  },
+  {
+    "probe": "emulator-real-capture-hardware-v1",
+    "video_size": [
+      540,
+      1200
+    ],
+    "source_scene_fps": 30,
+    "hardware_encoder_expected_fps": 30,
+    "warmup_seconds": 2,
+    "measurement_seconds": 10.0,
+    "capture_frames": 301,
+    "capture_fps": 30.1,
+    "unique_captured_images": 301,
+    "duplicate_capture_timestamps": 0,
+    "encoded_frames": 300,
+    "encoded_fps": 30.0,
+    "capture_age_p50_ms": 2.724,
+    "capture_age_p95_ms": 4.773,
+    "estimated_source_to_h264_pipe_age_p50_ms": 12.8,
+    "estimated_source_to_h264_pipe_age_p95_ms": 15.193,
+    "encoded_gap_p50_ms": 33.409,
+    "encoded_gap_p95_ms": 39.275,
+    "encoded_gaps_over_50ms": 3,
+    "actual_mbps": 4.036,
+    "native_encoder_metrics_include_warmup": {
+      "bitrate_target_bps": 4000000,
+      "complete_rgba_to_callback_ms": {
+        "count": 360,
+        "max": 208.915083,
+        "p50": 9.174167,
+        "p95": 9.638959
+      },
+      "dropped_or_failed": 0,
+      "elapsed_seconds": 11.998750667,
+      "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+      "final_drain_ms": 0.408083,
+      "finish_reason": "EOF",
+      "fps_expected": 30,
+      "frame_reordering_readback": false,
+      "height": 1200,
+      "host_capture_timestamp_age_at_submit_ms": {
+        "count": 360,
+        "max": 151.514,
+        "p50": 3.633,
+        "p95": 6.487
+      },
+      "input_frames": 360,
+      "keyframes": 7,
+      "max_frame_delay_applied": false,
+      "max_frame_delay_count_readback": null,
+      "max_frame_delay_raw_readback": 0,
+      "max_frame_delay_read_status": 0,
+      "max_frame_delay_set_status": {
+        "0": -12900,
+        "1": -12900
+      },
+      "output_bitrate_bps": 4033352.583373587,
+      "output_callback_gap_ms": {
+        "count": 359,
+        "max": 73.01975,
+        "p50": 33.304708,
+        "p95": 39.277709
+      },
+      "output_fps": 30.003123657707388,
+      "output_frames": 360,
+      "pending_at_end": 0,
+      "pending_peak": 3,
+      "probe": "emulator-hardware-rgba-v1",
+      "process_cpu_percent_of_one_core": 3.746890092786691,
+      "required_hardware": true,
+      "scope": "complete_rgba_to_callback_ms starts after stdin delivered the complete RGBA payload. It measures pool/conversion/VT work and excludes gRPC capture delivery, RGBA pipe delivery, network transport, phone decode and display. Capture timestamp age is a separate estimated upstream observation.",
+      "stdout_write_ms": {
+        "count": 360,
+        "max": 0.038208,
+        "p50": 0.012292,
+        "p95": 0.01825
+      },
+      "submit_to_callback_ms": {
+        "count": 360,
+        "max": 83.950541,
+        "p50": 9.05325,
+        "p95": 9.467834
+      },
+      "using_hardware": true,
+      "vimage_and_pool_ms": {
+        "count": 360,
+        "max": 1.393666,
+        "p50": 0.111292,
+        "p95": 0.151375
+      },
+      "width": 540
+    },
+    "pixel_or_video_persistence": false,
+    "scope": "local raw capture and hardware encode only; excludes audio, network transit, phone decoding and display",
+    "cpu_observation_seconds_including_drain": 10.049,
+    "guest_cpu_busy_percent_all_vcpus": 8.903,
+    "host_qemu_cpu_percent_one_core_equals_100": 41.996,
+    "capture_process_cpu_percent_one_core_equals_100": 17.913,
+    "ffprobe_decode_exit": 0,
+    "decoded_stream": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 540,
+          "height": 1200
+        }
+      ]
+    },
+    "ffmpeg_decode_exit": 0,
+    "host": "Apple M1 Max",
+    "guest_vcpu_count": 4
+  }
+]

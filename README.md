@@ -81,7 +81,9 @@ GitHub Actions 的 `Android build verification` 只负责编译、lint 和地址
 
 ## M5 服务端
 
-`gateway.py`、`media_transfer.py`、`lan_interfaces.py` 、官方 scrcpy 4.1 服务文件和可选的自适应扩展部署在 Mac。ADB 仅绑定回环地址。通过环境变量配置 `DIRECT_CERT`、`DIRECT_KEY`、`DIRECT_AUTH_FILE`、`DIRECT_AVD`（现有 AVD）、`DIRECT_MAX_SIZE=1600`、`DIRECT_INTERFACES` 等参数。请复用已有虚拟机及其 App 数据，不要重新创建或擦除 AVD。
+`gateway.py`、`media_transfer.py`、`lan_interfaces.py`、`display_profile.py`、官方 scrcpy 4.1 服务文件和可选的自适应扩展部署在 Mac。ADB 仅绑定回环地址。通过环境变量配置 `DIRECT_CERT`、`DIRECT_KEY`、`DIRECT_AUTH_FILE`、`DIRECT_AVD`（现有 AVD）、`DIRECT_MAX_SIZE=1600`、`DIRECT_INTERFACES` 等参数。请复用已有虚拟机及其 App 数据，不要重新创建或擦除 AVD。
+
+物理 540P 配置使用 AVD 的 `540×1200 / 210 dpi`，需冷启动后读回物理尺寸；单独 `wm size` 覆盖不等同于改变 AVD 物理屏幕。仅在该配置实际生效时设置 `DIRECT_PHYSICAL_DISPLAY=540x1200`，网关会在每次安卓启动完成后尝试去掉 Pixel 6 的显示轮廓覆盖。此参数默认关闭。当前生产视频仍用安卓软件编码；Mac 硬件编码的隔离实验、实际测量边界和待验收项目见 [540P 与硬件编码实验记录](docs/display-540-hardware-encoding-20260929.md)。
 
 `python3 add-user.py USERNAME --auth-file /private/path/auth.json` 以隐藏输入创建账号，密码仅保存为带随机盐的 scrypt 哈希。原单账号格式会自动迁移并保留旧账号。凭据、服务端私钥、NPS vkey 不属于源码。
 
