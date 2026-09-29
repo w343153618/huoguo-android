@@ -5,10 +5,13 @@ cache=root/'github-update-cache';cache.mkdir(mode=0o700,exist_ok=True)
 repo='w343153618/huoguo-android'
 ssh=['/usr/bin/ssh','-p','443','-o','HostKeyAlias=github.com','-o','StrictHostKeyChecking=yes',
      '-o','BatchMode=yes','-o','ConnectTimeout=10','-o','IdentitiesOnly=yes',
-     '-o','UserKnownHostsFile='+str(root/'github-known_hosts'),'-i',str(root/'github-update-key')]
+     '-o','UserKnownHostsFile="'+str(root/'github-known_hosts')+'"','-i',str(root/'github-update-key')]
 import shlex
 env=dict(os.environ,GIT_SSH_COMMAND=shlex.join(ssh))
-def git(*args):return subprocess.run(['/usr/bin/git','-C',str(cache),*args],env=env,capture_output=True,check=True,timeout=90).stdout
+def git(*args):
+    result=subprocess.run(['/usr/bin/git','-C',str(cache),*args],env=env,capture_output=True,timeout=90)
+    if result.returncode:raise RuntimeError('Git sync failed: '+result.stderr.decode(errors='replace')[-1500:])
+    return result.stdout
 if not (cache/'.git').exists():
     git('init');git('remote','add','origin','ssh://git@ssh.github.com/'+repo+'.git')
 git('fetch','--depth=1','origin','updates')
