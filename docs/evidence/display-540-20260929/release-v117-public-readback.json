@@ -1,0 +1,12 @@
+{
+  "scope": "unauthenticated update download through owned public NPS, no login credentials or video stream sent",
+  "source_interface": "en0",
+  "physical_binding_readback": 17,
+  "source_lan_ip": "192.168.9.126",
+  "wired_preferred_interface_available": false,
+  "version_name": "1.17",
+  "version_code": 18,
+  "apk_bytes": 3005686,
+  "apk_sha256": "110c41b4d3abe4e9797a71ece999344d720ccb68577abb9eddaa17acab2f91bb",
+  "digest_matched": true
+}
