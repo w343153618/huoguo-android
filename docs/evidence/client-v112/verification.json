@@ -1,0 +1,24 @@
+{
+  "version": "1.12",
+  "native_test_device": "M5 Android 17 AVD, not physical Ace5/V50",
+  "native_live_encoding_targets_accepted": [
+    1000000,
+    2000000
+  ],
+  "native_rendered_frames": 361,
+  "native_audio_pcm_bytes": 2367488,
+  "native_update_dialog_confirm_cancel_verified": true,
+  "lan_and_public_nps_control_acknowledgement_verified": true,
+  "manual_ceiling_rejection_verified": true,
+  "adaptive_feedback_policy_checks_passed": true,
+  "python_tests_passed": 16,
+  "avd_recovery": "One nonresponsive ADB install; cold restart of existing AVD preserved userdata, then native tests passed",
+  "source_media_volume_after_restart": 15,
+  "source_media_volume_maximum": 15,
+  "actual_mobile_carrier_benchmark": "Not yet measured. User reports same public endpoint: home WiFi smooth, China Telecom mobile VBR smoother than CBR",
+  "reported_old_update_prompt": "Not reproduced on user phone; full prompt and installed version requested; manifest and APK verified 1.11/code12 before release. New UI and pending installer validation added.",
+  "native_cached_apk_validation": "Same-version and corrupted pending APKs rejected before system installer",
+  "native_test_server_sha256": "efe0017f455058fb6aa5e381897f587fb3a8322de4a16dbdbe57d03b3b5a9033",
+  "release_server_sha256": "f954ec8acd3ead5aded9f621995dce0e2a5c13dba31bfe682cc1a5b4ed31de24",
+  "release_server_changes_after_native_test": "Same tested bitrate source implementation; minimum declared API raised from21 to24 for IntConsumer. Strict server lint 0 errors/18 warnings. Atomic artifact deployment without restarting gateway."
+}

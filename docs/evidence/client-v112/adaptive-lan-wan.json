@@ -1,0 +1,49 @@
+[
+  {
+    "live_bitrate_acknowledgements": [
+      1000000,
+      2000000,
+      0
+    ],
+    "ceiling_enforced": true,
+    "host": "192.168.9.99",
+    "video_bit_rate": 2500000,
+    "size": [
+      540,
+      1200
+    ],
+    "initial_avc_packets": [
+      33,
+      26353
+    ],
+    "actual_stream_received": true,
+    "bitrate_mode": "ADAPTIVE_VBR",
+    "max_fps": 30,
+    "test_client_physical_interface": "M1 en0 (IP_BOUND_IF)"
+  },
+  {
+    "live_bitrate_acknowledgements": [
+      1000000,
+      2000000,
+      0
+    ],
+    "ceiling_enforced": true,
+    "host": "146.56.249.175",
+    "video_bit_rate": 2500000,
+    "size": [
+      540,
+      1200
+    ],
+    "initial_avc_packets": [
+      33,
+      26353
+    ],
+    "actual_stream_received": true,
+    "bitrate_mode": "ADAPTIVE_VBR",
+    "max_fps": 60,
+    "test_client_physical_interface": "M1 en0 (IP_BOUND_IF)"
+  },
+  {
+    "invalid_bitrate_rejected": true
+  }
+]

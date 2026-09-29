@@ -40,4 +40,6 @@ jobs:
           java -cp /tmp/endpoint-check local.remoteandroid.direct.V50PresetCheck
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/PcmGain.java tests/PcmGainCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.PcmGainCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/AdaptiveBitrate.java tests/AdaptiveBitrateCheck.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.AdaptiveBitrateCheck
 # This job never publishes its temporary CI-signed APK. Upgrade signing stays on the owner's Mac.

@@ -19,6 +19,7 @@ class StreamSettingsTest(unittest.TestCase):
     def test_bitrate_modes(self):
         self.assertEqual(parse_bitrate_mode({}),('CBR',2))
         self.assertEqual(parse_bitrate_mode({'bitrate_mode':'VBR'}),('VBR',1))
+        self.assertEqual(parse_bitrate_mode({'bitrate_mode':'ADAPTIVE_VBR'}),('ADAPTIVE_VBR',1))
         for mode in ('AVBR','CBR_FD',0,True,None,'vbr'):
             with self.subTest(mode=mode),self.assertRaises(ValueError):
                 parse_bitrate_mode({'bitrate_mode':mode})

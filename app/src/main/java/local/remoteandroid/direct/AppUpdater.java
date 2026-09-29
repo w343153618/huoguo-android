@@ -41,6 +41,7 @@ final class AppUpdater {
             try {
                 JSONObject info = new JSONObject(new String(read(url, 65536), StandardCharsets.UTF_8));
                 long version = info.getLong("version_code");
+                if(version<BuildConfig.VERSION_CODE)throw new IOException("服务器返回旧版本 v"+info.getString("version_name")+"，当前已安装 v"+BuildConfig.VERSION_NAME+"；已拒绝降级");
                 boolean newer=version>BuildConfig.VERSION_CODE;
                 if(!newer&&!manual)return;
                 String name=info.getString("version_name");
@@ -65,7 +66,7 @@ final class AppUpdater {
         android.widget.TextView content=new android.widget.TextView(activity);
         int pad=Math.round(20*activity.getResources().getDisplayMetrics().density);
         content.setPadding(pad,pad,pad,pad);content.setTextSize(15);
-        content.setText("更新内容\n\n"+notes+(newer?"\n\n确认后才下载；安装仍由 Android 确认，保留现有设置。":"\n\n当前安装版本 v"+BuildConfig.VERSION_NAME+"，无需更新。"));
+        content.setText("已安装：v"+BuildConfig.VERSION_NAME+"（版本码 "+BuildConfig.VERSION_CODE+"）\n"+(newer?"可升级：v"+name:"服务器最新版：v"+name)+"\n\n更新内容\n\n"+notes+(newer?"\n\n确认后才下载；安装仍由 Android 确认，保留现有设置。":"\n\n当前安装版本 v"+BuildConfig.VERSION_NAME+"，无需更新。"));
         android.widget.ScrollView scroll=new android.widget.ScrollView(activity);scroll.addView(content);
         AtomicBoolean handedOff=new AtomicBoolean();
         AlertDialog.Builder builder=new AlertDialog.Builder(activity)
@@ -99,6 +100,7 @@ final class AppUpdater {
                 if (count != expectedSize || !hex(digest.digest()).equalsIgnoreCase(hash)) throw new IOException("更新包校验失败");
                 validate(part, version);
                 if (!part.renameTo(apk)) throw new IOException("无法保存更新包");
+                activity.getSharedPreferences("updates",0).edit().putLong("pending_version",version).putString("pending_hash",hash).putLong("pending_size",expectedSize).putBoolean("waiting_permission",false).commit();
                 activity.runOnUiThread(this::install);
             } catch (Exception error) { part.delete(); toast("更新失败：" + MainActivity.message(error)); }
             finally { if (connection != null) connection.disconnect(); busy.set(false); }
@@ -120,14 +122,33 @@ final class AppUpdater {
         return result;
     }
     private void install() {
+        new Thread(()->{
+        try {
+            android.content.SharedPreferences prefs=activity.getSharedPreferences("updates",0);
+            File file=new File(activity.getCacheDir(),"update.apk");
+            long expected=prefs.getLong("pending_version",0),size=prefs.getLong("pending_size",0);
+            String hash=prefs.getString("pending_hash","");
+            if(!file.isFile()||file.length()!=size||!hash.matches("[0-9a-fA-F]{64}"))throw new IOException("待安装包信息无效，请重新检查更新");
+            MessageDigest digest=MessageDigest.getInstance("SHA-256");
+            try(InputStream input=new FileInputStream(file)){byte[] buffer=new byte[32768];int n;while((n=input.read(buffer))!=-1)digest.update(buffer,0,n);}
+            if(!hex(digest.digest()).equalsIgnoreCase(hash))throw new IOException("待安装包校验失败，请重新下载");
+            validate(file,expected);
+            activity.runOnUiThread(this::launchInstaller);
+        }catch(Exception error){activity.getSharedPreferences("updates",0).edit().putBoolean("waiting_permission",false).apply();toast("安装更新已停止："+MainActivity.message(error));}
+        },"update-install-verify").start();
+    }
+    private void launchInstaller() {
+        if(activity.isFinishing()||activity.isDestroyed())return;
         try {
             if (!activity.getPackageManager().canRequestPackageInstalls()) {
                 waitingForPermission = true;
+                activity.getSharedPreferences("updates",0).edit().putBoolean("waiting_permission",true).apply();
                 toast("请允许此 App 安装更新，再返回 App");
                 activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                     Uri.parse("package:" + activity.getPackageName())));
                 return;
             }
+            activity.getSharedPreferences("updates",0).edit().putBoolean("waiting_permission",false).apply();
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(Uri.parse("content://" + activity.getPackageName() + ".updates/update.apk"),
                 "application/vnd.android.package-archive");
@@ -136,7 +157,7 @@ final class AppUpdater {
         } catch (Exception error) { toast("无法打开安装界面：" + MainActivity.message(error)); }
     }
     void resumeInstall() {
-        if (waitingForPermission) {
+        if (waitingForPermission||activity.getSharedPreferences("updates",0).getBoolean("waiting_permission",false)) {
             waitingForPermission = false;
             if (activity.getPackageManager().canRequestPackageInstalls()) install();
         }
@@ -181,6 +202,7 @@ final class AppUpdater {
                     });
                 }
             }
+            connection.setUseCaches(false);connection.setRequestProperty("Cache-Control","no-cache, no-store");
             connection.setConnectTimeout(15000); connection.setReadTimeout(30000);
             connection.setInstanceFollowRedirects(false);
             connection.setRequestProperty("User-Agent", "HuoguoAndroid/" + BuildConfig.VERSION_NAME);

@@ -1,6 +1,6 @@
 # 给火锅的安卓
 
-原生 Android 客户端，用手机直接控制 Apple Silicon Mac 上的 Android Emulator。视频为 H.264，音频为 AAC，触控直接发送到安卓；不依赖 Mac 桌面鼠标。当前版本 1.11。
+原生 Android 客户端，用手机直接控制 Apple Silicon Mac 上的 Android Emulator。视频为 H.264，音频为 AAC，触控直接发送到安卓；不依赖 Mac 桌面鼠标。当前版本 1.12。
 
 ## 照片图标与交互
 
@@ -21,7 +21,13 @@
 
 ## 流畅显示与延时
 
-连接页可选择 CBR 固定码率（`bitrate-mode=2`）或 VBR 可变码率（`bitrate-mode=1`），默认 CBR，上次选择在连接时记住；不静默替换编码模式。当前 M5 编码器已验证支持两种模式。AVBR 不是此 MediaCodec 软件编码器提供的标准模式，界面注明不支持，不提供无效选项。CBR 固定的是编码目标码率，并不意味着每帧大小相同或每秒传输量完全一致，静止画面也不会填充无用网络数据。
+连接页保留 CBR 固定目标码率与 VBR 可变码率，新安装默认 VBR；已有手动选择保留。新增“网络自适应 VBR · 实验”：编码器仍工作在 VBR，但客户端按视频到达时间与源时间戳之间的延迟变化，以及 `/ping` RTT 相对基线的变化，动态调整编码目标。它不是原生 AVBR，也不是严格峰值上限。
+
+自适应以用户所填码率作为目标上限，开始请求其70%（最低0.5 Mbps）。约每3秒评估一次：窗口至少8帧且新增延迟超过140ms、持续增长超过35ms或RTT增加超过80ms时降低目标25%；连续4个健康窗口才增加10%或0.1Mbps，以较大者为准；最低0.5Mbps，最高用户目标。静止/缺少视频样本不单独触发降低。指标显示服务端编码器确认接受的目标，而非实测网络吞吐。源时钟回退时重置基线；本地解码积压也会影响观测，因此该控制器仍需真机移动网络验收。
+
+自适应会话使用本仓库基于官方scrcpy4.1的服务扩展，通过现有已认证TLS控制通道发送240号消息。编码线程调用`MediaCodec.PARAMETER_KEY_VIDEO_BITRATE`，不重启会话或解码器。服务端拒绝低于0.5Mbps或超过初始目标的请求；回传240号确认，失败回传0，客户端停止自动调整并继续最后的VBR目标。标准CBR/VBR会话仍使用官方原服务。M5必须先部署`stream-server`构建产物为`scrcpy-server-adaptive-v4.1`以及新版gateway/parser。AVBR不在Android标准码率模式之中；不能仅改名后宣称支持。CBR固定的是目标，不能保证每帧或每秒字节数完全一致。
+
+主源：[Android编码模式](https://developer.android.com/reference/android/media/MediaCodecInfo.EncoderCapabilities)、[动态视频码率参数](https://developer.android.com/reference/android/media/MediaCodec#PARAMETER_KEY_VIDEO_BITRATE)。
 
 播放使用约 80 ms 的短缓冲，将 scrcpy 单调时间戳映射到共同的音视频播放时钟。视频采用 MediaCodec 定时输出并向 Surface 请求 60 Hz 内容节奏；丢弃明显过期的显示帧，严重网络停顿后重建时间映射，避免延时无限积累。触控仍即时发送。它减少到达抖动造成的显示忽快忽慢，不生成缺失帧，也不保证源端或 WAN 持续掉帧时仍有 60 FPS。
 
@@ -29,7 +35,7 @@
 
 ## 火锅的真我 V50 一键优化
 
-连接页“真我 V50 · 一键优化”读取正在运行的手机的 MediaCodec 声明，分别检查 H.264/H.265 硬解及 AVC 540×1200@60 支持。能力允许时应用 540P、H.264、2.5 Mbps CBR、最高 60 FPS、100 ms 共用音视频缓冲，向系统请求 60 Hz 显示，默认隐藏指标、默认1.5倍声音增强。若仅声明 AVC 硬解但未声明该尺寸60 FPS，则保留540P、改30 FPS；若没有合适的 AVC 硬解，采用432P、1.5 Mbps、30 FPS。检测 H.265 不会自动改编码协议，当前仍用已经验证的 H.264 链路。
+连接页“真我 V50 · 一键优化”读取正在运行的手机的 MediaCodec 声明，分别检查 H.264/H.265 硬解及 AVC 540×1200@60 支持。能力允许时应用 540P、H.264、2.5 Mbps VBR、最高 60 FPS、100 ms 共用音视频缓冲，向系统请求 60 Hz 显示，默认隐藏指标、默认1.5倍声音增强。若仅声明 AVC 硬解但未声明该尺寸60 FPS，则保留540P、改30 FPS；若没有合适的 AVC 硬解，采用432P、1.5 Mbps、30 FPS。检测 H.265 不会自动改编码协议，当前仍用已经验证的 H.264 链路。
 
 选择立即保存、下次连接生效，不改变账号、地址、密码或手机全局设置。可手动改清晰度/码率，也可点“恢复优化前设置”恢复性能参数、声音增强与指标状态。第一次应用时保留原参数，重复点击不会覆盖这个恢复点。能力标记来自系统，实际硬解成功、温度、耗电和稳定帧率仍需火锅真机验收；60 Hz 是请求，不是强制锁定。调查与主源见 [realme-v50-optimization.md](docs/realme-v50-optimization.md)。
 
@@ -57,7 +63,7 @@
 
 源码仓库为私有。正式升级包在本机签名，随后发布到私有 GitHub Release 和 `updates` 分支。M5 每 60 秒通过专用只读部署密钥同步该分支，将签名 APK 提供在已有的 TLS 串流服务中。App 不包含 GitHub Token。签名私钥不上传 GitHub。
 
-客户端更新入口为 `https://146.56.249.175:15556/updates/update.json`，使用与串流相同的服务器公开证书校验。客户端每天在连接页自动检查一次，也可以点击标题旁的“检查更新”。点击“检查更新”先显示可滚动的更新内容；有新版时显示“确认更新／取消更新”，确认后才下载，取消不下载。已经是最新版本也能手动查看服务端的版本说明。下载完成后校验 SHA-256、包名、递增版本号和现有签名，再打开 Android 安装确认界面。首次需允许此 App 安装更新；安装需要用户确认。
+客户端更新入口为 `https://146.56.249.175:15556/updates/update.json`，使用与串流相同的服务器公开证书校验。客户端每天在连接页自动检查一次，也可以点击标题旁的“检查更新”。点击“检查更新”先显示可滚动的更新内容；有新版时显示“确认更新／取消更新”，确认后才下载，取消不下载。已经是最新版本也能手动查看服务端的版本说明。页面明确显示已安装版本与可升级版本；服务器提供旧版本时明确拒绝降级。请求禁用HTTP缓存。下载完成后校验 SHA-256、包名、递增版本号和现有签名；安装前及从权限页返回后重新校验待安装文件，再打开 Android 安装确认界面。安装权限等待状态持久化，可在App被系统回收后继续；不自动安装未验证的缓存旧包。首次需允许此 App 安装更新；安装需要用户确认。
 
 以后更新：修改代码并递增 `app/build.gradle` 的 `versionCode` / `versionName`，更新 `release-notes.md`，在 `main` 分支提交，然后在配置了 Java 21、Android SDK 和原签名密钥的 Mac 上执行：
 
@@ -73,7 +79,7 @@ GitHub Actions 的 `Android build verification` 只负责编译、lint 和地址
 
 ## M5 服务端
 
-`gateway.py`、`media_transfer.py`、`lan_interfaces.py` 和官方 scrcpy 4.1 服务文件部署在 Mac。ADB 仅绑定回环地址。通过环境变量配置 `DIRECT_CERT`、`DIRECT_KEY`、`DIRECT_AUTH_FILE`、`DIRECT_AVD`（现有 AVD）、`DIRECT_MAX_SIZE=1600`、`DIRECT_INTERFACES` 等参数。请复用已有虚拟机及其 App 数据，不要重新创建或擦除 AVD。
+`gateway.py`、`media_transfer.py`、`lan_interfaces.py` 、官方 scrcpy 4.1 服务文件和可选的自适应扩展部署在 Mac。ADB 仅绑定回环地址。通过环境变量配置 `DIRECT_CERT`、`DIRECT_KEY`、`DIRECT_AUTH_FILE`、`DIRECT_AVD`（现有 AVD）、`DIRECT_MAX_SIZE=1600`、`DIRECT_INTERFACES` 等参数。请复用已有虚拟机及其 App 数据，不要重新创建或擦除 AVD。
 
 `python3 add-user.py USERNAME --auth-file /private/path/auth.json` 以隐藏输入创建账号，密码仅保存为带随机盐的 scrypt 哈希。原单账号格式会自动迁移并保留旧账号。凭据、服务端私钥、NPS vkey 不属于源码。
 

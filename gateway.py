@@ -165,7 +165,9 @@ class Handler(BaseHTTPRequestHandler):
             with lock:
                 for old in list(sessions): close_session(old)
                 ensure_android()
-                adb('push',str(BASE/'scrcpy-server-v4.1'),'/data/local/tmp/remoteandroid-scrcpy.jar')
+                server_file=BASE/('scrcpy-server-adaptive-v4.1' if bitrate_mode=='ADAPTIVE_VBR' else 'scrcpy-server-v4.1')
+                if not server_file.is_file(): raise RuntimeError('Adaptive server unavailable')
+                adb('push',str(server_file),'/data/local/tmp/remoteandroid-scrcpy.jar')
                 scid=secrets.randbelow(0x7fffffff)
                 port=int(adb('forward','tcp:0','localabstract:scrcpy_'+format(scid,'08x')).stdout.strip())
                 cmd='CLASSPATH=/data/local/tmp/remoteandroid-scrcpy.jar app_process / com.genymobile.scrcpy.Server 4.1 '+ ' '.join([
@@ -183,7 +185,7 @@ class Handler(BaseHTTPRequestHandler):
                 sid=secrets.token_hex(16)
                 sessions[sid]={'port':port,'proc':proc,'sockets':[],'roles':[],'created':time.monotonic()}
                 threading.Timer(30,lambda: self.expire(sid)).start()
-            self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':max_fps,'video_bit_rate':bit_rate,'bitrate_mode':bitrate_mode})
+            self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':max_fps,'video_bit_rate':bit_rate,'bitrate_mode':bitrate_mode,'adaptive_vbr':bitrate_mode=='ADAPTIVE_VBR'})
         except Exception as e:
             if proc and proc.poll() is None: proc.terminate()
             if port:

@@ -1,0 +1,15 @@
+apply plugin: 'com.android.application'
+android {
+    namespace 'com.genymobile.scrcpy'
+    compileSdk 37
+    defaultConfig {
+        applicationId 'com.genymobile.scrcpy'
+        minSdk 24
+        targetSdk 37
+        versionCode 40101
+        versionName '4.1'
+    }
+    buildFeatures { buildConfig true; aidl true }
+    buildTypes { release { minifyEnabled false } }
+    lint { disable 'UseRequiresApi' }
+}

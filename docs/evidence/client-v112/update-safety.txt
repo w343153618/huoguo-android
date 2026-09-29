@@ -1,0 +1,3 @@
+INSTRUMENTATION_RESULT: passed=update-safety
+INSTRUMENTATION_RESULT: same_version_and_corrupt_cache=rejected before system installer
+INSTRUMENTATION_CODE: -1

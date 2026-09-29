@@ -17,9 +17,9 @@ def parse_settings(settings, default_size):
 
 def parse_bitrate_mode(settings):
     mode=settings.get('bitrate_mode','CBR')
-    if type(mode) is not str or mode not in ('CBR','VBR'):
-        raise ValueError('Supported bitrate modes: CBR, VBR')
-    return mode, {'CBR':2, 'VBR':1}[mode]
+    if type(mode) is not str or mode not in ('CBR','VBR','ADAPTIVE_VBR'):
+        raise ValueError('Supported bitrate modes: CBR, VBR, ADAPTIVE_VBR')
+    return mode, {'CBR':2, 'VBR':1, 'ADAPTIVE_VBR':1}[mode]
 
 
 def parse_max_fps(settings):
