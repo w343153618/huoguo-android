@@ -7,7 +7,8 @@ final class V50Preset {
     V50Preset(boolean hardwareAvc,boolean hardwareAvc60){
         maxSize=hardwareAvc?1200:960;
         bitrate=hardwareAvc?2500000:1500000;
-        fps=hardwareAvc&&hardwareAvc60?60:30;
-        bufferMs=100;
+        // Advertised 60 FPS support is not sustained V50 playback validation.
+        fps=30;
+        bufferMs=120;
     }
 }

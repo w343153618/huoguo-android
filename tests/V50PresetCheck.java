@@ -3,7 +3,7 @@ public class V50PresetCheck {
     static void check(boolean value){if(!value)throw new AssertionError();}
     public static void main(String[] args){
         V50Preset fast=new V50Preset(true,true);
-        check(fast.maxSize==1200&&fast.bitrate==2500000&&fast.fps==60&&fast.bufferMs==100&&fast.mode.equals("VBR"));
+        check(fast.maxSize==1200&&fast.bitrate==2500000&&fast.fps==30&&fast.bufferMs==120&&fast.mode.equals("VBR"));
         V50Preset limited=new V50Preset(true,false);
         check(limited.maxSize==1200&&limited.bitrate==2500000&&limited.fps==30);
         V50Preset software=new V50Preset(false,true);
