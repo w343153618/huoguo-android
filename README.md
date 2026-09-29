@@ -1,6 +1,6 @@
 # 给火锅的安卓
 
-原生 Android 客户端，用手机直接控制 Apple Silicon Mac 上的 Android Emulator。视频为 H.264，音频为 AAC，触控直接发送到安卓；不依赖 Mac 桌面鼠标。当前版本 1.7。
+原生 Android 客户端，用手机直接控制 Apple Silicon Mac 上的 Android Emulator。视频为 H.264，音频为 AAC，触控直接发送到安卓；不依赖 Mac 桌面鼠标。当前版本 1.8。
 
 ## 照片图标与交互
 
@@ -18,6 +18,14 @@
 尺寸基于 1080 × 2400 的虚拟安卓。更换清晰度后重新连接。最高 60 FPS、目标码率 2.5 Mbps，实际表现取决于编码、画面和网络。虚拟机的 CPU 和 GPU 加速不代表已使用 Mac 硬件视频编码：当前服务采用安卓内部软件 H.264 编码。
 
 地址可填写 IP、主机名或带 `:15556` 的地址，随时修改，无需重新安装。App 记住地址、用户名和清晰度，不保存密码。多个账号共享同一台虚拟安卓；只允许一个活动会话。
+
+## 照片与视频互传
+
+连接页的“照片 · 视频互传”和串流底部“文件”按钮使用同一个 TLS 服务、证书和账号。手机用系统文件选择器选择照片/视频（最多一次20个）；发送到虚拟安卓 `Download/火锅互传`，同步扫描进入 MediaStore，视频 App 和相册能够选择。文件列表显示 DCIM、Pictures、Movies 与此互传目录的媒体，点“保存到手机”选择本机目标位置。
+
+不申请全盘存储权限，不上传媒体到 GitHub 或独立第三方网盘。手机地址仍可以随时修改。局域网和 NPS 公网映射均沿用 `15556`，不新增公网 ADB/文件端口。文件请求必须登录，路径仅允许上述公共媒体目录，校验规范路径避免符号链接越界，上传使用临时文件与随机文件名防止覆盖；上传后校验 SHA-256。
+
+互传期间暂停串流以释放带宽；从串流进入时返回按钮会重新连接安卓。密码仅保留在当前进程内，断开/返回连接页即清除。单文件上限1GB、服务器同一时刻一个文件传输，不支持断点续传，连接中断要重新发送。列出最多500个文件；不同账号共享同一个虚拟安卓和公共媒体。
 
 ## 编译
 
@@ -45,7 +53,7 @@ GitHub Actions 的 `Android build verification` 只负责编译、lint 和地址
 
 ## M5 服务端
 
-`gateway.py`、`lan_interfaces.py` 和官方 scrcpy 4.1 服务文件部署在 Mac。ADB 仅绑定回环地址。通过环境变量配置 `DIRECT_CERT`、`DIRECT_KEY`、`DIRECT_AUTH_FILE`、`DIRECT_AVD`（现有 AVD）、`DIRECT_MAX_SIZE=1600`、`DIRECT_INTERFACES` 等参数。请复用已有虚拟机及其 App 数据，不要重新创建或擦除 AVD。
+`gateway.py`、`media_transfer.py`、`lan_interfaces.py` 和官方 scrcpy 4.1 服务文件部署在 Mac。ADB 仅绑定回环地址。通过环境变量配置 `DIRECT_CERT`、`DIRECT_KEY`、`DIRECT_AUTH_FILE`、`DIRECT_AVD`（现有 AVD）、`DIRECT_MAX_SIZE=1600`、`DIRECT_INTERFACES` 等参数。请复用已有虚拟机及其 App 数据，不要重新创建或擦除 AVD。
 
 `python3 add-user.py USERNAME --auth-file /private/path/auth.json` 以隐藏输入创建账号，密码仅保存为带随机盐的 scrypt 哈希。原单账号格式会自动迁移并保留旧账号。凭据、服务端私钥、NPS vkey 不属于源码。
 

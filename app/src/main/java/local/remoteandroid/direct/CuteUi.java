@@ -44,11 +44,11 @@ final class CuteUi {
     }
     static LinearLayout controls(Context context,java.util.function.IntConsumer click){
         LinearLayout bar=new LinearLayout(context);bar.setGravity(Gravity.CENTER);bar.setPadding(dp(context,8),0,dp(context,8),0);bar.setBackgroundColor(0xfff5fbf9);
-        String[] labels={"返回","主页","任务","断开"};int[] icons={R.drawable.ic_back,R.drawable.ic_home,R.drawable.ic_tasks,R.drawable.ic_disconnect};
-        for(int i=0;i<4;i++){
+        String[] labels={"返回","主页","任务","文件","断开"};int[] icons={R.drawable.ic_back,R.drawable.ic_home,R.drawable.ic_tasks,R.drawable.ic_files,R.drawable.ic_disconnect};
+        for(int i=0;i<5;i++){
             final int action=i;Button button=new Button(context);button.setText(labels[i]);button.setContentDescription(labels[i]);
-            style(button,i==3?PINK:MINT,true);Drawable icon=context.getDrawable(icons[i]);icon.setBounds(0,0,dp(context,16),dp(context,16));button.setCompoundDrawables(icon,null,null,null);button.setCompoundDrawablePadding(dp(context,4));
-            bar.addView(button,new LinearLayout.LayoutParams(dp(context,76),dp(context,48)));
+            style(button,i==4?PINK:MINT,true);Drawable icon=context.getDrawable(icons[i]);icon.setBounds(0,0,dp(context,16),dp(context,16));button.setCompoundDrawables(icon,null,null,null);button.setCompoundDrawablePadding(dp(context,4));
+            bar.addView(button,new LinearLayout.LayoutParams(0,dp(context,48),1));
             button.setOnClickListener(v->click.accept(action));
         }
         return bar;

@@ -2,6 +2,7 @@
 """Authenticated TLS bridge to a loopback-only scrcpy service. No credential storage."""
 import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socket, ssl, subprocess, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from media_transfer import MediaStore, MediaError
 BASE = pathlib.Path(__file__).resolve().parent
 SDK = pathlib.Path.home() / 'Library/Android/sdk'
 ADB = str(SDK / 'platform-tools/adb')
@@ -13,6 +14,7 @@ AVD = os.environ.get('DIRECT_AVD','RemoteAndroid17')
 VIDEO_MAX_SIZE = int(os.environ.get('DIRECT_MAX_SIZE','960'))
 EMULATOR = str(SDK / 'emulator/emulator')
 RAMDISK = os.environ.get('DIRECT_RAMDISK',str(pathlib.Path.home() / 'Documents/ChatGPT/others/android-remote/boot/ramdisk-ksu.img'))
+media = MediaStore(ADB, SERIAL, BASE / 'media-cache')
 vm_proc = None
 lock = threading.RLock()
 sessions = {}
@@ -98,6 +100,15 @@ class Handler(BaseHTTPRequestHandler):
         elif authorized(self.headers.get('Authorization')): return True
         self.reply(401,{'error':'Login rejected'}); return False
     def do_GET(self):
+        if self.path == '/files' or self.path.startswith('/files/'):
+            if not self.auth(): return
+            try:
+                if self.path == '/files': self.reply(200, media.listing())
+                else: media.download(self, self.path[len('/files/'):])
+            except MediaError as e: self.reply(e.status, {'error': e.message})
+            except (subprocess.SubprocessError, ValueError): self.reply(503, {'error': 'Android media unavailable; retry later'})
+            except OSError: self.close_connection = True
+            return
         # Public signed client updates only; no runtime credentials or arbitrary files.
         prefix='/updates/'
         name=self.path[len(prefix):] if self.path.startswith(prefix) else ''
@@ -119,6 +130,19 @@ class Handler(BaseHTTPRequestHandler):
         except OSError:self.close_connection=True
     def do_POST(self):
         if not self.auth(): return
+        if self.path == '/files':
+            try: self.reply(201, media.upload(self))
+            except MediaError as e:
+                # Drain small rejected bodies so TLS closing does not discard the error reply.
+                try:
+                    remaining = int(self.headers.get('Content-Length', '0')) - getattr(self, '_media_body_read', 0)
+                    if 0 < remaining <= 4096:
+                        self.connection.settimeout(2); self.rfile.read(remaining)
+                except (ValueError, OSError): pass
+                self.reply(e.status, {'error': e.message})
+            except (subprocess.SubprocessError, ValueError): self.reply(503, {'error': 'Android media import failed; retry later'})
+            except OSError: self.close_connection = True
+            return
         if self.path!='/session': self.reply(404,{'error':'Unknown route'}); return
         try:
             length=int(self.headers.get('Content-Length','0'))

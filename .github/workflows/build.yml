@@ -24,10 +24,11 @@ jobs:
       - name: Compile and lint
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease lintRelease
       - name: Check gateway syntax and endpoint parser
         run: |
-          python3 -m py_compile gateway.py lan_interfaces.py add-user.py scripts/*.py
+          python3 -m py_compile gateway.py media_transfer.py lan_interfaces.py add-user.py scripts/*.py
+          python3 -m unittest discover -s tests -p "test_*.py"
           mkdir -p /tmp/endpoint-check
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Endpoint.java tests/EndpointCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.EndpointCheck

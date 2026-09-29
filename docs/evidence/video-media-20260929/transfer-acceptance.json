@@ -1,0 +1,35 @@
+[
+  {
+    "host": "192.168.9.99",
+    "tests": {
+      "unauthenticated_401": true,
+      "over_1GB_rejected": true,
+      "upload_traversal_rejected": true,
+      "non_media_rejected": true,
+      "private_path_traversal_rejected": true,
+      "photo_upload_download_sha256": "cd26b561944388d9cdc48d4931f035117ae9f69fe0b3dfdae324361ca73217a5",
+      "android_media_scan": true,
+      "list_contains_imported_photo": true,
+      "video_upload_download_sha256": "098378755b5550e8402f15cfab9c5500b16a9f65273ea3108b157439cf0acc45",
+      "video_bytes": 2049042,
+      "canonical_symlink_escape_rejected_unit": true
+    },
+    "roundtrip_seconds": 1.98
+  },
+  {
+    "host": "146.56.249.175",
+    "tests": {
+      "unauthenticated_401": true,
+      "over_1GB_rejected": true,
+      "upload_traversal_rejected": true,
+      "non_media_rejected": true,
+      "private_path_traversal_rejected": true,
+      "photo_upload_download_sha256": "cd26b561944388d9cdc48d4931f035117ae9f69fe0b3dfdae324361ca73217a5",
+      "android_media_scan": true,
+      "list_contains_imported_photo": true,
+      "video_upload_download_sha256": "098378755b5550e8402f15cfab9c5500b16a9f65273ea3108b157439cf0acc45",
+      "video_bytes": 2049042
+    },
+    "roundtrip_seconds": 3.33
+  }
+]

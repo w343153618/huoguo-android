@@ -1,0 +1,65 @@
+[
+  {
+    "file": "FanqieHook-v0.8.5.apk",
+    "package": "dev.operit.fanqiehook",
+    "version_code": "28",
+    "version_name": "0.8.5",
+    "signer_sha256": "032bcce45a401cf5946057b3d37042b40417a003c5fd5cd7ac4f791e8dc8daf3",
+    "apk_sha256": "ef70b7a907ce99a7d11196152681b52ebc4061f1c6ed0931a86f5d403b0d2d46",
+    "bytes": 489957
+  },
+  {
+    "file": "NewPipe-v0.29.1.apk",
+    "package": "org.schabi.newpipe",
+    "version_code": "1015",
+    "version_name": "0.29.1",
+    "signer_sha256": "cb84069bd68116bafae5ee4ee5b08a567aa6d898404e7cb12f9e756df5cf5cab",
+    "apk_sha256": "18447bfb1e06d113edc88df93f471827280de06f6f3d4dc42f56f28b9c1bab79",
+    "bytes": 11507122
+  },
+  {
+    "file": "VLC-Android-3.7.1-arm64-v8a.apk",
+    "package": "org.videolan.vlc",
+    "version_code": "13070106",
+    "version_name": "3.7.1",
+    "signer_sha256": "c8768d2cea0c4b622e419b4b4715981946821e4ebc035fb41776cad395a7f68e",
+    "apk_sha256": "bea9ea0cdecfd8f461ef305d2afe5d1ac1459cfb9156acce2f615788a486de74",
+    "bytes": 47990842
+  },
+  {
+    "file": "hongguo-official.apk",
+    "package": "com.phoenix.read",
+    "version_code": "73932",
+    "version_name": "7.3.9.32",
+    "signer_sha256": "1fe01f1425c72dc1cd158e05cb696cb9fc17259a70f9d233fc48e8e42e6510ec",
+    "apk_sha256": "fef69b1ae7d079656d915209482af1d2b81a6cab0a295f987d3c4e9e3e7b5836",
+    "bytes": 145240577
+  },
+  {
+    "file": "iqiyi-official.apk",
+    "package": "com.qiyi.video",
+    "version_code": "800170955",
+    "version_name": "17.9.5",
+    "signer_sha256": "bf46eae985c1ab0d636833670c3686bc443e49f37d75dec5909adcb587a80ab4",
+    "apk_sha256": "29671e7b81aa425da5fbf742e8758b21e1bd3840eceabb87686c2103e5cb3e67",
+    "bytes": 105691682
+  },
+  {
+    "file": "tencent-video-official.apk",
+    "package": "com.tencent.qqlive",
+    "version_code": "32321",
+    "version_name": "9.04.55.32321",
+    "signer_sha256": "d0cc12cd7c250ff62b6c21580be8be276760ca09c7507dc791c56a3fb9b887de",
+    "apk_sha256": "9193560a6cd4e7990f6072d9a2ce65047fc2da6cf7b62a17b66d71115fd7e3f9",
+    "bytes": 161193377
+  },
+  {
+    "file": "youku-official.apk",
+    "package": "com.youku.phone",
+    "version_code": "920",
+    "version_name": "11.2.15",
+    "signer_sha256": "c7dfd19f8199b80615ea6e70ab46f85d87f36af26501f4e02d5c2cba85e802fb",
+    "apk_sha256": "d9d9eeebb29a7e828a8aff0fe206c48fbf8b0ba5cc7bb1013d9e9350023d9216",
+    "bytes": 123741719
+  }
+]
