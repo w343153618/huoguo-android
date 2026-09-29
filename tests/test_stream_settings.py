@@ -1,5 +1,5 @@
 import unittest
-from stream_settings import parse_settings, parse_bitrate_mode
+from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
 
 class StreamSettingsTest(unittest.TestCase):
     def test_old_client_default(self):
@@ -22,3 +22,10 @@ class StreamSettingsTest(unittest.TestCase):
         for mode in ('AVBR','CBR_FD',0,True,None,'vbr'):
             with self.subTest(mode=mode),self.assertRaises(ValueError):
                 parse_bitrate_mode({'bitrate_mode':mode})
+
+    def test_frame_rate_default_and_limits(self):
+        self.assertEqual(parse_max_fps({}),60)
+        self.assertEqual(parse_max_fps({'max_fps':30}),30)
+        for fps in (True,None,'60',60.0,0,120):
+            with self.subTest(fps=fps),self.assertRaises(ValueError):
+                parse_max_fps({'max_fps':fps})

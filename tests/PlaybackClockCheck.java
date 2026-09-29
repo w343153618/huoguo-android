@@ -16,6 +16,7 @@ public final class PlaybackClockCheck {
         check(c.deadline(source+2_000_000L)==stalled+80_000_000L);
         c.observe(0,stalled+100_000_000L);
         check(c.deadline(0)==stalled+180_000_000L);
+        PlaybackClock buffered=new PlaybackClock(100);buffered.observe(source,arrival);check(buffered.deadline(source)==arrival+100_000_000L);
         System.out.println("PlaybackClock: cadence, jitter, shared A/V mapping, stall/reset PASS");
     }
 }

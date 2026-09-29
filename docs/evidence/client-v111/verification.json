@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-29",
+  "version": "1.11",
+  "native_ui_update_changelog_dialog": true,
+  "native_ui_cancel_download_callback_count": 0,
+  "native_ui_confirm_download_callback_count": 1,
+  "native_ui_latest_version_notes": true,
+  "native_ui_preset_apply_reload_restore": true,
+  "account_address_retained": true,
+  "preset_branches_unit_test": [
+    "hardware60",
+    "hardware30",
+    "software30"
+  ],
+  "native_test_device_path": "emulator software30, not a physical realme V50",
+  "native_stream_parameters": {
+    "max_size": 1200,
+    "video_bit_rate": 2500000,
+    "bitrate_mode": "CBR",
+    "max_fps": 30,
+    "buffer_ms": 100
+  },
+  "animated_source_test_rendered_frames": 355,
+  "animated_source_duration_seconds": 12,
+  "actual_realme_v50_hardware_decode_or_power": "not measured",
+  "initial_failures": "other live user session superseded the test; paused user connection for final acceptance; static frame-count threshold adjusted by testing an animated source",
+  "temporary_accounts_and_test_tool_removed": true,
+  "client_and_data_retained": true,
+  "audio_gain_test": 2.0,
+  "audio_pcm_bytes_written": 2396160,
+  "pcm_unit_check": "unity bytes, read-only buffers, silence, quiet sine RMS and bounded loud peaks passed",
+  "actual_phone_loudness": "not measured",
+  "source_volume_before": 5,
+  "source_volume_after": 15,
+  "source_volume_maximum": 15,
+  "source_volume_readback": "AudioManager, dumpsys speaker streamVolume and cmd media_session agree at 15/15"
+}

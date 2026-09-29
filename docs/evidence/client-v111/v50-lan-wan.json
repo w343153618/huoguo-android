@@ -1,0 +1,37 @@
+[
+  {
+    "host": "192.168.9.99",
+    "video_bit_rate": 2500000,
+    "size": [
+      540,
+      1200
+    ],
+    "initial_avc_packets": [
+      33,
+      26337
+    ],
+    "actual_stream_received": true,
+    "bitrate_mode": "CBR",
+    "max_fps": 30,
+    "test_client_physical_interface": "M1 en0 (IP_BOUND_IF)"
+  },
+  {
+    "host": "146.56.249.175",
+    "video_bit_rate": 2500000,
+    "size": [
+      540,
+      1200
+    ],
+    "initial_avc_packets": [
+      33,
+      26337
+    ],
+    "actual_stream_received": true,
+    "bitrate_mode": "CBR",
+    "max_fps": 60,
+    "test_client_physical_interface": "M1 en0 (IP_BOUND_IF)"
+  },
+  {
+    "invalid_bitrate_rejected": true
+  }
+]

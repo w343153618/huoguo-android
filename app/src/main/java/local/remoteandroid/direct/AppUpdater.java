@@ -37,27 +37,44 @@ final class AppUpdater {
         prefs.edit().putLong("last_check", now).apply();
         if (manual) toast("正在检查更新…");
         new Thread(() -> {
+            boolean posted=false;
             try {
                 JSONObject info = new JSONObject(new String(read(url, 65536), StandardCharsets.UTF_8));
                 long version = info.getLong("version_code");
-                if (version <= BuildConfig.VERSION_CODE) { if (manual) toast("已经是最新版本 v" + BuildConfig.VERSION_NAME); return; }
-                String name = info.getString("version_name");
-                String apkUrl = info.getString("apk_url");
-                https(apkUrl);
-                String digest = info.getString("sha256");
-                if (!digest.matches("[0-9a-fA-F]{64}")) throw new IOException("更新校验信息无效");
-                long size = info.getLong("apk_size");
-                if (size <= 0 || size > 67108864) throw new IOException("更新包大小无效");
-                activity.runOnUiThread(() -> {
-                    if (activity.isFinishing() || activity.isDestroyed()) return;
-                    new AlertDialog.Builder(activity).setTitle("发现新版本 v" + name)
-                        .setMessage(info.optString("changelog", "改进连接与流畅度") + "\n\n下载后由 Android 确认安装，保留现有设置。")
-                        .setNegativeButton("稍后", null)
-                        .setPositiveButton("下载更新", (dialog, which) -> download(apkUrl, digest, size, version)).show();
-                });
-            } catch (Exception error) { if (manual) toast("检查更新失败：" + MainActivity.message(error)); }
-            finally { busy.set(false); }
+                boolean newer=version>BuildConfig.VERSION_CODE;
+                if(!newer&&!manual)return;
+                String name=info.getString("version_name");
+                String notes=info.optString("changelog","暂无更新说明");
+                String apkUrl=info.optString("apk_url");
+                String digest=info.optString("sha256");
+                long size=info.optLong("apk_size");
+                if(newer){
+                    https(apkUrl);
+                    if(!digest.matches("[0-9a-fA-F]{64}"))throw new IOException("更新校验信息无效");
+                    if(size<=0||size>67108864)throw new IOException("更新包大小无效");
+                }
+                posted=true;
+                activity.runOnUiThread(()->presentUpdate(name,notes,newer,()->download(apkUrl,digest,size,version)));
+            }catch(Exception error){if(manual)toast("检查更新失败："+MainActivity.message(error));}
+            finally{if(!posted)busy.set(false);}
         }, "update-check").start();
+    }
+    AlertDialog presentUpdate(String name,String notes,boolean newer,Runnable confirmed){
+        if(activity.isFinishing()||activity.isDestroyed()){busy.set(false);return null;}
+        busy.set(true);
+        android.widget.TextView content=new android.widget.TextView(activity);
+        int pad=Math.round(20*activity.getResources().getDisplayMetrics().density);
+        content.setPadding(pad,pad,pad,pad);content.setTextSize(15);
+        content.setText("更新内容\n\n"+notes+(newer?"\n\n确认后才下载；安装仍由 Android 确认，保留现有设置。":"\n\n当前安装版本 v"+BuildConfig.VERSION_NAME+"，无需更新。"));
+        android.widget.ScrollView scroll=new android.widget.ScrollView(activity);scroll.addView(content);
+        AtomicBoolean handedOff=new AtomicBoolean();
+        AlertDialog.Builder builder=new AlertDialog.Builder(activity)
+            .setTitle(newer?"发现新版本 v"+name:"已是最新版本 · 更新说明 v"+name).setView(scroll);
+        if(newer)builder.setNegativeButton("取消更新",null).setPositiveButton("确认更新",(dialog,which)->{
+            handedOff.set(true);busy.set(false);confirmed.run();
+        });
+        else builder.setPositiveButton("知道了",null);
+        AlertDialog dialog=builder.create();dialog.setOnDismissListener(ignored->{if(!handedOff.get())busy.set(false);});dialog.show();return dialog;
     }
     private void download(String url, String hash, long expectedSize, long version) {
         if (!busy.compareAndSet(false, true)) return;

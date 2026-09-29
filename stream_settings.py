@@ -20,3 +20,10 @@ def parse_bitrate_mode(settings):
     if type(mode) is not str or mode not in ('CBR','VBR'):
         raise ValueError('Supported bitrate modes: CBR, VBR')
     return mode, {'CBR':2, 'VBR':1}[mode]
+
+
+def parse_max_fps(settings):
+    fps=settings.get('max_fps',60)
+    if type(fps) is not int or fps not in (30,60):
+        raise ValueError('Supported frame-rate limits: 30, 60')
+    return fps
