@@ -17,6 +17,24 @@ public final class PlaybackClockCheck {
         c.observe(0,stalled+100_000_000L);
         check(c.deadline(0)==stalled+180_000_000L);
         PlaybackClock buffered=new PlaybackClock(100);buffered.observe(source,arrival);check(buffered.deadline(source)==arrival+100_000_000L);
-        System.out.println("PlaybackClock: cadence, jitter, shared A/V mapping, stall/reset PASS");
+        PlaybackClock low=new PlaybackClock(30);low.observe(source,arrival);check(low.deadline(source)==arrival+30_000_000L);
+        for(int ms:new int[]{29,201})try{new PlaybackClock(ms);throw new AssertionError();}catch(IllegalArgumentException expected){}
+        // A 600ms stall below the timestamp-reset threshold must not leave playback behind forever.
+        PlaybackClock recovery=new PlaybackClock(100);recovery.observe(source,arrival);
+        recovery.observe(source+2_000_000L,arrival+2_600_000_000L);
+        long previous=recovery.deadline(source+2_700_000L);
+        for(int i=0;i<350;i++){
+            long pts=source+2_700_000L+i*40_000L,now=arrival+2_700_000_000L+i*40_000_000L;
+            recovery.observe(pts,now);long next=recovery.deadline(pts);
+            if(i>0)check(next-previous>=38_000_000L&&next-previous<=40_000_000L);
+            check(next-now>=100_000_000L);previous=next;
+        }
+        long last=arrival+2_700_000_000L+349*40_000_000L;
+        check(previous-last<=120_000_000L);
+        // Delayed callback observation must not create a negative catch-up step.
+        long fixed=recovery.deadline(source+20_000_000L);
+        recovery.observe(source+2_700_000L+349*40_000L,last-1_000_000L);
+        check(recovery.deadline(source+20_000_000L)==fixed);
+        System.out.println("PlaybackClock: cadence, jitter, shared A/V mapping, stall/reset, 30ms selection and gradual backlog recovery PASS");
     }
 }

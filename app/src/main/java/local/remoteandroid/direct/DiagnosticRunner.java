@@ -125,7 +125,7 @@ final class DiagnosticRunner {
         firstRenderNs = 0; phaseNs = System.nanoTime(); endpointNs = 0; samples = new JSONArray(); networkChanged = false;
         long token = ++stageToken;
         activity.auth = credential; activity.maxSize = profile.size; activity.bitRate = profile.bitrate;
-        activity.bitrateMode = profile.mode; activity.maxFps = 30; activity.bufferMs = 120;
+        activity.bitrateMode = profile.mode; activity.maxFps = 30; activity.bufferMs = 100;
         progress.setText("准备第 " + (index + 1) + "/" + profiles.size() + " 组 · " + profile.label);
         worker.execute(() -> {
             try {
@@ -208,7 +208,7 @@ final class DiagnosticRunner {
     JSONObject baseStage() throws Exception {
         Profile p = profiles.get(index);
         return new JSONObject().put("label", p.label).put("max_size", p.size).put("bitrate", p.bitrate)
-                .put("max_fps", 30).put("mode", p.mode).put("buffer_ms", 120).put("dimensions", activity.width + "x" + activity.height)
+                .put("max_fps", 30).put("mode", p.mode).put("buffer_ms", 100).put("dimensions", activity.width + "x" + activity.height)
                 .put("decoder_name", activity.videoDecoderName).put("hardware_decoder", activity.hardwareVideo)
                 .put("accepted_bitrate", activity.acceptedBitrate).put("adaptive_rejected", activity.adaptiveRejected)
                 .put("thermal_start", thermalStart).put("thermal_end", thermal()).put("battery_start", batteryStart).put("battery_end", battery())
@@ -333,7 +333,7 @@ final class DiagnosticRunner {
         if (recommended != null) box.addView(button("应用本次推荐参数", () -> {
             activity.getSharedPreferences("connection", 0).edit().putInt("quality_max_size", recommended.optInt("max_size"))
                     .putInt("video_bit_rate", recommended.optInt("bitrate")).putString("bitrate_mode", recommended.optString("mode"))
-                    .putInt("max_fps", 30).putInt("buffer_ms", 120).apply();
+                    .putInt("max_fps", 30).putInt("buffer_ms", recommended.optInt("buffer_ms", 100)).apply();
             Toast.makeText(activity, "已保存，下次连接使用本次推荐", Toast.LENGTH_LONG).show();
         }));
         box.addView(button("返回连接页", this::leave));

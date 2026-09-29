@@ -1,0 +1,31 @@
+{
+  "version_name": "1.16",
+  "version_code": 17,
+  "checked_at": "2026-09-29T11:31:59.695787+00:00",
+  "python_tests_passed": 39,
+  "jvm_checks_passed": 8,
+  "gradle": {
+    "debug_build": "passed",
+    "release_build": "passed",
+    "lint_errors": 0,
+    "lint_warnings": 52
+  },
+  "native_client_ui": {
+    "device": "isolated local read-only Android emulator",
+    "one_time_defaults_migration": "passed",
+    "account_address_audio_gain_and_metrics_preserved": "passed",
+    "30ms_buffer_selection": "passed",
+    "manual_quality_mode_bitrate_fps_buffer_save_without_connecting": "passed",
+    "preconnection_sound_and_metrics_preferences": "passed",
+    "preferences_survive_force_stop_and_reopen": "passed",
+    "authenticated_stream_started": false
+  },
+  "stream_controls": {
+    "sound_and_metrics_buttons_removed": true,
+    "verified_layer": "source inspection and successful compilation",
+    "live_v50_verified": false
+  },
+  "live_input_latency_reduction_measured": false,
+  "live_audio_video_sync_verified": false,
+  "server_sleep_configuration_changed": false
+}
