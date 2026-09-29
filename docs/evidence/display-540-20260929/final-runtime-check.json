@@ -1,0 +1,16 @@
+{
+  "physical_size": "Physical size: 540x1200",
+  "physical_density": "Physical density: 210",
+  "root_uid_zero": true,
+  "gateway_display_flag_loaded": true,
+  "gateway_running": true,
+  "npc_domestic_physical_socket_present": true,
+  "grpc_only_loopback_listener": true,
+  "temporary_serial_absent": true,
+  "production_stream_present": false,
+  "production_hardware_backend_enabled": false,
+  "credentials_modified": false,
+  "npc_configuration_modified": false,
+  "guest_cpu_count": 8,
+  "guest_memory_mib": 24576
+}

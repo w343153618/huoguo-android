@@ -1,0 +1,17 @@
+{
+  "primary_display_profile": {
+    "status": "applied",
+    "boot_id": "2e58399c-5208-42b3-9494-7df024970c97",
+    "cutouts": {
+      "android:string/config_mainBuiltInDisplayCutout": "",
+      "android:string/config_mainBuiltInDisplayCutoutRectApproximation": ""
+    },
+    "status_bar_heights": {
+      "portrait": "24.0dip",
+      "landscape": "24.0dip"
+    }
+  },
+  "gateway_reloaded": true,
+  "vm_restarted": false,
+  "full_cold_boot_decor_validation": false
+}

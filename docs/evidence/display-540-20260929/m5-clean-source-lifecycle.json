@@ -1,0 +1,9 @@
+{
+  "events": [
+    "09-29 21:42:25.217  2813  2813 I DiagnosticSource: synthetic_start run_id=d3cd5471-de19-46cf-8245-b1125f7a747b target_fps=30 cycle_seconds=20",
+    "09-29 21:42:26.383  2813  2813 I DiagnosticSource: synthetic_stop run_id=d3cd5471-de19-46cf-8245-b1125f7a747b source_frame=33 unique_drawn_frames=34 skipped_source_ticks=0 hardware_canvas=true",
+    "09-29 21:42:26.505  2813  2813 I DiagnosticSource: synthetic_start run_id=d3cd5471-de19-46cf-8245-b1125f7a747b target_fps=30 cycle_seconds=20",
+    "09-29 21:43:06.032  2813  2813 I DiagnosticSource: synthetic_stop run_id=d3cd5471-de19-46cf-8245-b1125f7a747b source_frame=1184 unique_drawn_frames=1184 skipped_source_ticks=1 hardware_canvas=true"
+  ],
+  "content": "synthetic source counters only"
+}

@@ -20,5 +20,16 @@
   "npc_source_interface_address": "192.168.9.99",
   "clash_routing_modified_this_optimization": false,
   "m1_isolated_test_vm_stopped": true,
-  "real_phone_wan_hardware_backend_validated": false
+  "real_phone_wan_hardware_backend_validated": false,
+  "display_helper_loaded_in_live_gateway": true,
+  "physical_display_decor_cold_boot_validated": false,
+  "m5_real_video_hardware_pipeline_validated": true,
+  "m5_primary_hardware_pipeline_fps": [
+    22.4,
+    23.2
+  ],
+  "m5_clean_hardware_pipeline_fps": [
+    30.0,
+    30.1
+  ]
 }

@@ -1,0 +1,7 @@
+{
+  "events": [
+    "09-29 21:46:42.952  9293  9293 I DiagnosticSource: synthetic_start run_id=09f62153-a5e2-4306-b73d-1081ad76b8fb target_fps=30 cycle_seconds=20",
+    "09-29 21:47:08.072  9293  9293 I DiagnosticSource: synthetic_stop run_id=09f62153-a5e2-4306-b73d-1081ad76b8fb source_frame=752 unique_drawn_frames=580 skipped_source_ticks=173 hardware_canvas=true"
+  ],
+  "content": "synthetic source counters only"
+}

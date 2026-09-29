@@ -1,0 +1,8 @@
+{
+  "temporary_vm_stopped": true,
+  "temporary_avd_deleted": true,
+  "production_instance_kept_running": true,
+  "production_stream_still_active": false,
+  "user_data_copied": false,
+  "production_hardware_backend_enabled": false
+}

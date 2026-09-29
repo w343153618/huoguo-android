@@ -1,0 +1,19 @@
+{
+  "profile": {
+    "status": "applied",
+    "boot_id": "52abae54-5b7f-43d5-8c1b-cc455da4d009",
+    "cutouts": {
+      "android:string/config_mainBuiltInDisplayCutout": "",
+      "android:string/config_mainBuiltInDisplayCutoutRectApproximation": ""
+    },
+    "status_bar_heights": {
+      "portrait": "24.0dip",
+      "landscape": "24.0dip"
+    }
+  },
+  "display_cutout_null_observed": false,
+  "geometry": "Physical size: 540x1200",
+  "density": "Physical density: 210",
+  "test_instance_only": true,
+  "production_profile_applied": false
+}
