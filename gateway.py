@@ -4,6 +4,7 @@ import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socke
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from media_transfer import MediaStore, MediaError
 from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
+from diagnostics_reports import DiagnosticSource, DiagnosticsError, ReportStore, read_json
 BASE = pathlib.Path(__file__).resolve().parent
 SDK = pathlib.Path.home() / 'Library/Android/sdk'
 ADB = str(SDK / 'platform-tools/adb')
@@ -16,6 +17,7 @@ VIDEO_MAX_SIZE = int(os.environ.get('DIRECT_MAX_SIZE','960'))
 EMULATOR = str(SDK / 'emulator/emulator')
 RAMDISK = os.environ.get('DIRECT_RAMDISK',str(pathlib.Path.home() / 'Documents/ChatGPT/others/android-remote/boot/ramdisk-ksu.img'))
 media = MediaStore(ADB, SERIAL, BASE / 'media-cache')
+diagnostics = ReportStore(os.environ.get('DIRECT_DIAGNOSTICS_DIR', str(BASE / 'diagnostics-reports')))
 vm_proc = None
 lock = threading.RLock()
 sessions = {}
@@ -57,36 +59,42 @@ def close_session(sid):
     try: adb('forward', '--remove', 'tcp:'+str(s['port']))
     except Exception: pass
     if s['proc'].poll() is None: s['proc'].terminate()
-def authorized(header):
-    if not header or not header.startswith('Basic ') or len(header)>2048: return False
+def authenticated_account(header):
+    if not header or not header.startswith('Basic ') or len(header)>2048: return None
     try:
         decoded=base64.b64decode(header[6:], validate=True).decode('utf-8')
-        if ':' not in decoded: return False
+        if ':' not in decoded: return None
+        username,password=decoded.split(':',1)
         if AUTH_FILE:
-            username,password=decoded.split(':',1)
             config=json.loads(pathlib.Path(AUTH_FILE).read_text())
             if 'users' in config:
                 record=config['users'].get(username)
-                if not record:return False
+                if not record:return None
             else:record=config
             digest=hashlib.scrypt(password.encode(),salt=bytes.fromhex(record['salt']),n=16384,r=8,p=1).hex()
-            return hmac.compare_digest(username,record.get('username',username)) and hmac.compare_digest(digest,record['digest'])
+            return username if hmac.compare_digest(username,record.get('username',username)) and hmac.compare_digest(digest,record['digest']) else None
         ctx=ssl.create_default_context(cafile=CERT); ctx.check_hostname=False
         conn=http.client.HTTPSConnection('127.0.0.1',47990,context=ctx,timeout=5)
         conn.request('GET','/api/config',headers={'Authorization':header})
         resp=conn.getresponse(); result=resp.status==200; resp.read(); conn.close()
-        return result
-    except Exception: return False
+        return username if result else None
+    except Exception: return None
+def authorized(header):
+    return authenticated_account(header) is not None
+
+diagnostic_source = DiagnosticSource(adb, ensure_android)
 class Handler(BaseHTTPRequestHandler):
     protocol_version='HTTP/1.1'
     def log_message(self,*args): pass
     def reply(self,status,data):
         payload=json.dumps(data).encode()
         self.send_response(status); self.send_header('Content-Type','application/json')
+        self.send_header('Cache-Control','no-store')
         self.send_header('Content-Length',str(len(payload))); self.send_header('Connection','close'); self.end_headers()
         self.wfile.write(payload); self.close_connection=True
     def auth(self):
         # Bound expensive password hashing and failed attempts on the public gateway.
+        self.account = None
         if AUTH_FILE:
             with auth_guard:
                 now=time.monotonic()
@@ -94,15 +102,25 @@ class Handler(BaseHTTPRequestHandler):
                 limited=len(auth_failures)>=20
             if limited or not auth_slots.acquire(blocking=False):
                 self.reply(429,{'error':'Too many login attempts; retry later'}); return False
-            try: valid=authorized(self.headers.get('Authorization'))
+            try: account=authenticated_account(self.headers.get('Authorization'))
             finally: auth_slots.release()
-            if valid: return True
+            if account is not None: self.account=account; return True
             with auth_guard: auth_failures.append(time.monotonic())
-        elif authorized(self.headers.get('Authorization')): return True
+        else:
+            account=authenticated_account(self.headers.get('Authorization'))
+            if account is not None: self.account=account; return True
         self.reply(401,{'error':'Login rejected'}); return False
     def do_GET(self):
         if self.path == "/ping":
             self.reply(200, {"ok": True}); return
+        if self.path == '/diagnostics/reports' or self.path.startswith('/diagnostics/reports/'):
+            if not self.auth(): return
+            try:
+                result = diagnostics.listing(self.account) if self.path == '/diagnostics/reports' else diagnostics.get(self.account, self.path[len('/diagnostics/reports/'):])
+                self.reply(200, result)
+            except DiagnosticsError as e: self.reply(e.status, {'error': e.message})
+            except OSError: self.reply(503, {'error': 'Diagnostic storage unavailable; retry later'})
+            return
         if self.path == '/files' or self.path.startswith('/files/'):
             if not self.auth(): return
             try:
@@ -133,6 +151,14 @@ class Handler(BaseHTTPRequestHandler):
         except OSError:self.close_connection=True
     def do_POST(self):
         if not self.auth(): return
+        if self.path in ('/diagnostics/reports', '/diagnostics/source'):
+            try:
+                request = read_json(self, 512) if self.path == '/diagnostics/source' else read_json(self)
+                if self.path == '/diagnostics/source': self.reply(200, diagnostic_source.control(self.account, request))
+                else: self.reply(201, diagnostics.save(self.account, request))
+            except DiagnosticsError as e: self.reply(e.status, {'error': e.message})
+            except OSError: self.reply(503, {'error': 'Diagnostic storage unavailable; retry later'})
+            return
         if self.path == '/files':
             try: self.reply(201, media.upload(self))
             except MediaError as e:
@@ -244,3 +270,4 @@ if __name__=='__main__':
             server.serve_forever()
     finally:
         for sid in list(sessions): close_session(sid)
+        diagnostic_source.shutdown()

@@ -12,3 +12,4 @@ auth.json*
 npc.conf
 *.log
 .env*
+diagnostics-reports/

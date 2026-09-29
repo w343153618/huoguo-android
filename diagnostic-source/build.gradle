@@ -1,0 +1,19 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace 'local.remoteandroid.benchmark'
+    compileSdk 37
+    defaultConfig {
+        applicationId 'local.remoteandroid.benchmark'
+        minSdk 30
+        targetSdk 37
+        versionCode 1
+        versionName '1.0'
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+        }
+    }
+}

@@ -1,2 +1,3 @@
 include ':app'
 include ':stream-server'
+include ':diagnostic-source'

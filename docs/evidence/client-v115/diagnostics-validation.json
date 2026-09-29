@@ -1,0 +1,48 @@
+{
+  "version_name": "1.15",
+  "version_code": 16,
+  "checked_at": "2026-09-29T10:43:59.926633+00:00",
+  "python_tests": {
+    "passed": 39
+  },
+  "jvm_checks": {
+    "passed": 7,
+    "includes_actual_render_timing_and_matched_pts_pipeline": true
+  },
+  "gradle": {
+    "debug_build": "passed",
+    "release_build": "passed",
+    "client_lint_errors": 0,
+    "client_lint_warnings": 52,
+    "synthetic_source_build": "passed",
+    "synthetic_source_lint_errors": 0
+  },
+  "native_client_ui": {
+    "device": "local read-only Android emulator",
+    "release_launch": "passed",
+    "installed_version_label": "1.15",
+    "quick_and_full_dialog": "passed",
+    "authenticated_stream_test_executed": false
+  },
+  "m5_synthetic_source": {
+    "installed": true,
+    "native_start": "passed",
+    "process_alive": "passed",
+    "frame_statistics_available": true,
+    "cleanup": "passed"
+  },
+  "m5_gateway": {
+    "service_running": true,
+    "deployed_hashes": {
+      "gateway.py": "d77940c5b5bd55eb2f1f12e58c5a8331b39692c82da1447478509955a5196e61",
+      "diagnostics_reports.py": "461b25444d61d65e0bd90dd202cc73fdda38ea87617fd350e0b7d85ae33bdfb9"
+    }
+  },
+  "apk_upgrade_certificate_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "real_phone_measurements": {
+    "v50_executed": false,
+    "network_performance_claimed": false,
+    "report_submission_live_verified": false,
+    "next_step": "Owner requested publication first; friend will use existing account on the real V50."
+  }
+}
