@@ -1,0 +1,162 @@
+{
+  "label": "original-skiavk-source-only",
+  "capture": "none",
+  "requested_renderer": "skiavk",
+  "original_renderer": "skiagl",
+  "physical_size": "Physical size: 540x1200",
+  "physical_density": "Physical density: 210",
+  "scope": "synthetic source and local video only; excludes phone/WAN/audio/touch",
+  "samples": [
+    {
+      "frame_stages": {
+        "valid_recent_rows": 120,
+        "stages_ms": {
+          "total": {
+            "count": 119,
+            "p50": 26.439,
+            "p95": 61.15,
+            "p99": 68.032
+          },
+          "vsync_adjustment": {
+            "count": 120,
+            "p50": 16.667,
+            "p95": 50.0,
+            "p99": 50.0
+          },
+          "ui_work": {
+            "count": 120,
+            "p50": 0.793,
+            "p95": 1.815,
+            "p99": 3.228
+          },
+          "render_queue": {
+            "count": 120,
+            "p50": 0.217,
+            "p95": 2.708,
+            "p99": 4.914
+          },
+          "draw_commands": {
+            "count": 120,
+            "p50": 5.097,
+            "p95": 7.681,
+            "p99": 8.234
+          },
+          "dequeue": {
+            "count": 120,
+            "p50": 0.01,
+            "p95": 0.828,
+            "p99": 2.024
+          },
+          "gpu_fence": {
+            "count": 119,
+            "p50": 0.265,
+            "p95": 0.536,
+            "p99": 1.845
+          }
+        },
+        "summary": {
+          "Total frames rendered": "383",
+          "Janky frames": "229 (59.79%)",
+          "50th percentile": "26ms",
+          "90th percentile": "53ms",
+          "95th percentile": "57ms",
+          "99th percentile": "65ms",
+          "Number Missed Vsync": "196",
+          "Number High input latency": "133",
+          "Number Slow UI thread": "133",
+          "Number Slow bitmap uploads": "1",
+          "Number Slow issue draw commands": "11",
+          "Number Frame deadline missed": "229",
+          "Number Frame deadline missed (legacy)": "229",
+          "Pipeline=Skia (Vulkan)": "Pipeline=Skia (Vulkan)"
+        }
+      },
+      "source": {
+        "run_id": "5a84b99d-0bcc-4125-a2cc-621525354976",
+        "lifecycle_complete": true,
+        "source_frame": 488,
+        "unique_drawn_frames": 418,
+        "skipped_source_ticks": 71,
+        "hardware_canvas": true,
+        "source_elapsed_seconds": 16.329,
+        "source_draw_fps_including_startup": 25.599
+      }
+    },
+    {
+      "frame_stages": {
+        "valid_recent_rows": 120,
+        "stages_ms": {
+          "total": {
+            "count": 120,
+            "p50": 27.205,
+            "p95": 68.352,
+            "p99": 78.92
+          },
+          "vsync_adjustment": {
+            "count": 120,
+            "p50": 16.667,
+            "p95": 50.0,
+            "p99": 50.0
+          },
+          "ui_work": {
+            "count": 120,
+            "p50": 0.799,
+            "p95": 1.953,
+            "p99": 5.908
+          },
+          "render_queue": {
+            "count": 120,
+            "p50": 0.188,
+            "p95": 2.378,
+            "p99": 7.52
+          },
+          "draw_commands": {
+            "count": 120,
+            "p50": 5.097,
+            "p95": 8.121,
+            "p99": 12.406
+          },
+          "dequeue": {
+            "count": 120,
+            "p50": 0.011,
+            "p95": 1.093,
+            "p99": 1.779
+          },
+          "gpu_fence": {
+            "count": 120,
+            "p50": 0.261,
+            "p95": 0.554,
+            "p99": 8.047
+          }
+        },
+        "summary": {
+          "Total frames rendered": "372",
+          "Janky frames": "241 (64.78%)",
+          "50th percentile": "27ms",
+          "90th percentile": "53ms",
+          "95th percentile": "65ms",
+          "99th percentile": "73ms",
+          "Number Missed Vsync": "202",
+          "Number High input latency": "104",
+          "Number Slow UI thread": "128",
+          "Number Slow bitmap uploads": "0",
+          "Number Slow issue draw commands": "11",
+          "Number Frame deadline missed": "241",
+          "Number Frame deadline missed (legacy)": "237",
+          "Pipeline=Skia (Vulkan)": "Pipeline=Skia (Vulkan)"
+        }
+      },
+      "source": {
+        "run_id": "42e2c703-b016-4d03-b678-d6546cc7f205",
+        "lifecycle_complete": true,
+        "source_frame": 486,
+        "unique_drawn_frames": 404,
+        "skipped_source_ticks": 83,
+        "hardware_canvas": true,
+        "source_elapsed_seconds": 16.251,
+        "source_draw_fps_including_startup": 24.86
+      }
+    }
+  ],
+  "renderer_restored": true
+}

@@ -24,6 +24,6 @@ def parse_bitrate_mode(settings):
 
 def parse_max_fps(settings):
     fps=settings.get('max_fps',60)
-    if type(fps) is not int or fps not in (30,60):
-        raise ValueError('Supported frame-rate limits: 30, 60')
+    if type(fps) is not int or fps not in (30,60,120):
+        raise ValueError('Supported frame-rate limits: 30, 60, 120')
     return fps

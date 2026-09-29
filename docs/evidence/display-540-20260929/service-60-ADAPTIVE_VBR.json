@@ -1,0 +1,39 @@
+{
+  "probe": "local-production-hardware-adapter-v1",
+  "mode": "ADAPTIVE_VBR",
+  "target_fps": 60,
+  "measurement_seconds": 12.03,
+  "encoded_received_fps": 60.015,
+  "output_gap_p95_ms": 19.091,
+  "gaps_over_33ms": 0,
+  "dimensions": [
+    [
+      540,
+      1200
+    ]
+  ],
+  "audio_packets": 564,
+  "audio_timestamp_age_p95_ms": 0.84,
+  "adaptive_acknowledgements": [
+    2500000,
+    4000000
+  ],
+  "touch_events": [
+    "synthetic_touch run_id=2b15c689-bbd8-451c-9762-70f36fb2447b action=0 x=270.0 y=600.0",
+    "synthetic_touch run_id=2b15c689-bbd8-451c-9762-70f36fb2447b action=1 x=270.0 y=600.0"
+  ],
+  "back_key_exited": true,
+  "hardware_readback": [
+    {
+      "bitrate_mode": "VBR",
+      "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+      "event": "ready",
+      "height": 1200,
+      "using_hardware": true,
+      "width": 540
+    }
+  ],
+  "local_h264_decode_exit": 0,
+  "scope": "M5 local production adapter with synthetic video, AAC and input; excludes WAN and real-phone playback",
+  "pixels_or_compressed_video_saved": false
+}

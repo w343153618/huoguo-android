@@ -8,10 +8,14 @@ import android.graphics.Insets;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
+import android.media.AudioAttributes;
+import android.media.AudioFormat;
+import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Choreographer;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -21,10 +25,11 @@ import android.window.OnBackInvokedDispatcher;
 import java.util.Locale;
 import java.util.UUID;
 
-/** A guest-side, synthetic source. Stream settings and run IDs never change its pixels. */
+/** A guest-side synthetic source. Normal diagnostics retain the fixed 30 FPS scene. */
 public final class DiagnosticSourceActivity extends Activity {
     private static final String TAG = "DiagnosticSource";
     private SceneView scene;
+    private volatile boolean audioProbeRunning;
 
     @Override
     public void onCreate(Bundle state) {
@@ -35,7 +40,10 @@ public final class DiagnosticSourceActivity extends Activity {
         attributes.layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         getWindow().setAttributes(attributes);
-        scene = new SceneView(this, validatedRunId(getIntent().getStringExtra("run_id")));
+        int requestedFps = getIntent().getIntExtra("source_fps", 30);
+        scene = new SceneView(this, validatedRunId(getIntent().getStringExtra("run_id")),
+                requestedFps == 120 ? 120 : requestedFps == 60 ? 60 : 30,
+                "nearest".equals(getIntent().getStringExtra("source_clock")));
         scene.setOnApplyWindowInsetsListener((view, insets) -> {
             scene.safeInsets = insets.getInsetsIgnoringVisibility(WindowInsets.Type.displayCutout());
             scene.invalidate();
@@ -54,12 +62,44 @@ public final class DiagnosticSourceActivity extends Activity {
     protected void onResume() {
         super.onResume();
         scene.start();
+        if (getIntent().getBooleanExtra("audio_probe", false)) startAudioProbe();
     }
 
     @Override
     protected void onPause() {
+        audioProbeRunning = false;
         scene.stop();
         super.onPause();
+    }
+
+    private void startAudioProbe() {
+        audioProbeRunning = true;
+        // Active, silent media supplies real AudioRecord/AAC timestamps without
+        // recording private content or playing an audible test tone on the Mac.
+        new Thread(() -> {
+            AudioTrack track = null;
+            try {
+                track = new AudioTrack.Builder()
+                        .setAudioAttributes(new AudioAttributes.Builder()
+                                .setUsage(AudioAttributes.USAGE_MEDIA)
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                        .setAudioFormat(new AudioFormat.Builder().setSampleRate(48000)
+                                .setChannelMask(AudioFormat.CHANNEL_OUT_STEREO)
+                                .setEncoding(AudioFormat.ENCODING_PCM_16BIT).build())
+                        .setTransferMode(AudioTrack.MODE_STREAM).setBufferSizeInBytes(19200).build();
+                byte[] silence = new byte[4096];
+                track.play();
+                while (audioProbeRunning) {
+                    int count = track.write(silence, 0, silence.length, AudioTrack.WRITE_NON_BLOCKING);
+                    if (count < 0) throw new IllegalStateException("Silent audio probe write failed");
+                    if (count == 0) Thread.sleep(5);
+                }
+            } catch (Exception exception) {
+                Log.w(TAG, "synthetic_audio_probe_failed type=" + exception.getClass().getSimpleName());
+            } finally {
+                if (track != null) { track.stop(); track.release(); }
+            }
+        }, "synthetic-audio").start();
     }
 
     @Override
@@ -94,9 +134,7 @@ public final class DiagnosticSourceActivity extends Activity {
     }
 
     private static final class SceneView extends View implements Choreographer.FrameCallback {
-        static final int TARGET_FPS = 30;
         static final int CYCLE_SECONDS = 20;
-        static final int CYCLE_FRAMES = TARGET_FPS * CYCLE_SECONDS;
         static final float WIDTH = 540f;
         static final float HEIGHT = 1200f;
         static final float LIST_TOP = 166f;
@@ -111,7 +149,10 @@ public final class DiagnosticSourceActivity extends Activity {
                 "COBALT / 01", "AMBER / 02", "MINT / 03", "IRIS / 04",
                 "GOLD / 05", "TIDAL / 06", "CORAL / 07", "SKY / 08"
         };
-        static final String[] FRAME_LABELS = frameLabels();
+        final int targetFps;
+        final int cycleFrames;
+        final String[] frameLabels;
+        final boolean nearestTick;
         final Choreographer choreographer = Choreographer.getInstance();
         final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         final Path path = new Path();
@@ -125,10 +166,16 @@ public final class DiagnosticSourceActivity extends Activity {
         long lastDrawnFrame;
         long uniqueDrawnFrames;
         long skippedSourceTicks;
+        long callbackFrames;
+        long repeatedTargetTicks;
 
-        SceneView(Context context, String runId) {
+        SceneView(Context context, String runId, int targetFps, boolean nearestTick) {
             super(context);
             this.runId = runId;
+            this.targetFps = targetFps;
+            this.nearestTick = nearestTick && targetFps >= 60;
+            cycleFrames = targetFps * CYCLE_SECONDS;
+            frameLabels = frameLabels(cycleFrames);
             setContentDescription("Deterministic synthetic scrolling scene for stream diagnostics");
             setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         }
@@ -142,11 +189,12 @@ public final class DiagnosticSourceActivity extends Activity {
             lastDrawnFrame = -1;
             uniqueDrawnFrames = 0;
             skippedSourceTicks = 0;
+            callbackFrames = repeatedTargetTicks = 0;
             hardwareCanvas = false;
             invalidate();
             choreographer.postFrameCallback(this);
-            Log.i(TAG, "synthetic_start run_id=" + runId + " target_fps=" + TARGET_FPS
-                    + " cycle_seconds=" + CYCLE_SECONDS);
+            Log.i(TAG, "synthetic_start run_id=" + runId + " target_fps=" + targetFps
+                    + " cycle_seconds=" + CYCLE_SECONDS + " source_clock=" + (nearestTick ? "nearest" : "floor"));
         }
 
         void stop() {
@@ -156,6 +204,7 @@ public final class DiagnosticSourceActivity extends Activity {
             Log.i(TAG, "synthetic_stop run_id=" + runId + " source_frame=" + sourceFrame
                     + " unique_drawn_frames=" + uniqueDrawnFrames
                     + " skipped_source_ticks=" + skippedSourceTicks
+                    + " callback_frames=" + callbackFrames + " repeated_target_ticks=" + repeatedTargetTicks
                     + " hardware_canvas=" + hardwareCanvas);
         }
 
@@ -163,7 +212,8 @@ public final class DiagnosticSourceActivity extends Activity {
         public void doFrame(long frameTimeNanos) {
             if (!running) return;
             if (epochNanos == 0) epochNanos = frameTimeNanos;
-            long frame = (frameTimeNanos - epochNanos) * TARGET_FPS / 1_000_000_000L;
+            callbackFrames++;
+            long frame = ((frameTimeNanos - epochNanos) * targetFps + (nearestTick ? 500_000_000L : 0)) / 1_000_000_000L;
             if (frame > lastScheduledFrame) {
                 if (lastScheduledFrame >= 0) {
                     skippedSourceTicks += Math.max(0, frame - lastScheduledFrame - 1);
@@ -171,8 +221,21 @@ public final class DiagnosticSourceActivity extends Activity {
                 sourceFrame = frame;
                 lastScheduledFrame = frame;
                 invalidate();
+            } else {
+                repeatedTargetTicks++;
             }
             choreographer.postFrameCallback(this);
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN
+                    || event.getActionMasked() == MotionEvent.ACTION_UP) {
+                Log.i(TAG, "synthetic_touch run_id=" + runId
+                        + " action=" + event.getActionMasked()
+                        + " x=" + event.getX() + " y=" + event.getY());
+            }
+            return true;
         }
 
         @Override
@@ -192,8 +255,8 @@ public final class DiagnosticSourceActivity extends Activity {
             canvas.translate(safeInsets.left + (availableWidth - WIDTH * scale) / 2f,
                     safeInsets.top + (availableHeight - HEIGHT * scale) / 2f);
             canvas.scale(scale, scale);
-            int cycleFrame = (int) (sourceFrame % CYCLE_FRAMES);
-            float phase = cycleFrame * (float) (2 * Math.PI / CYCLE_FRAMES);
+            int cycleFrame = (int) (sourceFrame % cycleFrames);
+            float phase = cycleFrame * (float) (2 * Math.PI / cycleFrames);
             drawHeader(canvas, cycleFrame);
             drawList(canvas, cycleFrame, phase);
             drawFooter(canvas, cycleFrame);
@@ -202,14 +265,14 @@ public final class DiagnosticSourceActivity extends Activity {
 
         private void drawHeader(Canvas canvas, int cycleFrame) {
             text(canvas, "SYNTHETIC STREAM CHECK", 24, 62, 26, Color.WHITE, true);
-            text(canvas, "Fixed scene  /  30 FPS source target", 24, 98, 19, 0xffbbcbde, false);
-            text(canvas, FRAME_LABELS[cycleFrame], 24, 136, 18, 0xff8be0cb, true);
+            text(canvas, "Fixed scene  /  " + targetFps + " FPS source target", 24, 98, 19, 0xffbbcbde, false);
+            text(canvas, frameLabels[cycleFrame], 24, 136, 18, 0xff8be0cb, true);
             fill(0xff263a52);
             canvas.drawRect(24, 151, 516, 154, paint);
         }
 
         private void drawList(Canvas canvas, int cycleFrame, float phase) {
-            float scroll = cycleFrame * (COLORS.length * CARD_PITCH / CYCLE_FRAMES);
+            float scroll = cycleFrame * (COLORS.length * CARD_PITCH / cycleFrames);
             int firstCard = (int) (scroll / CARD_PITCH);
             float offset = scroll % CARD_PITCH;
             canvas.save();
@@ -274,7 +337,7 @@ public final class DiagnosticSourceActivity extends Activity {
             fill(0xff314864);
             canvas.drawRoundRect(24, 1116, 516, 1124, 4, 4, paint);
             fill(0xff8be0cb);
-            float x = 24 + cycleFrame * (444f / CYCLE_FRAMES);
+            float x = 24 + cycleFrame * (444f / cycleFrames);
             canvas.drawRoundRect(x, 1116, x + 48, 1124, 4, 4, paint);
             text(canvas, "20 s loop  /  synthetic content only", 24, 1157, 18, 0xffbbcbde, false);
             text(canvas, "BACK exits", 24, 1185, 15, 0xff8ba3bf, false);
@@ -293,10 +356,10 @@ public final class DiagnosticSourceActivity extends Activity {
             canvas.drawText(value, x, y, paint);
         }
 
-        private static String[] frameLabels() {
-            String[] labels = new String[CYCLE_FRAMES];
+        private static String[] frameLabels(int cycleFrames) {
+            String[] labels = new String[cycleFrames];
             for (int i = 0; i < labels.length; i++) {
-                labels[i] = String.format(Locale.ROOT, "FRAME %03d / %d", i, CYCLE_FRAMES);
+                labels[i] = String.format(Locale.ROOT, "FRAME %03d / %d", i, cycleFrames);
             }
             return labels;
         }

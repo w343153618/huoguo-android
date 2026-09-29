@@ -5,7 +5,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from media_transfer import MediaStore, MediaError
 from idle_power import IdleScreen
 from display_profile import apply_540_profile
+from performance_profile import apply_performance_profile
 from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
+from hardware_stream import HostHardwareSession
 from diagnostics_reports import DiagnosticSource, DiagnosticsError, ReportStore, read_json
 BASE = pathlib.Path(__file__).resolve().parent
 SDK = pathlib.Path.home() / 'Library/Android/sdk'
@@ -16,6 +18,9 @@ AUTH_FILE = os.environ.get('DIRECT_AUTH_FILE')
 SERIAL = os.environ.get('DIRECT_SERIAL','emulator-5554')
 AVD = os.environ.get('DIRECT_AVD','RemoteAndroid17')
 VIDEO_MAX_SIZE = int(os.environ.get('DIRECT_MAX_SIZE','960'))
+VIDEO_BACKEND = os.environ.get('DIRECT_VIDEO_BACKEND', 'guest')
+if VIDEO_BACKEND not in ('guest', 'videotoolbox'):
+    raise ValueError('Invalid video backend')
 EMULATOR = str(SDK / 'emulator/emulator')
 RAMDISK = os.environ.get('DIRECT_RAMDISK',str(pathlib.Path.home() / 'Documents/ChatGPT/others/android-remote/boot/ramdisk-ksu.img'))
 media = MediaStore(ADB, SERIAL, BASE / 'media-cache')
@@ -38,6 +43,7 @@ def ensure_android():
         boot_ready=device_present and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1'
     except Exception: pass
     if boot_ready:
+        apply_performance_profile(adb)
         apply_540_profile(adb)
         return
     if not os.environ.get('DIRECT_EXTERNAL_VM') and not device_present and (vm_proc is None or vm_proc.poll() is not None):
@@ -53,6 +59,7 @@ def ensure_android():
             boot_ready=adb('get-state').stdout.strip() == 'device' and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1'
         except Exception: pass
         if boot_ready:
+            apply_performance_profile(adb)
             apply_540_profile(adb)
             return
         time.sleep(1)
@@ -67,9 +74,12 @@ def close_session(sid):
         except OSError: pass
         try: sock.close()
         except OSError: pass
-    try: adb('forward', '--remove', 'tcp:'+str(s['port']))
-    except Exception: pass
-    if s['proc'].poll() is None: s['proc'].terminate()
+    if s.get('hardware'):
+        s['hardware'].close()
+    else:
+        try: adb('forward', '--remove', 'tcp:'+str(s['port']))
+        except Exception: pass
+        if s['proc'].poll() is None: s['proc'].terminate()
     idle_screen.schedule()
 def authenticated_account(header):
     if not header or not header.startswith('Basic ') or len(header)>2048: return None
@@ -195,44 +205,63 @@ class Handler(BaseHTTPRequestHandler):
             max_size, bit_rate = parse_settings(settings, VIDEO_MAX_SIZE)
             bitrate_mode, mode_value = parse_bitrate_mode(settings)
             max_fps = parse_max_fps(settings)
+            if max_fps == 120 and VIDEO_BACKEND != 'videotoolbox':
+                self.reply(400, {'error': '120 FPS requires the Mac hardware video backend'}); return
         except (ValueError,OSError):
             self.reply(400,{'error':'Invalid resolution or bitrate settings'}); return
         port=None
         proc=None
+        hardware=None
         try:
             with lock:
                 for old in list(sessions): close_session(old)
                 idle_screen.cancel()
                 ensure_android()
                 adb('shell','input','keyevent','224')
-                server_file=BASE/('scrcpy-server-adaptive-v4.1' if bitrate_mode=='ADAPTIVE_VBR' else 'scrcpy-server-v4.1')
-                if not server_file.is_file(): raise RuntimeError('Adaptive server unavailable')
-                adb('push',str(server_file),'/data/local/tmp/remoteandroid-scrcpy.jar')
-                scid=secrets.randbelow(0x7fffffff)
-                port=int(adb('forward','tcp:0','localabstract:scrcpy_'+format(scid,'08x')).stdout.strip())
-                cmd='CLASSPATH=/data/local/tmp/remoteandroid-scrcpy.jar app_process / com.genymobile.scrcpy.Server 4.1 '+ ' '.join([
-                    'scid='+format(scid,'x'),'tunnel_forward=true','send_device_meta=false','send_dummy_byte=false',
-                    'video_codec=h264','audio_codec=aac','video_bit_rate='+str(bit_rate),'max_fps='+str(max_fps),'max_size='+str(max_size),
-                    'video_codec_options=bitrate-mode='+str(mode_value),'control=true','cleanup=true'])
-                log=open(BASE/'server.log','ab',buffering=0)
-                proc=subprocess.Popen([ADB,'-s',SERIAL,'shell',cmd],stdout=log,stderr=log)
-                log.close()
-                for attempt in range(30):
-                    if ('scrcpy_'+format(scid,'08x')) in adb('shell','cat','/proc/net/unix').stdout: break
-                    if proc.poll() is not None: raise RuntimeError('scrcpy exited during startup')
-                    time.sleep(.1)
-                else: raise TimeoutError('scrcpy socket startup')
+                if VIDEO_BACKEND == 'videotoolbox':
+                    hardware=HostHardwareSession(BASE,SERIAL,AVD,max_size,bit_rate,max_fps,bitrate_mode)
+                    proc=hardware.proc
+                else:
+                    port,proc=self.start_guest_video(max_size,bit_rate,max_fps,bitrate_mode,mode_value)
                 sid=secrets.token_hex(16)
-                sessions[sid]={'port':port,'proc':proc,'sockets':[],'roles':[],'created':time.monotonic()}
+                sessions[sid]={'port':port,'proc':proc,'hardware':hardware,'sockets':[],'roles':[],'created':time.monotonic()}
                 threading.Timer(30,lambda: self.expire(sid)).start()
-            self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':max_fps,'video_bit_rate':bit_rate,'bitrate_mode':bitrate_mode,'adaptive_vbr':bitrate_mode=='ADAPTIVE_VBR'})
+            self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':max_fps,'video_bit_rate':bit_rate,'bitrate_mode':bitrate_mode,'adaptive_vbr':bitrate_mode=='ADAPTIVE_VBR','video_backend':VIDEO_BACKEND,'hardware_required':VIDEO_BACKEND=='videotoolbox'})
         except Exception as e:
-            if proc and proc.poll() is None: proc.terminate()
+            if hardware: hardware.close()
+            elif proc and proc.poll() is None: proc.terminate()
             if port:
                 try: adb('forward','--remove','tcp:'+str(port))
                 except Exception: pass
             idle_screen.schedule()
             self.reply(503,{'error':type(e).__name__})
+    @staticmethod
+    def start_guest_video(max_size,bit_rate,max_fps,bitrate_mode,mode_value):
+        port=proc=None
+        try:
+            server_file=BASE/('scrcpy-server-adaptive-v4.1' if bitrate_mode=='ADAPTIVE_VBR' else 'scrcpy-server-v4.1')
+            if not server_file.is_file(): raise RuntimeError('Adaptive server unavailable')
+            adb('push',str(server_file),'/data/local/tmp/remoteandroid-scrcpy.jar')
+            scid=secrets.randbelow(0x7fffffff)
+            port=int(adb('forward','tcp:0','localabstract:scrcpy_'+format(scid,'08x')).stdout.strip())
+            cmd='CLASSPATH=/data/local/tmp/remoteandroid-scrcpy.jar app_process / com.genymobile.scrcpy.Server 4.1 '+ ' '.join([
+                'scid='+format(scid,'x'),'tunnel_forward=true','send_device_meta=false','send_dummy_byte=false',
+                'video_codec=h264','audio_codec=aac','video_bit_rate='+str(bit_rate),'max_fps='+str(max_fps),'max_size='+str(max_size),
+                'video_codec_options=bitrate-mode='+str(mode_value),'control=true','cleanup=true'])
+            with open(BASE/'server.log','ab',buffering=0) as log:
+                proc=subprocess.Popen([ADB,'-s',SERIAL,'shell',cmd],stdout=log,stderr=log)
+            for attempt in range(30):
+                if ('scrcpy_'+format(scid,'08x')) in adb('shell','cat','/proc/net/unix').stdout: break
+                if proc.poll() is not None: raise RuntimeError('scrcpy exited during startup')
+                time.sleep(.1)
+            else: raise TimeoutError('scrcpy socket startup')
+            return port,proc
+        except Exception:
+            if proc and proc.poll() is None: proc.terminate()
+            if port:
+                try: adb('forward','--remove','tcp:'+str(port))
+                except Exception: pass
+            raise
     @staticmethod
     def expire(sid):
         with lock:
@@ -249,13 +278,22 @@ class Handler(BaseHTTPRequestHandler):
             if len(s['roles'])>=3 or role!=['video','audio','control'][len(s['roles'])]:
                 self.reply(409,{'error':'Invalid channel order'}); return
             upstream=None
-            for retry in range(50):
-                try:
-                    upstream=socket.create_connection(('127.0.0.1',s['port']),timeout=1); break
-                except OSError: time.sleep(.1)
+            if s.get('hardware'):
+                try: upstream=s['hardware'].channel(role)
+                except RuntimeError: pass
+            else:
+                for retry in range(50):
+                    try:
+                        upstream=socket.create_connection(('127.0.0.1',s['port']),timeout=1); break
+                    except OSError: time.sleep(.1)
             if not upstream: self.reply(503,{'error':'Android service unavailable'}); return
-            upstream.settimeout(None); upstream.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
+            upstream.settimeout(None)
+            if not s.get('hardware'): upstream.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
             s['roles'].append(role); s['sockets'].extend([upstream,self.connection])
+            if s.get('hardware') and len(s['roles']) == 3:
+                try: s['hardware'].start()
+                except OSError:
+                    close_session(sid); self.reply(503,{'error':'Hardware worker stopped'}); return
         self.send_response(200,'Connection Established'); self.end_headers(); self.wfile.flush()
         self.connection.settimeout(None); self.connection.setsockopt(socket.IPPROTO_TCP,socket.TCP_NODELAY,1)
         def pump(src,dst):

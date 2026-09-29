@@ -31,7 +31,8 @@ def main():
     parser.add_argument('--discovery', required=True, type=pathlib.Path)
     parser.add_argument('--encoder', required=True, type=pathlib.Path)
     parser.add_argument('--duration', type=float, default=10)
-    parser.add_argument('--fps', type=int, choices=(30, 60), default=30)
+    parser.add_argument('--fps', type=int, choices=(30, 60, 120), default=30)
+    parser.add_argument('--source-fps', type=int, choices=(30, 60, 120), default=30)
     parser.add_argument('--serial', default='emulator-5554')
     parser.add_argument('--avd', default='phone17-root')
     args = parser.parse_args()
@@ -53,7 +54,7 @@ def main():
     metadata = (('authorization', 'Bearer ' + token),)
     channel = grpc.insecure_channel(target, options=[('grpc.max_receive_message_length', 64 * 1024 * 1024)])
     process = subprocess.Popen([str(args.encoder), '--fps', str(args.fps), '--bitrate', '4000000',
-                                '--max-frames', '2000', '--max-seconds', str(args.duration + 5)],
+                                '--max-frames', '3600', '--max-seconds', str(args.duration + 5)],
                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     packets = []
     compressed = bytearray()
@@ -143,13 +144,14 @@ def main():
         reader.join(timeout=3)
     stderr = process.stderr.read().decode()
     native = [json.loads(line) for line in stderr.splitlines() if line.startswith('{')]
+    native = [item for item in native if item.get('probe') == 'emulator-hardware-rgba-v1']
     if process.returncode or reader_errors or not native or not native[0].get('using_hardware'):
         raise RuntimeError('native encoder validation failed: ' + json.dumps({'native': native, 'reader': reader_errors}))
     selected = [p for p in packets if start <= p[0] <= end]
     gaps = [(b[0] - a[0]) * 1000 for a, b in zip(selected, selected[1:])]
     report = {
         'probe': 'emulator-real-capture-hardware-v1', 'video_size': dimensions,
-        'source_scene_fps': 30, 'hardware_encoder_expected_fps': args.fps,
+        'source_scene_fps': args.source_fps, 'hardware_encoder_expected_fps': args.fps,
         'warmup_seconds': 2, 'measurement_seconds': args.duration,
         'capture_frames': len(samples), 'capture_fps': round(len(samples) / args.duration, 3),
         'unique_captured_images': len(source_hashes), 'duplicate_capture_timestamps': duplicate_timestamps,

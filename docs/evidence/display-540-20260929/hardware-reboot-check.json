@@ -1,0 +1,33 @@
+{
+  "before": {
+    "third_party_packages": 19,
+    "package_list_sha256": "05356559eb7caa271309c04f3dc852490bdb03c0ee73e81f3a7be7890902511c",
+    "boot_id": "8039c479-c6f3-4fb9-a9a9-7aef1fe76b80"
+  },
+  "after": {
+    "third_party_packages": 19,
+    "package_list_sha256": "05356559eb7caa271309c04f3dc852490bdb03c0ee73e81f3a7be7890902511c",
+    "boot_id": "1d759a03-eb6b-4224-9bd4-325b8fd0a018",
+    "root": "uid=0(root) gid=0(root) groups=0(root),1004(input),1007(log),1011(adb),1015(sdcard_rw),1028(sdcard_r),1078(ext_data_rw),1079(ext_obb_rw),3001(net_bt_admin),3002(net_bt),3003(inet),3006(net_bw_stats),3009(readproc),3011(uhid),3012(readtracefs) context=u:r:su:s0",
+    "renderer": "skiavk",
+    "min_refresh": "120.0",
+    "peak_refresh": "120.0",
+    "physical_size": "Physical size: 540x1200",
+    "physical_density": "Physical density: 210",
+    "npc_socket": "COMMAND   PID  USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nPython  21523 yawen    5u  IPv4 0x37e83b3542084f05      0t0  TCP 192.168.9.126:57174->146.56.249.175:8024 (ESTABLISHED)"
+  },
+  "package_list_unchanged": true,
+  "boot_changed": true,
+  "launch_agents": {
+    "vm17": {
+      "RunAtLoad": true,
+      "KeepAlive": true,
+      "ProcessType": "Interactive"
+    },
+    "direct": {
+      "RunAtLoad": true,
+      "KeepAlive": true,
+      "ProcessType": "Interactive"
+    }
+  }
+}

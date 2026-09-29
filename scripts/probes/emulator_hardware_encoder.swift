@@ -1,4 +1,4 @@
-// Isolated prototype: complete RGBA frames from stdin -> required Apple H.264 hardware encoder.
+// Complete RGBA frames from stdin -> required Apple H.264 hardware encoder.
 // No ADB, gRPC, screen capture, network access, or service changes are performed here.
 // Build: xcrun swiftc -O -module-cache-path /private/tmp/huoguo-swift-cache \
 //   scripts/probes/emulator_hardware_encoder.swift -o /private/tmp/huoguo-emulator-hw-encoder
@@ -8,9 +8,10 @@
 // Metrics are JSON on stderr. stdout is exclusively binary client-compatible video.
 // complete_rgba_to_callback_ms starts only after the full frame has been read
 // from stdin; it excludes gRPC capture delivery, the RGBA pipe, and networking.
-// A production adapter still needs a bounded latest-frame queue upstream.
-// Prototype bounds: at most 3 in-flight frames, 600 input frames, 30 seconds,
-// 10-second idle input, and 2-second stdout-write timeout. No 540->528 cropping.
+// hardware_stream.py provides the bounded latest-frame queue in service mode.
+// Default probe mode is bounded by frames/time. --service removes those lifetime
+// limits; both modes retain 3 in-flight frames and a 2-second write timeout.
+// Resolution changes rebuild the encoder without repeating the codec header.
 
 import Foundation
 import CoreVideo
@@ -115,6 +116,7 @@ let outputCallback: VTCompressionOutputCallback = { context, source, status, fla
 
 final class HardwareEncoder {
     let width: Int, height: Int, fps: Int, bitrate: Int
+    let bitrateMode: String
     let startedNS = nowNS(), cpuStart = cpuSeconds()
     let lock = NSLock(), outputLock = NSLock(), slots = DispatchSemaphore(value: 3)
     var session: VTCompressionSession?, pool: CVPixelBufferPool?
@@ -123,9 +125,11 @@ final class HardwareEncoder {
     var captureAgeMS: [Double] = [], outputTimesNS: [UInt64] = []
     var errorMessage: String?, previousConfig = Data(), previousPTS: UInt64?
     var frameDelaySetStatus: [String: Int] = [:]
+    var forceKeyframe = false
 
-    init(width: Int, height: Int, fps: Int, bitrate: Int) throws {
+    init(width: Int, height: Int, fps: Int, bitrate: Int, bitrateMode: String = "VBR", emitCodec: Bool = true) throws {
         self.width = width; self.height = height; self.fps = fps; self.bitrate = bitrate
+        self.bitrateMode = bitrateMode
         let pixelAttributes: [CFString: Any] = [
             kCVPixelBufferPixelFormatTypeKey: kCVPixelFormatType_32BGRA,
             kCVPixelBufferWidthKey: width, kCVPixelBufferHeightKey: height,
@@ -151,6 +155,10 @@ final class HardwareEncoder {
             (kVTCompressionPropertyKey_YCbCrMatrix, kCVImageBufferYCbCrMatrix_ITU_R_709_2)
         ]
         for (key, value) in properties { try check(VTSessionSetProperty(session, key: key, value: value), "set \(key)") }
+        if bitrateMode == "CBR" {
+            try check(VTSessionSetProperty(session, key: "ConstantBitRate" as CFString,
+                                          value: NSNumber(value: bitrate)), "set required CBR target")
+        }
         // Optional API: do not mistake ignoring an unsupported property for an
         // applied limit. Check both documented low-delay candidates and report
         // their exact status. Actual hardware selection remains mandatory.
@@ -162,13 +170,29 @@ final class HardwareEncoder {
             if delayZero != kVTPropertyNotSupportedErr { try check(delayZero, "set MaxFrameDelayCount=0") }
         } else { try check(delayOne, "set MaxFrameDelayCount=1") }
         try check(VTCompressionSessionPrepareToEncodeFrames(session), "prepare hardware encoder")
+        guard let hardware = try sessionProperty(session, kVTCompressionPropertyKey_UsingHardwareAcceleratedVideoEncoder) as? NSNumber,
+              hardware.boolValue else { throw EncoderFailure(description: "hardware encoder required at startup") }
+        logJSON(["event": "ready", "using_hardware": true, "bitrate_mode": bitrateMode,
+                 "width": width, "height": height,
+                 "encoder_id": (try? sessionProperty(session, kVTCompressionPropertyKey_EncoderID)) as? String ?? "unavailable"])
         let poolAttributes = [kCVPixelBufferPoolMinimumBufferCountKey: 3] as CFDictionary
         try check(CVPixelBufferPoolCreate(kCFAllocatorDefault, poolAttributes, pixelAttributes as CFDictionary, &pool), "create IOSurface pixel pool")
-        var header = Data("h264".utf8)
+        var header = emitCodec ? Data("h264".utf8) : Data()
         appendBE(UInt32(0x80000000), to: &header); appendBE(UInt32(width), to: &header); appendBE(UInt32(height), to: &header)
         try writeAll(header)
     }
     deinit { if let session = session { VTCompressionSessionInvalidate(session) } }
+
+    func updateBitrate(_ value: Int, sequence: UInt64) -> Bool {
+        var status: OSStatus = kVTInvalidSessionErr
+        if let session = session, (500_000...100_000_000).contains(value) {
+            let key = bitrateMode == "CBR" ? "ConstantBitRate" as CFString : kVTCompressionPropertyKey_AverageBitRate
+            status = VTSessionSetProperty(session, key: key, value: NSNumber(value: value))
+        }
+        logJSON(["event": "bitrate", "sequence": sequence, "accepted_bitrate": status == noErr ? value : 0,
+                 "status": Int(status)])
+        return status == noErr
+    }
 
     func submit(_ rgba: Data, pts: UInt64, rawReadyNS: UInt64) throws {
         if let prior = previousPTS, pts <= prior { throw EncoderFailure(description: "input PTS must increase") }
@@ -198,16 +222,18 @@ final class HardwareEncoder {
         let ticket = Unmanaged.passRetained(FrameContext(pts, rawReadyNS, submitNS, pixel))
         lock.lock()
         submitted += 1; pending += 1; pendingPeak = max(pendingPeak, pending)
-        conversionMS.append(ms(conversionStart, submitNS))
+        if conversionMS.count < 3600 { conversionMS.append(ms(conversionStart, submitNS)) }
         let unixUS = UInt64(Date().timeIntervalSince1970 * 1e6)
         if pts > 1_000_000_000_000 && unixUS >= pts && unixUS - pts < 5_000_000 {
-            captureAgeMS.append(Double(unixUS - pts) / 1000)
+            if captureAgeMS.count < 3600 { captureAgeMS.append(Double(unixUS - pts) / 1000) }
         }
         lock.unlock()
         slotTransferred = true
+        let frameProperties = forceKeyframe ? [kVTEncodeFrameOptionKey_ForceKeyFrame: kCFBooleanTrue!] as CFDictionary : nil
+        forceKeyframe = false
         let status = VTCompressionSessionEncodeFrame(session, imageBuffer: pixel,
             presentationTimeStamp: CMTime(value: Int64(pts), timescale: 1_000_000),
-            duration: CMTime(value: 1, timescale: Int32(fps)), frameProperties: nil,
+            duration: CMTime(value: 1, timescale: Int32(fps)), frameProperties: frameProperties,
             sourceFrameRefcon: ticket.toOpaque(), infoFlagsOut: nil)
         if status != noErr { deliver(ticket.takeRetainedValue(), status, [], nil) }
         previousPTS = pts
@@ -263,8 +289,8 @@ final class HardwareEncoder {
             let writeEnd = nowNS()
             lock.lock()
             encoded += 1; if keyframe { keyframes += 1 }; bytesOutput += annexB.count
-            encodeMS.append(ms(frame.submitNS, callbackNS)); fullMS.append(ms(frame.rawReadyNS, callbackNS))
-            writeMS.append(ms(writeStart, writeEnd)); outputTimesNS.append(callbackNS)
+            if encodeMS.count < 3600 { encodeMS.append(ms(frame.submitNS, callbackNS)); fullMS.append(ms(frame.rawReadyNS, callbackNS)) }
+            if writeMS.count < 3600 { writeMS.append(ms(writeStart, writeEnd)); outputTimesNS.append(callbackNS) }
             lock.unlock()
         } catch {
             lock.lock(); dropped += 1; if errorMessage == nil { errorMessage = String(describing: error) }; lock.unlock()
@@ -311,6 +337,7 @@ final class HardwareEncoder {
             "max_frame_delay_applied": confirmedDelay != nil,
             "input_frames": submitted, "output_frames": encoded, "dropped_or_failed": dropped,
             "pending_at_end": pending, "pending_peak": pendingPeak, "keyframes": keyframes,
+            "bitrate_mode": bitrateMode, "distribution_sample_limit": 3600,
             "elapsed_seconds": seconds, "output_fps": Double(encoded) / seconds,
             "output_bitrate_bps": Double(bytesOutput) * 8 / seconds,
             "vimage_and_pool_ms": distribution(conversionMS), "submit_to_callback_ms": distribution(encodeMS),
@@ -332,12 +359,15 @@ signal(SIGPIPE, SIG_IGN)
 let stdoutFlags = fcntl(STDOUT_FILENO, F_GETFL)
 if stdoutFlags >= 0 { _ = fcntl(STDOUT_FILENO, F_SETFL, stdoutFlags | O_NONBLOCK) }
 var fps = 30, bitrate = 4_000_000, maxFrames = 600, maxSeconds = 30.0, idleMS: Int32 = 10_000
+var service = false, bitrateMode = "VBR"
 var arguments = Array(CommandLine.arguments.dropFirst()), encoder: HardwareEncoder?
 do {
     while !arguments.isEmpty {
         let key = arguments.removeFirst(); guard !arguments.isEmpty else { throw EncoderFailure(description: "missing value for \(key)") }
         let value = arguments.removeFirst()
         switch key {
+        case "--service": guard value == "true" else { throw EncoderFailure(description: "service expects true") }; service = true
+        case "--mode": guard value == "CBR" || value == "VBR" else { throw EncoderFailure(description: "mode expects CBR or VBR") }; bitrateMode = value
         case "--fps": guard let n = Int(value), (1...120).contains(n) else { throw EncoderFailure(description: "fps must be 1...120") }; fps = n
         case "--bitrate": guard let n = Int(value), (100_000...100_000_000).contains(n) else { throw EncoderFailure(description: "invalid bitrate") }; bitrate = n
         case "--max-frames": guard let n = Int(value), (1...3600).contains(n) else { throw EncoderFailure(description: "max-frames must be 1...3600") }; maxFrames = n
@@ -346,22 +376,37 @@ do {
         default: throw EncoderFailure(description: "unknown option \(key)")
         }
     }
-    let started = nowNS(), inputDeadline = started + UInt64(maxSeconds * 1e9)
-    var frames = 0, reason = "EOF"
-    while frames < maxFrames {
-        if Double(nowNS() - started) / 1e9 >= maxSeconds { reason = "time_limit"; break }
+    let started = nowNS(), inputDeadline = service ? UInt64.max : started + UInt64(maxSeconds * 1e9)
+    var frames = 0, reason = "EOF", emittedCodec = false
+    while service || frames < maxFrames {
+        if !service && Double(nowNS() - started) / 1e9 >= maxSeconds { reason = "time_limit"; break }
         guard let header = try readExact(20, idleMS: idleMS, deadlineNS: inputDeadline, cleanEOF: true) else { break }
         let width = Int(unsignedBE(header, 0, 4)), height = Int(unsignedBE(header, 4, 4))
         let pts = unsignedBE(header, 8, 8), length = Int(unsignedBE(header, 16, 4))
+        if service && width == 0 && height == 0 && length == 8 {
+            guard let command = try readExact(8, idleMS: idleMS, deadlineNS: inputDeadline) else { break }
+            let type = unsignedBE(command, 0, 4), value = Int(unsignedBE(command, 4, 4))
+            if type == 1, encoder?.updateBitrate(value, sequence: pts) == true { bitrate = value }
+            else if type == 2 { encoder?.forceKeyframe = true }
+            else { throw EncoderFailure(description: "invalid local encoder control") }
+            continue
+        }
         guard width >= 2, height >= 2, width <= 8192, height <= 8192, width % 2 == 0, height % 2 == 0,
               length == width * height * 4, length <= 64 * 1024 * 1024 else { throw EncoderFailure(description: "invalid complete RGBA frame dimensions/length") }
         guard let rgba = try readExact(length, idleMS: idleMS, deadlineNS: inputDeadline) else { throw EncoderFailure(description: "missing RGBA") }
         let ready = nowNS()
-        if encoder == nil { encoder = try HardwareEncoder(width: width, height: height, fps: fps, bitrate: bitrate) }
+        if service, let current = encoder, width != current.width || height != current.height {
+            try current.finish(reason: "resize"); encoder = nil
+        }
+        if encoder == nil {
+            encoder = try HardwareEncoder(width: width, height: height, fps: fps, bitrate: bitrate,
+                                          bitrateMode: bitrateMode, emitCodec: !emittedCodec)
+            emittedCodec = true
+        }
         guard let current = encoder, width == current.width, height == current.height else { throw EncoderFailure(description: "resolution changes require a new prototype process") }
         try current.submit(rgba, pts: pts, rawReadyNS: ready); frames += 1
     }
-    if frames == maxFrames { reason = "frame_limit" }
+    if !service && frames == maxFrames { reason = "frame_limit" }
     if let encoder = encoder { try encoder.finish(reason: reason) }
     else { logJSON(["probe": "emulator-hardware-rgba-v1", "input_frames": 0, "finish_reason": reason]) }
 } catch {

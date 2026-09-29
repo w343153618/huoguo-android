@@ -1,0 +1,88 @@
+{
+  "label": "original-60-none",
+  "capture": "none",
+  "scene_target_fps": 60,
+  "requested_renderer": null,
+  "original_renderer": "skiagl",
+  "physical_size": "Physical size: 540x1200",
+  "physical_density": "Physical density: 210",
+  "scope": "synthetic source and local video only; excludes phone/WAN/audio/touch",
+  "samples": [
+    {
+      "frame_stages": {
+        "valid_recent_rows": 120,
+        "stages_ms": {
+          "total": {
+            "count": 120,
+            "p50": 38.136,
+            "p95": 89.105,
+            "p99": 112.274
+          },
+          "vsync_adjustment": {
+            "count": 120,
+            "p50": 0.0,
+            "p95": 50.0,
+            "p99": 50.0
+          },
+          "ui_work": {
+            "count": 120,
+            "p50": 0.855,
+            "p95": 2.076,
+            "p99": 3.486
+          },
+          "render_queue": {
+            "count": 120,
+            "p50": 0.203,
+            "p95": 1.217,
+            "p99": 1.61
+          },
+          "draw_commands": {
+            "count": 120,
+            "p50": 0.889,
+            "p95": 2.221,
+            "p99": 3.716
+          },
+          "dequeue": {
+            "count": 120,
+            "p50": 0.003,
+            "p95": 37.344,
+            "p99": 65.817
+          },
+          "gpu_fence": {
+            "count": 120,
+            "p50": 15.715,
+            "p95": 71.464,
+            "p99": 79.181
+          }
+        },
+        "summary": {
+          "Total frames rendered": "445",
+          "Janky frames": "151 (33.93%)",
+          "50th percentile": "24ms",
+          "90th percentile": "65ms",
+          "95th percentile": "81ms",
+          "99th percentile": "113ms",
+          "Number Missed Vsync": "52",
+          "Number High input latency": "446",
+          "Number Slow UI thread": "59",
+          "Number Slow bitmap uploads": "0",
+          "Number Slow issue draw commands": "133",
+          "Number Frame deadline missed": "151",
+          "Number Frame deadline missed (legacy)": "128",
+          "Pipeline=Skia (OpenGL)": "Pipeline=Skia (OpenGL)"
+        }
+      },
+      "source": {
+        "run_id": "043398af-d9e5-4f3e-acaf-71ea051d640a",
+        "lifecycle_complete": true,
+        "source_frame": 797,
+        "unique_drawn_frames": 497,
+        "skipped_source_ticks": 301,
+        "hardware_canvas": true,
+        "source_elapsed_seconds": 13.33,
+        "source_draw_fps_including_startup": 37.284
+      }
+    }
+  ],
+  "renderer_restored": true
+}

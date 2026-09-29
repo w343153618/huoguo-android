@@ -27,6 +27,7 @@ class StreamSettingsTest(unittest.TestCase):
     def test_frame_rate_default_and_limits(self):
         self.assertEqual(parse_max_fps({}),60)
         self.assertEqual(parse_max_fps({'max_fps':30}),30)
-        for fps in (True,None,'60',60.0,0,120):
+        self.assertEqual(parse_max_fps({'max_fps':120}),120)
+        for fps in (True,None,'60',60.0,0,90,240):
             with self.subTest(fps=fps),self.assertRaises(ValueError):
                 parse_max_fps({'max_fps':fps})

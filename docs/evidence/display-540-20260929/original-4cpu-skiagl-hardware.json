@@ -1,0 +1,386 @@
+{
+  "label": "original-4cpu-skiagl-hardware",
+  "capture": "hardware",
+  "requested_renderer": "skiagl",
+  "original_renderer": "skiagl",
+  "physical_size": "Physical size: 540x1200",
+  "physical_density": "Physical density: 210",
+  "scope": "synthetic source and local video only; excludes phone/WAN/audio/touch",
+  "samples": [
+    {
+      "hardware_capture": {
+        "probe": "emulator-real-capture-hardware-v1",
+        "video_size": [
+          540,
+          1200
+        ],
+        "source_scene_fps": 30,
+        "hardware_encoder_expected_fps": 30,
+        "warmup_seconds": 2,
+        "measurement_seconds": 10.0,
+        "capture_frames": 263,
+        "capture_fps": 26.3,
+        "unique_captured_images": 263,
+        "duplicate_capture_timestamps": 0,
+        "encoded_frames": 263,
+        "encoded_fps": 26.3,
+        "capture_age_p50_ms": 3.291,
+        "capture_age_p95_ms": 5.29,
+        "estimated_source_to_h264_pipe_age_p50_ms": 7.569,
+        "estimated_source_to_h264_pipe_age_p95_ms": 11.715,
+        "encoded_gap_p50_ms": 33.304,
+        "encoded_gap_p95_ms": 74.573,
+        "encoded_gaps_over_50ms": 72,
+        "actual_mbps": 3.398,
+        "native_encoder_metrics_include_warmup": {
+          "bitrate_target_bps": 4000000,
+          "complete_rgba_to_callback_ms": {
+            "count": 316,
+            "max": 100.266875,
+            "p50": 3.205958,
+            "p95": 5.546291
+          },
+          "dropped_or_failed": 0,
+          "elapsed_seconds": 11.989579333,
+          "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+          "final_drain_ms": 0.2675,
+          "finish_reason": "EOF",
+          "fps_expected": 30,
+          "frame_reordering_readback": false,
+          "height": 1200,
+          "host_capture_timestamp_age_at_submit_ms": {
+            "count": 316,
+            "max": 81.065,
+            "p50": 4.445,
+            "p95": 7.045
+          },
+          "input_frames": 316,
+          "keyframes": 7,
+          "max_frame_delay_applied": false,
+          "max_frame_delay_count_readback": null,
+          "max_frame_delay_raw_readback": 0,
+          "max_frame_delay_read_status": 0,
+          "max_frame_delay_set_status": {
+            "0": -12900,
+            "1": -12900
+          },
+          "output_bitrate_bps": 3293828.991256069,
+          "output_callback_gap_ms": {
+            "count": 315,
+            "max": 115.046875,
+            "p50": 33.10175,
+            "p95": 75.186833
+          },
+          "output_fps": 26.35622078334681,
+          "output_frames": 316,
+          "pending_at_end": 0,
+          "pending_peak": 3,
+          "probe": "emulator-hardware-rgba-v1",
+          "process_cpu_percent_of_one_core": 3.8889271011924005,
+          "required_hardware": true,
+          "scope": "complete_rgba_to_callback_ms starts after stdin delivered the complete RGBA payload. It measures pool/conversion/VT work and excludes gRPC capture delivery, RGBA pipe delivery, network transport, phone decode and display. Capture timestamp age is a separate estimated upstream observation.",
+          "stdout_write_ms": {
+            "count": 316,
+            "max": 0.038625,
+            "p50": 0.015,
+            "p95": 0.02425
+          },
+          "submit_to_callback_ms": {
+            "count": 316,
+            "max": 24.168,
+            "p50": 3.038458,
+            "p95": 5.373375
+          },
+          "using_hardware": true,
+          "vimage_and_pool_ms": {
+            "count": 316,
+            "max": 0.409958,
+            "p50": 0.142583,
+            "p95": 0.216667
+          },
+          "width": 540
+        },
+        "pixel_or_video_persistence": false,
+        "scope": "local raw capture and hardware encode only; excludes audio, network transit, phone decoding and display",
+        "cpu_observation_seconds_including_drain": 10.02,
+        "guest_cpu_busy_percent_all_vcpus": 8.898,
+        "host_qemu_cpu_percent_one_core_equals_100": 44.611,
+        "capture_process_cpu_percent_one_core_equals_100": 19.218,
+        "ffprobe_decode_exit": 0,
+        "decoded_stream": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "codec_name": "h264",
+              "width": 540,
+              "height": 1200
+            }
+          ]
+        },
+        "ffmpeg_decode_exit": 0
+      },
+      "frame_stages": {
+        "valid_recent_rows": 120,
+        "stages_ms": {
+          "total": {
+            "count": 119,
+            "p50": 34.028,
+            "p95": 72.123,
+            "p99": 90.555
+          },
+          "vsync_adjustment": {
+            "count": 120,
+            "p50": 0.0,
+            "p95": 33.333,
+            "p99": 33.333
+          },
+          "ui_work": {
+            "count": 120,
+            "p50": 0.547,
+            "p95": 1.378,
+            "p99": 1.622
+          },
+          "render_queue": {
+            "count": 120,
+            "p50": 0.135,
+            "p95": 1.136,
+            "p99": 2.668
+          },
+          "draw_commands": {
+            "count": 120,
+            "p50": 1.214,
+            "p95": 3.472,
+            "p99": 5.484
+          },
+          "dequeue": {
+            "count": 120,
+            "p50": 0.003,
+            "p95": 26.886,
+            "p99": 46.209
+          },
+          "gpu_fence": {
+            "count": 119,
+            "p50": 14.852,
+            "p95": 48.663,
+            "p99": 60.56
+          }
+        },
+        "summary": {
+          "Total frames rendered": "334",
+          "Janky frames": "201 (60.18%)",
+          "50th percentile": "34ms",
+          "90th percentile": "65ms",
+          "95th percentile": "81ms",
+          "99th percentile": "97ms",
+          "Number Missed Vsync": "81",
+          "Number High input latency": "201",
+          "Number Slow UI thread": "90",
+          "Number Slow bitmap uploads": "0",
+          "Number Slow issue draw commands": "157",
+          "Number Frame deadline missed": "201",
+          "Number Frame deadline missed (legacy)": "161",
+          "Pipeline=Skia (OpenGL)": "Pipeline=Skia (OpenGL)"
+        }
+      },
+      "source": {
+        "run_id": "00379e86-903c-441e-9fca-000c08caab56",
+        "lifecycle_complete": true,
+        "source_frame": 413,
+        "unique_drawn_frames": 367,
+        "skipped_source_ticks": 47,
+        "hardware_canvas": true,
+        "source_elapsed_seconds": 13.803,
+        "source_draw_fps_including_startup": 26.588
+      }
+    },
+    {
+      "hardware_capture": {
+        "probe": "emulator-real-capture-hardware-v1",
+        "video_size": [
+          540,
+          1200
+        ],
+        "source_scene_fps": 30,
+        "hardware_encoder_expected_fps": 30,
+        "warmup_seconds": 2,
+        "measurement_seconds": 10.0,
+        "capture_frames": 270,
+        "capture_fps": 27.0,
+        "unique_captured_images": 270,
+        "duplicate_capture_timestamps": 0,
+        "encoded_frames": 270,
+        "encoded_fps": 27.0,
+        "capture_age_p50_ms": 3.018,
+        "capture_age_p95_ms": 5.295,
+        "estimated_source_to_h264_pipe_age_p50_ms": 7.079,
+        "estimated_source_to_h264_pipe_age_p95_ms": 11.963,
+        "encoded_gap_p50_ms": 33.324,
+        "encoded_gap_p95_ms": 77.176,
+        "encoded_gaps_over_50ms": 64,
+        "actual_mbps": 3.458,
+        "native_encoder_metrics_include_warmup": {
+          "bitrate_target_bps": 4000000,
+          "complete_rgba_to_callback_ms": {
+            "count": 321,
+            "max": 100.98375,
+            "p50": 2.988167,
+            "p95": 5.789167
+          },
+          "dropped_or_failed": 0,
+          "elapsed_seconds": 11.933935041,
+          "encoder_id": "com.apple.videotoolbox.videoencoder.ave.avc",
+          "final_drain_ms": 0.430708,
+          "finish_reason": "EOF",
+          "fps_expected": 30,
+          "frame_reordering_readback": false,
+          "height": 1200,
+          "host_capture_timestamp_age_at_submit_ms": {
+            "count": 321,
+            "max": 95.732,
+            "p50": 4.004,
+            "p95": 7.303
+          },
+          "input_frames": 321,
+          "keyframes": 7,
+          "max_frame_delay_applied": false,
+          "max_frame_delay_count_readback": null,
+          "max_frame_delay_raw_readback": 0,
+          "max_frame_delay_read_status": 0,
+          "max_frame_delay_set_status": {
+            "0": -12900,
+            "1": -12900
+          },
+          "output_bitrate_bps": 3355078.426557693,
+          "output_callback_gap_ms": {
+            "count": 320,
+            "max": 120.716583,
+            "p50": 33.308916,
+            "p95": 77.43925
+          },
+          "output_fps": 26.898085073965838,
+          "output_frames": 321,
+          "pending_at_end": 0,
+          "pending_peak": 3,
+          "probe": "emulator-hardware-rgba-v1",
+          "process_cpu_percent_of_one_core": 3.696475625889072,
+          "required_hardware": true,
+          "scope": "complete_rgba_to_callback_ms starts after stdin delivered the complete RGBA payload. It measures pool/conversion/VT work and excludes gRPC capture delivery, RGBA pipe delivery, network transport, phone decode and display. Capture timestamp age is a separate estimated upstream observation.",
+          "stdout_write_ms": {
+            "count": 321,
+            "max": 0.102083,
+            "p50": 0.013542,
+            "p95": 0.023
+          },
+          "submit_to_callback_ms": {
+            "count": 321,
+            "max": 26.92975,
+            "p50": 2.854208,
+            "p95": 5.461667
+          },
+          "using_hardware": true,
+          "vimage_and_pool_ms": {
+            "count": 321,
+            "max": 0.477667,
+            "p50": 0.117416,
+            "p95": 0.209458
+          },
+          "width": 540
+        },
+        "pixel_or_video_persistence": false,
+        "scope": "local raw capture and hardware encode only; excludes audio, network transit, phone decoding and display",
+        "cpu_observation_seconds_including_drain": 9.96,
+        "guest_cpu_busy_percent_all_vcpus": 8.868,
+        "host_qemu_cpu_percent_one_core_equals_100": 44.377,
+        "capture_process_cpu_percent_one_core_equals_100": 18.297,
+        "ffprobe_decode_exit": 0,
+        "decoded_stream": {
+          "programs": [],
+          "stream_groups": [],
+          "streams": [
+            {
+              "codec_name": "h264",
+              "width": 540,
+              "height": 1200
+            }
+          ]
+        },
+        "ffmpeg_decode_exit": 0
+      },
+      "frame_stages": {
+        "valid_recent_rows": 120,
+        "stages_ms": {
+          "total": {
+            "count": 120,
+            "p50": 36.525,
+            "p95": 80.893,
+            "p99": 89.674
+          },
+          "vsync_adjustment": {
+            "count": 120,
+            "p50": 0.0,
+            "p95": 33.333,
+            "p99": 46.833
+          },
+          "ui_work": {
+            "count": 120,
+            "p50": 0.583,
+            "p95": 1.483,
+            "p99": 1.747
+          },
+          "render_queue": {
+            "count": 120,
+            "p50": 0.152,
+            "p95": 1.565,
+            "p99": 3.073
+          },
+          "draw_commands": {
+            "count": 120,
+            "p50": 1.651,
+            "p95": 3.536,
+            "p99": 3.845
+          },
+          "dequeue": {
+            "count": 120,
+            "p50": 0.003,
+            "p95": 24.512,
+            "p99": 49.092
+          },
+          "gpu_fence": {
+            "count": 120,
+            "p50": 13.793,
+            "p95": 46.676,
+            "p99": 57.97
+          }
+        },
+        "summary": {
+          "Total frames rendered": "336",
+          "Janky frames": "206 (61.31%)",
+          "50th percentile": "36ms",
+          "90th percentile": "61ms",
+          "95th percentile": "73ms",
+          "99th percentile": "89ms",
+          "Number Missed Vsync": "85",
+          "Number High input latency": "210",
+          "Number Slow UI thread": "88",
+          "Number Slow bitmap uploads": "0",
+          "Number Slow issue draw commands": "154",
+          "Number Frame deadline missed": "206",
+          "Number Frame deadline missed (legacy)": "155",
+          "Pipeline=Skia (OpenGL)": "Pipeline=Skia (OpenGL)"
+        }
+      },
+      "source": {
+        "run_id": "497331d6-d29f-4d66-ae17-5bdd3d31bbc9",
+        "lifecycle_complete": true,
+        "source_frame": 408,
+        "unique_drawn_frames": 367,
+        "skipped_source_ticks": 42,
+        "hardware_canvas": true,
+        "source_elapsed_seconds": 13.621,
+        "source_draw_fps_including_startup": 26.944
+      }
+    }
+  ],
+  "renderer_restored": true
+}
