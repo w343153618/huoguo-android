@@ -2,7 +2,7 @@
   "version_name": "1.16",
   "version_code": 17,
   "checked_at": "2026-09-29T11:31:59.695787+00:00",
-  "python_tests_passed": 39,
+  "python_tests_passed": 44,
   "jvm_checks_passed": 8,
   "gradle": {
     "debug_build": "passed",
@@ -27,5 +27,26 @@
   },
   "live_input_latency_reduction_measured": false,
   "live_audio_video_sync_verified": false,
-  "server_sleep_configuration_changed": false
+  "server_sleep_configuration_changed": true,
+  "m5_idle_screen": {
+    "production_delay_seconds": 300,
+    "timer_cancellation_and_active_session_guard_tests": "passed",
+    "real_guest_sleep_and_wake": "passed",
+    "real_sleep_state": "Asleep",
+    "real_wake_state": "Awake",
+    "validation_used_isolated_short_timer": true,
+    "vm_stopped_for_idle": false
+  },
+  "m5_autostart": {
+    "gateway_vm_and_nps_run_at_load": true,
+    "gateway_vm_and_nps_keep_alive": true,
+    "scope": "user LaunchAgents start after macOS login"
+  },
+  "m5_guest_reboot": {
+    "actual_guest_reboot": "passed",
+    "boot_id_changed": true,
+    "ensure_android_recovery": "passed",
+    "wake_after_reboot": "passed",
+    "authenticated_phone_stream_after_reboot_verified": false
+  }
 }

@@ -27,7 +27,7 @@ jobs:
           ./gradlew assembleRelease lintRelease
       - name: Check gateway syntax and endpoint parser
         run: |
-          python3 -m py_compile gateway.py diagnostics_reports.py media_transfer.py stream_settings.py npc_physical_relay.py lan_interfaces.py add-user.py scripts/*.py
+          python3 -m py_compile gateway.py idle_power.py diagnostics_reports.py media_transfer.py stream_settings.py npc_physical_relay.py lan_interfaces.py add-user.py scripts/*.py
           python3 -m unittest discover -s tests -p "test_*.py"
           mkdir -p /tmp/endpoint-check
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Endpoint.java tests/EndpointCheck.java

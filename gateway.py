@@ -3,6 +3,7 @@
 import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socket, ssl, subprocess, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from media_transfer import MediaStore, MediaError
+from idle_power import IdleScreen
 from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
 from diagnostics_reports import DiagnosticSource, DiagnosticsError, ReportStore, read_json
 BASE = pathlib.Path(__file__).resolve().parent
@@ -26,6 +27,7 @@ auth_failures=[]
 auth_guard=threading.Lock()
 def adb(*args, **kw):
     return subprocess.run([ADB, '-s', SERIAL, *args], capture_output=True, text=True, timeout=20, check=True, **kw)
+idle_screen = IdleScreen(lock, lambda: bool(sessions), lambda: adb('shell','input','keyevent','223'), delay=300)
 def ensure_android():
     global vm_proc
     device_present=False
@@ -59,6 +61,7 @@ def close_session(sid):
     try: adb('forward', '--remove', 'tcp:'+str(s['port']))
     except Exception: pass
     if s['proc'].poll() is None: s['proc'].terminate()
+    idle_screen.schedule()
 def authenticated_account(header):
     if not header or not header.startswith('Basic ') or len(header)>2048: return None
     try:
@@ -190,7 +193,9 @@ class Handler(BaseHTTPRequestHandler):
         try:
             with lock:
                 for old in list(sessions): close_session(old)
+                idle_screen.cancel()
                 ensure_android()
+                adb('shell','input','keyevent','224')
                 server_file=BASE/('scrcpy-server-adaptive-v4.1' if bitrate_mode=='ADAPTIVE_VBR' else 'scrcpy-server-v4.1')
                 if not server_file.is_file(): raise RuntimeError('Adaptive server unavailable')
                 adb('push',str(server_file),'/data/local/tmp/remoteandroid-scrcpy.jar')
@@ -217,6 +222,7 @@ class Handler(BaseHTTPRequestHandler):
             if port:
                 try: adb('forward','--remove','tcp:'+str(port))
                 except Exception: pass
+            idle_screen.schedule()
             self.reply(503,{'error':type(e).__name__})
     @staticmethod
     def expire(sid):
@@ -254,6 +260,7 @@ class Handler(BaseHTTPRequestHandler):
         threading.Thread(target=pump,args=(self.connection,upstream),daemon=True).start()
         pump(upstream,self.connection); self.close_connection=True
 if __name__=='__main__':
+    idle_screen.schedule()
     host=os.environ.get('DIRECT_HOST','192.168.9.125'); port=int(os.environ.get('DIRECT_PORT','15556'))
     context=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); context.minimum_version=ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(CERT,KEY)
@@ -269,5 +276,6 @@ if __name__=='__main__':
             print('Android Direct TLS gateway listening on '+host+':'+str(port),flush=True)
             server.serve_forever()
     finally:
+        idle_screen.shutdown()
         for sid in list(sessions): close_session(sid)
         diagnostic_source.shutdown()
