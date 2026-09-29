@@ -521,7 +521,7 @@ if __name__ == '__main__':
     options = parser.parse_args()
     if not re.fullmatch(r'emulator-\d+', options.serial) or not re.fullmatch(r'[a-zA-Z0-9_-]+', options.avd):
         parser.error('requires a local emulator and plain AVD name')
-    if not 500000 <= options.bitrate <= 12000000:
+    if not 500000 <= options.bitrate <= 40000000:
         parser.error('invalid bitrate')
     try:
         worker(options)

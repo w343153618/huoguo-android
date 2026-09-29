@@ -39,4 +39,4 @@ PYTHONPATH="$probe_dir:scripts/probes" "$probe_dir/venv/bin/python" \
 
 实验中的 `source_scene_fps=30` 是合成源目标，不等于实测绘制帧率。`timestamp_age_ms` 是宿主时钟和模拟器时间戳的估算差，不能解释为手机端延迟。VideoToolbox 属性若设置不受支持，应保留错误码；不能仅因为读取值为 0 就声称已启用该优化。
 
-`measure_source_rendering.py` 支持显式 30 / 60 / 120 FPS 合成源，对比 Android 帧阶段、实际绘制和硬件输出；正常手机自动检测仍用原固定 30 FPS 场景。`measure_hardware_service.py` 验证正式适配器的 H.264、AAC、真实触摸和动态码率；`--gateway` 只使用已有账号和本机 TLS，口令从测试进程环境读取。`--bitrate` 支持 0.5–12 Mbps，报告平均 FPS、5 秒窗口、帧间隔及音频时钟估计，不保存画面。
+`measure_source_rendering.py` 支持显式 30 / 60 / 120 FPS 合成源，对比 Android 帧阶段、实际绘制和硬件输出；正常手机自动检测仍用原固定 30 FPS 场景。`measure_hardware_service.py` 验证正式适配器的 H.264、AAC、真实触摸和动态码率；`--gateway` 只使用已有账号和本机 TLS，口令从测试进程环境读取。`--bitrate` 支持 0.5–40 Mbps，报告平均 FPS、5 秒窗口、帧间隔及音频时钟估计，不保存画面。24 / 40 Mbps 需要 Mac 硬件编码后端。

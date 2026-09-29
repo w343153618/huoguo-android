@@ -87,8 +87,8 @@ def main():
     initial_rate = min(2500000, args.bitrate)
     if not 10 <= args.duration <= 120:
         parser.error('requires 10-120 seconds')
-    if not 500000 <= args.bitrate <= 12000000:
-        parser.error('requires 0.5-12 Mbps')
+    if not 500000 <= args.bitrate <= 40000000:
+        parser.error('requires 0.5-40 Mbps')
     adb_path = str(pathlib.Path.home() / 'Library/Android/sdk/platform-tools/adb')
 
     def adb(*words):

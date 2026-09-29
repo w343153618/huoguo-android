@@ -110,7 +110,7 @@ def validate_report(report):
         'render_gap_count': (0, 1_000_000_000), 'discarded_frames': (0, 1_000_000_000),
         'thermal_start': (-1, 6), 'thermal_end': (-1, 6),
         'battery_start': (-1, 100), 'battery_end': (-1, 100),
-        'accepted_bitrate': (0, 12_000_000), 'source_startup_ms': (0, 3_600_000),
+        'accepted_bitrate': (0, 40_000_000), 'source_startup_ms': (0, 3_600_000),
         'actual_sample_ms': (1, 5000),
     }
     number_ranges = {
@@ -131,7 +131,7 @@ def validate_report(report):
         _object(stage, (*core, *integer_ranges, *number_ranges, *flags, *texts, 'dimensions', 'samples'), core)
         _text(stage['label'], 120, False)
         _number(stage['max_size'], 128, 4096, True)
-        _number(stage['bitrate'], 500_000, 12_000_000, True)
+        _number(stage['bitrate'], 500_000, 40_000_000, True)
         _number(stage['max_fps'], 1, 120, True)
         _enum(stage['mode'], ('CBR', 'VBR', 'ADAPTIVE_VBR'))
         _number(stage['buffer_ms'], 0, 5000, True)

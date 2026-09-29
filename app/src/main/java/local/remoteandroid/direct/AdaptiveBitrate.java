@@ -8,7 +8,7 @@ final class AdaptiveBitrate {
     private long windowDelay,windowPackets,lastPts=-1;
     private long previousDelay=Long.MIN_VALUE;
     AdaptiveBitrate(int ceiling){
-        if(ceiling<500000||ceiling>12000000)throw new IllegalArgumentException("Invalid ceiling");
+        if(ceiling<500000||ceiling>40000000)throw new IllegalArgumentException("Invalid ceiling");
         this.ceiling=ceiling;target=Math.max(500000,ceiling*7/10);
     }
     synchronized int target(){return target;}

@@ -125,6 +125,7 @@ final class HardwareEncoder {
     var captureAgeMS: [Double] = [], outputTimesNS: [UInt64] = []
     var errorMessage: String?, previousConfig = Data(), previousPTS: UInt64?
     var frameDelaySetStatus: [String: Int] = [:]
+    var rateLimitStatus: Int?
     var forceKeyframe = false
 
     init(width: Int, height: Int, fps: Int, bitrate: Int, bitrateMode: String = "VBR", emitCodec: Bool = true) throws {
@@ -158,6 +159,8 @@ final class HardwareEncoder {
         if bitrateMode == "CBR" {
             try check(VTSessionSetProperty(session, key: "ConstantBitRate" as CFString,
                                           value: NSNumber(value: bitrate)), "set required CBR target")
+        } else {
+            rateLimitStatus = Int(setRateLimit(session, bitrate))
         }
         // Optional API: do not mistake ignoring an unsupported property for an
         // applied limit. Check both documented low-delay candidates and report
@@ -174,6 +177,7 @@ final class HardwareEncoder {
               hardware.boolValue else { throw EncoderFailure(description: "hardware encoder required at startup") }
         logJSON(["event": "ready", "using_hardware": true, "bitrate_mode": bitrateMode,
                  "width": width, "height": height,
+                 "vbr_rate_limit_status": rateLimitStatus as Any? ?? NSNull(),
                  "encoder_id": (try? sessionProperty(session, kVTCompressionPropertyKey_EncoderID)) as? String ?? "unavailable"])
         let poolAttributes = [kCVPixelBufferPoolMinimumBufferCountKey: 3] as CFDictionary
         try check(CVPixelBufferPoolCreate(kCFAllocatorDefault, poolAttributes, pixelAttributes as CFDictionary, &pool), "create IOSurface pixel pool")
@@ -183,14 +187,24 @@ final class HardwareEncoder {
     }
     deinit { if let session = session { VTCompressionSessionInvalidate(session) } }
 
+    private func setRateLimit(_ session: VTCompressionSession, _ target: Int) -> OSStatus {
+        // AverageBitRate is only a long-term target. Limit one-second VBR bursts
+        // to 1.5x so a short-video scene cut cannot flood a shallow jitter buffer.
+        let bytesPerSecond = NSNumber(value: Int64(target) * 3 / 16)
+        let oneSecond = NSNumber(value: 1.0)
+        return VTSessionSetProperty(session, key: kVTCompressionPropertyKey_DataRateLimits,
+                                    value: [bytesPerSecond, oneSecond] as CFArray)
+    }
+
     func updateBitrate(_ value: Int, sequence: UInt64) -> Bool {
         var status: OSStatus = kVTInvalidSessionErr
         if let session = session, (500_000...100_000_000).contains(value) {
             let key = bitrateMode == "CBR" ? "ConstantBitRate" as CFString : kVTCompressionPropertyKey_AverageBitRate
             status = VTSessionSetProperty(session, key: key, value: NSNumber(value: value))
+            if status == noErr && bitrateMode != "CBR" { rateLimitStatus = Int(setRateLimit(session, value)) }
         }
         logJSON(["event": "bitrate", "sequence": sequence, "accepted_bitrate": status == noErr ? value : 0,
-                 "status": Int(status)])
+                 "status": Int(status), "vbr_rate_limit_status": rateLimitStatus as Any? ?? NSNull()])
         return status == noErr
     }
 
@@ -338,6 +352,7 @@ final class HardwareEncoder {
             "input_frames": submitted, "output_frames": encoded, "dropped_or_failed": dropped,
             "pending_at_end": pending, "pending_peak": pendingPeak, "keyframes": keyframes,
             "bitrate_mode": bitrateMode, "distribution_sample_limit": 3600,
+            "vbr_rate_limit_status": rateLimitStatus as Any? ?? NSNull(),
             "elapsed_seconds": seconds, "output_fps": Double(encoded) / seconds,
             "output_bitrate_bps": Double(bytesOutput) * 8 / seconds,
             "vimage_and_pool_ms": distribution(conversionMS), "submit_to_callback_ms": distribution(encodeMS),

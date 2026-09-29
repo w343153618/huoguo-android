@@ -205,6 +205,8 @@ class Handler(BaseHTTPRequestHandler):
             max_size, bit_rate = parse_settings(settings, VIDEO_MAX_SIZE)
             bitrate_mode, mode_value = parse_bitrate_mode(settings)
             max_fps = parse_max_fps(settings)
+            if bit_rate > 12_000_000 and VIDEO_BACKEND != 'videotoolbox':
+                self.reply(400, {'error': 'Bitrates above 12 Mbps require Mac hardware encoding'}); return
             if max_fps == 120 and VIDEO_BACKEND != 'videotoolbox':
                 self.reply(400, {'error': '120 FPS requires the Mac hardware video backend'}); return
         except (ValueError,OSError):
