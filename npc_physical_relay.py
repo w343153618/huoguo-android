@@ -6,7 +6,9 @@ unbound connect, DNS, proxy environment, or VPN fallback is ever used.
 """
 import logging
 import os
+import re
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -15,6 +17,8 @@ DESTINATION = ('146.56.249.175', 8024)
 LISTEN = ('127.0.0.1', 18024)
 INTERFACES = tuple(os.environ.get('NPC_PHYSICAL_INTERFACES', 'en11,en0').split(','))
 IP_BOUND_IF = 25  # Apple XNU bsd/netinet/in.h
+LINK_CHECK_SECONDS = 5
+FAILBACK_STABLE_SECONDS = 15
 slots = threading.BoundedSemaphore(64)
 
 def physical_connect(interfaces=INTERFACES):
@@ -40,6 +44,55 @@ def physical_connect(interfaces=INTERFACES):
         except OSError:
             upstream.close()
     raise OSError('No allowed physical NPS path; refusing proxy fallback')
+
+def interface_usable(name, index=None, source_ip=None):
+    """Check link state and IPv4 address, not just the persistent device index."""
+    if not re.fullmatch(r'en[0-9]+', name):
+        return False
+    try:
+        current_index = socket.if_nametoindex(name)
+        if current_index <= 0 or (index is not None and current_index != index):
+            return False
+        state = subprocess.run(['/sbin/ifconfig', name], capture_output=True,
+                               text=True, timeout=2, check=False)
+        if state.returncode != 0 or 'status: active' not in state.stdout:
+            return False
+        addresses = re.findall(r'^\s*inet\s+(\d{1,3}(?:\.\d{1,3}){3})\b',
+                               state.stdout, re.MULTILINE)
+        return bool(addresses) and (source_ip is None or source_ip in addresses)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+def watch_connection(upstream, name, index, closed, interfaces=INTERFACES):
+    """Force a reconnect after link loss, or when a stable higher-priority link returns."""
+    source_ip = upstream.getsockname()[0]
+    better_since = None
+    while not closed.wait(LINK_CHECK_SECONDS):
+        if not interface_usable(name, index, source_ip):
+            return 'bound interface lost its link or address'
+        try:
+            rank = interfaces.index(name)
+        except ValueError:
+            return 'bound interface is no longer allowed'
+        preferred = next((candidate for candidate in interfaces[:rank]
+                          if interface_usable(candidate)), None)
+        if preferred is None:
+            better_since = None
+            continue
+        now = time.monotonic()
+        if better_since is None or better_since[0] != preferred:
+            better_since = preferred, now
+            continue
+        if now - better_since[1] < FAILBACK_STABLE_SECONDS:
+            continue
+        try:
+            probe, _, _ = physical_connect((preferred,))
+            probe.close()
+            return 'higher-priority physical interface reachable: ' + preferred
+        except OSError:
+            # Link-up alone does not prove the Tencent endpoint is reachable.
+            better_since = preferred, now
+    return None
 
 def handle(client):
     upstream = None
@@ -68,12 +121,9 @@ def handle(client):
         workers = [threading.Thread(target=pump, args=pair, daemon=True)
                    for pair in ((client, upstream), (upstream, client))]
         for worker in workers: worker.start()
-        while not closed.wait(2):
-            # Disconnect on unplug/device replacement rather than following a new route.
-            try:
-                if socket.if_nametoindex(name) != index:
-                    break
-            except OSError: break
+        reason = watch_connection(upstream, name, index, closed)
+        if reason:
+            logging.info('NPS connection will re-establish: %s', reason)
         close()
         for worker in workers: worker.join(timeout=2)
     except OSError:

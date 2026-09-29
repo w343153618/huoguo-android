@@ -3,20 +3,26 @@ package local.remoteandroid.direct;
 /** Map scrcpy's monotonic media timestamps to one local audio/video clock. */
 final class PlaybackClock {
     static final long BUFFER_NS=80_000_000L;
+    private static final long MAX_DECODER_HOLD_NS=200_000_000L;
+    private static final long PRESENT_LEAD_NS=3_000_000L;
     private final long bufferNs;
     PlaybackClock(){this(80);}
     PlaybackClock(int bufferMs){if(bufferMs<30||bufferMs>200)throw new IllegalArgumentException("Invalid buffer");bufferNs=bufferMs*1_000_000L;}
     private long offsetNs;
     private long lastArrivalNs;
+    private long decoderHoldNs;
     private boolean initialized;
+    private boolean videoAnchored;
+    private int lateVideoFrames;
 
     synchronized void observe(long ptsUs,long arrivalNs) {
         long sourceNs=ptsUs*1000L;
-        if(!initialized || arrivalNs-(sourceNs+offsetNs)>250_000_000L
+        if(!videoAnchored || arrivalNs-(sourceNs+offsetNs)>250_000_000L
                 || sourceNs+offsetNs-arrivalNs>1_000_000_000L) {
             // Recover from a large transport stall/reset without accumulating delay forever.
             offsetNs=arrivalNs+bufferNs-sourceNs;
             initialized=true;
+            videoAnchored=true;
         } else {
             // A stall can leave the old mapping far behind fresh arriving frames.
             // Recover at <=5% of wall time, preserving a shared A/V mapping and jitter buffer.
@@ -27,8 +33,30 @@ final class PlaybackClock {
         lastArrivalNs=Math.max(lastArrivalNs,arrivalNs);
     }
 
+    synchronized void observeAudio(long ptsUs,long arrivalNs) {
+        // Audio may arrive first, but an earlier audio packet must not pull the
+        // video presentation clock ahead of frames still being encoded/delivered.
+        if(!initialized) {
+            offsetNs=arrivalNs+bufferNs-ptsUs*1000L;
+            lastArrivalNs=arrivalNs;
+            initialized=true;
+        }
+    }
+
+    synchronized long videoDeadline(long ptsUs,long decoderReadyNs) {
+        long scheduled=deadline(ptsUs);
+        long behind=decoderReadyNs+PRESENT_LEAD_NS-scheduled;
+        if(behind>40_000_000L) {
+            if(++lateVideoFrames>=3) {
+                decoderHoldNs+=Math.min(behind,MAX_DECODER_HOLD_NS-decoderHoldNs);
+                scheduled=deadline(ptsUs);
+            }
+        } else lateVideoFrames=0;
+        return scheduled;
+    }
+
     synchronized long deadline(long ptsUs) {
         if(!initialized)throw new IllegalStateException("Missing media timestamp");
-        return ptsUs*1000L+offsetNs;
+        return ptsUs*1000L+offsetNs+decoderHoldNs;
     }
 }

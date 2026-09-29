@@ -100,7 +100,7 @@ scrcpy 服务遵循 Apache 2.0，见 `LICENSE.scrcpy`。本项目未另行授予
 
 ### 南京家庭出口与 Clash TUN
 
-M5 可继续开启 Clash TUN，安卓的 YouTube 等网页访问可使用原有代理。NPS 串流链路独立使用 `npc_physical_relay.py`：NPC 只连接本机 `127.0.0.1:18024`，relay 只允许连接固定 `146.56.249.175:8024`，IPv4 socket 使用 macOS `IP_BOUND_IF` 绑定 `en11`，失败时尝试 `en0`。物理接口不可用、绑定失败或设备被替换时关闭连接；不会使用普通未绑定 socket 或代理回退。relay 不提供任意目标代理，监听仅限 loopback。
+M5 可继续开启 Clash TUN，安卓的 YouTube 等网页访问可使用原有代理。NPS 串流链路独立使用 `npc_physical_relay.py`：NPC 只连接本机 `127.0.0.1:18024`，relay 只允许连接固定 `146.56.249.175:8024`，IPv4 socket 使用 macOS `IP_BOUND_IF` 优先绑定有线 `en11`，失败时尝试 Wi-Fi `en0`。程序每 5 秒检查当前链路和源 IPv4；链路断开则关闭旧连接，让 NPC 重连。若正在使用 Wi-Fi，等有线恢复并稳定 15 秒后，先用有线接口验证可连接腾讯云，再关闭旧连接并自动切回有线。切换会断开现有串流，手机可能需要重新点连接；尚未进行真实拔插网线的端到端演练。物理接口不可用或绑定失败时，不使用普通未绑定 socket 或代理回退。relay 不提供任意目标代理，监听仅限 loopback。
 
 现有 Clash 持久化规则仍保留 NPS `/32` 的 TUN route-exclude 和 DIRECT，作为额外保护。2026-09-29 在 TUN 开启时再次读回活动连接，物理绑定与服务端实际来源一致且命中服务器现有 cn4 集合；模拟 VPN-only/缺失网卡均拒绝连接，不回退代理。验证结果见 [nps-physical-path-20260929.json](docs/evidence/network/nps-physical-path-20260929.json)。部署已用 M5 活动连接与 NPS 本机 API 确认家庭公网来源；不能据此承诺云厂商的账号风控或服务条款判定。手机端若有 VPN，也需对本 App / NPS 地址配置国内直连；它的出口与 M5 的 NPC 是不同的连接。
 
