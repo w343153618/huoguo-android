@@ -12,7 +12,7 @@ SERIAL = os.environ.get('DIRECT_SERIAL','emulator-5554')
 AVD = os.environ.get('DIRECT_AVD','RemoteAndroid17')
 VIDEO_MAX_SIZE = int(os.environ.get('DIRECT_MAX_SIZE','960'))
 EMULATOR = str(SDK / 'emulator/emulator')
-RAMDISK = str(pathlib.Path.home() / 'Documents/ChatGPT/others/android-remote/boot/ramdisk-ksu.img')
+RAMDISK = os.environ.get('DIRECT_RAMDISK',str(pathlib.Path.home() / 'Documents/ChatGPT/others/android-remote/boot/ramdisk-ksu.img'))
 vm_proc = None
 lock = threading.RLock()
 sessions = {}
@@ -28,10 +28,10 @@ def ensure_android():
         device_present=adb('get-state').stdout.strip() == 'device'
         if device_present and adb('shell','getprop','sys.boot_completed').stdout.strip() == '1': return
     except Exception: pass
-    if not device_present and (vm_proc is None or vm_proc.poll() is not None):
+    if not os.environ.get('DIRECT_EXTERNAL_VM') and not device_present and (vm_proc is None or vm_proc.poll() is not None):
         log=open(BASE/'emulator.log','ab',buffering=0)
         args=[EMULATOR,'@'+AVD,'-port','5554','-gpu','host','-no-window','-no-snapshot','-no-boot-anim','-no-metrics']
-        if AVD=='RemoteAndroid17': args+=['-ramdisk',RAMDISK]
+        if os.environ.get('DIRECT_RAMDISK') or AVD=='RemoteAndroid17': args+=['-ramdisk',RAMDISK]
         vm_proc=subprocess.Popen(args,stdout=log,stderr=log)
         log.close()
     for attempt in range(120):
