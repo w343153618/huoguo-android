@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-09-29T12:09:21.367286+00:00",
+  "m5_clash": {
+    "tun_enabled": true,
+    "mode": "rule",
+    "nps_32_route_excluded": true,
+    "nps_ip_direct_rule": true,
+    "npc_process_direct_rule": true,
+    "persistent_global_script_has_exclusion": true
+  },
+  "npc": {
+    "client_id": 1466,
+    "server_addr": "127.0.0.1:18024",
+    "connected": true,
+    "guest_npc_process_present": false
+  },
+  "fixed_relay": {
+    "listen": "127.0.0.1:18024",
+    "only_destination": "146.56.249.175:8024",
+    "allowed_interfaces": [
+      "en11",
+      "en0"
+    ],
+    "active_interface": "en11",
+    "local_address": "192.168.9.99",
+    "ip_bound_if_readback_matches": true,
+    "unusable_proxy_environment_ignored": true,
+    "vpn_only_interface_refused": true,
+    "missing_interface_refused": true,
+    "unbound_proxy_fallback_present": false
+  },
+  "cloud_readback": {
+    "actual_client_source_matches_existing_cn4_policy": true,
+    "tcp_peer_matches_client_source": true,
+    "public_home_ip_omitted": true,
+    "firewall_changed": false
+  },
+  "guest_https": {
+    "probe_execution": "Android app_process using platform TLS validation",
+    "youtube_homepage": 200,
+    "google_generate_204": 204,
+    "youtube_thumbnail": 200,
+    "baidu": 200,
+    "authenticated_playback_verified": false
+  },
+  "existing_relay_unit_checks_passed": 3,
+  "scope": "Verified current controlled physical routing and source policy, not a guarantee of cloud-provider account decisions."
+}

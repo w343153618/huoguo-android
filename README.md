@@ -100,7 +100,7 @@ scrcpy 服务遵循 Apache 2.0，见 `LICENSE.scrcpy`。本项目未另行授予
 
 M5 可继续开启 Clash TUN，安卓的 YouTube 等网页访问可使用原有代理。NPS 串流链路独立使用 `npc_physical_relay.py`：NPC 只连接本机 `127.0.0.1:18024`，relay 只允许连接固定 `146.56.249.175:8024`，IPv4 socket 使用 macOS `IP_BOUND_IF` 绑定 `en11`，失败时尝试 `en0`。物理接口不可用、绑定失败或设备被替换时关闭连接；不会使用普通未绑定 socket 或代理回退。relay 不提供任意目标代理，监听仅限 loopback。
 
-现有 Clash 持久化规则仍保留 NPS `/32` 的 TUN route-exclude 和 DIRECT，作为额外保护。部署已用 M5 活动连接与 NPS 本机 API 确认家庭公网来源；不能据此承诺云厂商的账号风控或服务条款判定。手机端若有 VPN，也需对本 App / NPS 地址配置国内直连；它的出口与 M5 的 NPC 是不同的连接。
+现有 Clash 持久化规则仍保留 NPS `/32` 的 TUN route-exclude 和 DIRECT，作为额外保护。2026-09-29 在 TUN 开启时再次读回活动连接，物理绑定与服务端实际来源一致且命中服务器现有 cn4 集合；模拟 VPN-only/缺失网卡均拒绝连接，不回退代理。验证结果见 [nps-physical-path-20260929.json](docs/evidence/network/nps-physical-path-20260929.json)。部署已用 M5 活动连接与 NPS 本机 API 确认家庭公网来源；不能据此承诺云厂商的账号风控或服务条款判定。手机端若有 VPN，也需对本 App / NPS 地址配置国内直连；它的出口与 M5 的 NPC 是不同的连接。
 
 当前安卓仍使用模拟器 NAT。官方 `-vmnet-bridged` 在 M1 的只读副本测试因 macOS 权限失败，未获得桥接 DHCP；没有把 NPC 直连保护叫作安卓桥接。按现有爱快无境外出口的条件，裸桥接也不能自动提供 YouTube 访问。
 
