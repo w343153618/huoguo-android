@@ -1,5 +1,6 @@
 """Read-only Git deployment key pulls signed release artifacts for the HTTPS gateway."""
 import hashlib,json,os,pathlib,re,subprocess,tempfile
+from download_page import sync_downloads
 root=pathlib.Path.home()/'Library/Application Support/AndroidRemote/direct'
 cache=root/'github-update-cache';cache.mkdir(mode=0o700,exist_ok=True)
 repo='w343153618/huoguo-android'
@@ -28,7 +29,8 @@ if current.exists():
     if code<before['version_code']:raise RuntimeError('Refuse downgrade')
     if code==before['version_code']:
         if metadata!=before:raise RuntimeError('Same-version release must be immutable')
-        print('Updates unchanged');raise SystemExit(0)
+        sync_downloads(updates, root/'download', metadata)
+        print('Updates unchanged; manual download entrypoint synchronized');raise SystemExit(0)
 apk=git('show','FETCH_HEAD:HuoguoAndroid.apk')
 if not 0<len(apk)<=67108864 or len(apk)!=metadata['apk_size'] or hashlib.sha256(apk).hexdigest()!=metadata['sha256']:raise RuntimeError('Release digest/size mismatch')
 def atomic(path,data):
@@ -40,4 +42,5 @@ def atomic(path,data):
         if os.path.exists(temp):os.unlink(temp)
 atomic(updates/name,apk)
 atomic(current,(json.dumps(metadata,ensure_ascii=False,indent=2)+'\n').encode())
+sync_downloads(updates, root/'download', metadata)
 print('Published signed update version '+version+' to HTTPS gateway; client verifies APK signing identity')

@@ -109,3 +109,5 @@ M5 可继续开启 Clash TUN，安卓的 YouTube 等网页访问可使用原有�
 ## 空闲息屏与自动恢复
 
 M5 网关在最后一个串流退出后等待 300 秒，向安卓发送明确的 SLEEP 键；重新建立串流前发送 WAKEUP 键。取消计时与新连接共用会话锁，避免旧计时把刚连接的安卓关闭屏幕。网关初次启动也计时；设备暂不可用时延后重试。虚拟机常驻，息屏并不保证暂停后台音频、下载或网络任务。已有用户 LaunchAgent 为网关、虚拟机和 NPS 设置 RunAtLoad/KeepAlive，用户登录后自动启动并在异常退出时恢复；安卓重启后网关等待启动完成再创建串流。macOS 未登录、FileVault 等待解锁或主机休眠期间无法提供远程连接。
+
+手动下载入口随升级清单同步：M5 的下载主页、版本文件和通用 `AndroidDirect.apk` 都使用同一签名包。即使更新清单版本未变化，轮询也修复遗留的旧页面；校验失败不覆盖现有下载。M1 本地 `phone-download` 的旧入口已同步至 v1.16。公开升级清单与旧版客户端的真实安装流程验证见 [update-entrypoint-repair.json](docs/evidence/client-v116/update-entrypoint-repair.json)。

@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-09-29T11:52:04.049154+00:00",
+  "confirmed_issue": "M1 and M5 manual download pages and generic download file still referenced v1.14",
+  "public_manifest_version": "1.16",
+  "old_apk_manifest_url_matches_current": true,
+  "native_update": {
+    "native_old_app_public_update_check": "passed",
+    "native_system_installer_upgrade_v114_to_v116": "passed",
+    "homepage_version": [
+      "已安装版本 v1.16 · 版本码 17"
+    ],
+    "authenticated_stream_started": false
+  },
+  "download_entrypoints": {
+    "m5_download_page_http_status": 200,
+    "page_version": "1.16",
+    "m5_legacy_apk_download_status": 200,
+    "legacy_alias_sha256": "86f4003bad43b090785545ed6240f708322fbfc6b11058c90a919583e8c05f89",
+    "canonical_public_url": "https://146.56.249.175:15556/updates/HuoguoAndroid-v1.16.apk"
+  },
+  "automatic_manual_page_sync_deployed": true,
+  "python_tests_passed": 47,
+  "oneplus15_live_verified": false
+}
