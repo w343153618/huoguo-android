@@ -6,8 +6,8 @@ android {
         applicationId 'local.remoteandroid.direct'
         minSdk 30
         targetSdk 37
-        versionCode 10
-        versionName '1.9'
+        versionCode 11
+        versionName '1.10'
         buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: '').replace('"', '') + '"'
     }
     buildFeatures { buildConfig true }

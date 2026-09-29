@@ -13,3 +13,10 @@ def parse_settings(settings, default_size):
     if type(bitrate) is not int or not MIN_BIT_RATE <= bitrate <= MAX_BIT_RATE:
         raise ValueError('Video bitrate must be 500000 to 12000000 bits/s')
     return size, bitrate
+
+
+def parse_bitrate_mode(settings):
+    mode=settings.get('bitrate_mode','CBR')
+    if type(mode) is not str or mode not in ('CBR','VBR'):
+        raise ValueError('Supported bitrate modes: CBR, VBR')
+    return mode, {'CBR':2, 'VBR':1}[mode]

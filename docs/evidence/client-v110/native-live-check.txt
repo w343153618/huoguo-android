@@ -1,0 +1,8 @@
+INSTRUMENTATION_RESULT: configured_mode=CBR (2), capability supported and configure/start accepted
+INSTRUMENTATION_RESULT: encoder=c2.android.avc.encoder
+INSTRUMENTATION_RESULT: passed=codec
+INSTRUMENTATION_CODE: -1
+INSTRUMENTATION_RESULT: passed=stream
+INSTRUMENTATION_RESULT: rendered=362
+INSTRUMENTATION_RESULT: rtt_ms=1
+INSTRUMENTATION_CODE: -1

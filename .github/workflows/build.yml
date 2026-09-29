@@ -34,4 +34,6 @@ jobs:
           java -cp /tmp/endpoint-check local.remoteandroid.direct.EndpointCheck
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Bitrate.java tests/BitrateCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.BitrateCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/PlaybackClock.java tests/PlaybackClockCheck.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.PlaybackClockCheck
 # This job never publishes its temporary CI-signed APK. Upgrade signing stays on the owner's Mac.

@@ -1,5 +1,5 @@
 import unittest
-from stream_settings import parse_settings
+from stream_settings import parse_settings, parse_bitrate_mode
 
 class StreamSettingsTest(unittest.TestCase):
     def test_old_client_default(self):
@@ -15,3 +15,10 @@ class StreamSettingsTest(unittest.TestCase):
         for settings in ([],None,{'max_size':True},{'max_size':720}):
             with self.subTest(settings=settings),self.assertRaises(ValueError):
                 parse_settings(settings,1600)
+
+    def test_bitrate_modes(self):
+        self.assertEqual(parse_bitrate_mode({}),('CBR',2))
+        self.assertEqual(parse_bitrate_mode({'bitrate_mode':'VBR'}),('VBR',1))
+        for mode in ('AVBR','CBR_FD',0,True,None,'vbr'):
+            with self.subTest(mode=mode),self.assertRaises(ValueError):
+                parse_bitrate_mode({'bitrate_mode':mode})

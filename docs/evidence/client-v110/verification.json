@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-29",
+  "client_version": "1.10",
+  "native_password_ui_save": true,
+  "native_password_process_restart_restore": true,
+  "ciphertext_only_preferences": true,
+  "account_binding_and_aad_tamper_rejection": true,
+  "clear_password_and_key_survives_restart": true,
+  "legacy_default_migration_and_manual_choice_preservation": true,
+  "encoder": "c2.android.avc.encoder",
+  "cbr_capability_supported": true,
+  "cbr_configuration_and_start_accepted": true,
+  "native_stream_test": "362 frames rendered in 12-second emulator/host test; not a continuous-motion FPS benchmark",
+  "clock_jitter_stall_reset_unit_check": true,
+  "physical_oneplus_acceptance": "not tested by agent",
+  "full_touch_to_photon_latency": "not measured",
+  "temporary_test_account_removed": true,
+  "client_app_and_data_retained": true,
+  "vbr_capability_supported": true,
+  "native_stream_mode": "VBR",
+  "metrics_hide_show_native_click_test": true,
+  "metrics_hidden_state_saved": true
+}
