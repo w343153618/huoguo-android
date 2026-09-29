@@ -1,0 +1,14 @@
+local.properties
+.gradle/
+**/build/
+__pycache__/
+*.pyc
+*.apk
+*.keystore
+*.jks
+*.p12
+*key.pem
+auth.json*
+npc.conf
+*.log
+.env*

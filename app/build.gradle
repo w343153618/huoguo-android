@@ -1,0 +1,25 @@
+apply plugin: 'com.android.application'
+android {
+    namespace 'local.remoteandroid.direct'
+    compileSdk 37
+    defaultConfig {
+        applicationId 'local.remoteandroid.direct'
+        minSdk 30
+        targetSdk 37
+        versionCode 7
+        versionName '1.6'
+        buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: '').replace('"', '') + '"'
+    }
+    buildFeatures { buildConfig true }
+    signingConfigs {
+        distribution {
+            if (System.getenv('ANDROID_KEYSTORE_FILE')) {
+                storeFile file(System.getenv('ANDROID_KEYSTORE_FILE'))
+                storePassword System.getenv('ANDROID_STORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes { release { signingConfig System.getenv('ANDROID_KEYSTORE_FILE') ? signingConfigs.distribution : signingConfigs.debug; minifyEnabled false } }
+}
