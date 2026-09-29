@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory(prefix='huoguo-release-') as directory:
     if args.resume:
         run(['gh','release','download',tag,'--repo',args.repository,'--pattern','HuoguoAndroid.apk','--pattern','update.json','--dir',directory])
     else:
-        run(['./gradlew','assembleRelease','-PupdateManifestUrl='+args.base_url+'/update.json'])
+        run(['./gradlew',':app:assembleRelease','-PupdateManifestUrl='+args.base_url+'/update.json'])
         shutil.copy2(root/'app/build/outputs/apk/release/app-release.apk',temp/'HuoguoAndroid.apk')
         run(['python3','scripts/release_manifest.py','--repository',args.repository,'--tag',tag,'--base-url',args.base_url,'--apk',str(temp/'HuoguoAndroid.apk'),'--output',str(temp/'update.json')])
     validate(temp/'HuoguoAndroid.apk',json.loads((temp/'update.json').read_text()))
