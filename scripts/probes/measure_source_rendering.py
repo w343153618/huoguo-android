@@ -87,6 +87,7 @@ def main():
     parser.add_argument('--duration', type=float, default=10)
     parser.add_argument('--repeats', type=int, default=2)
     parser.add_argument('--fps', type=int, choices=(30, 60, 120), default=30)
+    parser.add_argument('--avd', default='phone17-root', help='running AVD name for hardware capture')
     parser.add_argument('--source-clock', choices=('floor', 'nearest'), default='floor')
     parser.add_argument('--capture', choices=('none', 'hardware'), default='none')
     parser.add_argument('--renderer', choices=('skiagl', 'skiavk'))
@@ -122,7 +123,7 @@ def main():
             if args.capture == 'hardware':
                 child = subprocess.run([sys.executable, str(pathlib.Path(__file__).with_name('measure_host_hardware.py')),
                                         '--discovery', str(args.discovery), '--encoder', str(args.encoder),
-                                        '--duration', str(args.duration), '--fps', str(args.fps),
+                                        '--duration', str(args.duration), '--fps', str(args.fps), '--avd', args.avd,
                                         '--source-fps', str(args.fps)],
                                        capture_output=True, text=True, timeout=args.duration + 35)
                 if child.returncode:

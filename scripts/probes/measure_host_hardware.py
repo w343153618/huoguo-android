@@ -51,6 +51,13 @@ def main():
         raise RuntimeError('existing stream active; measurement refused')
     if not capture.synthetic_foreground(pathlib.Path(software.ADB), software.SERIAL):
         raise RuntimeError('synthetic scene must be focused')
+    size_text = software.adb('shell', 'wm', 'size')
+    size_match = re.search(r'Physical size: (\d+)x(\d+)', size_text)
+    if not size_match:
+        raise RuntimeError('physical display size unavailable')
+    expected_width, expected_height = map(int, size_match.groups())
+    if not (2 <= expected_width <= 4096 and 2 <= expected_height <= 4096):
+        raise ValueError('physical display size outside probe bounds')
     metadata = (('authorization', 'Bearer ' + token),)
     channel = grpc.insecure_channel(target, options=[('grpc.max_receive_message_length', 64 * 1024 * 1024)])
     process = subprocess.Popen([str(args.encoder), '--fps', str(args.fps), '--bitrate', '4000000',
@@ -71,7 +78,7 @@ def main():
             if read(4) != b'h264':
                 raise ValueError('invalid H264 codec header')
             marker, width, height = struct.unpack('>III', read(12))
-            if marker != 0x80000000 or [width, height] != [540, 1200]:
+            if marker != 0x80000000 or [width, height] != [expected_width, expected_height]:
                 raise ValueError('unexpected physical video dimensions')
             dimensions.extend([width, height])
             while True:
@@ -96,7 +103,7 @@ def main():
     reader = threading.Thread(target=receive, daemon=True)
     reader.start()
     stub = proto_grpc.EmulatorControllerStub(channel)
-    request = proto.ImageFormat(format=proto.ImageFormat.RGBA8888, width=540, height=1200, display=0)
+    request = proto.ImageFormat(format=proto.ImageFormat.RGBA8888, width=expected_width, height=expected_height, display=0)
     begin = time.monotonic()
     start = begin + 2
     end = start + args.duration
@@ -114,7 +121,7 @@ def main():
             width, height, size, seq, pts, age = capture.frame_info(image)
             if not size:
                 continue
-            if [width, height] != [540, 1200] or size != 540 * 1200 * 4:
+            if [width, height] != [expected_width, expected_height] or size != expected_width * expected_height * 4:
                 raise ValueError('invalid complete RGBA capture')
             if pts <= last_pts:
                 duplicate_timestamps += 1

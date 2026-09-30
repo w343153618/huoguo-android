@@ -1,0 +1,15 @@
+{
+  "label": "android17-vlc-local-verified",
+  "scope": "local 720x1280 VLC video capture, no encoder or network",
+  "duration_seconds": 10.0,
+  "captured_frames": 318,
+  "capture_fps": 31.8,
+  "consecutive_changed_frames": 318,
+  "changed_fps": 31.8,
+  "consecutive_duplicates": 0,
+  "change_gap_p50_ms": 33.284,
+  "change_gap_p95_ms": 34.604,
+  "change_gaps_over_50ms": 3,
+  "capture_age_p95_ms": 3.699,
+  "pixel_persistence": false
+}
