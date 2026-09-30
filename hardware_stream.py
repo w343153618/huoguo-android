@@ -467,7 +467,24 @@ def worker(args):
                     raise EOFError('guest input service stopped')
                 control_reply(data)
 
-        for function in (collect, native_events, video_input, audio_output, input_events, guest_replies):
+        def sample_pipeline():
+            previous_time = time.monotonic()
+            previous = {key: counters[key] for key in ('raw_frames', 'pending_frames_replaced',
+                                                       'frames_submitted', 'idle_repeats')}
+            while not stop.wait(5):
+                now = time.monotonic()
+                elapsed = max(now - previous_time, 0.001)
+                current = {key: counters[key] for key in previous}
+                log({'event': 'pipeline_sample', 'unix_ms': time.time_ns() // 1_000_000,
+                     'interval_ms': round(elapsed * 1000), 'fps_cap': args.fps,
+                     'raw_fps': round((current['raw_frames'] - previous['raw_frames']) / elapsed, 2),
+                     'submitted_fps': round((current['frames_submitted'] - previous['frames_submitted']) / elapsed, 2),
+                     'replaced_fps': round((current['pending_frames_replaced'] - previous['pending_frames_replaced']) / elapsed, 2),
+                     'idle_repeats': current['idle_repeats'] - previous['idle_repeats']})
+                previous_time, previous = now, current
+
+        for function in (collect, native_events, video_input, audio_output, input_events, guest_replies,
+                         sample_pipeline):
             background(function)
         while not stop.wait(.1):
             if native.poll() is not None or audio_control.poll() is not None:

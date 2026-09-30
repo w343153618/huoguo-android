@@ -50,6 +50,14 @@ final class PlaybackClock {
             if(++lateVideoFrames>=3) {
                 decoderHoldNs+=Math.min(behind,MAX_DECODER_HOLD_NS-decoderHoldNs);
                 scheduled=deadline(ptsUs);
+                // The bounded hold cannot recover a larger decoder backlog.
+                // Re-anchor to the decoded frame instead of dropping every
+                // subsequent output while the receive stream stays healthy.
+                if(decoderReadyNs+PRESENT_LEAD_NS-scheduled>40_000_000L) {
+                    offsetNs=decoderReadyNs+bufferNs-ptsUs*1000L-decoderHoldNs;
+                    scheduled=deadline(ptsUs);
+                    lateVideoFrames=0;
+                }
             }
         } else lateVideoFrames=0;
         return scheduled;

@@ -38,6 +38,21 @@ public final class PlaybackClockProbe {
             healthy.videoDeadline(ptsUs, ready);
         }
         equal(1_060_000_000L, healthy.deadline(0), "healthy decoder adds no delay");
+
+        // A decoder backlog greater than the bounded hold must recover instead
+        // of discarding every subsequent frame indefinitely.
+        PlaybackClock overloaded = new PlaybackClock(80);
+        overloaded.observe(0, 1_000_000_000L);
+        long target = 0;
+        for (int i = 0; i < 12; i++) {
+            long ptsUs = i * 33_333L;
+            long arrival = 1_000_000_000L + i * 33_333_000L;
+            overloaded.observe(ptsUs, arrival);
+            long ready = arrival + 500_000_000L;
+            target = overloaded.videoDeadline(ptsUs, ready);
+            if (i >= 3 && target < ready - 40_000_000L)
+                throw new AssertionError("decoder backlog never resynchronized at frame " + i);
+        }
         System.out.println("PlaybackClockProbe PASS");
     }
 }
