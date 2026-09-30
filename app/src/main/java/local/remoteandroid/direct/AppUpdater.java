@@ -26,9 +26,14 @@ final class AppUpdater {
     private final Activity activity;
     private final AtomicBoolean busy = new AtomicBoolean();
     private boolean waitingForPermission;
+    static final String DEFAULT_UPDATE_URL = "https://146.56.249.175:15556/updates/update.json";
+    static String getUpdateUrl() {
+        String u = BuildConfig.UPDATE_MANIFEST_URL;
+        return (u != null && !u.trim().isEmpty()) ? u.trim() : DEFAULT_UPDATE_URL;
+    }
     AppUpdater(Activity activity) { this.activity = activity; }
     void check(boolean manual) {
-        String url = BuildConfig.UPDATE_MANIFEST_URL;
+        String url = getUpdateUrl();
         if (url.isEmpty()) { if (manual) toast("更新入口尚未配置"); return; }
         android.content.SharedPreferences prefs = activity.getSharedPreferences("updates", 0);
         long now = System.currentTimeMillis();
@@ -174,7 +179,7 @@ final class AppUpdater {
         URL target = https(url);
         for (int redirects = 0; redirects < 6; redirects++) {
             HttpURLConnection connection = (HttpURLConnection) target.openConnection();
-            URL source = https(BuildConfig.UPDATE_MANIFEST_URL);
+            URL source = https(getUpdateUrl());
             if (target.getHost().equals(source.getHost()) && target.getPort() == source.getPort()) {
                 HttpsURLConnection secured = (HttpsURLConnection) connection;
                 KeyStore store = KeyStore.getInstance(KeyStore.getDefaultType()); store.load(null, null);
