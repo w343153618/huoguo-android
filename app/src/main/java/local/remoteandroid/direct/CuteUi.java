@@ -43,11 +43,13 @@ final class CuteUi {
             .setInterpolator(release?new OvershootInterpolator(1.3f):new DecelerateInterpolator()).start();
     }
     static LinearLayout controls(Context context,java.util.function.IntConsumer click){
-        LinearLayout bar=new LinearLayout(context);bar.setGravity(Gravity.CENTER);bar.setPadding(dp(context,8),0,dp(context,8),0);bar.setBackgroundColor(0xfff5fbf9);
-        String[] labels={"返回","主页","任务","文件","断开"};int[] icons={R.drawable.ic_back,R.drawable.ic_home,R.drawable.ic_tasks,R.drawable.ic_files,R.drawable.ic_disconnect};
-        for(int i=0;i<5;i++){
+        LinearLayout bar=new LinearLayout(context);bar.setGravity(Gravity.CENTER);bar.setPadding(dp(context,4),0,dp(context,4),0);bar.setBackgroundColor(0xfff5fbf9);
+        String[] labels={"返回","主页","任务","横屏","文件","断开"};int[] icons={R.drawable.ic_back,R.drawable.ic_home,R.drawable.ic_tasks,R.drawable.ic_rotate,R.drawable.ic_files,R.drawable.ic_disconnect};
+        for(int i=0;i<6;i++){
             final int action=i;Button button=new Button(context);button.setText(labels[i]);button.setContentDescription(labels[i]);
-            style(button,i==4?PINK:MINT,true);Drawable icon=context.getDrawable(icons[i]);icon.setBounds(0,0,dp(context,16),dp(context,16));button.setCompoundDrawables(icon,null,null,null);button.setCompoundDrawablePadding(dp(context,4));
+            if(i==3)button.setTag("rotate_btn");
+            style(button,i==5?PINK:MINT,true);button.setPadding(dp(context,4),0,dp(context,4),0);
+            Drawable icon=context.getDrawable(icons[i]);icon.setBounds(0,0,dp(context,15),dp(context,15));button.setCompoundDrawables(icon,null,null,null);button.setCompoundDrawablePadding(dp(context,2));
             bar.addView(button,new LinearLayout.LayoutParams(0,dp(context,48),1));
             button.setOnClickListener(v->click.accept(action));
         }
