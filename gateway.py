@@ -33,7 +33,11 @@ auth_failures=[]
 auth_guard=threading.Lock()
 def adb(*args, **kw):
     return subprocess.run([ADB, '-s', SERIAL, *args], capture_output=True, text=True, timeout=20, check=True, **kw)
-idle_screen = IdleScreen(lock, lambda: bool(sessions), lambda: adb('shell','input','keyevent','223'), delay=300)
+def sleep_guest():
+    try: adb('shell','input','keyevent','127')
+    except Exception: pass
+    adb('shell','input','keyevent','223')
+idle_screen = IdleScreen(lock, lambda: bool(sessions), sleep_guest, delay=int(os.environ.get('DIRECT_IDLE_DELAY','15')))
 def ensure_android():
     global vm_proc
     device_present=False
