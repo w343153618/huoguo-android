@@ -49,9 +49,9 @@ final class DeviceProfiles {
         8000000,   // 8 Mbps
         60,        // 60 FPS
         60,        // 60 ms
-        "ADAPTIVE_VBR",
+        "VBR",
         1.0f,
-        -25,       // 声音超前 25ms 抵消扬声器硬件延迟
+        -50,       // 声音超前 50ms 达到绝对精准音画同步
         true,
         true
     );
@@ -66,9 +66,9 @@ final class DeviceProfiles {
         3500000,   // 3.5 Mbps
         30,        // 30 FPS
         80,        // 80 ms (严格 <= 80ms)
-        "ADAPTIVE_VBR",
+        "VBR",
         1.5f,
-        -25,       // 声音超前 25ms 抵消扬声器硬件延迟
+        -50,       // 声音超前 50ms 达到绝对精准音画同步
         false,
         false
     );
