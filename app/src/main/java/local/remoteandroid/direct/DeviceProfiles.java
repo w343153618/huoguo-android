@@ -16,12 +16,13 @@ final class DeviceProfiles {
         final int bufferMs;
         final String mode;
         final float audioGain;
+        final int avSyncOffsetMs;
         final boolean showMetrics;
         final boolean lowLatencyVendor;
 
         Profile(String id, String title, String subtitle, String summary,
                 int maxSize, int bitrate, int fps, int bufferMs,
-                String mode, float audioGain, boolean showMetrics, boolean lowLatencyVendor) {
+                String mode, float audioGain, int avSyncOffsetMs, boolean showMetrics, boolean lowLatencyVendor) {
             this.id = id;
             this.title = title;
             this.subtitle = subtitle;
@@ -32,6 +33,7 @@ final class DeviceProfiles {
             this.bufferMs = bufferMs;
             this.mode = mode;
             this.audioGain = audioGain;
+            this.avSyncOffsetMs = avSyncOffsetMs;
             this.showMetrics = showMetrics;
             this.lowLatencyVendor = lowLatencyVendor;
         }
@@ -49,6 +51,7 @@ final class DeviceProfiles {
         60,        // 60 ms
         "ADAPTIVE_VBR",
         1.0f,
+        -25,       // 声音超前 25ms 抵消扬声器硬件延迟
         true,
         true
     );
@@ -65,6 +68,7 @@ final class DeviceProfiles {
         80,        // 80 ms (严格 <= 80ms)
         "ADAPTIVE_VBR",
         1.5f,
+        -25,       // 声音超前 25ms 抵消扬声器硬件延迟
         false,
         false
     );

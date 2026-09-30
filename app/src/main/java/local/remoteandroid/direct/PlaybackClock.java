@@ -3,14 +3,22 @@ package local.remoteandroid.direct;
 /** Map scrcpy's monotonic media timestamps to one local audio/video clock. */
 final class PlaybackClock {
     static final long BUFFER_NS=80_000_000L;
+    private static final long MAX_DECODER_HOLD_NS=200_000_000L;
     private static final long PRESENT_LEAD_NS=3_000_000L;
     private final long bufferNs;
-    private final long maxHoldNs;
-    PlaybackClock(){this(80);}
-    PlaybackClock(int bufferMs){
-        int clamped = Math.max(30, Math.min(80, bufferMs));
-        bufferNs=clamped*1_000_000L;
-        maxHoldNs=Math.max(0L,80_000_000L-bufferNs);
+    private long avSyncOffsetNs;
+    PlaybackClock(){this(80,0);}
+    PlaybackClock(int bufferMs){this(bufferMs,0);}
+    PlaybackClock(int bufferMs,int avSyncOffsetMs){
+        if(bufferMs<30||bufferMs>200)throw new IllegalArgumentException("Invalid buffer");
+        bufferNs=bufferMs*1_000_000L;
+        avSyncOffsetNs=avSyncOffsetMs*1_000_000L;
+    }
+    synchronized void setAvSyncOffsetMs(int offsetMs){
+        avSyncOffsetNs=offsetMs*1_000_000L;
+    }
+    synchronized long audioDeadline(long ptsUs){
+        return deadline(ptsUs)+avSyncOffsetNs;
     }
     private long offsetNs;
     private long lastArrivalNs;
@@ -52,7 +60,7 @@ final class PlaybackClock {
         long behind=decoderReadyNs+PRESENT_LEAD_NS-scheduled;
         if(behind>40_000_000L) {
             if(++lateVideoFrames>=3) {
-                long holdRoom=Math.max(0L,maxHoldNs-decoderHoldNs);
+                long holdRoom=Math.max(0L,MAX_DECODER_HOLD_NS-decoderHoldNs);
                 if(holdRoom>0) {
                     decoderHoldNs+=Math.min(behind,holdRoom);
                     scheduled=deadline(ptsUs);

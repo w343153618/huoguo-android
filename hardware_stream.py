@@ -105,14 +105,14 @@ def scale_touch(frame, physical_size):
 
 
 class FrameRateBudget:
-    """Permit four-frame delivery jitter while bounding the sustained rate."""
-    def __init__(self, fps, clock=time.monotonic):
-        self.fps, self.clock = fps, clock
-        self.tokens, self.updated = 4., clock()
+    """Permit delivery jitter while bounding the sustained rate."""
+    def __init__(self, fps, clock=time.monotonic, burst=2.):
+        self.fps, self.clock, self.burst = fps, clock, burst
+        self.tokens, self.updated = float(burst), clock()
 
     def delay(self):
         now = self.clock()
-        self.tokens = min(4., self.tokens + max(0., now - self.updated) * self.fps)
+        self.tokens = min(self.burst, self.tokens + max(0., now - self.updated) * self.fps)
         self.updated = now
         return max(0., (1. - self.tokens) / self.fps)
 

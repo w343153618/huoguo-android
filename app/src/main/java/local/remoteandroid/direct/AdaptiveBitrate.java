@@ -9,7 +9,7 @@ final class AdaptiveBitrate {
     private long previousDelay=Long.MIN_VALUE;
     AdaptiveBitrate(int ceiling){
         if(ceiling<500000||ceiling>40000000)throw new IllegalArgumentException("Invalid ceiling");
-        this.ceiling=ceiling;target=ceiling;
+        this.ceiling=ceiling;target=Math.max(500000,ceiling*7/10);
     }
     synchronized int target(){return target;}
     synchronized void packet(long ptsUs,long arrivalNs){
@@ -24,12 +24,12 @@ final class AdaptiveBitrate {
     synchronized int update(long rttMs){
         if(rttMs>=0)baselineRtt=Math.min(baselineRtt,rttMs);
         long packets=windowPackets,delay=windowDelay;windowPackets=0;windowDelay=0;
-        boolean rttCongestion=rttMs>=0&&baselineRtt!=Long.MAX_VALUE&&rttMs-baselineRtt>120;
-        boolean growing=previousDelay!=Long.MIN_VALUE&&delay>200&&delay>previousDelay+60;
-        boolean congested=packets>=8&&(delay>300||growing||rttCongestion);
-        boolean healthy=packets>=8&&delay<120&&!rttCongestion&&rttMs>=0;
-        if(congested){target=Math.max(1000000,target*4/5);stable=0;}
-        else if(healthy){if(++stable>=1){target=Math.min(ceiling,target+Math.max(500000,target/6));stable=0;}}
+        boolean rttCongestion=rttMs>=0&&baselineRtt!=Long.MAX_VALUE&&rttMs-baselineRtt>80;
+        boolean growing=previousDelay!=Long.MIN_VALUE&&delay>previousDelay+35;
+        boolean congested=packets>=8&&(delay>140||growing||rttCongestion);
+        boolean healthy=packets>=8&&delay<70&&!rttCongestion&&rttMs>=0;
+        if(congested){target=Math.max(500000,target*3/4);stable=0;}
+        else if(healthy){if(++stable>=4){target=Math.min(ceiling,target+Math.max(100000,target/10));stable=0;}}
         else stable=0;
         if(packets>=8)previousDelay=delay;
         // After backing off, allow a stable lower-latency path to establish a new baseline.
