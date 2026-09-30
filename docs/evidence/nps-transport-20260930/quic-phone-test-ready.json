@@ -1,0 +1,58 @@
+{
+  "transport": "quic",
+  "timestamp_utc": "2026-09-30T07:34:21.779333+00:00",
+  "target": "146.56.249.175:15557",
+  "physical_interface": "en0",
+  "physical_source_ips": [
+    "192.168.9.125"
+  ],
+  "samples_requested": 5,
+  "successes": 5,
+  "failures": [],
+  "total_ms": {
+    "median": 135.56,
+    "p95": 141.3,
+    "max": 141.49
+  },
+  "first_byte_ms": {
+    "median": 135.27,
+    "p95": 140.19
+  },
+  "raw": [
+    {
+      "source_ip": "192.168.9.125",
+      "connect_ms": 14.2,
+      "tls_ms": 56.18,
+      "first_byte_ms": 125.65,
+      "total_ms": 131.22
+    },
+    {
+      "source_ip": "192.168.9.125",
+      "connect_ms": 15.26,
+      "tls_ms": 67.97,
+      "first_byte_ms": 138.69,
+      "total_ms": 140.54
+    },
+    {
+      "source_ip": "192.168.9.125",
+      "connect_ms": 15.29,
+      "tls_ms": 57.85,
+      "first_byte_ms": 122.45,
+      "total_ms": 122.64
+    },
+    {
+      "source_ip": "192.168.9.125",
+      "connect_ms": 13.59,
+      "tls_ms": 56.0,
+      "first_byte_ms": 135.27,
+      "total_ms": 135.56
+    },
+    {
+      "source_ip": "192.168.9.125",
+      "connect_ms": 20.11,
+      "tls_ms": 60.23,
+      "first_byte_ms": 140.57,
+      "total_ms": 141.49
+    }
+  ]
+}

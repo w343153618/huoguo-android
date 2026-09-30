@@ -1,0 +1,88 @@
+{
+  "transport": "tailscale",
+  "host": "100.65.0.3",
+  "source": "YouTube dQw4w9WgXcQ restarted; forced Tencent domestic DERP; phone home Wi-Fi",
+  "mode": "ADAPTIVE_VBR",
+  "requested_bps": 4000000,
+  "decoder": "c2.qti.avc.decoder.low_latency",
+  "hardware": true,
+  "size": "540x1200",
+  "fps_limit": 60,
+  "buffer_ms": 80,
+  "late_total": 73,
+  "running_at_end": true,
+  "adaptive_rejected": false,
+  "rx_fps": {
+    "mean": 25.63,
+    "p10": 24.98,
+    "p95": 27.0,
+    "min": 22,
+    "max": 27
+  },
+  "render_fps": {
+    "mean": 24.16,
+    "p10": 19.0,
+    "p95": 28.0,
+    "min": 17,
+    "max": 29
+  },
+  "late_fps": {
+    "mean": 1.5,
+    "p10": 0.0,
+    "p95": 4.0,
+    "min": 0,
+    "max": 6
+  },
+  "rtt_ms": {
+    "mean": 32.38,
+    "p10": 29.0,
+    "p95": 41.65,
+    "min": 29,
+    "max": 42
+  },
+  "video_mbps": {
+    "mean": 2.15,
+    "p10": 1.59,
+    "p95": 2.95,
+    "min": 0.77,
+    "max": 3.27
+  },
+  "decoder_hold_ms": {
+    "mean": 200,
+    "p10": 200.0,
+    "p95": 200.0,
+    "min": 200,
+    "max": 200
+  },
+  "audio_queued_ms": {
+    "mean": 134.43,
+    "p10": 126.33,
+    "p95": 145.0,
+    "min": 122.33,
+    "max": 145
+  },
+  "render_gaps_ms": {
+    "p95": 75.71,
+    "p99": 126.73,
+    "max": 248.127135,
+    "over_100ms": 22
+  },
+  "source_raw_fps": {
+    "mean": 25.63,
+    "min": 24.43,
+    "max": 26.19,
+    "windows": 7
+  },
+  "source_submitted_fps": {
+    "mean": 25.6,
+    "min": 24.43,
+    "max": 26.19,
+    "windows": 7
+  },
+  "source_replaced_fps": {
+    "mean": 0.06,
+    "min": 0.0,
+    "max": 0.2,
+    "windows": 7
+  }
+}

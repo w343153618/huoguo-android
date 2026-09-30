@@ -105,14 +105,14 @@ def scale_touch(frame, physical_size):
 
 
 class FrameRateBudget:
-    """Permit two-frame delivery jitter while bounding the sustained rate."""
+    """Permit four-frame delivery jitter while bounding the sustained rate."""
     def __init__(self, fps, clock=time.monotonic):
         self.fps, self.clock = fps, clock
-        self.tokens, self.updated = 2., clock()
+        self.tokens, self.updated = 4., clock()
 
     def delay(self):
         now = self.clock()
-        self.tokens = min(2., self.tokens + max(0., now - self.updated) * self.fps)
+        self.tokens = min(4., self.tokens + max(0., now - self.updated) * self.fps)
         self.updated = now
         return max(0., (1. - self.tokens) / self.fps)
 
@@ -213,7 +213,7 @@ def worker(args):
     threads = []
     condition = threading.Condition()
     native_ready = threading.Event()
-    latest = None
+    latest_frames = collections.deque(maxlen=4)
     controls = collections.deque(maxlen=8)
     physical_size = (540, 1200)
     reply_lock = threading.Lock()
@@ -338,7 +338,7 @@ def worker(args):
                                   stdin=subprocess.PIPE, stdout=sockets['video'].fileno(), stderr=subprocess.PIPE)
 
         def collect():
-            nonlocal latest, physical_size
+            nonlocal physical_size
             call = stub.streamScreenshot(request, metadata=metadata)
             try:
                 for image in call:
@@ -351,10 +351,10 @@ def worker(args):
                     if width % 2 or height % 2 or len(image.image) != width * height * 4:
                         raise ValueError('invalid complete hardware frame')
                     with condition:
-                        if latest is not None:
+                        if len(latest_frames) == 4:
                             counters['pending_frames_replaced'] += 1
                         physical_size = (base_height, base_width) if width > height else (base_width, base_height)
-                        latest = (width, height, int(image.timestampUs), image.image)
+                        latest_frames.append((width, height, int(image.timestampUs), image.image))
                         counters['raw_frames'] += 1
                         condition.notify_all()
             finally:
@@ -374,37 +374,36 @@ def worker(args):
                 stop.set()
 
         def video_input():
-            nonlocal latest
             previous_pts = -1
             last = None
             last_submit = 0.
             budget = FrameRateBudget(args.fps)
             while not stop.is_set():
                 with condition:
-                    if latest is None and not (controls and native_ready.is_set()):
+                    if not latest_frames and not (controls and native_ready.is_set()):
                         condition.wait(timeout=.25)
                     # Initial adaptive requests can precede the first frame.
                     # Retain them until VT has created its required HW session.
                     commands = list(controls) if native_ready.is_set() else []
                     if commands:
                         controls.clear()
+                    frame = latest_frames.popleft() if latest_frames else None
+                    has_more = len(latest_frames) > 0
                 for sequence, kind, value in commands:
                     native.stdin.write(struct.pack('>IIQIII', 0, 0, sequence, 8, kind, value))
-                # gRPC delivery can bunch two timely source frames together.
-                # A two-frame budget preserves them without an unbounded queue.
-                delay = budget.delay()
-                if delay > 0:
-                    stop.wait(delay)
-                if stop.is_set():
-                    break
-                with condition:
-                    frame, latest = latest, None
                 if frame is None:
                     if last is None or time.monotonic() - last_submit < 1:
                         native.stdin.flush()
                         continue
                     frame = (last[0], last[1], time.time_ns() // 1000, last[3])
                     counters['idle_repeats'] += 1
+                else:
+                    if not has_more:
+                        delay = budget.delay()
+                        if delay > 0:
+                            stop.wait(delay)
+                        if stop.is_set():
+                            break
                 width, height, pts, pixels = frame
                 if pts <= previous_pts:
                     continue

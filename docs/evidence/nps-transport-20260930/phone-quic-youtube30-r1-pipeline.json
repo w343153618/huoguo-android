@@ -1,0 +1,75 @@
+{
+  "alignment": "approximate end UTC minus sample duration; excludes first 3s and partial source windows",
+  "events": [
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754814734,
+      "interval_ms": 5063,
+      "fps_cap": 60,
+      "raw_fps": 24.49,
+      "submitted_fps": 24.49,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754819809,
+      "interval_ms": 5075,
+      "fps_cap": 60,
+      "raw_fps": 26.6,
+      "submitted_fps": 26.6,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754824885,
+      "interval_ms": 5076,
+      "fps_cap": 60,
+      "raw_fps": 24.82,
+      "submitted_fps": 24.82,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754829959,
+      "interval_ms": 5074,
+      "fps_cap": 60,
+      "raw_fps": 25.23,
+      "submitted_fps": 25.23,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754835033,
+      "interval_ms": 5074,
+      "fps_cap": 60,
+      "raw_fps": 24.05,
+      "submitted_fps": 24.05,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754840104,
+      "interval_ms": 5070,
+      "fps_cap": 60,
+      "raw_fps": 25.44,
+      "submitted_fps": 25.44,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1790754845168,
+      "interval_ms": 5065,
+      "fps_cap": 60,
+      "raw_fps": 25.27,
+      "submitted_fps": 25.27,
+      "replaced_fps": 0.0,
+      "idle_repeats": 0
+    }
+  ]
+}

@@ -1,0 +1,443 @@
+{
+  "transport": "tcp",
+  "timestamp_utc": "2026-09-30T06:06:16.521739+00:00",
+  "target": "146.56.249.175:15557",
+  "physical_interface": "en9",
+  "physical_source_ips": [
+    "192.168.9.8"
+  ],
+  "samples_requested": 60,
+  "successes": 60,
+  "failures": [],
+  "total_ms": {
+    "median": 124.29,
+    "p95": 143.94,
+    "max": 152.68
+  },
+  "first_byte_ms": {
+    "median": 121.41,
+    "p95": 143.61
+  },
+  "raw": [
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.5,
+      "tls_ms": 56.23,
+      "first_byte_ms": 124.78,
+      "total_ms": 125.18
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 16.04,
+      "tls_ms": 70.1,
+      "first_byte_ms": 146.25,
+      "total_ms": 146.78
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 15.33,
+      "tls_ms": 60.68,
+      "first_byte_ms": 134.74,
+      "total_ms": 135.26
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.61,
+      "tls_ms": 57.46,
+      "first_byte_ms": 115.63,
+      "total_ms": 115.91
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 8.87,
+      "tls_ms": 47.03,
+      "first_byte_ms": 104.38,
+      "total_ms": 104.99
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 13.03,
+      "tls_ms": 61.66,
+      "first_byte_ms": 135.57,
+      "total_ms": 135.93
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.95,
+      "tls_ms": 57.42,
+      "first_byte_ms": 117.84,
+      "total_ms": 118.78
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.23,
+      "tls_ms": 56.69,
+      "first_byte_ms": 118.9,
+      "total_ms": 119.31
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.91,
+      "tls_ms": 50.88,
+      "first_byte_ms": 110.4,
+      "total_ms": 110.8
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 13.35,
+      "tls_ms": 54.63,
+      "first_byte_ms": 117.77,
+      "total_ms": 118.24
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 13.38,
+      "tls_ms": 56.72,
+      "first_byte_ms": 121.45,
+      "total_ms": 122.4
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 13.12,
+      "tls_ms": 50.93,
+      "first_byte_ms": 120.21,
+      "total_ms": 141.2
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 8.27,
+      "tls_ms": 56.67,
+      "first_byte_ms": 110.2,
+      "total_ms": 111.0
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 12.09,
+      "tls_ms": 49.67,
+      "first_byte_ms": 111.68,
+      "total_ms": 112.02
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 13.89,
+      "tls_ms": 56.78,
+      "first_byte_ms": 123.78,
+      "total_ms": 124.1
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 9.89,
+      "tls_ms": 61.38,
+      "first_byte_ms": 119.42,
+      "total_ms": 120.33
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.26,
+      "tls_ms": 51.48,
+      "first_byte_ms": 110.8,
+      "total_ms": 111.83
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.99,
+      "tls_ms": 60.19,
+      "first_byte_ms": 120.57,
+      "total_ms": 121.69
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.86,
+      "tls_ms": 59.93,
+      "first_byte_ms": 123.0,
+      "total_ms": 125.8
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 12.94,
+      "tls_ms": 69.41,
+      "first_byte_ms": 123.93,
+      "total_ms": 124.48
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 18.06,
+      "tls_ms": 60.32,
+      "first_byte_ms": 136.56,
+      "total_ms": 136.65
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.94,
+      "tls_ms": 56.06,
+      "first_byte_ms": 116.15,
+      "total_ms": 117.68
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 8.82,
+      "tls_ms": 69.27,
+      "first_byte_ms": 126.39,
+      "total_ms": 126.75
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 8.04,
+      "tls_ms": 51.82,
+      "first_byte_ms": 99.15,
+      "total_ms": 99.44
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.05,
+      "tls_ms": 64.92,
+      "first_byte_ms": 117.53,
+      "total_ms": 124.91
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 8.55,
+      "tls_ms": 52.27,
+      "first_byte_ms": 114.4,
+      "total_ms": 114.81
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 9.91,
+      "tls_ms": 54.12,
+      "first_byte_ms": 112.69,
+      "total_ms": 112.8
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.27,
+      "tls_ms": 58.92,
+      "first_byte_ms": 115.34,
+      "total_ms": 115.85
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 14.02,
+      "tls_ms": 59.25,
+      "first_byte_ms": 127.89,
+      "total_ms": 128.57
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.03,
+      "tls_ms": 60.41,
+      "first_byte_ms": 116.94,
+      "total_ms": 117.24
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.13,
+      "tls_ms": 66.6,
+      "first_byte_ms": 134.07,
+      "total_ms": 134.31
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 12.24,
+      "tls_ms": 63.36,
+      "first_byte_ms": 129.69,
+      "total_ms": 129.95
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 14.31,
+      "tls_ms": 56.81,
+      "first_byte_ms": 129.1,
+      "total_ms": 129.88
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 16.26,
+      "tls_ms": 58.76,
+      "first_byte_ms": 144.3,
+      "total_ms": 144.66
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 9.47,
+      "tls_ms": 72.87,
+      "first_byte_ms": 139.53,
+      "total_ms": 140.07
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.1,
+      "tls_ms": 45.92,
+      "first_byte_ms": 114.58,
+      "total_ms": 114.81
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 9.29,
+      "tls_ms": 60.2,
+      "first_byte_ms": 126.03,
+      "total_ms": 127.03
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.99,
+      "tls_ms": 59.39,
+      "first_byte_ms": 117.85,
+      "total_ms": 118.62
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.47,
+      "tls_ms": 74.52,
+      "first_byte_ms": 140.97,
+      "total_ms": 142.27
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.39,
+      "tls_ms": 62.72,
+      "first_byte_ms": 127.46,
+      "total_ms": 128.44
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 9.88,
+      "tls_ms": 54.93,
+      "first_byte_ms": 108.78,
+      "total_ms": 110.73
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 13.3,
+      "tls_ms": 56.75,
+      "first_byte_ms": 127.98,
+      "total_ms": 128.21
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 12.69,
+      "tls_ms": 56.55,
+      "first_byte_ms": 116.94,
+      "total_ms": 117.56
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 17.7,
+      "tls_ms": 55.6,
+      "first_byte_ms": 135.02,
+      "total_ms": 135.3
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 17.6,
+      "tls_ms": 55.53,
+      "first_byte_ms": 135.28,
+      "total_ms": 136.14
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.82,
+      "tls_ms": 70.25,
+      "first_byte_ms": 118.49,
+      "total_ms": 119.14
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 17.19,
+      "tls_ms": 65.49,
+      "first_byte_ms": 151.94,
+      "total_ms": 152.68
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 15.25,
+      "tls_ms": 57.1,
+      "first_byte_ms": 129.37,
+      "total_ms": 129.59
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 14.92,
+      "tls_ms": 61.64,
+      "first_byte_ms": 137.89,
+      "total_ms": 139.14
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 8.52,
+      "tls_ms": 54.77,
+      "first_byte_ms": 107.24,
+      "total_ms": 107.46
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 12.02,
+      "tls_ms": 56.85,
+      "first_byte_ms": 121.37,
+      "total_ms": 121.97
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 12.14,
+      "tls_ms": 62.39,
+      "first_byte_ms": 140.74,
+      "total_ms": 141.28
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 11.76,
+      "tls_ms": 54.73,
+      "first_byte_ms": 124.88,
+      "total_ms": 125.35
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 17.08,
+      "tls_ms": 60.01,
+      "first_byte_ms": 137.96,
+      "total_ms": 138.31
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.65,
+      "tls_ms": 57.26,
+      "first_byte_ms": 111.18,
+      "total_ms": 119.4
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 9.58,
+      "tls_ms": 55.89,
+      "first_byte_ms": 111.98,
+      "total_ms": 116.17
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 17.0,
+      "tls_ms": 58.05,
+      "first_byte_ms": 131.27,
+      "total_ms": 132.23
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.38,
+      "tls_ms": 57.65,
+      "first_byte_ms": 111.52,
+      "total_ms": 112.26
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 10.36,
+      "tls_ms": 54.16,
+      "first_byte_ms": 116.77,
+      "total_ms": 117.73
+    },
+    {
+      "source_ip": "192.168.9.8",
+      "connect_ms": 18.59,
+      "tls_ms": 60.09,
+      "first_byte_ms": 143.57,
+      "total_ms": 143.9
+    }
+  ]
+}

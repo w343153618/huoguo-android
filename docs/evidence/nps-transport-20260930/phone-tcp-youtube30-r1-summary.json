@@ -1,0 +1,88 @@
+{
+  "transport": "tcp",
+  "host": "146.56.249.175",
+  "source": "YouTube dQw4w9WgXcQ real player",
+  "mode": "ADAPTIVE_VBR",
+  "requested_bps": 4000000,
+  "decoder": "c2.qti.avc.decoder.low_latency",
+  "hardware": true,
+  "size": "540x1200",
+  "fps_limit": 60,
+  "buffer_ms": 80,
+  "late_total": 30,
+  "running_at_end": true,
+  "adaptive_rejected": false,
+  "rx_fps": {
+    "mean": 35.68,
+    "p10": 32.1,
+    "p95": 39.0,
+    "min": 32,
+    "max": 43
+  },
+  "render_fps": {
+    "mean": 35.13,
+    "p10": 32.0,
+    "p95": 38.91,
+    "min": 28.97,
+    "max": 39
+  },
+  "late_fps": {
+    "mean": 0.5,
+    "p10": 0.0,
+    "p95": 2.0,
+    "min": 0,
+    "max": 5.0
+  },
+  "rtt_ms": {
+    "mean": 34.31,
+    "p10": 29.1,
+    "p95": 47.65,
+    "min": 28,
+    "max": 48
+  },
+  "video_mbps": {
+    "mean": 1.89,
+    "p10": 1.23,
+    "p95": 2.81,
+    "min": 0.5,
+    "max": 3.35
+  },
+  "decoder_hold_ms": {
+    "mean": 183.89,
+    "p10": 170.58,
+    "p95": 200.0,
+    "min": 170.58,
+    "max": 200
+  },
+  "audio_queued_ms": {
+    "mean": 135.63,
+    "p10": 126.47,
+    "p95": 144.93,
+    "min": 125,
+    "max": 145
+  },
+  "render_gaps_ms": {
+    "p95": 44.56,
+    "p99": 69.09,
+    "max": 127.52073,
+    "over_100ms": 5
+  },
+  "source_raw_fps": {
+    "mean": 36.03,
+    "min": 34.85,
+    "max": 37.06,
+    "windows": 7
+  },
+  "source_submitted_fps": {
+    "mean": 35.75,
+    "min": 34.26,
+    "max": 36.87,
+    "windows": 7
+  },
+  "source_replaced_fps": {
+    "mean": 0.28,
+    "min": 0.0,
+    "max": 0.79,
+    "windows": 7
+  }
+}

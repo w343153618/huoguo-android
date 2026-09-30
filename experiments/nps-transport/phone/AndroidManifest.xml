@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="local.remoteandroid.phoneprobe">
+  <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37"/>
+  <application android:label="火锅串流测量探针"/>
+  <instrumentation android:name="local.remoteandroid.direct.PhoneProbe" android:targetPackage="local.remoteandroid.direct"/>
+</manifest>

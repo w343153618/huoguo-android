@@ -1,0 +1,76 @@
+{
+  "transport": "quic",
+  "timestamp_utc": "2026-09-30T06:27:29.331914+00:00",
+  "target": "146.56.249.175:15557",
+  "physical_interface": "en9",
+  "physical_source_ips": [
+    "192.168.9.8"
+  ],
+  "duration_seconds": 35,
+  "requested_fps": 60,
+  "requested_bitrate_bps": 4000000,
+  "gateway_video_backend": "videotoolbox",
+  "frames_all": 884,
+  "steady_mean_fps": 25.22,
+  "steady_second_fps_p10": 23.1,
+  "steady_second_fps_min": 21,
+  "arrival_gap_ms": {
+    "p50": 35.47,
+    "p95": 85.68,
+    "p99": 123.54,
+    "max": 218.56,
+    "worst_at_second": 23.7
+  },
+  "source_pts_gap_ms": {
+    "p50": 35.95,
+    "p95": 65.8,
+    "max": 98.89,
+    "at_worst_arrival": 83.77
+  },
+  "video_source_to_receive_ms": {
+    "p50": 49.07,
+    "p95": 98.59
+  },
+  "audio_source_to_receive_ms": {
+    "p50": -73.0,
+    "p95": -30.03
+  },
+  "video_minus_audio_receive_age_ms": 122.07,
+  "received_video_mbps": 2.789,
+  "audio_packets": 1654,
+  "errors": [],
+  "second_counts": [
+    23,
+    25,
+    25,
+    25,
+    26,
+    24,
+    25,
+    27,
+    23,
+    27,
+    25,
+    28,
+    25,
+    26,
+    21,
+    25,
+    25,
+    27,
+    24,
+    28,
+    26,
+    25,
+    26,
+    24,
+    27,
+    24,
+    22,
+    26,
+    24,
+    26,
+    27,
+    25
+  ]
+}

@@ -1,0 +1,7 @@
+apply plugin: 'com.android.application'
+android {
+  namespace 'local.remoteandroid.bench'
+  compileSdk 37
+  defaultConfig { applicationId 'local.remoteandroid.bench'; minSdk 30; targetSdk 37; versionCode 1; versionName '1' }
+  buildTypes { release { signingConfig signingConfigs.debug } }
+}

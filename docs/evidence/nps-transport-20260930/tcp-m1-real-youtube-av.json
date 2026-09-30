@@ -1,0 +1,76 @@
+{
+  "transport": "tcp",
+  "timestamp_utc": "2026-09-30T06:47:33.029184+00:00",
+  "target": "146.56.249.175:15557",
+  "physical_interface": "en9",
+  "physical_source_ips": [
+    "192.168.9.8"
+  ],
+  "duration_seconds": 35,
+  "requested_fps": 60,
+  "requested_bitrate_bps": 4000000,
+  "gateway_video_backend": "videotoolbox",
+  "frames_all": 1170,
+  "steady_mean_fps": 33.28,
+  "steady_second_fps_p10": 30.1,
+  "steady_second_fps_min": 29,
+  "arrival_gap_ms": {
+    "p50": 30.44,
+    "p95": 58.46,
+    "p99": 71.38,
+    "max": 88.59,
+    "worst_at_second": 30.03
+  },
+  "source_pts_gap_ms": {
+    "p50": 31.9,
+    "p95": 48.85,
+    "max": 85.44,
+    "at_worst_arrival": 85.44
+  },
+  "video_source_to_receive_ms": {
+    "p50": 30.89,
+    "p95": 53.32
+  },
+  "audio_source_to_receive_ms": {
+    "p50": -11.52,
+    "p95": 10.12
+  },
+  "video_minus_audio_receive_age_ms": 42.41,
+  "received_video_mbps": 3.612,
+  "audio_packets": 1654,
+  "errors": [],
+  "second_counts": [
+    32,
+    30,
+    37,
+    32,
+    32,
+    35,
+    32,
+    35,
+    34,
+    34,
+    29,
+    33,
+    37,
+    32,
+    35,
+    32,
+    36,
+    37,
+    35,
+    29,
+    31,
+    32,
+    33,
+    35,
+    33,
+    35,
+    34,
+    29,
+    32,
+    38,
+    31,
+    33
+  ]
+}
