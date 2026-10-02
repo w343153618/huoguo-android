@@ -30,12 +30,15 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private static final String SETTINGS="authenticated_udp_candidate";
     private static final String DEFAULT_LAN_ADDRESS="192.168.9.128:15560";
     private String lastLanAddress;
+    // Owner instrumentation only: no public widget, Intent extra or saved setting.
+    // showLogin resets this one-attempt value; helper must explicitly opt in again.
+    private int ownerSurfaceSubmitLeadMs;
     private static final class Attempt {
         final long generation;final String endpoint,credential,networkScope;
-        final boolean boundedPcmQueueEnabled;
+        final boolean boundedPcmQueueEnabled;final int surfaceSubmitLeadMs;
         volatile boolean cancelled;volatile SSLSocket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
-        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;}
+        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue,int surfaceLeadMs){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
@@ -45,6 +48,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     @Override public void showLogin(){
         if(Looper.myLooper()!=Looper.getMainLooper()){activity.ui.post(this::showLogin);return;}
         if(active())return;
+        ownerSurfaceSubmitLeadMs=0;
         SharedPreferences saved=activity.getSharedPreferences(SETTINGS,0);
         final int savedScope=savedSelection(saved,"scope",1,0);
         lastLanAddress=savedAddress(saved,"lan_address",LanUdpContract.LAN_SCOPE,DEFAULT_LAN_ADDRESS);
@@ -109,7 +113,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     }
     private void start(){
         synchronized(lock){if(retiring!=null){status.setText("上一条 UDP 会话正在收尾，请稍后重新连接。");return;}}
-        final String endpoint,credential,networkScope;final JSONObject request=new JSONObject();
+        final String endpoint,credential,networkScope;final int requestedSurfaceLeadMs;final JSONObject request=new JSONObject();
         try{
             endpoint=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(endpoint);
             networkScope=scope.getSelectedItemPosition()==0?LanUdpContract.LAN_SCOPE:LanUdpContract.TAILNET_SCOPE;
@@ -122,10 +126,12 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             request.put("video_bit_rate",new int[]{4000000,8000000,12000000,16000000,24000000}[rate.getSelectedItemPosition()]);
             request.put("max_fps",fps.getSelectedItemPosition()==0?60:120).put("buffer_ms",new int[]{30,50,80,100}[buffer.getSelectedItemPosition()]);
             request.put("seconds",120).put("audio_enabled",sound.isChecked()).put("touch_enabled",true).put("network_scope",networkScope);
+            requestedSurfaceLeadMs=ownerSurfaceSubmitLeadMs;LanUdpContract.validateOwnerSurfaceLead(requestedSurfaceLeadMs);
+            request.put("surface_submit_lead_ms",requestedSurfaceLeadMs);
             activity.initTLS();
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked());current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked(),requestedSurfaceLeadMs);current=attempt;}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();
@@ -134,7 +140,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         try{
             JSONObject descriptor=http(attempt,"POST","/udp/session",request,true);
             String id=descriptor.optString("session","");if(!id.matches("[0-9a-f]{32}"))throw new IOException("invalid_session_id");attempt.sessionId=id;
-            validateDescriptor(descriptor,Endpoint.parse(attempt.endpoint).host,attempt.networkScope);
+            validateDescriptor(descriptor,Endpoint.parse(attempt.endpoint).host,attempt.networkScope,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
                 attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,(report,failed)->finished(attempt,report,failed));
@@ -151,9 +157,12 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         validateDescriptor(json,loginHost,LanUdpContract.LAN_SCOPE);
     }
     static void validateDescriptor(JSONObject json,String loginHost,String expectedScope)throws Exception{
+        validateDescriptor(json,loginHost,expectedScope,0);
+    }
+    static void validateDescriptor(JSONObject json,String loginHost,String expectedScope,int expectedLeadMs)throws Exception{
         java.util.Map<String,Object> fields=new java.util.HashMap<>();java.util.Iterator<String> keys=json.keys();
         while(keys.hasNext()){String key=keys.next();fields.put(key,json.get(key));}
-        LanUdpContract.validate(fields,loginHost,expectedScope);
+        LanUdpContract.validate(fields,loginHost,expectedScope,expectedLeadMs);
     }
     private JSONObject http(Attempt attempt,String method,String path,JSONObject data,boolean cancellable)throws Exception{
         if(cancellable&&attempt.cancelled)throw new IOException("cancelled");Endpoint.Address endpoint=Endpoint.parse(attempt.endpoint);

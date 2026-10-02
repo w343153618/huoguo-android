@@ -6,6 +6,7 @@ only bounded numeric test reports, never instrumentation/system raw logs.
 """
 import argparse
 import json
+import math
 from pathlib import Path
 import shlex
 import subprocess
@@ -14,6 +15,45 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 PRIVATE = '/data/user/0/local.remoteandroid.direct.experiment/files/'
+
+
+def verify_surface_submit_readback(result, expected_lead):
+    """Require actual per-session execution evidence, never descriptor/request echo alone."""
+    if (type(expected_lead) is not int or expected_lead not in (0, 16)
+            or not isinstance(result, dict) or 'failure_class' in result
+            or type(result.get('requested_surface_submit_lead_ms')) is not int
+            or result['requested_surface_submit_lead_ms'] != expected_lead):
+        return False
+    for stage in ('first', 'second'):
+        if result.get(stage+'_surface_submit_execution_verified') is not True:
+            return False
+        keys = ('surface_submit_lead_ms', 'surface_submit_status_code',
+                'surface_submit_wait_count', 'surface_submit_applications')
+        values = [result.get(stage+'_'+key) for key in keys]
+        if any(type(value) is not int for value in values):
+            return False
+        lead, status, waits, applications = values
+        if lead != expected_lead or (expected_lead == 0 and (status, waits, applications) != (0, 0, 0)):
+            return False
+        if expected_lead == 16 and (status != 1 or waits < 1 or applications < 1):
+            return False
+    return True
+
+
+def verify_steady_window_readback(result, expected_seconds):
+    """The sampler completion marker is required before the UI may leave steady media."""
+    if (type(expected_seconds) is not int or not 20 <= expected_seconds <= 30
+            or not isinstance(result,dict) or 'failure_class' in result
+            or type(result.get('requested_steady_seconds')) is not int
+            or result['requested_steady_seconds']!=expected_seconds
+            or result.get('steady_sampler_completion_observed') is not True):
+        return False
+    started,finished,wait_ms=(result.get(key) for key in (
+        'steady_media_started_ns','steady_media_finished_ns','steady_media_wait_ms'))
+    return bool(type(started) is int and type(finished) is int and 0 < started <= finished
+        and type(wait_ms) in (int,float) and math.isfinite(wait_ms)
+        and wait_ms >= (expected_seconds+2)*1000
+        and abs(wait_ms-(finished-started)/1e6) <= .001)
 
 
 def record_cleanup_failure(report, operation, failure=None, returncode=None):
@@ -75,6 +115,10 @@ def main():
     p.add_argument('--rate-index', type=int, choices=range(5), default=2)
     p.add_argument('--network-scope', choices=['lan','tailnet'], default='lan')
     p.add_argument('--pcm-queue', choices=['off','on'], default='off')
+    p.add_argument('--surface-submit-lead-ms', type=int, choices=[0,16], default=0,
+                   help='Explicit owner-only Surface submission experiment; does not change playback target/buffer')
+    p.add_argument('--steady-seconds', type=int, choices=range(20,31), default=20,
+                   help='Bounded SF steady window; helper waits this duration plus 2 seconds before reconnect')
     p.add_argument('--media-only', action='store_true')
     p.add_argument('--source-description', default='Morphe YouTube real video; selected content format requires separate readback')
     args = p.parse_args()
@@ -87,14 +131,14 @@ def main():
     def root(command, check=True):
         return adb(args.phone, 'su -c '+shlex.quote(command), check)
 
-    flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
+    flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
     proc = None
     instrumentation_reaped = False
     samplers=[]
     report={'scope':'normal App UI existing account; isolated '+('physical LAN' if args.network_scope=='lan' else 'registered Tailnet')+' UDP; outer path requires separate evidence',
             'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
-    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only)
+    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds)
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -107,18 +151,28 @@ def main():
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+' -e pcm_queue '+args.pcm_queue+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+' -e pcm_queue '+args.pcm_queue+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        deadline=time.monotonic()+120
+        deadline=time.monotonic()+120+(args.steady_seconds-20)
         while proc.poll() is None and time.monotonic()<deadline:
             if not report['phone_sampler_started']:
                 if root('test -f '+PRIVATE+'udp-ui-phase-steady-media',False).returncode==0:
                     for name,serial,package in [('phone',args.phone,'local.remoteandroid.direct.experiment'),
                                                ('source',args.guest,'app.morphe.android.youtube')]:
                         samplers.append(subprocess.Popen([sys.executable,str(ROOT/'scripts/probes/measure_surface_cadence.py'),
-                            '--serial',serial,'--package',package,'--seconds','20','--wait-layer','3',
+                            '--serial',serial,'--package',package,'--seconds',str(args.steady_seconds),'--wait-layer','3',
                             '--output',str(args.output/(name+'-cadence.json'))],stdout=subprocess.PIPE,stderr=subprocess.PIPE))
                     report['phone_sampler_started']=True
+            if (report['phone_sampler_started'] and not report.get('steady_samplers_completed_before_leave')
+                    and len(samplers)==2 and all(child.poll() is not None for child in samplers)):
+                if any(child.returncode!=0 for child in samplers):
+                    raise RuntimeError('steady_sampler_failed')
+                uid=adb(args.phone,'cmd package list packages -U local.remoteandroid.direct.experiment').stdout.split('uid:',1)[1].split(',',1)[0].strip()
+                if not uid.isdigit():
+                    raise ValueError('isolated_App_uid_readback')
+                done=PRIVATE+'udp-ui-phase-steady-sampled';staged=done+'.tmp'
+                root('touch '+staged+' && chown '+uid+':'+uid+' '+staged+' && chmod 600 '+staged+' && restorecon '+staged+' && mv '+staged+' '+done)
+                report['steady_samplers_completed_before_leave']=True
             if not report['touch_source_switched'] and root('test -f '+PRIVATE+'udp-ui-phase-ready-touch',False).returncode==0:
                 adb(args.guest,'am force-stop local.huoguo.touchreceipt')
                 adb(args.guest,'am start -n local.huoguo.touchreceipt/.TouchReceiptActivity')
@@ -185,6 +239,8 @@ def main():
             report['ui_result']=json.loads(numeric)
         else:
             report['numeric_result_missing']=True
+        report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
+        report['steady_window_readback_verified']=verify_steady_window_readback(report.get('ui_result'),args.steady_seconds)
         reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
                  ('App-first',args.phone,PRIVATE+'udp-app-first-report.json')]
         if not args.media_only:
@@ -196,13 +252,18 @@ def main():
             if result.returncode==0 and 0<len(result.stdout)<=65536:
                 (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')
                 report[name+'_report_read']=True
+        if not report['surface_submit_execution_verified']:
+            raise RuntimeError('surface_submit_readback_unverified')
+        if not report['steady_window_readback_verified']:
+            raise RuntimeError('steady_window_readback_unverified')
     except (Exception, KeyboardInterrupt) as failure:
         report['driver_failure_class']=type(failure).__name__
         labels = {'formal_gate_failed','formal_session_active','private_login_missing',
                   'instrumentation_timeout','guest_receipt_not_focused',
                   'isolated_App_uid_readback','test_coordinate_file_bound',
                   'test_coordinate_bound','kernel_test_dedicated_phone_only',
-                  'kernel_touch_capability_mismatch'}
+                  'kernel_touch_capability_mismatch','surface_submit_readback_unverified',
+                  'steady_sampler_failed','steady_window_readback_unverified'}
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
@@ -216,7 +277,7 @@ def main():
             reap_owned_process(proc, report, 'instrumentation', 2, terminate=failed)
             report['instrumentation_exit_code']=proc.returncode
         for sampler in samplers:
-            reap_owned_process(sampler, report, 'sampler', 1 if failed else 25, terminate=failed)
+            reap_owned_process(sampler, report, 'sampler', 1 if failed else args.steady_seconds+5, terminate=failed)
             report.setdefault('sampler_exit_codes',[]).append(sampler.returncode)
         attempt_cleanup(report, 'remove_private_test_input',
                         lambda: root('rm -f '+PRIVATE+'udp-test-login.json '+' '.join(PRIVATE+f for f in flags),False))

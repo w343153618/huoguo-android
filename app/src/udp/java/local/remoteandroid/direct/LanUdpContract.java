@@ -35,6 +35,11 @@ public final class LanUdpContract {
         validate(data,loginHost,LAN_SCOPE);
     }
     public static void validate(Map<String,Object> data,String loginHost,String expectedScope)throws IOException{
+        validate(data,loginHost,expectedScope,0);
+    }
+    /** Nonzero lead is accepted only when this isolated caller explicitly requested it. */
+    public static void validate(Map<String,Object> data,String loginHost,String expectedScope,int expectedLeadMs)throws IOException{
+        validateOwnerSurfaceLead(expectedLeadMs);
         validateLogin(loginHost,HTTPS_PORT,expectedScope);
         if(!string(data,"network_scope").equals(expectedScope)||!string(data,"protocol").equals("HGUE_UDP_V1")
             ||!string(data,"peer_host").equals(loginHost))throw new IOException("descriptor_peer_binding");
@@ -43,8 +48,20 @@ public final class LanUdpContract {
         try{if(key.length!=32)throw new IOException("descriptor_key_length");}finally{Arrays.fill(key,(byte)0);}
         int seconds=integer(data,"seconds"),fps=integer(data,"fps"),buffer=integer(data,"buffer_ms");
         if(integer(data,"peer_port")!=UDP_PORT||integer(data,"bind_port")!=0||seconds<1||seconds>120||fps!=60&&fps!=120||buffer<30||buffer>100
-            ||integer(data,"display_hz")!=120||integer(data,"surface_submit_lead_ms")!=0||!string(data,"video_release").equals("scheduled"))throw new IOException("descriptor_options");
+            ||integer(data,"display_hz")!=120||integer(data,"surface_submit_lead_ms")!=expectedLeadMs||!string(data,"video_release").equals("scheduled"))throw new IOException("descriptor_options");
         for(String name:new String[]{"audio_enabled","touch_enabled","async_video","decoder_reanchor_enabled"})if(!(data.get(name) instanceof Boolean))throw new IOException("descriptor_boolean");
         if(!((Boolean)data.get("touch_enabled"))||!((Boolean)data.get("async_video"))||!((Boolean)data.get("decoder_reanchor_enabled")))throw new IOException("descriptor_required_components");
+    }
+    public static void validateOwnerSurfaceLead(int leadMs)throws IOException{
+        if(leadMs!=0&&leadMs!=16)throw new IOException("owner_surface_submit_lead_bound");
+    }
+    /** Execution evidence is separate from descriptor acceptance and requested targets. */
+    public static void validateSurfaceSubmissionReadback(Map<String,Object> report,int expectedLeadMs)throws IOException{
+        validateOwnerSurfaceLead(expectedLeadMs);
+        if(integer(report,"surface_submit_lead_ms")!=expectedLeadMs)throw new IOException("surface_submit_readback_mismatch");
+        int waits=integer(report,"surface_submit_wait_count"),applications=integer(report,"surface_submit_applications");
+        int status=integer(report,"surface_submit_status_code");
+        if(expectedLeadMs==0?(status!=0||waits!=0||applications!=0)
+            :(status!=1||waits<1||applications<1))throw new IOException("surface_submit_execution_unobserved");
     }
 }

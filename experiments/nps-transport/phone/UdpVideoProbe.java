@@ -105,27 +105,39 @@ public final class UdpVideoProbe extends Instrumentation {
         long epoch,bytes,admitted,overflowEvents,overflowRejected,cleared,waitingDrops,oversizeDrops,closingDrops;
         long recoveryEpochs,recoveryCompleted,lastRecoveredEpoch=-1,maxDepth,maxBytes;
         final boolean diagnosticEvents;final ArrayDeque<InboxEvent> events=new ArrayDeque<>();long eventsEvicted;
+        final MediaPresentationMetrics.StageDiagnostics stages;
         boolean waiting=true,acceptingChain,closed;
         VideoInbox(){this(false);}
-        VideoInbox(boolean diagnosticEvents){this.diagnosticEvents=diagnosticEvents;}
+        VideoInbox(boolean diagnosticEvents){this(diagnosticEvents,null);}
+        VideoInbox(boolean diagnosticEvents,MediaPresentationMetrics.StageDiagnostics stages){
+            this.diagnosticEvents=diagnosticEvents;this.stages=stages;}
         private void record(String event,String reason,long previousEpoch,VideoFrame frame){
             if(!diagnosticEvents)return;
             if(events.size()>=MAX_INBOX_EVENTS){events.removeFirst();eventsEvicted++;}
             events.addLast(new InboxEvent(event,reason,epoch,previousEpoch,System.nanoTime(),frame,queue.size(),bytes));
         }
         synchronized boolean offer(VideoFrame frame){
+            if(stages!=null)stages.inboxOffer(frame.receivedNs);
+            try{
             if(closed){closingDrops++;return false;}
             if(frame.body.length>MAX_BYTES){oversizeDrops++;lose(frame,"oversized_au");return false;}
             if(queue.size()>=MAX_FRAMES||bytes+frame.body.length>MAX_BYTES){
                 overflowEvents++;lose(frame,queue.size()>=MAX_FRAMES?"queue_frame_overflow":"queue_byte_overflow");
                 if(!frame.recoveryIdr()){overflowRejected++;return false;}
             }
-            if(!acceptingChain&&!frame.recoveryIdr()){waitingDrops++;return false;}
+            if(!acceptingChain&&!frame.recoveryIdr()){waitingDrops++;if(stages!=null)stages.waitingIdrDrop(System.nanoTime());return false;}
             if(frame.recoveryIdr()){acceptingChain=true;record("idr_admitted","complete_config_idr",epoch,frame);} // Following P frames may wait behind this complete IDR.
             queue.addLast(frame.atEpoch(epoch));bytes+=frame.body.length;admitted++;
             maxDepth=Math.max(maxDepth,queue.size());maxBytes=Math.max(maxBytes,bytes);notifyAll();return true;
+            }finally{if(stages!=null)stages.inboxDepth(System.nanoTime(),queue.size(),bytes);}
         }
         private void lose(VideoFrame frame,String reason){
+            if(stages!=null){int kind=reason.equals("queue_frame_overflow")?MediaPresentationMetrics.StageDiagnostics.FRAME_OVERFLOW
+                    :reason.equals("queue_byte_overflow")?MediaPresentationMetrics.StageDiagnostics.BYTE_OVERFLOW
+                    :reason.equals("worker_complete_au_expired")?MediaPresentationMetrics.StageDiagnostics.WORKER_EXPIRED
+                    :reason.equals("codec_input_timeout")?MediaPresentationMetrics.StageDiagnostics.TIMEOUT_CHAIN_LOSS
+                    :MediaPresentationMetrics.StageDiagnostics.OTHER_CHAIN_LOSS;
+                stages.inboxLoss(System.nanoTime(),frame==null?-1:frame.ptsUs,kind,queue.size(),bytes,epoch);}
             record("chain_lost",reason,epoch,frame);
             cleared+=queue.size();queue.clear();bytes=0;epoch++;recoveryEpochs++;
             waiting=true;acceptingChain=false;notifyAll();
@@ -145,7 +157,8 @@ public final class UdpVideoProbe extends Instrumentation {
         synchronized boolean needsIdr(){return waiting;}
         synchronized VideoFrame take()throws InterruptedException{
             while(queue.isEmpty()&&!closed)wait(20);
-            VideoFrame frame=queue.pollFirst();if(frame!=null)bytes-=frame.body.length;return frame;
+            VideoFrame frame=queue.pollFirst();if(frame!=null)bytes-=frame.body.length;
+            if(stages!=null)stages.inboxDepth(System.nanoTime(),queue.size(),bytes);return frame;
         }
         synchronized void close(){closed=true;notifyAll();}
         synchronized JSONObject snapshot()throws Exception{
@@ -247,7 +260,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 a.probeVideoSubmissionLeadMs=settings.surfaceSubmitLeadMs;
                 a.probeVideoSubmissionWaits.set(0);a.probeVideoSubmissionWaitNs.set(0);a.probeVideoSubmissionWaitedOutputs.set(0);
                 a.probeVideoSubmissionMaxHoldNs.set(0);a.probeVideoSubmissionMaxParkNs.set(0);a.probeVideoSubmissionBudgetFallbacks.set(0);
-                a.playback=new PlaybackClock(settings.buffer,0,settings.decoderReanchorEnabled);a.presentationMetrics=new MediaPresentationMetrics(48000);
+                a.playback=new PlaybackClock(settings.buffer,0,settings.decoderReanchorEnabled);a.presentationMetrics=new MediaPresentationMetrics(48000,true);
                 a.receivedFrames.set(0);a.receivedVideoBytes.set(0);a.presentedFrames.set(0);a.lateDiscardedFrames.set(0);
                 a.audioOutputBytes.set(0);
                 a.running=true;generation[0]=++a.generation;appGeneration=generation[0];
@@ -363,7 +376,9 @@ public final class UdpVideoProbe extends Instrumentation {
                         .put("surface_submit_budget_fallbacks",activity.probeVideoSubmissionBudgetFallbacks.get())
                         .put("surface_submit_status",session==null?"session_not_validated":session.surfaceSubmitLeadMs==0?"disabled_existing_release_path"
                             :submissionWaits>0?"applied_bounded_wait":"enabled_no_wait_observed");
-                    if(activity.presentationMetrics!=null)CodecFileProbe.appendPresentation(report,activity.presentationMetrics.snapshot());
+                    if(activity.presentationMetrics!=null){CodecFileProbe.appendPresentation(report,activity.presentationMetrics.snapshot());
+                        if(activity.presentationMetrics.decoderStages!=null)report.put("decoder_stage_metrics",
+                            stageSummary(activity.presentationMetrics.decoderStages.snapshot(System.nanoTime())));}
                 }
                 if(appActivity==null)writeReport(new File(getTargetContext().getFilesDir(),REPORT),report,result);
                 else appReport=numericAppSummary(report);
@@ -567,7 +582,7 @@ public final class UdpVideoProbe extends Instrumentation {
     }
 
     private void startVideoWorker(MainActivity activity,int generation){
-        videoInbox=new VideoInbox(diagnosticEvents);
+        videoInbox=new VideoInbox(diagnosticEvents,activity.presentationMetrics==null?null:activity.presentationMetrics.decoderStages);
         videoWorker=new Thread(()->{
             try{
                 while(!videoWorkerStop&&activity.running&&activity.generation==generation){
@@ -654,14 +669,21 @@ public final class UdpVideoProbe extends Instrumentation {
     private int lastQueueFailure; // Input-owner only: 1 timeout, 2 stale epoch, 3 stopping.
     private boolean queue(MainActivity a,int gen,VideoFrame frame,int offset,int bytes,boolean config)throws Exception{
         MediaCodec decoder=a.video;lastQueueFailure=0;
+        MediaPresentationMetrics.StageDiagnostics stages=a.presentationMetrics==null?null:a.presentationMetrics.decoderStages;
         // A retains its original per-call wait; B bounds queue plus codec-input
         // delay from the original complete-frame arrival, not worker start.
-        long deadline=(videoInbox==null?System.nanoTime():frame.receivedNs)+80_000_000L;int index=-1;
-        while(!videoWorkerStop&&a.running&&a.generation==gen&&a.video==decoder&&System.nanoTime()<deadline){
-            if(videoInbox!=null&&!videoInbox.valid(frame)){lastQueueFailure=2;return false;}
-            index=decoder.dequeueInputBuffer(videoInbox==null?10000:1000);if(index>=0)break;
+        long deadline=(videoInbox==null?System.nanoTime():frame.receivedNs)+80_000_000L;int index=-1,polls=0;
+        long reserveStartedNs=stages==null?0:System.nanoTime();
+        try{
+            while(!videoWorkerStop&&a.running&&a.generation==gen&&a.video==decoder&&System.nanoTime()<deadline){
+                if(videoInbox!=null&&!videoInbox.valid(frame)){lastQueueFailure=2;return false;}
+                polls++;index=decoder.dequeueInputBuffer(videoInbox==null?10000:1000);if(index>=0)break;
+            }
+            if(index<0){lastQueueFailure=videoWorkerStop||!a.running||a.generation!=gen||a.video!=decoder?3:1;return false;}
+        }finally{
+            if(stages!=null){long acquiredNs=System.nanoTime();stages.reserve(acquiredNs,frame.ptsUs,reserveStartedNs,acquiredNs,
+                polls,config,lastQueueFailure,-1,-1,frame.epoch);}
         }
-        if(index<0){lastQueueFailure=videoWorkerStop||!a.running||a.generation!=gen||a.video!=decoder?3:1;return false;}
         ByteBuffer input=decoder.getInputBuffer(index);if(input==null||input.capacity()<bytes)throw new IOException("codec_input_capacity");
         if(videoInbox!=null){
             if(!videoInbox.valid(frame)||videoWorkerStop){
@@ -795,17 +817,65 @@ public final class UdpVideoProbe extends Instrumentation {
         if(result.surfaceSubmitLeadMs>0&&!result.release.equals("scheduled"))throw new IOException("surface_submit_requires_scheduled_release");
         return result;
     }
+    static JSONObject stageSummary(MediaPresentationMetrics.StageSnapshot s)throws Exception{
+        long eventMinNs=0,eventMaxNs=0;
+        if(s.events[0].length>0){eventMinNs=Long.MAX_VALUE;eventMaxNs=Long.MIN_VALUE;
+            for(long timeNs:s.events[0]){eventMinNs=Math.min(eventMinNs,timeNs);eventMaxNs=Math.max(eventMaxNs,timeNs);}}
+        JSONObject out=new JSONObject().put("schema_version",1).put("clock_domain_code",1)
+            .put("phone_system_nano_time",1).put("sf_time_domain_verified",0).put("clock_reanchor_coverage",0)
+            .put("origin_present",s.originNs==MediaPresentationMetrics.MISSING?0:1)
+            .put("clock_origin_ns",s.originNs==MediaPresentationMetrics.MISSING?0:s.originNs)
+            .put("fixed_initial_band_ns",MediaPresentationMetrics.StageDiagnostics.WARMUP_NS)
+            .put("fixed_initial_band_is_stability_measurement",0).put("snapshot_ns",s.snapshotNs)
+            .put("first_observation_ns",s.firstNs==MediaPresentationMetrics.MISSING?0:s.firstNs)
+            .put("last_observation_ns",s.lastNs==MediaPresentationMetrics.MISSING?0:s.lastNs)
+            .put("observations",s.observations).put("before_origin_observations",s.beforeOrigin)
+            .put("after_segment_capacity_observations",s.afterCapacity)
+            .put("segment_width_ns",MediaPresentationMetrics.StageDiagnostics.WINDOW_NS)
+            .put("segment_capacity",MediaPresentationMetrics.StageDiagnostics.SEGMENTS)
+            .put("segments_retained",s.segments[0].length).put("event_capacity",MediaPresentationMetrics.StageDiagnostics.EVENTS)
+            .put("events_observed",s.eventObserved).put("events_retained",s.events[0].length).put("events_evicted",s.eventsEvicted)
+            .put("event_window_start_ns",eventMinNs).put("event_window_end_ns",eventMaxNs)
+            .put("event_retention_chronological",0)
+            .put("slow_input_wait_threshold_ns",20_000_000L).put("operation_sampled_depth",1)
+            .put("input_queue_call_start_not_completion",1)
+            .put("codec_reserve_duration_covers_reservation_loop",1).put("reserve_event_depth_unknown",1)
+            .put("independent_surface_presentation_measured",0);
+        String[] totalNames={"offered_frames","depth_observations","overflow_events","cleared_frames","worker_expired",
+            "codec_reserve_calls","codec_reserve_polls","config_reserve_calls","media_reserve_calls","codec_input_timeouts",
+            "scheduled_outputs","ready_minus_input_missing","ready_minus_input_invalid","waiting_idr_drops"};
+        JSONObject totals=new JSONObject();for(int i=0;i<totalNames.length;i++)totals.put(totalNames[i],s.totals[i]);
+        out.put("totals",totals).put("depth_counts_0_through_4",numericArray(s.depthCounts));
+        JSONObject segments=new JSONObject(),events=new JSONObject(),histograms=new JSONObject();
+        for(int i=0;i<s.segments.length;i++)segments.put(MediaPresentationMetrics.StageDiagnostics.SEGMENT_NAMES[i],numericArray(s.segments[i]));
+        for(int i=0;i<s.events.length;i++)events.put(MediaPresentationMetrics.StageDiagnostics.EVENT_NAMES[i],numericArray(s.events[i]));
+        String[] histogramNames={"target_minus_release","ready_minus_input","release_minus_ready","codec_reserve_wait","input_minus_receive"};
+        out.put("histogram_upper_bounds_ns",numericArray(MediaPresentationMetrics.StageDiagnostics.Histogram.UPPER_NS))
+            .put("histogram_bounds_inclusive",1).put("histogram_last_bucket_unbounded",1);
+        for(int i=0;i<s.histograms.length;i++){MediaPresentationMetrics.HistogramSnapshot h=s.histograms[i];
+            histograms.put(histogramNames[i],new JSONObject().put("counts",numericArray(h.counts)).put("valid",h.valid)
+                .put("invalid",h.invalid).put("sum_ns",h.sum).put("min_ns",h.min).put("max_ns",h.max));}
+        return out.put("segments",segments).put("events",events).put("histograms",histograms);
+    }
+    private static JSONArray numericArray(long[] values){JSONArray array=new JSONArray();for(long value:values)array.put(value);return array;}
+
     static JSONObject numericAppSummary(JSONObject report)throws Exception{
         JSONObject out=new JSONObject();
         String[] scalars={"start_ns","first_server_packet_ns","receive_end_ns","observation_end_ns","fps_limit","buffer_ms",
             "udp_packets","udp_payload_bytes","foreign_peer_packets","authentication_errors","replay_errors","received_media_frames",
             "queued_media_frames","source_width","source_height","decoder_input_timeouts","late_discarded_count","codec_callback_count","receive_loop_max_ms",
-            "receive_processing_max_ms","receive_socket_wait_max_ms","video_worker_expired_frames","video_worker_stale_epoch_drops","audio_cleanup_confirmed"};
+            "receive_processing_max_ms","receive_socket_wait_max_ms","video_worker_expired_frames","video_worker_stale_epoch_drops","audio_cleanup_confirmed",
+            "surface_submit_lead_ms","surface_submit_applications","surface_submit_wait_count","surface_submit_wait_total_ms",
+            "surface_submit_max_output_hold_ms","surface_submit_max_park_ms","surface_submit_budget_fallbacks"};
         for(String key:scalars)if(report.opt(key) instanceof Number)out.put(key,report.get(key));
+        String status=report.optString("surface_submit_status","");
+        out.put("surface_submit_status_code",status.equals("disabled_existing_release_path")?0:status.equals("applied_bounded_wait")?1
+            :status.equals("enabled_no_wait_observed")?2:-1);
         out.put("hardware_video",report.optBoolean("hardware",false)?1:0);
-        for(String key:new String[]{"native_fec","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end"}){
+        for(String key:new String[]{"native_fec","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
             Object value=report.opt(key);if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
         }
+        if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");
         return out;
     }
     private static JSONObject numericTree(JSONObject input)throws Exception{

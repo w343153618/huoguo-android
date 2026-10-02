@@ -58,6 +58,9 @@ def parse_udp_settings(settings: dict) -> dict:
         raise ValueError('Buffer must be 30 to 100 ms')
     if type(seconds) is not int or not 1 <= seconds <= 120:
         raise ValueError('Session duration must be 1 to 120 seconds')
+    lead_ms = settings.get('surface_submit_lead_ms', 0)
+    if type(lead_ms) is not int or lead_ms not in (0, 16):
+        raise ValueError('Owner Surface experiment supports only 0 or 16 ms')
     toggles = {}
     for name in ('audio', 'touch'):
         long_name = name + '_enabled'
@@ -74,6 +77,7 @@ def parse_udp_settings(settings: dict) -> dict:
         'bitrate_mode': mode, 'android_bitrate_mode': android_mode,
         'max_fps': fps, 'fps': fps, 'buffer_ms': buffer_ms, 'seconds': seconds,
         'network_scope': scope,
+        'surface_submit_lead_ms': lead_ms,
         **toggles,
     }
 
@@ -111,7 +115,8 @@ class UdpLanSessions:
 
     def __init__(self, peer_host: str, peer_port: int = 15963,
                  clock: Callable[[], float] = time.monotonic, *,
-                 network_scope: str = 'lan', scope_guard: Callable[[], bool] | None = None):
+                 network_scope: str = 'lan', scope_guard: Callable[[], bool] | None = None,
+                 allow_owner_surface_submit_lead: bool = False):
         try:
             address = ipaddress.IPv4Address(peer_host)
         except (ipaddress.AddressValueError, TypeError):
@@ -126,8 +131,11 @@ class UdpLanSessions:
             raise ValueError('Tailnet requires a current verified scope guard')
         if type(peer_port) is not int or not 1 <= peer_port <= 65535:
             raise ValueError('Invalid UDP port')
+        if type(allow_owner_surface_submit_lead) is not bool:
+            raise ValueError('Owner Surface experiment opt-in must be a boolean')
         self._peer_host, self._peer_port, self._clock = str(address), peer_port, clock
         self._network_scope, self._scope_guard = network_scope, scope_guard
+        self._allow_owner_surface_submit_lead = allow_owner_surface_submit_lead
         self._lock = threading.RLock()
         self._active: _Session | None = None
         self._tombstones: OrderedDict[str, tuple[str, float]] = OrderedDict()
@@ -236,6 +244,8 @@ class UdpLanSessions:
             raise SessionError(400, 'invalid_udp_settings') from None
         if options['network_scope'] != self._network_scope:
             raise SessionError(400, 'udp_network_scope_mismatch')
+        if options['surface_submit_lead_ms'] != 0 and not self._allow_owner_surface_submit_lead:
+            raise SessionError(400, 'owner_surface_submit_experiment_not_enabled')
         if not self._scope_ok():
             raise SessionError(503, 'udp_network_scope_unavailable')
         self.reap()
@@ -256,7 +266,7 @@ class UdpLanSessions:
                 'peer_host': self._peer_host, 'peer_port': self._peer_port,
                 'bind_port': 0, **options,
                 'video_release': 'scheduled', 'async_video': True,
-                'decoder_reanchor_enabled': True, 'surface_submit_lead_ms': 0,
+                'decoder_reanchor_enabled': True,
                 'diagnostic_events': False, 'display_hz': 120,
                 'network_feedback': True,
             }

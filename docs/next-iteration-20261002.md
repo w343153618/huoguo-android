@@ -1,5 +1,14 @@
 2026-10-03最新媒体进展见[机主Tailnet真机记录](tailnet-owner-media-20261003.md)：当前实际安装ba84客户端已正常UI认证、Tailnet内层音视频UDP、退出与重新认证；同家Wi-Fi，机主非隔离环境。gateway退出barrier及完整记录feed已完成源码/fixture和真实收尾验证：最新两会话1551/269个media记录均完整发布，撤销各丢未发布4字节，native均退出0，无TERM/KILL，两host final齐全。全仓896项unittest通过。
 
+## 2026-10-03 最新：解码阶段诊断与Surface候选
+
+新独立APK1.31-alpha.2 SHA `792c6da7ac92e3c0538351940b15e632367a762552c2b7cd3dd17f60b1a8bf09` 已装机主一加12。真实Tailnet内层认证UDP完成90秒位置的A/B/B及独立95秒位置的A4续轮，见[本轮报告](surface-submit-real-video-20261003.md)和[安全数值摘要](surface-submit-real-video-20261003.json)。这不是严格ABBA：A4源门槛曾N/A后另起，实际95秒，CPU上限动态改变；B3/A4的SF末次deadline超时，只保留有效前缀。16ms没有重复改善，不推广；保持lead0、1080/4M/60/80ms、PCMoff及wait/guard。
+
+新增fixed一秒段/直方图/异常环已真实采到，四轮input reserve最大均<15ms；input timeout都初始化polls0，不能归持续vendor槽堵。B的ready−input、Java输出持有及调度park长尾增加。稳态4帧Inbox overflow与若干长空档重叠，但另有供给下降、接收FEC恢复及发送预算丢，不能统一解释。八个native final自然退出0，无TERM/KILL；本轮没有派发触控、做声学或光学验收，也没有公网/V50验收。现有账号正常认证，helper及一次性输入已移除，候选端口已关闭，正式M1 ping正常；M1 node46/M5 node23保留，NPS未改。
+
+下一轮优先补有界configure时段、offer/take间隔与接收FEC异常时刻、共享时钟reanchor发生范围，先独立评估并发采样成本。源码null/default正式路径不启用本轮新诊断，ARTstage-only基准不代表整套采样开销。先分清瞬时AU突发、worker未被调度与配置阶段；需要时才做显式owner Inbox4→8单因素，并保持2MiB/80ms年龄期限，不直接改默认。独立修复SF尾部不足预算仍发起ADB的假失效；新sampler不能追认本轮旧SHA的完整覆盖。之后推进PCM、音画及指定公网路径，朋友新版仍需宿主/LAN隔离验收。
+
+
 确认BBB标题后，8M轮源SFcadence59.702、手机57.273，有一次754ms空档；最大wire帧322584字节在本层32M至少80.646ms，native预算丢1、参考链丢31。最新4M探索轮源59.652、手机59.094，主机预算/依赖丢0，仍有一次165.763ms空档及手机Inbox溢出/输入超时；feed与码率同时变动，不是受控8→4 AB，不能称稳定60或公网/V50验收。
 
 下一项先补固定直方图/稳态分段关联输入等待、Inbox、target−release与独立SF空档；默认lead0提前把未来target交Surface，官方契约提示这是库存/背压候选，尚未证明根因。认证入口目前拒绝非0；若执行0/16ms ABBA，先实现仅实验opt-in及读回，同APK固定4M/1080/60/80ms、PCMoff与手机实际120Hz，不更改共享目标时钟。固定真实格式/播放位置后再单独检验峰值帧预算；PCM独立ABBA随后。以下早期“尚未Tailnet媒体/PCM未安装”段落保留历史日期与各自SHA边界，以最新记录为准。

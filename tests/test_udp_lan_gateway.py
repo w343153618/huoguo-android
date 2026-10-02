@@ -141,6 +141,29 @@ class HandlerChecks(unittest.TestCase):
         self.assertEqual(descriptor['fps'], 120)
         self.assertEqual(self.worker.starts, 0)
 
+    def test_default_gateway_rejects_authenticated_nonzero_surface_lead_without_worker(self):
+        self.assertEqual(self.dispatch(self.request(body=b'{"surface_submit_lead_ms":16}')),
+            (400, {'error': 'owner_surface_submit_experiment_not_enabled'}))
+        self.assertEqual(self.factory_calls, [])
+
+    def test_explicit_owner_surface_flag_preserves_auth_and_formal_busy_before_allocation(self):
+        self.registry = UdpLanSessions('192.168.9.128', allow_owner_surface_submit_lead=True)
+        def factory(config, peer):
+            self.factory_calls.append((config, peer))
+            return self.worker
+        self.handler = handler_for(self.registry, factory, '192.168.9.128', self.busy)
+        body = b'{"surface_submit_lead_ms":16}'
+        self.assertEqual(self.dispatch(self.request(body=body, accepted=False))[0], 401)
+        self.busy.return_value = True
+        self.assertEqual(self.dispatch(self.request(body=body))[0], 409)
+        self.assertEqual(self.factory_calls, [])
+        self.busy.return_value = False
+        status, descriptor = self.dispatch(self.request(body=body))
+        self.assertEqual(status, 201)
+        self.assertEqual(descriptor['surface_submit_lead_ms'], 16)
+        self.assertEqual(self.factory_calls[0][0]['surface_submit_lead_ms'], 16)
+        self.assertEqual(self.worker.starts, 0)
+
     def test_bounded_content_length_requires_one_decimal_value_and_rejects_any_transfer_encoding(self):
         invalid = [[], [('Content-Length', '0')], [('Content-Length', '-1')],
                    [('Content-Length', '513')], [('Content-Length', 'no')],

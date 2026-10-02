@@ -29,6 +29,22 @@ class SettingsChecks(unittest.TestCase):
         self.assertEqual(defaults['bitrate_mode'], 'VBR')
         self.assertTrue(defaults['audio_enabled'])
         self.assertTrue(defaults['touch_enabled'])
+        self.assertEqual(defaults['surface_submit_lead_ms'], 0)
+
+    def test_owner_surface_lead_is_narrow_and_not_a_playback_buffer(self):
+        for lead in (0, 16):
+            settings = parse_udp_settings({'surface_submit_lead_ms': lead})
+            self.assertEqual(settings['surface_submit_lead_ms'], lead)
+            self.assertEqual(settings['buffer_ms'], 80)
+            self.assertEqual(settings['seconds'], 120)
+        for lead in (None, True, False, 0.0, 16.0, '16', -1, 8, 17, 80):
+            with self.subTest(lead=lead), self.assertRaises(ValueError):
+                parse_udp_settings({'surface_submit_lead_ms': lead})
+
+    def test_owner_surface_opt_in_requires_explicit_boolean(self):
+        for enabled in (None, 0, 1, 'true'):
+            with self.subTest(enabled=enabled), self.assertRaises(ValueError):
+                UdpLanSessions('192.168.9.128', allow_owner_surface_submit_lead=enabled)
 
     def test_existing_parsers_apply_to_resolution_bitrate_and_mode(self):
         for size in (960, 1280, 1920):
@@ -203,6 +219,45 @@ class SessionChecks(unittest.TestCase):
             self.create(buffer_ms=120)
         self.assertEqual(error.exception.status, 400)
         self.assertEqual(self.configs, [])
+
+    def test_surface_lead16_default_rejects_without_reserving_or_starting_worker(self):
+        with self.assertRaises(SessionError) as error:
+            self.create(surface_submit_lead_ms=16)
+        self.assertEqual((error.exception.status, error.exception.code),
+                         (400, 'owner_surface_submit_experiment_not_enabled'))
+        self.assertEqual(self.configs, [])
+        self.assertEqual(self.worker.starts, 0)
+        self.assertEqual(self.create()['surface_submit_lead_ms'], 0)
+
+    def test_explicit_owner_surface_opt_in_echoes_selected_lead_to_descriptor_and_worker(self):
+        self.registry = UdpLanSessions('192.168.9.128', clock=self.clock,
+                                      allow_owner_surface_submit_lead=True)
+        for lead in (0, 16, 0):
+            descriptor = self.create(surface_submit_lead_ms=lead)
+            self.assertEqual(descriptor['surface_submit_lead_ms'], lead)
+            self.assertEqual(self.configs[-1]['surface_submit_lead_ms'], lead)
+            self.assertEqual(descriptor['buffer_ms'], 80)
+            self.assertEqual(descriptor['video_release'], 'scheduled')
+            self.assertEqual(self.worker.starts, 0)
+            self.registry.cancel('huoguo', descriptor['session'])
+
+    def test_explicit_owner_surface_opt_in_keeps_scope_auth_busy_and_invalid_lead_guards(self):
+        self.registry = UdpLanSessions('100.65.0.2', clock=self.clock,
+            network_scope='tailnet', scope_guard=lambda: True,
+            allow_owner_surface_submit_lead=True)
+        for account, settings, code in ((None, {'surface_submit_lead_ms': 16}, 'account_required'),
+                ('huoguo', {'surface_submit_lead_ms': 16}, 'udp_network_scope_mismatch'),
+                ('huoguo', {'network_scope': 'tailnet', 'surface_submit_lead_ms': 8}, 'invalid_udp_settings')):
+            with self.subTest(code=code), self.assertRaises(SessionError) as error:
+                self.registry.create(account, settings, self.factory)
+            self.assertEqual(error.exception.code, code)
+        settings = {'network_scope': 'tailnet', 'surface_submit_lead_ms': 16}
+        descriptor = self.registry.create('huoguo', settings, self.factory)
+        with self.assertRaises(SessionError) as error:
+            self.registry.create('different-owner', settings, self.factory)
+        self.assertEqual(error.exception.code, 'udp_session_busy')
+        self.assertEqual(len(self.configs), 1)
+        self.assertFalse(self.registry.touch_allowed(descriptor['session']))
 
     def test_factory_config_and_returned_descriptor_do_not_mutate_registry_settings(self):
         def factory(config):

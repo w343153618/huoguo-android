@@ -203,6 +203,8 @@ def main():
     parser.add_argument('--host', required=True)
     parser.add_argument('--interface', required=True)
     parser.add_argument('--network-scope', choices=('lan', 'tailnet'), default='lan')
+    parser.add_argument('--allow-owner-surface-submit-lead', action='store_true',
+                        help='Bounded owner experiment only: explicitly permit requested lead 16 ms; default 0 remains')
     parser.add_argument('--https-port', type=int, default=15560)
     parser.add_argument('--udp-port', type=int, default=15963)
     parser.add_argument('--runtime', type=Path, required=True,
@@ -226,7 +228,8 @@ def main():
     except (ValueError, ScopeUnavailable) as error:
         parser.error(str(error))
     registry = UdpLanSessions(host, args.udp_port, network_scope=scope.name,
-                              scope_guard=scope.healthy)
+                              scope_guard=scope.healthy,
+                              allow_owner_surface_submit_lead=args.allow_owner_surface_submit_lead)
     def factory(config, peer):
         return LanMediaWorker(config, peer, host, args.interface, args.runtime,
                               args.packetizer, args.native_encoder, registry,

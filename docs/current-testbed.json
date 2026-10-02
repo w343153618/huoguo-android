@@ -30,10 +30,10 @@
     "sampling_boundary": "Dynamic CPU max/current, approx5s non-atomic sysfs readbacks only. Current experiment observer uses explicit CLOCK_MONOTONIC host-before/after brackets; no host-phone time subtraction. Earlier lower-cpu evidence used Python monotonic_ns with an observed offset from capture CLOCK_MONOTONIC and must not be retroactively aligned.",
     "equivalence_verified": false,
     "last_observed_policy_max_khz": {
-      "policy0": 1689600,
-      "policy2": 1612800,
-      "policy5": 1824000,
-      "policy7": 1939200
+      "policy0": 672000,
+      "policy2": 960000,
+      "policy5": 960000,
+      "policy7": 902400
     },
     "preflight_policy_max_khz": {
       "policy0": 672000,
@@ -41,7 +41,7 @@
       "policy5": 614400,
       "policy7": 672000
     },
-    "last_observed_policy_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json"
+    "last_observed_policy_evidence": "docs/evidence/surface-submit-20261003/case-4-A/case-context.json"
   },
   "resource_fields_scope": "cpu_cores and memory_mib above describe Android VM on M1, not physical phone",
   "last_completed_test": {
@@ -81,7 +81,7 @@
     "source_requested_seek_verified": false,
     "native_final_summaries_complete": false
   },
-  "updated_from_evidence_utc": "2026-10-02T11:27:33Z",
+  "updated_from_evidence_utc": "2026-10-02T22:58:47Z",
   "user_authorized_buffer_max_ms": 100,
   "experimental_buffer_options_ms": [
     30,
@@ -97,7 +97,7 @@
   "renderer": "skiavk",
   "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
-  "independent_experimental_app_sha256": "ba84ac006eb007cbe1b087fe29efec3a3a0c2dcdb6298b8130a1d5eb49331387",
+  "independent_experimental_app_sha256": "792c6da7ac92e3c0538351940b15e632367a762552c2b7cd3dd17f60b1a8bf09",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
     "real_video_sessions": 33,
@@ -631,5 +631,66 @@
       "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
     }
   },
-  "updated_evidence_utc": "2026-10-02T19:19:27.970618+00:00"
+  "updated_evidence_utc": "2026-10-02T19:19:27.970618+00:00",
+  "independent_experimental_app_version": "1.31-alpha.2",
+  "latest_surface_submit_experiment": {
+    "evidence": "docs/evidence/surface-submit-20261003",
+    "summary": "docs/surface-submit-real-video-20261003.json",
+    "report": "docs/surface-submit-real-video-20261003.md",
+    "actual_apk_sha256": "792c6da7ac92e3c0538351940b15e632367a762552c2b7cd3dd17f60b1a8bf09",
+    "actual_sampler_sha256": "dc588c419d0540ea2d1345ec5f0ba8e08f4ac7e30aa81dcb97c8782e628b15bd",
+    "source_itag": 299,
+    "source_codec": "avc1",
+    "source_fps": 60,
+    "source_dimensions": [
+      1920,
+      1080
+    ],
+    "stream_dimensions": [
+      1080,
+      1920
+    ],
+    "bitrate_bps": 4000000,
+    "buffer_ms": 80,
+    "pcm_queue_enabled": false,
+    "lead_sequence_ms": [
+      0,
+      16,
+      16,
+      0
+    ],
+    "strict_ABBA_completed": false,
+    "sequence_scope": "first3 validsource90s; A4 separately resumed95s afterN/A gate; CPU ceilings dynamic; B3/A4 SFtaildeadlinefailure validprefix only",
+    "phone_sf_cadence_fps": [
+      58.631,
+      58.844,
+      54.402,
+      59.8
+    ],
+    "phone_sf_max_gap_ms": [
+      223.793385,
+      265.190781,
+      1002.89177,
+      66.305208
+    ],
+    "phone_sf_full_chain_verified": [
+      true,
+      true,
+      false,
+      false
+    ],
+    "source_sf_full_chain_verified": [
+      true,
+      true,
+      true,
+      true
+    ],
+    "native_session_exit_zero_count": 8,
+    "temporary_candidate_closed": true,
+    "formal_media_transport_changed": false,
+    "surface_submit_lead_recommendation_ms": 0,
+    "16_ms_not_promoted": true,
+    "public_WAN_or_V50_tested": false,
+    "optical_or_acoustic_latency_measured": false
+  }
 }

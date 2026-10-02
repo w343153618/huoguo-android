@@ -29,6 +29,12 @@ public final class LanUiAcceptance extends Instrumentation {
     public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
     private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    private int steadySeconds(){int value=Integer.parseInt(arguments.getString("steady_seconds","20"));if(value<20||value>30)throw new IllegalArgumentException("steady_seconds_bound");return value;}
+    private int surfaceLeadMs()throws Exception{
+        String raw=arguments.getString("surface_submit_lead_ms","0");
+        if(!raw.equals("0")&&!raw.equals("16"))throw new IllegalArgumentException("surface_submit_lead_bound");
+        int value=Integer.parseInt(raw);LanUdpContract.validateOwnerSurfaceLead(value);return value;
+    }
     private void prepareUi(MainActivity target,String username,String password)throws Exception{
         Object ui=target.lanUdpEntry;String scope=arguments.getString("network_scope","lan");
         if(!scope.equals("lan")&&!scope.equals("tailnet"))throw new IllegalArgumentException("scope_bound");
@@ -40,6 +46,7 @@ public final class LanUiAcceptance extends Instrumentation {
         ((Spinner)field(ui,"buffer")).setSelection(2);((CheckBox)field(ui,"sound")).setChecked(true);
         String pcm=arguments.getString("pcm_queue","off");if(!pcm.equals("on")&&!pcm.equals("off"))throw new IllegalArgumentException("pcm_choice_bound");
         ((CheckBox)field(ui,"pcmQueue")).setChecked(pcm.equals("on"));
+        Field lead=ui.getClass().getDeclaredField("ownerSurfaceSubmitLeadMs");lead.setAccessible(true);lead.setInt(ui,surfaceLeadMs());
     }
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
@@ -49,6 +56,22 @@ public final class LanUiAcceptance extends Instrumentation {
         long deadline=SystemClock.elapsedRealtime()+20000;
         while((report.length()<1||field(field(getCurrentActivity(),"lanUdpEntry"),"retiring")!=null)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
         if(report.length()<1||report.length()>65536||field(field(getCurrentActivity(),"lanUdpEntry"),"retiring")!=null)throw new IllegalStateException("report_unavailable_after_leave");
+    }
+    private void verifySurfaceReadback(File file,JSONObject result,String stage)throws Exception{
+        if(file.length()<1||file.length()>65536)throw new IllegalStateException("surface_readback_file_bound");
+        byte[] bytes=new byte[(int)file.length()];
+        try(FileInputStream in=new FileInputStream(file)){
+            int read=0,n;while(read<bytes.length&&(n=in.read(bytes,read,bytes.length-read))>0)read+=n;
+            if(read!=bytes.length)throw new IllegalStateException("surface_readback_file_short");
+        }
+        JSONObject report;
+        try{report=new JSONObject(new String(bytes,StandardCharsets.UTF_8));}finally{java.util.Arrays.fill(bytes,(byte)0);}
+        java.util.Map<String,Object> fields=new java.util.HashMap<>();
+        for(String key:new String[]{"surface_submit_lead_ms","surface_submit_status_code","surface_submit_wait_count","surface_submit_applications"}){
+            fields.put(key,report.get(key));result.put(stage+"_"+key,report.get(key));
+        }
+        LanUdpContract.validateSurfaceSubmissionReadback(fields,surfaceLeadMs());
+        result.put(stage+"_surface_submit_execution_verified",true);
     }
     /** Independent test-process liveness check, outside the media window.
      * Never obtain stacks or export names; a full fixed snapshot is inconclusive.
@@ -163,6 +186,8 @@ public final class LanUiAcceptance extends Instrumentation {
         JSONObject report=new JSONObject();Bundle result=new Bundle();MainActivity a=null;
         File credential=new File(getTargetContext().getFilesDir(),"udp-test-login.json");Window.Callback original=null;
         try{
+            report.put("requested_surface_submit_lead_ms",surfaceLeadMs());
+            report.put("requested_steady_seconds",steadySeconds());
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
             for(boolean enabled:new boolean[]{false,true,true,false})rows.put(new JSONObject()
                 .put("diagnostics_enabled",enabled).put("iterations",100000).put("elapsed_ns",bench(enabled,100000)));
@@ -199,8 +224,17 @@ public final class LanUiAcceptance extends Instrumentation {
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("no_authenticated_media");
             report.put("normal_UI_login_received_media",true);Thread.sleep(3000);
+            long steadyStart=System.nanoTime();report.put("steady_media_started_ns",steadyStart);
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
-            Thread.sleep(22000);
+            Thread.sleep((steadySeconds()+2)*1000L);
+            File sampled=new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-sampled");
+            deadline=SystemClock.elapsedRealtime()+10000;
+            while(!sampled.exists()&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
+            if(!sampled.exists())throw new IllegalStateException("steady_sampler_completion_missing");
+            if(!sampled.delete())throw new IllegalStateException("steady_sampler_completion_cleanup");
+            long steadyEnd=System.nanoTime();report.put("steady_media_finished_ns",steadyEnd)
+                .put("steady_media_wait_ms",(steadyEnd-steadyStart)/1e6)
+                .put("steady_sampler_completion_observed",true);
             report.put("before_touch_received_frames",target.receivedFrames.get()).put("before_touch_callback_count",target.presentedFrames.get());
             if(!mediaOnly()){
             File phase=new File(getTargetContext().getFilesDir(),"udp-ui-phase-ready-touch");
@@ -246,6 +280,7 @@ public final class LanUiAcceptance extends Instrumentation {
             }else report.put("media_only_no_touch_exercised",true);
             runOnMainSync(()->target.handleBack());
             File first=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");waitReport(first);
+            verifySurfaceReadback(first,report,"first");
             waitAudioThreadsGone(report,"first_leave");
             report.put("left_through_App_back",true).put("activity_running_after_leave",target.running)
                 .put("actual_optical_latency_measured",false).put("actual_acoustic_sync_measured",false);
@@ -266,6 +301,7 @@ public final class LanUiAcceptance extends Instrumentation {
             Thread.sleep(2500);report.put("normal_UI_reconnected_received_media",true);
             if(!mediaOnly()){pointers(target,2,false,false);Thread.sleep(400);}
             runOnMainSync(()->target.handleBack());waitReport(first);
+            verifySurfaceReadback(first,report,"second");
             waitAudioThreadsGone(report,"second_leave");
             report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
