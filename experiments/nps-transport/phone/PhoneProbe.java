@@ -10,6 +10,9 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Base64;
 import android.util.AtomicFile;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.File;
@@ -20,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Measures the installed client's actual decoder and Surface, with no saved-setting changes. */
+/** Measures the installed client's actual decoder and Surface. The optional
+ * button path exercises normal login, which remembers connection choices, but
+ * never clicks the password-save button. The direct path keeps saved settings. */
 public final class PhoneProbe extends Instrumentation {
     private static final String REPORT_FILE="transport-test-report.json";
     private Bundle args;
@@ -57,25 +62,43 @@ public final class PhoneProbe extends Instrumentation {
             f.setAccessible(true);return (MediaPresentationMetrics)f.get(a);
         } catch(Exception absent) { return null; }
     }
+    private Button connectionButton(View view) {
+        if(view instanceof Button&&"连接虚拟安卓".contentEquals(((Button)view).getText()))
+            return (Button)view;
+        if(view instanceof ViewGroup) {
+            ViewGroup group=(ViewGroup)view;
+            for(int i=0;i<group.getChildCount();i++) {
+                Button found=connectionButton(group.getChildAt(i));if(found!=null)return found;
+            }
+        }
+        return null;
+    }
     private void measure(MainActivity a,Bundle result)throws Exception {
+        String loginPath=args.getString("login_path","direct");
+        if(!loginPath.equals("direct")&&!loginPath.equals("button"))
+            throw new IllegalArgumentException("Invalid login path");
+        boolean buttonPath=loginPath.equals("button");
         File secret=new File(a.getFilesDir(),"transport-test-credential");
         String credential;
         if(secret.isFile()) {
             credential=new String(Files.readAllBytes(secret.toPath()),StandardCharsets.UTF_8).trim();
             if(!secret.delete())throw new IllegalStateException("Cannot consume test credential");
         } else {
+            if(buttonPath)throw new IllegalStateException("Button login requires a private test credential");
             final String[] loaded={null};
             runOnMainSync(()->{if(a.password.length()>0)loaded[0]=a.user.getText()+":"+a.password.getText();});
             if(loaded[0]==null)throw new IllegalStateException("No test credential available");
             credential=loaded[0]; loaded[0]=null;
         }
-        a.host=args.getString("host"); a.maxSize=Integer.parseInt(args.getString("max_size","1200"));
+        String requestedHost=args.getString("host");
+        if(requestedHost==null||requestedHost.isEmpty())throw new IllegalArgumentException("Missing test endpoint");
+        a.host=requestedHost; a.maxSize=Integer.parseInt(args.getString("max_size","960"));
         a.bitRate=Integer.parseInt(args.getString("bit_rate","4000000"));
         a.maxFps=Integer.parseInt(args.getString("fps","60"));
         a.bufferMs=Integer.parseInt(args.getString("buffer_ms","80"));
         if(a.bufferMs<30||a.bufferMs>100)throw new IllegalArgumentException("Buffer outside user limit");
         a.bitrateMode=args.getString("mode","ADAPTIVE_VBR");
-        a.avSyncOffsetMs=Integer.parseInt(args.getString("av_sync_ms","0"));a.initTLS();
+        a.avSyncOffsetMs=Integer.parseInt(args.getString("av_sync_ms","0"));
         String releaseMode=args.getString("video_release","scheduled");
         if(!releaseMode.equals("scheduled")&&!releaseMode.equals("immediate"))
             throw new IllegalArgumentException("Invalid video release experiment");
@@ -83,12 +106,47 @@ public final class PhoneProbe extends Instrumentation {
         if(audioFrames!=0&&audioFrames!=2048&&audioFrames!=3072&&audioFrames!=4096)
             throw new IllegalArgumentException("Invalid audio buffer experiment");
         a.probeImmediateVideoRelease=releaseMode.equals("immediate");a.probeAudioBufferFrames=audioFrames;
-        a.auth="Basic "+Base64.encodeToString(credential.getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);
-        credential=null;
-        long connectAt=SystemClock.elapsedRealtime(); String id=a.session();
-        runOnMainSync(()->a.show(id));
-        for(int i=0;i<400&&a.video==null&&a.running;i++)Thread.sleep(50);
-        if(a.video==null||!a.running)throw new IllegalStateException("Video did not start");
+        JSONObject requestedSettings=new JSONObject().put("host",requestedHost).put("max_size",a.maxSize)
+            .put("bit_rate",a.bitRate).put("fps",a.maxFps).put("mode",a.bitrateMode).put("buffer_ms",a.bufferMs);
+        long connectAt=SystemClock.elapsedRealtime();
+        if(buttonPath) {
+            int separator=credential.indexOf(':');
+            if(separator<=0||separator==credential.length()-1)
+                throw new IllegalArgumentException("Invalid private test credential format");
+            final String username=credential.substring(0,separator),password=credential.substring(separator+1);
+            credential=null;
+            final Button[] clicked={null};
+            runOnMainSync(()->{
+                if(a.running||a.address==null||a.user==null||a.password==null)
+                    throw new IllegalStateException("Login view is unavailable");
+                Button button=connectionButton(a.getWindow().getDecorView());
+                if(button==null||!button.isEnabled())throw new IllegalStateException("Connection button is unavailable");
+                // Address/account restoration may replace the password. The
+                // explicit unsaved password must be typed last, just as a user does.
+                a.address.setText(requestedHost);a.user.setText(username);a.password.setText(password);
+                if(!button.performClick())throw new IllegalStateException("Connection button did not accept the click");
+                clicked[0]=button;
+                if(button.isEnabled()&&!a.running)throw new IllegalStateException("Button login did not begin");
+            });
+            // Normal login initially has running=false while /session is in
+            // flight. Never create a session or invoke show() on this path.
+            while(SystemClock.elapsedRealtime()-connectAt<160000) {
+                if(a.running&&a.video!=null&&a.receivedFrames.get()>0)break;
+                final boolean[] failed={false};
+                runOnMainSync(()->failed[0]=clicked[0].isEnabled()&&!a.running);
+                if(failed[0])throw new IllegalStateException("Button login failed before video startup");
+                Thread.sleep(50);
+            }
+            if(a.video==null||!a.running||a.receivedFrames.get()==0)
+                throw new IllegalStateException("Button login video did not start");
+        } else {
+            a.initTLS();
+            a.auth="Basic "+Base64.encodeToString(credential.getBytes(StandardCharsets.UTF_8),Base64.NO_WRAP);
+            credential=null;
+            String id=a.session();runOnMainSync(()->a.show(id));
+            for(int i=0;i<400&&a.video==null&&a.running;i++)Thread.sleep(50);
+            if(a.video==null||!a.running)throw new IllegalStateException("Video did not start");
+        }
         MediaPresentationMetrics presentation=presentation(a);
         MediaCodec decoder=a.video; List<Long> renderTimes=Collections.synchronizedList(new ArrayList<>());
         List<Long> renderPts=Collections.synchronizedList(new ArrayList<>());
@@ -100,7 +158,10 @@ public final class PhoneProbe extends Instrumentation {
                 if(presentation!=null)presentation.rendered(pts,ns,System.nanoTime());
             }
         },new Handler(a.statsThread.getLooper()));
-        JSONObject report=new JSONObject().put("host",a.host).put("mode",a.bitrateMode)
+        // The real button may replace requested hints with its selected UI
+        // choices. Publish the actual final fields, and keep hints separate.
+        JSONObject report=new JSONObject().put("login_path",loginPath).put("probe_requested_settings",requestedSettings)
+            .put("host",a.host).put("mode",a.bitrateMode).put("max_size",a.maxSize)
             .put("requested_bps",a.bitRate).put("decoder",decoder.getName()).put("hardware",a.hardwareVideo)
             .put("size",a.width+"x"+a.height).put("fps_limit",a.maxFps).put("buffer_ms",a.bufferMs)
             .put("video_release_mode",releaseMode).put("requested_audio_buffer_frames",audioFrames)

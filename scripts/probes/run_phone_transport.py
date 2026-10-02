@@ -6,7 +6,6 @@ import os
 import shlex
 import statistics
 import subprocess
-import ipaddress
 import math
 from datetime import datetime, timezone
 from pathlib import Path
@@ -83,7 +82,8 @@ def summarize(report):
     summary['codec_timestamp_validity']=validity
     summary['actual_display_fps_measured']=False
     summary['actual_audio_video_skew_measured']=False
-    for name in ('video_release_mode','requested_audio_buffer_frames','actual_audio_buffer_frames','audio_buffer_frames_observed'):
+    for name in ('login_path','max_size','probe_requested_settings','video_release_mode',
+                 'requested_audio_buffer_frames','actual_audio_buffer_frames','audio_buffer_frames_observed'):
         if name in report:summary[name]=report[name]
     for name in ('rx_fps','render_fps','late_fps','rtt_ms','video_mbps','decoder_hold_ms',
                  'audio_queued_ms','audio_queued_estimate_ms','audio_timestamp_age_ms'):
@@ -129,14 +129,19 @@ def main():
     p.add_argument('transport',choices=('tcp','quic','kcp','tailscale','lan'))
     p.add_argument('--host',required=True);p.add_argument('--serial',default='3B15AL00M9U00000')
     p.add_argument('--seconds',type=int,default=45);p.add_argument('--fps',type=int,default=60)
+    p.add_argument('--max-size',type=int,default=960,help='Requested video long edge; button login reports its final UI choices')
     p.add_argument('--bitrate',type=int,default=4000000);p.add_argument('--buffer',type=int,default=80)
+    p.add_argument('--login-path',choices=('direct','button'),default='direct',
+                   help='Exercise direct instrumentation or the real unsaved-password connection button')
     p.add_argument('--mode',default='ADAPTIVE_VBR');p.add_argument('--source',required=True)
     p.add_argument('--av-sync',type=int,default=0)
     p.add_argument('--video-release',choices=('scheduled','immediate'),default='scheduled')
     p.add_argument('--audio-buffer-frames',type=int,choices=(0,2048,3072,4096),default=0)
     p.add_argument('--credential-file',type=Path);p.add_argument('--output',type=Path,required=True)
     a=p.parse_args()
-    if not 30<=a.buffer<=80:raise SystemExit('Buffer must respect the 80 ms user limit')
+    if not 30<=a.buffer<=100:raise SystemExit('Buffer must be between 30 and 100 ms for this test')
+    if a.login_path=='button' and a.credential_file is None:
+        raise SystemExit('Button login requires --credential-file; it never clicks Save Password')
     if a.credential_file and a.credential_file.stat().st_mode&0o077:raise SystemExit('Credential file must be mode 600')
     credential=a.credential_file.read_bytes().strip() if a.credential_file else None
     adb=[str(Path(os.environ.get('ANDROID_HOME',str(Path.home()/'Library/Android/sdk')))/'platform-tools/adb'),'-s',a.serial]
@@ -145,30 +150,22 @@ def main():
         return subprocess.run(adb+['shell','su -c '+shlex.quote(command)],check=True,capture_output=True,**kw)
     uid=root('stat -c %u /data/user/0/local.remoteandroid.direct').stdout.decode().strip()
     if not uid.isdigit():raise SystemExit('Cannot determine target application owner')
+    # The current client parses endpoint ports itself, including bracketed
+    # IPv6. Preserve the exact input; do not redirect device networking.
     host=a.host
-    redirect=None
-    if ':' in host:
-        host,port=host.rsplit(':',1)
-        ipaddress.IPv4Address(host)
-        port=int(port)
-        if not 1<=port<=65535:raise SystemExit('Invalid test port')
-        if port!=15556:
-            # The installed v1.21 client uses fixed port 15556. Redirect only this
-            # app UID and destination during the isolated test; preserve all other traffic.
-            redirect=['OUTPUT','-p','tcp','-d',host,'--dport','15556','-m','owner',
-                      '--uid-owner',uid,'-m','comment','--comment','huoguo-transport-test',
-                      '-j','DNAT','--to-destination',host+':'+str(port)]
     try:
         root('rm -f '+REPORT_REMOTE)
-        if redirect:root(shlex.join(['iptables','-t','nat','-A',*redirect]))
         if credential is not None:root('umask 077; cat > '+remote+'; chown '+uid+':'+uid+' '+remote+'; chmod 600 '+remote+'; restorecon '+remote,input=credential)
         credential=None
-        args=['am','instrument','-w','-e','host',host,'-e','mode',a.mode,'-e','max_size','1200',
+        args=['am','instrument','-w','-e','host',host,'-e','mode',a.mode,'-e','max_size',str(a.max_size),
+              '-e','login_path',a.login_path,
               '-e','bit_rate',str(a.bitrate),'-e','seconds',str(a.seconds),'-e','fps',str(a.fps),
               '-e','video_release',a.video_release,'-e','audio_buffer_frames',str(a.audio_buffer_frames),
               '-e','av_sync_ms',str(a.av_sync),'-e','buffer_ms',str(a.buffer),'local.remoteandroid.phoneprobe/local.remoteandroid.direct.PhoneProbe']
-        result=root(shlex.join(args),timeout=a.seconds+100)
+        result=root(shlex.join(args),timeout=a.seconds+180)
         report=read_instrumentation_report(result.stdout,lambda:root('cat '+REPORT_REMOTE).stdout)
+        if report.get('login_path')!=a.login_path:
+            raise RuntimeError('Installed PhoneProbe did not confirm the requested login path; rebuild the probe')
         report.update(transport=a.transport,endpoint=a.host,source=a.source,timestamp_utc=datetime.now(timezone.utc).isoformat())
         summary=summarize(report)
         a.output.parent.mkdir(parents=True,exist_ok=True)
@@ -177,6 +174,5 @@ def main():
         print(json.dumps(summary,ensure_ascii=False))
     finally:
         root('rm -f '+remote+' '+REPORT_REMOTE)
-        if redirect:root(shlex.join(['iptables','-t','nat','-D',*redirect]))
 
 if __name__=='__main__':main()
