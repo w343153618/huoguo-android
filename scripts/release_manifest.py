@@ -14,6 +14,7 @@ code = int(re.search(r'versionCode (\d+)', text).group(1))
 if args.tag != 'v' + version: raise SystemExit('Release tag must match versionName')
 apk = args.apk.read_bytes()
 metadata = dict(version_code=code, version_name=version,
+    release_tag=args.tag,
     apk_url=args.base_url.rstrip('/')+'/HuoguoAndroid-v'+version+'.apk',
     sha256=hashlib.sha256(apk).hexdigest(), apk_size=len(apk),
     changelog=pathlib.Path('release-notes.md').read_text()[:4000])
