@@ -420,6 +420,14 @@
     "root_guest_firewall_not_trusted": true,
     "credentials_read": false,
     "emulator_restarted": false,
-    "new_public_udp_release_allowed_before_isolation_acceptance": false
+    "new_public_udp_release_allowed_before_isolation_acceptance": false,
+    "candidate_report": "m1-isolation-candidate-20261002.md",
+    "candidate_source_checks_passed": 111,
+    "candidate_root_installed": false,
+    "candidate_production_switch": false,
+    "candidate_hardware_acceptance": false,
+    "os_native_admin_authentication": "pending; no staging executed",
+    "candidate_source_evidence": "evidence/m1-host-isolation-20261002/candidate-source-checks.json",
+    "candidate_source_branch": "codex/experimental-udp"
   }
 }
