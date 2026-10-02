@@ -4,6 +4,8 @@
 
 最新闭合状态探针f7确认固定ADB transport为offline，非unauthorized：20秒readiness内71次attempt、一次connect-timeout，没有读到boot。不能据此说Android没有启动，也不能归因GPU/HVF。下一轮仅对这个候选的固定受限日志/端点作有界host/guest ADB通道诊断，不继续增加重试时长、不复制ownerkeys或扩大策略。受限启动日志曾显示Metal/ANGLE；boot/HVF/capture/编码仍需独立证据。246项源码/owned fixtures通过不代表这些实际验收。
 
+最后一次固定closed日志读回的管理员调用120秒超时，固定root报告仍缺失；`boot-marker-final-receipt-check.json`只记录报告缺失，不宣称payload未执行或日志无错误。下一次先核对该固定receipt是否迟到，再决定是否准备fresh nonce；禁止自动重用O_EXCL目标。日志分类取得后，分开核验guest adbd虚拟通道、host regular ADB listener与专用601 server的握手状态。上游机制不支持仅因拒绝5037／随机JDWP端口或泛socketpair警告就放宽guest profile；SDK版本对应关系仍待核对，见候选报告的官方源码链接。
+
 另准备了 [LocalOnly系统解析委托canary](../scripts/security/localonly_resolver_canary.py)：21项源码/owned inert检查通过，未注册/query/root/600执行。后续先取得boot和该API正向/负向结果，再做guest DNS/root网络与文件负向检查、media身份/策略、GPU/HV及隔离媒体。最后才推进新公网UDP；现有正式v1.30仍TLS/TCP。
 
 最新用户优先事项：`huoguo` 只给火锅，`wyw` 仅机主测试。远程安卓（含 root）不能访问 M1 无关文件或成为宿主／LAN 跳板。见 [宿主隔离设计](m1-host-isolation-design-20261002.md)。现有 guest 与 gateway 共用个人 UID；两个新建 host-owned TCP canary 在 guest 中均可达。正式入口 owner 隔离与更新文件 nofollow 已通过100项范围检查并只重载 gateway，原证书／ping／清单正常；这不是 OS／网络隔离完成。管理员读回PF enabled，但尚无经验证的guest UID策略。独立合成 sandbox 子进程可拒绝文件和本机IPv4／IPv6 TCP，但没有套到VM，runner为deprecated，不可直接推广。后续先完成隔离身份、文件与受限出口候选及负向验收，不为新公网UDP开放原始ADB／shell／任意转发；不去除认证、完整性或防重放。保留既有服务，忙时跳过迁移；不能把不同App账号视为macOS边界。

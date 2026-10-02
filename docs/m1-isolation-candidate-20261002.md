@@ -41,7 +41,8 @@ python3 -m unittest \
   tests.test_restricted_egress tests.test_restricted_dns \
   tests.test_emulator_sandbox_profile tests.test_isolation_admin \
   tests.test_prepare_isolation_candidate tests.test_isolated_uid_canary \
-  tests.test_isolation_candidate_supervisor tests.test_candidate_capture_probe -q
+  tests.test_isolation_candidate_supervisor tests.test_candidate_capture_probe \
+  tests.test_localonly_resolver_canary -q
 ```
 
 ## Web 与 DNS 出口的具体边界
@@ -104,6 +105,10 @@ Seatbelt 候选只读指定 SDK／代码与明确系统依赖，只写自己的 
 阶段结束独立readback确认f7全部recorded Web/DNS/guest/media PGID均ESRCH3、候选TCP管理端口及UDP53无监听；原UID501 guest `boot_completed=1`，5556/5557/8556、15556与8089仍在原PID监听，安装pins精确一致。云端路由仍物理en7/192.168.9.1，未对country/source或手机媒体作验收。见`phase-final-health.json`与`phase-final-guard-cleanup.json`。下一诊断只读取固定closed候选日志并输出闭合数字/flags；不把日志初始化标记当boot或HVF通过。
 
 本轮候选源码只推送 `codex/experimental-udp`；正式 `main` 与v1.30保持原提交。源码推送不构成新APK发布或隔离验收。
+
+10月3日01:56:59开始的最后一次管理员调用仅尝试读取已结束候选的固定启动日志；调用方120秒超时，随后固定root报告仍不存在。见`boot-marker-native-call.json`与`boot-marker-final-receipt-check.json`。这说明当前没有取得日志分类结果，不能认定root payload未执行、已经完成或已经失败。私有reader固定核验b445 trial的SHA，只检查首尾最多128KiB并输出闭合计数；准备与fixture通过不代表实际日志已读回。保留原nonce，不能自动重跑同一个O_EXCL报告路径。
+
+只读上游机制审查给下一轮提供排除依据：[AOSP AdbVsockPipe.cpp](https://android.googlesource.com/platform/external/qemu/+/emu-master-dev/android/android-emu/android/emulation/AdbVsockPipe.cpp)先通过虚拟vsock open/ping判断guest adbd存活，再启动host listener并通知ADB server；通知5037与guest虚拟通道是不同阶段。[AOSP AdbHostListener.cpp](https://android.googlesource.com/platform/external/qemu/+/emu-master-dev/android/android-emu/android/emulation/AdbHostListener.cpp)固定regular ADB监听成功后，随机JDWP监听失败只警告可选Icebox不可用。因此，拒绝5037或随机JDWP bind都不足以单独解释已手动连接5567后offline，不能据此扩大网络权限。这些是upstream master机制参考，尚未逐分支证明等同本机SDK37.1.11；SDK中的泛socketpair/Crashpad标记也不能单独归因ADB故障。
 
 独立controller源码默认只描述计划。boot仅使用已经运行的专用15037 ADB smart socket，root先核验601 server PID／600 managed VM PID及仅loopback端点，用root-owned0600已unlink普通文件的O_RDONLY继承FD授予短期描述；不用shared5037、个人Home或ADB凭据。固定读取boot／尺寸／GLES，并前后核验PID。token broker只从固定600/PID/AVD/8566来源送至private匿名pipe，不写stdout或报告；真正gRPC截图尚未实现。
 

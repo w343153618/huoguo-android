@@ -494,6 +494,11 @@
     "candidate_localonly_resolver_tests": 21,
     "candidate_localonly_resolver_actual_uid600": false,
     "candidate_final_health": "evidence/m1-host-isolation-20261002/phase-final-health.json",
-    "candidate_final_guard_cleanup": "evidence/m1-host-isolation-20261002/phase-final-guard-cleanup.json"
+    "candidate_final_guard_cleanup": "evidence/m1-host-isolation-20261002/phase-final-guard-cleanup.json",
+    "candidate_closed_log_readback_prepared": true,
+    "candidate_closed_log_readback_native_call": "Started2026-10-03T01:56:59+08:00; caller timed out120s; fixed root receipt still absent on later readback. Payload execution state unknown; no actual marker counts accepted.",
+    "candidate_closed_log_readback_receipt_obtained": false,
+    "candidate_closed_log_readback_evidence": "evidence/m1-host-isolation-20261002/boot-marker-final-receipt-check.json",
+    "candidate_adb_upstream_review_scope": "Upstream master separates guest-adbd vsock liveness from host-server notification; optional random JDWP listener failure does not alone fail regular ADB listener. SDK37.1.11 branch equivalence unverified; no permission widening inferred from generic markers."
   }
 }
