@@ -397,5 +397,29 @@
     "formal_and_isolated_binary_match_official": true,
     "web_files_match": 55,
     "audit_was_read_only": true
+  },
+  "host_isolation": {
+    "status": "not_accepted",
+    "report": "m1-host-isolation-design-20261002.md",
+    "evidence": "evidence/m1-host-isolation-20261002",
+    "app_accounts": {
+      "huoguo": "friend only",
+      "wyw": "owner testing only"
+    },
+    "guest_and_gateway_share_personal_macos_uid": true,
+    "guest_owned_tcp_canaries_host_loopback_and_lan_reachable": true,
+    "formal_gateway_owner_checks_deployed": true,
+    "formal_update_symlink_and_fifo_rejection_deployed": true,
+    "gateway_scope_checks_passed": 100,
+    "gateway_health_and_manifest_after_reload": true,
+    "cross_account_checks_offline_only": true,
+    "pf_status_read_with_admin": "enabled",
+    "pf_guest_uid_policy_deployed": false,
+    "sandbox_feasibility": "Owned synthetic subprocess read/write/create plus loopback/LAN/IPv6 TCP negative checks passed; deprecated runner; no emulator sandbox acceptance",
+    "dedicated_run_users_deployed": false,
+    "root_guest_firewall_not_trusted": true,
+    "credentials_read": false,
+    "emulator_restarted": false,
+    "new_public_udp_release_allowed_before_isolation_acceptance": false
   }
 }

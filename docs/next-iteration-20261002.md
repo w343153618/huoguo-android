@@ -1,5 +1,7 @@
 # 下一轮有界实验与 UDP 产品化验收计划
 
+最新用户优先事项：`huoguo` 只给火锅，`wyw` 仅机主测试。远程安卓（含 root）不能访问 M1 无关文件或成为宿主／LAN 跳板。见 [宿主隔离设计](m1-host-isolation-design-20261002.md)。现有 guest 与 gateway 共用个人 UID；两个新建 host-owned TCP canary 在 guest 中均可达。正式入口 owner 隔离与更新文件 nofollow 已通过100项范围检查并只重载 gateway，原证书／ping／清单正常；这不是 OS／网络隔离完成。管理员读回PF enabled，但尚无经验证的guest UID策略。独立合成 sandbox 子进程可拒绝文件和本机IPv4／IPv6 TCP，但没有套到VM，runner为deprecated，不可直接推广。后续先完成隔离身份、文件与受限出口候选及负向验收，不为新公网UDP开放原始ADB／shell／任意转发；不去除认证、完整性或防重放。保留既有服务，忙时跳过迁移；不能把不同App账号视为macOS边界。
+
 双通道源码准备已完成，见[发布说明](dual-release-channels-20261002.md)与[独立交付](experimental-public-delivery-20261002.md)。正式v1.30保持，实验1.31-alpha.1采用独立包名、原签名、独立清单与手动实验更新。候选已编译/lint并安装一加12，真实UI显示版本和通道；媒体对照尚未执行。新增注册Tailnet策略要求100.65.0.2/100.65.0.3精确身份、hs.yilufa控制域、kernel utun与路由一致，失败仅撤销候选。不能把这些离线检查、安装或UI文字当成Tailnet媒体实测。
 
 本轮曾看到正式入口有三条经NPC连接并跳过媒体测试；连接空闲后只做候选安装与UI读回，用户随后讨论NPS传输设计，尚未启动新的媒体会话。接着先完成同APK PCM A/B/B/A和Tailnet真实媒体，明确界面与内容格式；仅发布源码不能称朋友的下载/升级入口已可用。腾讯NPS原版来源核对见[审计](nps-provenance-audit-20261002.md)，保持现有服务和国内来源规则。

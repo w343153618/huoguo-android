@@ -165,19 +165,35 @@ class Handler(BaseHTTPRequestHandler):
         if name!='update.json' and not re.fullmatch(r'HuoguoAndroid-v[0-9]+(?:\.[0-9]+){1,3}\.apk',name):
             self.reply(404,{'error':'Unknown route'});return
         directory=pathlib.Path(os.environ.get('DIRECT_UPDATE_DIR',str(BASE/'updates')))
+        source=None;fd=None;headers_sent=False
         try:
-            with (directory/name).open('rb') as source:
-                size=os.fstat(source.fileno()).st_size
-                if size>64*1024*1024:raise OSError('Oversized update')
-                self.connection.settimeout(30)
-                self.send_response(200)
-                self.send_header('Content-Type','application/json' if name=='update.json' else 'application/vnd.android.package-archive')
-                self.send_header('Content-Length',str(size));self.send_header('Cache-Control','no-cache')
-                self.send_header('Connection','close');self.end_headers()
-                while chunk:=source.read(65536):self.wfile.write(chunk)
-                self.close_connection=True
+            # A published name must never dereference a host-file symlink or
+            # block the request on a FIFO/device masquerading as an update.
+            fd=os.open(directory/name,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            source=os.fdopen(fd,'rb');fd=None
+            info=os.fstat(source.fileno())
+            limit=65536 if name=='update.json' else 64*1024*1024
+            if not stat.S_ISREG(info.st_mode) or not 0<info.st_size<=limit:
+                self.reply(503,{'error':'Update unavailable'});return
+            self.connection.settimeout(30)
+            self.send_response(200)
+            self.send_header('Content-Type','application/json' if name=='update.json' else 'application/vnd.android.package-archive')
+            self.send_header('Content-Length',str(info.st_size));self.send_header('Cache-Control','no-cache')
+            self.send_header('X-Content-Type-Options','nosniff')
+            self.send_header('Connection','close');self.end_headers();headers_sent=True
+            remaining=info.st_size
+            while remaining:
+                chunk=source.read(min(65536,remaining))
+                if not chunk:break
+                self.wfile.write(chunk);remaining-=len(chunk)
+            self.close_connection=True
         except FileNotFoundError:self.reply(404,{'error':'Update not available'})
-        except OSError:self.close_connection=True
+        except OSError:
+            if not headers_sent:self.reply(503,{'error':'Update unavailable'})
+            else:self.close_connection=True
+        finally:
+            if source is not None:source.close()
+            if fd is not None:os.close(fd)
     def experimental_asset(self):
         # Isolated signed installation assets only; never credentials, arbitrary
         # files or a mutation of the established formal /updates/ channel.
@@ -258,6 +274,10 @@ class Handler(BaseHTTPRequestHandler):
         hardware=None
         try:
             with lock:
+                # Knowing another user's random SID must not grant its channels
+                # or permit a login to displace an active, differently owned run.
+                if any(s.get('account') != self.account for s in sessions.values()):
+                    self.reply(409,{'error':'Android session is in use'});return
                 for old in list(sessions): close_session(old)
                 idle_screen.cancel()
                 ensure_android()
@@ -268,7 +288,7 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     port,proc=self.start_guest_video(max_size,bit_rate,max_fps,bitrate_mode,mode_value)
                 sid=secrets.token_hex(16)
-                sessions[sid]={'port':port,'proc':proc,'hardware':hardware,'sockets':[],'roles':[],'created':time.monotonic()}
+                sessions[sid]={'account':self.account,'port':port,'proc':proc,'hardware':hardware,'sockets':[],'roles':[],'created':time.monotonic()}
                 threading.Timer(30,lambda: self.expire(sid)).start()
             self.reply(200,{'session':sid,'codec':'h264','max_size':max_size,'max_fps':max_fps,'video_bit_rate':bit_rate,'bitrate_mode':bitrate_mode,'adaptive_vbr':bitrate_mode=='ADAPTIVE_VBR','video_backend':VIDEO_BACKEND,'hardware_required':VIDEO_BACKEND=='videotoolbox'})
         except Exception as e:
@@ -318,7 +338,8 @@ class Handler(BaseHTTPRequestHandler):
         sid,role=parts[2:]
         with lock:
             s=sessions.get(sid)
-            if not s: self.reply(404,{'error':'Session expired'}); return
+            if not s or s.get('account') != self.account:
+                self.reply(404,{'error':'Session expired'}); return
             if len(s['roles'])>=3 or role!=['video','audio','control'][len(s['roles'])]:
                 self.reply(409,{'error':'Invalid channel order'}); return
             upstream=None
@@ -350,6 +371,17 @@ class Handler(BaseHTTPRequestHandler):
             finally: close_session(sid)
         threading.Thread(target=pump,args=(self.connection,upstream),daemon=True).start()
         pump(upstream,self.connection); self.close_connection=True
+    def do_DELETE(self):
+        if not self.auth():return
+        match=re.fullmatch(r'/session/([0-9a-f]{32})',self.path)
+        if not match:self.reply(404,{'error':'Unknown route'});return
+        sid=match[1]
+        with lock:
+            s=sessions.get(sid)
+            if not s or s.get('account') != self.account:
+                self.reply(404,{'error':'Session expired'});return
+            close_session(sid)
+        self.reply(200,{'closed':True})
 if __name__=='__main__':
     if os.environ.get('DIRECT_PHYSICAL_DISPLAY') in ('540x1200', '720x1280', '1080x1920'):
         def prepare_display():

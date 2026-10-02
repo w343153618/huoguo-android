@@ -32,6 +32,7 @@ class HardwareGatewayTest(unittest.TestCase):
                            'video_bit_rate': 4000000, 'bitrate_mode': 'ADAPTIVE_VBR'}).encode()
         request.headers['Content-Length'] = str(len(body))
         request.rfile, request.connection = io.BytesIO(body), Mock()
+        request.account = 'test-owner'
         request.auth, request.reply = Mock(return_value=True), Mock()
         request.start_guest_video = Mock()
         request.do_POST()
