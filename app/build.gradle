@@ -13,8 +13,8 @@ android {
         applicationId(probeApplicationId == null ? 'local.remoteandroid.direct' : probeApplicationId)
         minSdk 30
         targetSdk 37
-        versionCode 30
-        versionName '1.29'
+        versionCode 31
+        versionName '1.30'
         buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: 'https://146.56.249.175:15556/updates/update.json').replace('"', '') + '"'
     }
     buildFeatures { buildConfig true }
