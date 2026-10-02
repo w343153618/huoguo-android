@@ -299,6 +299,9 @@ class PrepareFixture(unittest.TestCase):
     def test_cli_source_and_output_boundaries_and_no_execute_flag(self):
         for args in (("--source", str(self.source), "--output", str(self.output)),
                      ("--output", str(self.output)),
+                     ("--system-temp", "--output", str(self.output)),
+                     ("--system-temp", "--source", str(self.source)),
+                     ("--system-temp", "--execute"),
                      ("--output", str(prepare.CANONICAL_SOURCE / "docs/evidence/x"), "--execute")):
             with patch.object(sys, "argv", ["prepare"] + list(args)), \
                     patch.object(prepare, "prepare") as callback, redirect_stdout(io.StringIO()), \
@@ -306,6 +309,151 @@ class PrepareFixture(unittest.TestCase):
                     self.assertRaises(SystemExit):
                 prepare.main()
             callback.assert_not_called()
+
+    def test_system_temp_private_bundle_receipt_and_collision(self):
+        scratch = self.base / "owned-system-temp"
+        scratch.mkdir(mode=0o1777)
+        evidence = self.base / "ignored-evidence"
+        evidence.mkdir()
+        with patch.object(prepare, "SYSTEM_TEMP", scratch), \
+                patch.object(prepare, "RECEIPT_DIRECTORY", evidence), \
+                patch.object(prepare, "_require_system_temp_parent") as guard, \
+                patch.object(prepare.uuid, "uuid4", return_value=SimpleNamespace(hex="a" * 32)), \
+                patch("subprocess.run", side_effect=AssertionError("prepare-only")):
+            result = prepare.prepare_system_temp(self.source, self.sdk)
+            receipt = prepare._write_prepare_receipt(result)
+            self.assertEqual(guard.call_count, 2)
+            bundle = scratch / (prepare.SYSTEM_TEMP_PREFIX + "a" * 32)
+            self.assertEqual(result["bundle"], str(bundle))
+            self.assertEqual(stat.S_IMODE(bundle.stat().st_mode), 0o700)
+            self.assertEqual(result["storage"], "system-temp")
+            self.assertFalse(result["executed"])
+            path = Path(receipt["receipt"])
+            self.assertEqual(path.parent, evidence)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            record = json.loads(path.read_text())
+            self.assertFalse(record["executed"])
+            self.assertEqual(record["bundle"], str(bundle))
+            self.assertEqual(receipt["receipt_sha256"], prepare.sha256(path.read_bytes()))
+            self.assertNotIn("OWNED_FIXTURE", path.read_text())
+            with self.assertRaises(FileExistsError):
+                prepare.prepare_system_temp(self.source, self.sdk)
+            with self.assertRaises(FileExistsError):
+                prepare._write_prepare_receipt(result)
+
+    def test_system_temp_requires_root_owned_sticky_parent_and_fixed_name(self):
+        for uid, mode in ((501, stat.S_IFDIR | 0o1777), (0, stat.S_IFDIR | 0o0755)):
+            with patch.object(prepare.os, "fstat", return_value=SimpleNamespace(st_uid=uid, st_mode=mode)), \
+                    self.assertRaises(ValueError):
+                prepare._require_system_temp_parent(7)
+        with patch.object(prepare.os, "fstat", return_value=SimpleNamespace(
+                st_uid=0, st_mode=stat.S_IFDIR | 0o1777)):
+            prepare._require_system_temp_parent(7)
+        for path in (self.base / (prepare.SYSTEM_TEMP_PREFIX + "a" * 32),
+                     prepare.SYSTEM_TEMP / "arbitrary-name",
+                     prepare.SYSTEM_TEMP / (prepare.SYSTEM_TEMP_PREFIX + "../../bad"),
+                     prepare.SYSTEM_TEMP / (prepare.SYSTEM_TEMP_PREFIX + "A" * 32)):
+            with self.assertRaises(ValueError):
+                prepare.prepare(self.source, self.sdk, path, system_temp=True)
+        scratch = self.base / "untrusted-system-temp"
+        scratch.mkdir(mode=0o1777)
+        with patch.object(prepare, "SYSTEM_TEMP", scratch), self.assertRaises(ValueError):
+            prepare.prepare_system_temp(self.source, self.sdk)
+        self.assertEqual(list(scratch.iterdir()), [])
+
+    def test_cli_system_temp_keeps_canonical_source_and_does_not_execute(self):
+        metadata = {"prepared": True, "executed": False, "bundle": "fixture metadata"}
+        with patch.object(sys, "argv", ["prepare", "--system-temp"]), \
+                patch.object(prepare, "prepare_system_temp", return_value=metadata) as callback, \
+                patch.object(prepare, "_write_prepare_receipt", return_value=metadata) as receipt, \
+                redirect_stdout(io.StringIO()) as output:
+            prepare.main()
+        callback.assert_called_once_with(prepare.CANONICAL_SOURCE, prepare.DEFAULT_SDK)
+        receipt.assert_called_once_with(metadata)
+        self.assertFalse(json.loads(output.getvalue())["executed"])
+
+    def test_profile_fallback_only_on_permission_error_and_exact_contract(self):
+        generator = (self.helpers / "emulator_sandbox_profile.py").read_bytes()
+        module = prepare._snapshot_generator(generator)
+        with patch.object(prepare, "_snapshot_generator", return_value=module), \
+                patch.object(module, "generate_profile", side_effect=PermissionError("owned private home")), \
+                patch.object(prepare, "_installed_profile", return_value=b"pinned fixture") as fallback:
+            self.assertEqual(prepare._profile(generator), b"pinned fixture")
+        self.assertEqual(fallback.call_count, 1)
+        self.assertEqual(prepare._config_record(fallback.call_args.args[1]), prepare._INSTALLED_CONFIG)
+        with patch.object(prepare, "_snapshot_generator", return_value=module), \
+                patch.object(module, "generate_profile", side_effect=ValueError("noncanonical")), \
+                patch.object(prepare, "_installed_profile") as fallback, self.assertRaises(ValueError):
+            prepare._profile(generator)
+        fallback.assert_not_called()
+        config = SimpleNamespace(**prepare._INSTALLED_CONFIG)
+        with patch.object(prepare, "_read_root_public") as read:
+            with self.assertRaises(ValueError):
+                prepare._installed_profile(generator + b"\nchanged", config)
+            config.proxy_tcp_port = 18132
+            with self.assertRaises(ValueError):
+                prepare._installed_profile(generator, config)
+        read.assert_not_called()
+
+    def test_installed_profile_checks_journal_hash_and_directory_ownership(self):
+        generator = (self.helpers / "emulator_sandbox_profile.py").read_bytes()
+        config = SimpleNamespace(**prepare._INSTALLED_CONFIG)
+        profile = b"owned fixed profile fixture\n"
+        digest = prepare.sha256(profile)
+        journal = {"schema": 1, "root": str(prepare.ISOLATION_ROOT), "guest_profile": {
+            "path": str(prepare.ISOLATION_ROOT / "profiles/guest.sb"), "sha256": digest}}
+        # No privileged path is opened: all logical fixed directories map to a
+        # new ordinary fixture directory; ownership checks are independently tested.
+        original_directory_fd = prepare.directory_fd
+        def owned_directory(path):
+            return original_directory_fd(self.base)
+        with patch.object(prepare, "directory_fd", side_effect=owned_directory), \
+                patch.object(prepare, "_check_root_public_directory"), \
+                patch.object(prepare, "_INSTALLED_PROFILE_SHA256", digest), \
+                patch.object(prepare, "_read_root_public", side_effect=[json.dumps(journal).encode(), profile]):
+            self.assertEqual(prepare._installed_profile(generator, config), profile)
+        bad_journal = dict(journal, guest_profile={"path": "arbitrary", "sha256": digest})
+        for records in ([json.dumps(bad_journal).encode()],
+                        [json.dumps(journal).encode(), profile + b"changed"]):
+            with patch.object(prepare, "directory_fd", side_effect=owned_directory), \
+                    patch.object(prepare, "_check_root_public_directory"), \
+                    patch.object(prepare, "_INSTALLED_PROFILE_SHA256", digest), \
+                    patch.object(prepare, "_read_root_public", side_effect=records), self.assertRaises(ValueError):
+                prepare._installed_profile(generator, config)
+        for uid, mode in ((501, stat.S_IFDIR | 0o755), (0, stat.S_IFDIR | 0o777)):
+            with patch.object(prepare.os, "fstat", return_value=SimpleNamespace(st_uid=uid, st_mode=mode)), \
+                    self.assertRaises(ValueError):
+                prepare._check_root_public_directory(7)
+
+    def test_root_public_profile_leaf_rejects_untrusted_modes_links_and_size(self):
+        target = self.base / "owned-profile"
+        target.write_bytes(b"fixture")
+        with prepare.directory_fd(self.base) as parent:
+            with self.assertRaises(ValueError):
+                prepare._read_root_public(parent, target.name, 1024)
+            original = prepare.os.fstat
+            def as_root(fd):
+                info = original(fd)
+                values = list(info)
+                values[4] = 0
+                return os.stat_result(values)
+            # Explicit root metadata is mocked for owned data, never chowned.
+            with patch.object(prepare.os, "fstat", side_effect=as_root):
+                target.chmod(0o600)
+                with self.assertRaises(ValueError):
+                    prepare._read_root_public(parent, target.name, 1024)
+                target.chmod(0o644)
+                with self.assertRaises(ValueError):
+                    prepare._read_root_public(parent, target.name, 1)
+                alias = self.base / "alias-profile"
+                os.link(target, alias)
+                with self.assertRaises(ValueError):
+                    prepare._read_root_public(parent, target.name, 1024)
+                alias.unlink()
+                target.unlink()
+                target.symlink_to(self.source / "owned.py")
+                with self.assertRaises(OSError):
+                    prepare._read_root_public(parent, target.name, 1024)
 
 
 if __name__ == "__main__":

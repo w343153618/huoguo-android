@@ -197,6 +197,62 @@ class PublicDestinationPolicyTest(unittest.TestCase):
 
 
 class ResolverPinningTest(unittest.TestCase):
+    def test_private_names_are_rejected_before_any_resolver_child(self):
+        suffixes = ("local", "localhost", "home", "lan", "internal", "invalid",
+                    "test", "onion", "in-addr.arpa", "ip6.arpa", "home.arpa")
+        for suffix in suffixes:
+            for host in (suffix, "device." + suffix, "DEVICE." + suffix.upper() + "."):
+                with self.subTest(host=host), patch.object(egress.subprocess, "run") as resolver, \
+                        patch.object(egress, "open_numeric") as dial:
+                    with self.assertRaises(egress.Rejected) as raised:
+                        egress.resolve_public(host, 443, egress.EgressPolicy(), time.monotonic() + 1)
+                    self.assertEqual(raised.exception.reason, "private_namespace")
+                    self.assertEqual(raised.exception.status, 403)
+                    resolver.assert_not_called()
+                    dial.assert_not_called()
+
+    def test_invalid_search_names_and_alternate_ip_forms_never_reach_resolver(self):
+        for host in ("printer", "", "router.local..", "example..com", "127.1", "0177.0.0.1",
+                     "2130706433", "0x7f000001", "localhost\x00.example", "例子.com",
+                     "fe80::1%en0"):
+            with self.subTest(host=host), patch.object(egress.subprocess, "run") as resolver:
+                with self.assertRaises(egress.Rejected):
+                    egress.resolve_public(host, 443, egress.EgressPolicy(), time.monotonic() + 1)
+                resolver.assert_not_called()
+
+    def test_nonpublic_literals_and_denied_self_literals_never_reach_resolver(self):
+        policy = egress.EgressPolicy(deny_self_ips=frozenset(("8.8.8.8",)))
+        for host in ("127.0.0.1", "192.168.9.1", "100.65.0.2", "169.254.169.254",
+                     "0.0.0.0", "198.18.0.1", "224.0.0.1", "::1", "fd00::1",
+                     "::ffff:192.168.9.1", "64:ff9b::c0a8:0901", "8.8.8.8", "::ffff:8.8.8.8"):
+            with self.subTest(host=host), patch.object(egress.subprocess, "run") as resolver:
+                with self.assertRaises(egress.Rejected) as raised:
+                    egress.resolve_public(host, 443, policy, time.monotonic() + 1)
+                self.assertEqual(raised.exception.status, 403)
+                resolver.assert_not_called()
+
+    def test_public_names_with_similar_labels_still_resolve_and_pin_numeric_results(self):
+        for host in ("example.locality.com", "test.example.com", "home.example.com",
+                     "WWW.Example.COM."):
+            with self.subTest(host=host), patch.object(egress.subprocess, "run",
+                    return_value=dns_result("8.8.8.8")) as resolver:
+                self.assertEqual(egress.resolve_public(host, 443, egress.EgressPolicy(),
+                                                       time.monotonic() + 1), ["8.8.8.8"])
+                self.assertEqual(resolver.call_args.args[0][-2:], [host, "443"])
+
+    def test_private_names_are_blocked_through_both_connect_and_plain_http(self):
+        requests = (b"CONNECT router.local:443 HTTP/1.1\r\n\r\n",
+                    b"GET http://printer.home.arpa/ HTTP/1.1\r\nHost: printer.home.arpa\r\n\r\n",
+                    b"HEAD http://device.internal/ HTTP/1.1\r\nHost: device.internal\r\n\r\n")
+        with patch.object(egress.subprocess, "run") as resolver, \
+                patch.object(egress, "open_numeric") as dial, running_proxy() as proxy:
+            for request in requests:
+                with self.subTest(request=request), connect_client(proxy, request) as client:
+                    reply = read_header(client)
+                    self.assertIn(b"403 Forbidden", reply)
+            resolver.assert_not_called()
+            dial.assert_not_called()
+
     def test_mixed_dns_records_reject_the_entire_resolution_before_dial(self):
         for forbidden in ("192.168.9.125", "::1", "198.18.0.8", "::ffff:10.0.0.1"):
             with self.subTest(forbidden=forbidden), patch.object(

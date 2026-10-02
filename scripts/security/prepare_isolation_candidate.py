@@ -20,16 +20,34 @@ import shlex
 import stat
 import sys
 import types
+import uuid
 
 
 CANONICAL_SOURCE = Path("/Users/wyw/Documents/Codex/others/huoguo-android")
 DEFAULT_SDK = Path("/Users/wyw/Library/Android/sdk")
 ISOLATION_ROOT = Path("/private/var/lib/huoguo-android-isolation")
+SYSTEM_TEMP = Path("/private/var/tmp")
+SYSTEM_TEMP_PREFIX = "huoguo-isolation-stage-"
+RECEIPT_DIRECTORY = CANONICAL_SOURCE / "docs/evidence/m1-host-isolation-20261002"
 MAX_FILE_BYTES = 1024 * 1024
 MAX_MODULES = 64
 MAX_TOTAL_BYTES = 16 * 1024 * 1024
 HELPERS = ("isolation_admin.py", "emulator_sandbox_profile.py")
 _MODULE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,100}\.py\Z")
+# The already-installed public profile is a fallback ONLY for a PermissionError
+# while resolving the private VM home. These pins bind its exact bytes, generator
+# and complete fixed config; changing either source or policy fails closed.
+_INSTALLED_GENERATOR_SHA256 = "27315681595a45ac3bb0a4c626acb377211e10a181a2a1d1f4f376f60c673954"
+_INSTALLED_PROFILE_SHA256 = "a5bc861cd978b7c6229bf6a0dc9b66f6379d2feab05fea1775b8a1f12158ddeb"
+_INSTALLED_CONFIG = {
+    "proxy_tcp_port": 18131,
+    "runtime_root": "/private/var/lib/huoguo-android-isolation/homes/vm",
+    "sdk_root": "/private/var/lib/huoguo-android-isolation/shared/sdk",
+    "avd_root": "/private/var/lib/huoguo-android-isolation/homes/vm/.android/avd",
+    "immutable_code_roots": ["/private/var/lib/huoguo-android-isolation/shared/code"],
+    "homebrew_read_roots": [], "listen_tcp_ports": [5566, 5567, 8566],
+    "dns_loopback_port": 53,
+}
 
 
 @contextmanager
@@ -108,6 +126,70 @@ def _snapshot_generator(data: bytes):
             sys.modules[name] = previous
 
 
+def _config_record(config) -> dict:
+    return {"proxy_tcp_port": config.proxy_tcp_port,
+            "runtime_root": str(config.runtime_root), "sdk_root": str(config.sdk_root),
+            "avd_root": str(config.avd_root),
+            "immutable_code_roots": [str(path) for path in config.immutable_code_roots],
+            "homebrew_read_roots": [str(path) for path in config.homebrew_read_roots],
+            "listen_tcp_ports": list(config.listen_tcp_ports),
+            "dns_loopback_port": config.dns_loopback_port}
+
+
+def _read_root_public(parent_fd: int, name: str, limit: int) -> bytes:
+    """Read a fixed root-owned public leaf without weakening path checks."""
+    if "/" in name or name in ("", ".", ".."):
+        raise ValueError("a fixed installed metadata leaf is required")
+    fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent_fd)
+    try:
+        info = os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_uid != 0
+                or stat.S_IMODE(info.st_mode) != 0o644 or info.st_size > limit):
+            raise ValueError("installed profile metadata must be root-owned public regular data")
+        chunks, count = [], 0
+        while count <= limit:
+            block = os.read(fd, min(65536, limit + 1 - count))
+            if not block:
+                break
+            chunks.append(block)
+            count += len(block)
+        after = os.fstat(fd)
+        if (count > limit or count != info.st_size
+                or (info.st_size, info.st_mtime_ns, info.st_ctime_ns)
+                != (after.st_size, after.st_mtime_ns, after.st_ctime_ns)):
+            raise ValueError("installed profile metadata changed during reading")
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
+
+
+def _check_root_public_directory(fd: int) -> None:
+    info = os.fstat(fd)
+    if info.st_uid != 0 or info.st_mode & 0o022:
+        raise ValueError("installed profile directory must be administrator owned")
+
+
+def _installed_profile(generator_bytes: bytes, config) -> bytes:
+    if (ISOLATION_ROOT != Path("/private/var/lib/huoguo-android-isolation")
+            or sha256(generator_bytes) != _INSTALLED_GENERATOR_SHA256
+            or _config_record(config) != _INSTALLED_CONFIG):
+        raise ValueError("installed profile fallback contract is not exact")
+    with directory_fd(ISOLATION_ROOT) as root_fd:
+        _check_root_public_directory(root_fd)
+        journal = json.loads(_read_root_public(root_fd, "candidate-layout.json", 65536))
+    profile_path = ISOLATION_ROOT / "profiles/guest.sb"
+    if (journal.get("schema") != 1 or journal.get("root") != str(ISOLATION_ROOT)
+            or journal.get("guest_profile") != {
+                "path": str(profile_path), "sha256": _INSTALLED_PROFILE_SHA256}):
+        raise ValueError("installed profile journal does not match the fixed contract")
+    with directory_fd(profile_path.parent) as profile_fd:
+        _check_root_public_directory(profile_fd)
+        data = _read_root_public(profile_fd, "guest.sb", MAX_FILE_BYTES)
+    if sha256(data) != _INSTALLED_PROFILE_SHA256:
+        raise ValueError("installed profile bytes do not match the fixed contract")
+    return data
+
+
 def _profile(generator_bytes: bytes) -> bytes:
     module = _snapshot_generator(generator_bytes)
     config = module.SandboxConfig(
@@ -119,7 +201,25 @@ def _profile(generator_bytes: bytes) -> bytes:
         listen_tcp_ports=(5566, 5567, 8566),
         dns_loopback_port=53,
     )
-    return module.generate_profile(config).encode("utf-8")
+    try:
+        return module.generate_profile(config).encode("utf-8")
+    except PermissionError:
+        # Python path-resolution behavior differs by runtime version once the
+        # installed VMHOME is private. No validation is patched or bypassed.
+        return _installed_profile(generator_bytes, config)
+
+
+def _require_system_temp_parent(fd: int) -> None:
+    info = os.fstat(fd)
+    if info.st_uid != 0 or not info.st_mode & stat.S_ISVTX:
+        raise ValueError("system scratch parent must be root owned and sticky")
+
+
+def _validate_system_temp_output(output: Path) -> None:
+    suffix = output.name.removeprefix(SYSTEM_TEMP_PREFIX)
+    if (output.parent != SYSTEM_TEMP or not output.name.startswith(SYSTEM_TEMP_PREFIX)
+            or not re.fullmatch(r"[0-9a-f]{32}", suffix)):
+        raise ValueError("system scratch requires the fixed parent and a fresh UUID name")
 
 
 # This is self-contained stdlib-only source, never imported from the checkout.
@@ -291,10 +391,14 @@ def _applescript_literal(value: str) -> str:
     return '"' + value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r") + '"'
 
 
-def prepare(source: Path, sdk: Path, output: Path) -> dict:
+def prepare(source: Path, sdk: Path, output: Path, *, system_temp: bool = False) -> dict:
     if os.geteuid() == 0:
         raise PermissionError("prepare-only must run without root")
     source, sdk, output = map(Path, (source, sdk, output))
+    if system_temp:
+        _validate_system_temp_output(output)
+        with directory_fd(output.parent) as parent:
+            _require_system_temp_parent(parent)
     # Open first: reject symbolic path components without silently resolving.
     with directory_fd(source) as source_fd, directory_fd(sdk):
         names = sorted(name for name in os.listdir(source_fd) if name.endswith(".py"))
@@ -312,6 +416,7 @@ def prepare(source: Path, sdk: Path, output: Path) -> dict:
                 "modules": {name: sha256(data) for name, data in modules.items()},
                 "helpers": {name: sha256(data) for name, data in helpers.items()},
                 "profile_sha256": sha256(profile), "candidate_root": str(ISOLATION_ROOT),
+                "profile_config": dict(_INSTALLED_CONFIG),
                 "proxy_port": 18131, "dns_port": 53, "management_ports": [5566, 5567, 8566]}
     manifest_bytes = (json.dumps(manifest, indent=2, sort_keys=True) + "\n").encode()
     expected = {"owner_uid": owner, "sdk": str(sdk), "manifest": manifest,
@@ -319,6 +424,8 @@ def prepare(source: Path, sdk: Path, output: Path) -> dict:
                 "helpers": manifest["helpers"], "profile_sha256": manifest["profile_sha256"]}
     # Output must be new; never adopt, remove or overwrite an existing bundle.
     with directory_fd(output.parent) as parent:
+        if system_temp:
+            _require_system_temp_parent(parent)
         os.mkdir(output.name, 0o700, dir_fd=parent)
     with directory_fd(output) as bundle_fd:
         os.fchmod(bundle_fd, 0o700)
@@ -344,25 +451,56 @@ def prepare(source: Path, sdk: Path, output: Path) -> dict:
         command = shlex.join(["/usr/bin/osascript", "-e", script]) + "\n"
         _write_leaf(bundle_fd, "command.txt", command.encode())
     return {"schema": 1, "prepared": True, "executed": False,
+            "storage": "system-temp" if system_temp else "explicit-evidence",
             "bundle": str(output), "manifest": str(output / "manifest.json"),
             "manifest_sha256": sha256(manifest_bytes), "loader_sha256": sha256(payload),
             "command_sha256": sha256(command.encode()), "module_sha256": manifest["modules"],
             "helper_sha256": manifest["helpers"], "profile_sha256": manifest["profile_sha256"]}
 
 
+def prepare_system_temp(source: Path, sdk: Path) -> dict:
+    """Unprivileged fresh private bundle; no root operation is performed."""
+    output = SYSTEM_TEMP / (SYSTEM_TEMP_PREFIX + uuid.uuid4().hex)
+    return prepare(source, sdk, output, system_temp=True)
+
+
+def _write_prepare_receipt(result: dict) -> dict:
+    # Fixed ignored evidence destination, containing paths and hashes only.
+    # Keep a copy in the project even though the payload lives in system temp.
+    bundle = Path(result["bundle"])
+    _validate_system_temp_output(bundle)
+    name = "prepare-system-temp-receipt-" + bundle.name[len(SYSTEM_TEMP_PREFIX):] + ".json"
+    path = RECEIPT_DIRECTORY / name
+    record = dict(result, receipt=str(path),
+                  scope="prepare-only; no administrator action, clone or service operation executed",
+                  path_boundary_note=("A prior administrator outer read failed with PermissionError "
+                                      "for a Documents bundle and succeeded from private var tmp; "
+                                      "the access-control mechanism has not been established"))
+    data = (json.dumps(record, indent=2, sort_keys=True) + "\n").encode()
+    with directory_fd(RECEIPT_DIRECTORY) as directory:
+        _write_leaf(directory, name, data)
+    return dict(record, receipt_sha256=sha256(data))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, default=CANONICAL_SOURCE)
     parser.add_argument("--sdk", type=Path, default=DEFAULT_SDK)
-    parser.add_argument("--output", type=Path, required=True,
-                        help="new private bundle below an existing ignored evidence directory")
+    destination = parser.add_mutually_exclusive_group(required=True)
+    destination.add_argument("--output", type=Path,
+                             help="new private bundle below an existing ignored evidence directory")
+    destination.add_argument("--system-temp", action="store_true",
+                             help="prepare fresh private /private/var/tmp bundle and project evidence receipt")
     args = parser.parse_args()
     if args.source != CANONICAL_SOURCE:
         parser.error("CLI source must be the canonical project directory")
-    evidence = CANONICAL_SOURCE / "docs/evidence"
-    if args.output == evidence or not args.output.is_relative_to(evidence):
-        parser.error("CLI output must be below the ignored project evidence directory")
-    result = prepare(args.source, args.sdk, args.output)
+    if args.system_temp:
+        result = _write_prepare_receipt(prepare_system_temp(args.source, args.sdk))
+    else:
+        evidence = CANONICAL_SOURCE / "docs/evidence"
+        if args.output == evidence or not args.output.is_relative_to(evidence):
+            parser.error("CLI output must be below the ignored project evidence directory")
+        result = prepare(args.source, args.sdk, args.output)
     print(json.dumps(result, indent=2, sort_keys=True))
 
 

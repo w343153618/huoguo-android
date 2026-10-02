@@ -11,6 +11,10 @@ claim. Do not expose this listener on a physical or Tailnet interface.
 
 Every DNS answer is checked, then the chosen numeric address is used both for
 direct connections and SOCKS5 ATYP 1/4 requests. Fake-IP answers fail closed.
+Private names are rejected before resolution, matching the dedicated DNS guard.
+Public names still use the host system resolver; this does not constrain its
+OS daemon, search-domain or physical-egress behavior and is not DNS isolation
+acceptance.
 The optional SOCKS listener must itself be a loopback numeric address. Keep
 the process's file/network permissions restricted independently of this code.
 """
@@ -40,6 +44,11 @@ PUBLIC_PORTS = frozenset((80, 443))
 _NAT64 = (ipaddress.ip_network("64:ff9b::/96"), ipaddress.ip_network("64:ff9b:1::/48"))
 _LABEL = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\Z")
 _HEADER_NAME = re.compile(rb"[!#$%&'*+.^_`|~0-9A-Za-z-]+\Z")
+# Keep this small independent list aligned with restricted_dns._PRIVATE_SUFFIXES.
+# Importing that parser here would couple the two independently staged guards.
+_PRIVATE_NAME_SUFFIXES = ("local", "localhost", "home", "lan", "internal",
+                          "invalid", "test", "onion", "in-addr.arpa", "ip6.arpa",
+                          "home.arpa")
 _DNS_PROGRAM = """import json,socket,sys
 rows=socket.getaddrinfo(sys.argv[1],int(sys.argv[2]),socket.AF_UNSPEC,socket.SOCK_STREAM,socket.IPPROTO_TCP)
 if len(rows)>32: raise SystemExit(2)
@@ -192,6 +201,20 @@ def resolve_public(host: str, port: int, policy: EgressPolicy,
     try:
         ipaddress.ip_address(host)
     except ValueError:
+        # Reject before spawning a system-resolver child. Rejecting only its
+        # returned private addresses would still delegate private-name lookups
+        # to OS services outside this guard's socket boundary.
+        name = (host[:-1] if host.endswith(".") else host).lower()
+        if any(name == suffix or name.endswith("." + suffix)
+               for suffix in _PRIVATE_NAME_SUFFIXES):
+            raise Rejected(403, "private_namespace")
+        labels = name.split(".")
+        if (not name or len(name) > 253 or not name.isascii() or len(labels) < 2
+                or not all(_LABEL.fullmatch(label) for label in labels)
+                or labels[-1].isdecimal()):
+            # Do not give getaddrinfo single-label search names or alternate
+            # numeric IP spellings, even when this function is called directly.
+            raise Rejected(400, "invalid_authority")
         remaining = min(policy.dns_timeout, deadline - time.monotonic())
         if remaining <= 0:
             raise Rejected(504, "dns_timeout")

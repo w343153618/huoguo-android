@@ -1,6 +1,6 @@
 # 下一轮有界实验与 UDP 产品化验收计划
 
-新增隔离候选见 [M1 staging 与出口验收](m1-isolation-candidate-20261002.md)：Web/DNS 双族回环独占、公网数字地址 pin、专用身份／只读 SDK staging 与特权路径安全及固定安装包准备的111项范围检查通过；没有真实VM或手机隔离验收。管理员本机认证仍等待密码，候选未安装。先完成独立候选安装、管理／guest root 负向检查与GPU/HV兼容，再继续新公网UDP；不从端口开放或源码测试推断已经隔离。
+新增隔离候选见 [M1 staging 与出口验收](m1-isolation-candidate-20261002.md)：专用身份、只读SDK与独立AVD冷拷贝已经实际完成，正式实例没有迁移。修正Darwin kernel组接口后的18项真实UID600/profile无害子进程canary全部通过，fixtures清理完成；仍非Android root、完整宿主或LAN隔离验收。受限guest真实启动日志显示Metal／ANGLE初始化，但boot_completed、HVF、实际捕获／编解码尚未直接核验。外层管理员调用超时不表示未执行，旧冻结supervisor已实际安装并运行；完整时长／收尾stdout丢失，新源码需持久nonce阶段receipt。当前明确兼容问题是guard出站策略阻止DNS回环回复；最小固定源端口例外已由双族自有fixture正反验证，源码最小回复规则已安装，UID602／固定53双族public A回复实际成功；45秒候选运行完成但整组收尾探测报错，同一异常在owned fixture重现，先定位该实际错误（不把EPERM当退出），再做guest DNS与固定controller boot与GPU/HV兼容、guest root负向检查，最后推进新公网UDP。不能从端口开放或源码测试推断已经隔离。
 
 最新用户优先事项：`huoguo` 只给火锅，`wyw` 仅机主测试。远程安卓（含 root）不能访问 M1 无关文件或成为宿主／LAN 跳板。见 [宿主隔离设计](m1-host-isolation-design-20261002.md)。现有 guest 与 gateway 共用个人 UID；两个新建 host-owned TCP canary 在 guest 中均可达。正式入口 owner 隔离与更新文件 nofollow 已通过100项范围检查并只重载 gateway，原证书／ping／清单正常；这不是 OS／网络隔离完成。管理员读回PF enabled，但尚无经验证的guest UID策略。独立合成 sandbox 子进程可拒绝文件和本机IPv4／IPv6 TCP，但没有套到VM，runner为deprecated，不可直接推广。后续先完成隔离身份、文件与受限出口候选及负向验收，不为新公网UDP开放原始ADB／shell／任意转发；不去除认证、完整性或防重放。保留既有服务，忙时跳过迁移；不能把不同App账号视为macOS边界。
 
