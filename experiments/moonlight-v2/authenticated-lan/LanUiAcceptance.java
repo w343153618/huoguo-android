@@ -10,6 +10,7 @@ import android.view.Window;
 import android.widget.Spinner;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.CheckBox;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.File;
@@ -27,6 +28,19 @@ public final class LanUiAcceptance extends Instrumentation {
     private int osCleanupFailures;private boolean osCleanup;
     public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
     private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
+    private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    private void prepareUi(MainActivity target,String username,String password)throws Exception{
+        Object ui=target.lanUdpEntry;String scope=arguments.getString("network_scope","lan");
+        if(!scope.equals("lan")&&!scope.equals("tailnet"))throw new IllegalArgumentException("scope_bound");
+        ((Spinner)field(ui,"scope")).setSelection(scope.equals("tailnet")?1:0);
+        ((EditText)field(ui,"address")).setText(scope.equals("tailnet")?"100.65.0.2:15560":"192.168.9.128:15560");
+        ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
+        ((Spinner)field(ui,"rate")).setSelection(rateIndex());
+        ((Spinner)field(ui,"quality")).setSelection(2);((Spinner)field(ui,"fps")).setSelection(0);
+        ((Spinner)field(ui,"buffer")).setSelection(2);((CheckBox)field(ui,"sound")).setChecked(true);
+        String pcm=arguments.getString("pcm_queue","off");if(!pcm.equals("on")&&!pcm.equals("off"))throw new IllegalArgumentException("pcm_choice_bound");
+        ((CheckBox)field(ui,"pcmQueue")).setChecked(pcm.equals("on"));
+    }
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
         Field field=target.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(target);
@@ -139,11 +153,7 @@ public final class LanUiAcceptance extends Instrumentation {
                 })));
             final Throwable[] problem={null};int oldGeneration=target.generation;
             runOnMainSync(()->{try{
-                Object ui=target.lanUdpEntry;
-                ((EditText)field(ui,"address")).setText("192.168.9.128:15560");
-                ((EditText)field(ui,"user")).setText(login.getString("username"));
-                ((EditText)field(ui,"password")).setText(login.getString("password"));
-                ((Spinner)field(ui,"rate")).setSelection(rateIndex());
+                prepareUi(target,login.getString("username"),login.getString("password"));
                 android.view.ViewGroup decor=(android.view.ViewGroup)target.getWindow().getDecorView();
                 if(!clickStart(decor))throw new IllegalStateException("normal_UI_start_button_missing");
             }catch(Throwable e){problem[0]=e;}});
@@ -157,6 +167,7 @@ public final class LanUiAcceptance extends Instrumentation {
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
             Thread.sleep(22000);
             report.put("before_touch_received_frames",target.receivedFrames.get()).put("before_touch_callback_count",target.presentedFrames.get());
+            if(!mediaOnly()){
             File phase=new File(getTargetContext().getFilesDir(),"udp-ui-phase-ready-touch");
             try(FileOutputStream out=new FileOutputStream(phase)){out.write(1);}
             File ready=new File(getTargetContext().getFilesDir(),"udp-ui-phase-touch-ready");deadline=SystemClock.elapsedRealtime()+15000;
@@ -197,6 +208,7 @@ public final class LanUiAcceptance extends Instrumentation {
                 .put("four_video_corners_one_percent_inset_direct_View_dispatch",true)
                 .put("App_dispatched_two_and_ten_native_MotionEvent_contacts_cancel_and_fresh_down",true)
                 .put("ten_contacts_delivered_through_phone_OS",false);
+            }else report.put("media_only_no_touch_exercised",true);
             runOnMainSync(()->target.handleBack());
             File first=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");waitReport(first);
             report.put("left_through_App_back",true).put("activity_running_after_leave",target.running)
@@ -208,10 +220,7 @@ public final class LanUiAcceptance extends Instrumentation {
             // New HTTPS account auth, fresh session key/receiver, normal start UI.
             oldGeneration=target.generation;
             runOnMainSync(()->{try{
-                Object ui=target.lanUdpEntry;
-                ((EditText)field(ui,"address")).setText("192.168.9.128:15560");
-                ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
-                ((Spinner)field(ui,"rate")).setSelection(rateIndex());
+                prepareUi(target,username,password);
                 if(!clickStart(target.getWindow().getDecorView()))throw new IllegalStateException("reconnect_UI_button_missing");
             }catch(Throwable e){problem[0]=e;}});
             if(problem[0]!=null)throw new IllegalStateException("normal_UI_reconnect",problem[0]);
@@ -219,9 +228,9 @@ public final class LanUiAcceptance extends Instrumentation {
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("reconnect_no_authenticated_media");
             Thread.sleep(2500);report.put("normal_UI_reconnected_received_media",true);
-            pointers(target,2,false,false);Thread.sleep(400);
+            if(!mediaOnly()){pointers(target,2,false,false);Thread.sleep(400);}
             runOnMainSync(()->target.handleBack());waitReport(first);
-            report.put("disconnect_with_two_contacts_still_down",true).put("running_after_second_leave",target.running);
+            report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
         finally{credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);if(target.lanUdpEntry!=null)target.lanUdpEntry.cancel(true);});}}
         result.putString("numeric_result",report.toString());finish(report.has("failure_class")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);

@@ -65,12 +65,94 @@ class SettingsChecks(unittest.TestCase):
 
     def test_lan_ipv4_and_port_are_literals_and_valid(self):
         for host in ('localhost', '127.0.0.1', '0.0.0.0', '169.254.1.1',
-                     '224.0.0.1', '146.56.249.175', '::1', None):
+                     '224.0.0.1', '146.56.249.175', '100.65.0.2', '192.0.2.1', '::1', None):
             with self.subTest(host=host), self.assertRaises(ValueError):
                 UdpLanSessions(host)
         for port in (0, 65536, True, '15963'):
             with self.subTest(port=port), self.assertRaises(ValueError):
                 UdpLanSessions('192.168.9.128', port)
+
+    def test_scope_is_explicit_and_tailnet_registry_is_exact_guarded_host(self):
+        for scope in (None, True, 'public', 'TAILNET'):
+            with self.subTest(scope=scope), self.assertRaises(ValueError):
+                parse_udp_settings({'network_scope': scope})
+        with self.assertRaises(ValueError):
+            UdpLanSessions('100.65.0.2', network_scope='tailnet')
+        for host in ('100.65.0.3', '100.65.0.11', '192.168.9.128'):
+            with self.subTest(host=host), self.assertRaises(ValueError):
+                UdpLanSessions(host, network_scope='tailnet', scope_guard=lambda: True)
+
+
+class TailnetSessionChecks(unittest.TestCase):
+    def setUp(self):
+        self.healthy = True
+        self.worker = Worker()
+        self.factory_calls = 0
+        self.registry = UdpLanSessions('100.65.0.2', network_scope='tailnet',
+                                       scope_guard=lambda: self.healthy)
+
+    def factory(self, config):
+        self.factory_calls += 1
+        return self.worker
+
+    def create(self):
+        return self.registry.create('test-owner', {'network_scope': 'tailnet'}, self.factory)
+
+    def test_only_matching_requested_scope_creates_tailnet_descriptor(self):
+        for settings in ({}, {'network_scope': 'lan'}):
+            with self.assertRaises(SessionError) as error:
+                self.registry.create('test-owner', settings, self.factory)
+            self.assertEqual((error.exception.status, error.exception.code),
+                             (400, 'udp_network_scope_mismatch'))
+        self.assertEqual(self.factory_calls, 0)
+        descriptor = self.create()
+        self.assertEqual((descriptor['network_scope'], descriptor['peer_host']),
+                         ('tailnet', '100.65.0.2'))
+        lan = UdpLanSessions('192.168.9.128')
+        with self.assertRaises(SessionError):
+            lan.create('test-owner', {'network_scope': 'tailnet'}, self.factory)
+
+    def test_cached_scope_failure_rejects_ready_alive_and_touch_without_releasing_guard(self):
+        descriptor = self.create()
+        sid = descriptor['session']
+        self.assertTrue(self.registry.authenticated_ready(sid))
+        self.healthy = False
+        self.assertFalse(self.registry.authenticated_ready(sid))
+        self.assertFalse(self.registry.authenticated_alive(sid))
+        self.assertFalse(self.registry.touch_allowed(sid))
+        self.assertFalse(self.registry.dispatch_touch(sid, lambda: self.fail('revoked touch write')))
+        self.assertIsNone(self.registry.status('test-owner', sid))
+        self.registry.close()
+        self.registry.close()
+        self.assertEqual(self.worker.stops, 1)
+        with self.assertRaises(SessionError) as error:
+            self.create()
+        self.assertEqual(error.exception.status, 503)
+
+    def test_scope_failure_before_or_during_factory_cannot_return_a_live_descriptor(self):
+        self.healthy = False
+        with self.assertRaises(SessionError):
+            self.create()
+        self.assertEqual(self.factory_calls, 0)
+        self.healthy = True
+        def factory(config):
+            self.healthy = False
+            return self.worker
+        with self.assertRaises(SessionError) as error:
+            self.registry.create('test-owner', {'network_scope': 'tailnet'}, factory)
+        self.assertEqual((error.exception.status, error.exception.code),
+                         (503, 'udp_network_scope_unavailable'))
+        self.assertEqual(self.worker.stops, 1)
+        self.assertEqual(self.worker.starts, 0)
+
+    def test_scope_failure_during_start_revokes_and_stops_owned_worker(self):
+        sid = self.create()['session']
+        def start():
+            self.worker.starts += 1
+            self.healthy = False
+        self.worker.start = start
+        self.assertFalse(self.registry.authenticated_ready(sid))
+        self.assertEqual((self.worker.starts, self.worker.stops), (1, 1))
 
 
 class SessionChecks(unittest.TestCase):
@@ -95,6 +177,7 @@ class SessionChecks(unittest.TestCase):
         self.assertEqual(len(first['session_tag_hex']), 16)
         int(first['session_tag_hex'], 16)
         self.assertEqual(first['protocol'], 'HGUE_UDP_V1')
+        self.assertEqual(first['network_scope'], 'lan')
         self.assertEqual((first['peer_host'], first['peer_port'], first['bind_port']),
                          ('192.168.9.128', 15963, 0))
         self.assertEqual(first['video_release'], 'scheduled')

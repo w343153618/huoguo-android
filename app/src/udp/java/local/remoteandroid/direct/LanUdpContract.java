@@ -8,6 +8,9 @@ import java.util.Map;
 /** Pure fail-closed descriptor contract, independent of Android/UI/network. */
 public final class LanUdpContract {
     private LanUdpContract(){}
+    public static final String LAN_SCOPE="lan",TAILNET_SCOPE="tailnet";
+    public static final String TAILNET_HOST="100.65.0.2";
+    public static final int HTTPS_PORT=15560,UDP_PORT=15963;
     static boolean privateIpv4(String host){
         if(host==null||!host.matches("(?:0|[1-9][0-9]{0,2})(?:\\.(?:0|[1-9][0-9]{0,2})){3}"))return false;
         String[] values=host.split("\\.");int[] bytes=new int[4];
@@ -23,13 +26,23 @@ public final class LanUdpContract {
         if(Double.isNaN(number)||Double.isInfinite(number)||number!=Math.rint(number)||number<Integer.MIN_VALUE||number>Integer.MAX_VALUE)throw new IOException("descriptor_integer");
         return (int)number;
     }
+    /** Tailnet is an explicit test scope, never a broad CGNAT/private allowance. */
+    public static void validateLogin(String loginHost,int loginPort,String scope)throws IOException{
+        if(loginPort!=HTTPS_PORT||!(LAN_SCOPE.equals(scope)&&privateIpv4(loginHost)
+            ||TAILNET_SCOPE.equals(scope)&&TAILNET_HOST.equals(loginHost)))throw new IOException("login_network_scope");
+    }
     public static void validate(Map<String,Object> data,String loginHost)throws IOException{
-        if(!string(data,"protocol").equals("HGUE_UDP_V1")||!privateIpv4(loginHost)||!string(data,"peer_host").equals(loginHost))throw new IOException("descriptor_peer_binding");
+        validate(data,loginHost,LAN_SCOPE);
+    }
+    public static void validate(Map<String,Object> data,String loginHost,String expectedScope)throws IOException{
+        validateLogin(loginHost,HTTPS_PORT,expectedScope);
+        if(!string(data,"network_scope").equals(expectedScope)||!string(data,"protocol").equals("HGUE_UDP_V1")
+            ||!string(data,"peer_host").equals(loginHost))throw new IOException("descriptor_peer_binding");
         if(!string(data,"session").matches("[0-9a-f]{32}")||!string(data,"session_tag_hex").matches("[0-9a-fA-F]{16}")||!string(data,"key_b64").matches("[A-Za-z0-9+/]{43}="))throw new IOException("descriptor_secret_encoding");
         byte[] key;try{key=Base64.getDecoder().decode(string(data,"key_b64"));}catch(IllegalArgumentException failure){throw new IOException("descriptor_secret_encoding");}
         try{if(key.length!=32)throw new IOException("descriptor_key_length");}finally{Arrays.fill(key,(byte)0);}
         int seconds=integer(data,"seconds"),fps=integer(data,"fps"),buffer=integer(data,"buffer_ms");
-        if(integer(data,"peer_port")!=15963||integer(data,"bind_port")!=0||seconds<1||seconds>120||fps!=60&&fps!=120||buffer<30||buffer>100
+        if(integer(data,"peer_port")!=UDP_PORT||integer(data,"bind_port")!=0||seconds<1||seconds>120||fps!=60&&fps!=120||buffer<30||buffer>100
             ||integer(data,"display_hz")!=120||integer(data,"surface_submit_lead_ms")!=0||!string(data,"video_release").equals("scheduled"))throw new IOException("descriptor_options");
         for(String name:new String[]{"audio_enabled","touch_enabled","async_video","decoder_reanchor_enabled"})if(!(data.get(name) instanceof Boolean))throw new IOException("descriptor_boolean");
         if(!((Boolean)data.get("touch_enabled"))||!((Boolean)data.get("async_video"))||!((Boolean)data.get("decoder_reanchor_enabled")))throw new IOException("descriptor_required_components");

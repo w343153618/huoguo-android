@@ -73,6 +73,9 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--touch-mode', choices=['direct','os','adb','kernel'], default='direct')
     p.add_argument('--rate-index', type=int, choices=range(5), default=2)
+    p.add_argument('--network-scope', choices=['lan','tailnet'], default='lan')
+    p.add_argument('--pcm-queue', choices=['off','on'], default='off')
+    p.add_argument('--media-only', action='store_true')
     p.add_argument('--source-description', default='Morphe YouTube real video; selected content format requires separate readback')
     args = p.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
@@ -88,10 +91,10 @@ def main():
     proc = None
     instrumentation_reaped = False
     samplers=[]
-    report={'scope':'normal App UI existing account; isolated physical LAN UDP',
-            'source':args.source_description+'; dedicated receipt only during touch phase',
+    report={'scope':'normal App UI existing account; isolated '+('physical LAN' if args.network_scope=='lan' else 'registered Tailnet')+' UDP; outer path requires separate evidence',
+            'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
-    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index])
+    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only)
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -104,7 +107,7 @@ def main():
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+' -e pcm_queue '+args.pcm_queue+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+120
         while proc.poll() is None and time.monotonic()<deadline:
@@ -125,6 +128,9 @@ def main():
                     if 'local.huoguo.touchreceipt/' in focus and 'TouchReceiptActivity' in focus:break
                     time.sleep(.25)
                 else:raise RuntimeError('guest_receipt_not_focused')
+                # Focus can precede a usable fullscreen input window. This is
+                # test setup, outside the media sampling window.
+                time.sleep(4)
                 uid=adb(args.phone,'cmd package list packages -U local.remoteandroid.direct.experiment').stdout.split('uid:',1)[1].split(',',1)[0].strip()
                 if not uid.isdigit():
                     raise ValueError('isolated_App_uid_readback')
@@ -179,9 +185,13 @@ def main():
             report['ui_result']=json.loads(numeric)
         else:
             report['numeric_result_missing']=True
-        for name,serial,path in [('App',args.phone,PRIVATE+'udp-app-last-report.json'),
-                                 ('App-first',args.phone,PRIVATE+'udp-app-first-report.json'),
-                                 ('guest_touch',args.guest,'/data/user/0/local.huoguo.touchreceipt/files/touch-receipt.json')]:
+        reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
+                 ('App-first',args.phone,PRIVATE+'udp-app-first-report.json')]
+        if not args.media_only:
+            reports.append(('guest_touch',args.guest,'/data/user/0/local.huoguo.touchreceipt/files/touch-receipt.json'))
+        else:
+            report['guest_touch_not_exercised']=True
+        for name,serial,path in reports:
             result=root('cat '+path,False) if serial==args.phone else adb(serial,'run-as local.huoguo.touchreceipt cat files/touch-receipt.json',False)
             if result.returncode==0 and 0<len(result.stdout)<=65536:
                 (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')

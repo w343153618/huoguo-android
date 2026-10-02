@@ -1,5 +1,9 @@
 # 下一轮有界实验与 UDP 产品化验收计划
 
+双通道源码准备已完成，见[发布说明](dual-release-channels-20261002.md)与[独立交付](experimental-public-delivery-20261002.md)。正式v1.30保持，实验1.31-alpha.1采用独立包名、原签名、独立清单与手动实验更新。候选已编译/lint并安装一加12，真实UI显示版本和通道；媒体对照尚未执行。新增注册Tailnet策略要求100.65.0.2/100.65.0.3精确身份、hs.yilufa控制域、kernel utun与路由一致，失败仅撤销候选。不能把这些离线检查、安装或UI文字当成Tailnet媒体实测。
+
+本轮曾看到正式入口有三条经NPC连接并跳过媒体测试；连接空闲后只做候选安装与UI读回，用户随后讨论NPS传输设计，尚未启动新的媒体会话。接着先完成同APK PCM A/B/B/A和Tailnet真实媒体，明确界面与内容格式；仅发布源码不能称朋友的下载/升级入口已可用。腾讯NPS原版来源核对见[审计](nps-provenance-audit-20261002.md)，保持现有服务和国内来源规则。
+
 最新后续见[系统触控、收尾与音频候选记录](authenticated-lan-udp-followup-20261002.md)，上一轮[认证UDP记录](authenticated-lan-udp-results-20261002.md)仍保留原证据边界。已用一加12内核生成的触屏事件验证手机InputReader/Window→UDP→guest单指/双指；十指仍仅App直接派发，物理手指与光学延时未测。正常登录、新认证重连、两指未抬起退出真CANCEL通过；四角只确认3/4，不能把host ACK当成guest应用收到事件。guest本地对照4秒窗口预热后四角通过，但不能据此修复远程缺角。下一轮先加稳定窗口及guest注入结果关联，再测边缘/旋转。
 
 worker现在可靠排空stdout/stderr并获取真实native final；四条完成会话均正确UPTIME clock、自然退出0、无TERM/KILL。正式连接忙会跳过/取消候选，2秒检查不是原子保护。12M/8M探索性视频轮源SF约28.8/29.2、手机约24.4/26.9，不能当成60FPS源或受控ABBA。最大wire帧656392/575196字节在32Mbps下至少164.1/143.8ms，仍超过80ms期限。先核实真实60帧格式/源供给，再隔离关键帧预算，保留wait/guard，不能默认提高缓冲掩盖问题。

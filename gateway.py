@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Authenticated TLS bridge to a loopback-only scrcpy service. No credential storage."""
-import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socket, ssl, subprocess, threading, time
+import re, base64, hashlib, hmac, http.client, json, os, pathlib, secrets, socket, ssl, stat, subprocess, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from media_transfer import MediaStore, MediaError
 from idle_power import IdleScreen
@@ -140,6 +140,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/ping":
             self.reply(200, {"ok": True, "node": os.environ.get('DIRECT_NODE_NAME', 'unconfigured'),
                              "serial": SERIAL, "video_backend": VIDEO_BACKEND}); return
+        if self.path.startswith('/experimental/'):
+            self.experimental_asset(); return
         if self.path == '/diagnostics/reports' or self.path.startswith('/diagnostics/reports/'):
             if not self.auth(): return
             try:
@@ -176,6 +178,41 @@ class Handler(BaseHTTPRequestHandler):
                 self.close_connection=True
         except FileNotFoundError:self.reply(404,{'error':'Update not available'})
         except OSError:self.close_connection=True
+    def experimental_asset(self):
+        # Isolated signed installation assets only; never credentials, arbitrary
+        # files or a mutation of the established formal /updates/ channel.
+        name=self.path[len('/experimental/'):]
+        if name!='experiment.json' and not re.fullmatch(
+                r'HuoguoAndroidExperiment-v[0-9]+(?:\.[0-9]+){1,2}-alpha\.[1-9][0-9]*\.apk',name):
+            self.reply(404,{'error':'Unknown experimental asset'});return
+        directory=pathlib.Path(os.environ.get('DIRECT_EXPERIMENTAL_DIR',str(BASE/'experimental')))
+        source=None;fd=None;headers_sent=False
+        try:
+            fd=os.open(directory/name,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+            source=os.fdopen(fd,'rb');fd=None
+            info=os.fstat(source.fileno())
+            limit=65536 if name=='experiment.json' else 64*1024*1024
+            if not stat.S_ISREG(info.st_mode) or not 0<info.st_size<=limit:
+                self.reply(503,{'error':'Experimental asset unavailable'});return
+            self.connection.settimeout(30)
+            self.send_response(200)
+            self.send_header('Content-Type','application/json' if name=='experiment.json' else 'application/vnd.android.package-archive')
+            self.send_header('Content-Length',str(info.st_size));self.send_header('Cache-Control','no-cache')
+            self.send_header('X-Content-Type-Options','nosniff')
+            self.send_header('Connection','close');self.end_headers();headers_sent=True
+            remaining=info.st_size
+            while remaining:
+                chunk=source.read(min(65536,remaining))
+                if not chunk:break
+                self.wfile.write(chunk);remaining-=len(chunk)
+            self.close_connection=True
+        except FileNotFoundError:self.reply(404,{'error':'Experimental asset not available'})
+        except OSError:
+            if not headers_sent:self.reply(503,{'error':'Experimental asset unavailable'})
+            else:self.close_connection=True
+        finally:
+            if source is not None:source.close()
+            if fd is not None:os.close(fd)
     def do_POST(self):
         if not self.auth(): return
         if self.path in ('/diagnostics/reports', '/diagnostics/source'):

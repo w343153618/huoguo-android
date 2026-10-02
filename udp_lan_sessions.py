@@ -1,6 +1,6 @@
-"""Account-bound, bounded lifecycle for the candidate authenticated LAN UDP path.
+"""Account-bound, bounded lifecycle for isolated authenticated UDP paths.
 
-The HTTPS adapter authenticates the account and validates the physical LAN peer
+The HTTPS adapter authenticates the account and validates the selected network peer
 before calling ``create``. It must call READY/ALIVE only after authenticating and
 replay-checking the session's UDP packet. This module neither accepts passwords
 nor opens sockets, files or subprocesses. A worker owns only its own resources;
@@ -18,6 +18,7 @@ import time
 from typing import Callable, Protocol
 
 from stream_settings import parse_bitrate_mode, parse_max_fps, parse_settings
+from udp_network_scope import TAILNET_HOST, rfc1918_address
 
 
 class SessionError(Exception):
@@ -34,10 +35,13 @@ class Worker(Protocol):
 
 
 def parse_udp_settings(settings: dict) -> dict:
-    """Use the formal stream parsers, then narrow the initial LAN candidate."""
+    """Use the formal stream parsers, then narrow the isolated UDP candidate."""
     if not isinstance(settings, dict):
         raise ValueError('Invalid settings object')
     normalized = dict(settings)
+    scope = normalized.get('network_scope', 'lan')
+    if type(scope) is not str or scope not in ('lan', 'tailnet'):
+        raise ValueError('Explicit supported UDP network scope required')
     normalized.setdefault('max_size', 1280)
     normalized.setdefault('video_bit_rate', 8_000_000)
     normalized.setdefault('bitrate_mode', 'VBR')
@@ -69,6 +73,7 @@ def parse_udp_settings(settings: dict) -> dict:
         'max_size': size, 'video_bit_rate': bitrate,
         'bitrate_mode': mode, 'android_bitrate_mode': android_mode,
         'max_fps': fps, 'fps': fps, 'buffer_ms': buffer_ms, 'seconds': seconds,
+        'network_scope': scope,
         **toggles,
     }
 
@@ -105,17 +110,24 @@ class UdpLanSessions:
     MAX_TOMBSTONES = 256
 
     def __init__(self, peer_host: str, peer_port: int = 15963,
-                 clock: Callable[[], float] = time.monotonic):
+                 clock: Callable[[], float] = time.monotonic, *,
+                 network_scope: str = 'lan', scope_guard: Callable[[], bool] | None = None):
         try:
             address = ipaddress.IPv4Address(peer_host)
         except (ipaddress.AddressValueError, TypeError):
             raise ValueError('LAN peer_host must be a literal IPv4 address') from None
-        if (not address.is_private or address.is_loopback or address.is_link_local
-                or address.is_multicast or address.is_unspecified):
+        if network_scope not in ('lan', 'tailnet'):
+            raise ValueError('Invalid UDP network scope')
+        if network_scope == 'lan' and not rfc1918_address(str(address)):
             raise ValueError('LAN peer_host must be a private LAN IPv4 address')
+        if network_scope == 'tailnet' and str(address) != TAILNET_HOST:
+            raise ValueError('Exact M1 Tailnet host required')
+        if network_scope == 'tailnet' and not callable(scope_guard):
+            raise ValueError('Tailnet requires a current verified scope guard')
         if type(peer_port) is not int or not 1 <= peer_port <= 65535:
             raise ValueError('Invalid UDP port')
         self._peer_host, self._peer_port, self._clock = str(address), peer_port, clock
+        self._network_scope, self._scope_guard = network_scope, scope_guard
         self._lock = threading.RLock()
         self._active: _Session | None = None
         self._tombstones: OrderedDict[str, tuple[str, float]] = OrderedDict()
@@ -123,6 +135,18 @@ class UdpLanSessions:
         self._closed = False
         self._stop_failures = 0
         self._cleanup_failed = False
+
+    def _scope_ok(self) -> bool:
+        """Read an in-memory verifier state; never do IPC on the UDP hot path.
+
+        The gateway refreshes that state outside this registry and closes the
+        owned registry when verification fails. Until cleanup completes this
+        gate prevents READY, ALIVE and new touch writes from extending access.
+        """
+        try:
+            return self._scope_guard is None or self._scope_guard() is True
+        except Exception:
+            return False
 
     @staticmethod
     def _account(account: str) -> None:
@@ -204,6 +228,10 @@ class UdpLanSessions:
             options = parse_udp_settings(settings)
         except ValueError:
             raise SessionError(400, 'invalid_udp_settings') from None
+        if options['network_scope'] != self._network_scope:
+            raise SessionError(400, 'udp_network_scope_mismatch')
+        if not self._scope_ok():
+            raise SessionError(503, 'udp_network_scope_unavailable')
         self.reap()
         with self._lock:
             if self._closed:
@@ -246,7 +274,8 @@ class UdpLanSessions:
             record.worker = worker
             record.factory_finished = True
             now = self._clock()
-            if record.phase == 'closed' or now >= record.ready_deadline:
+            scope_ok = self._scope_ok()
+            if not scope_ok or record.phase == 'closed' or now >= record.ready_deadline:
                 cleanup = self._close_locked(record, now)
                 accepted = False
             else:
@@ -254,6 +283,8 @@ class UdpLanSessions:
                 cleanup, accepted = None, True
         self._stop(cleanup)
         if not accepted:
+            if not scope_ok:
+                raise SessionError(503, 'udp_network_scope_unavailable')
             raise SessionError(409, 'udp_session_revoked')
         return dict(config)
 
@@ -261,6 +292,8 @@ class UdpLanSessions:
         """Only the already authenticated/replay-checked UDP READY may call this."""
         self.reap()
         with self._lock:
+            if not self._scope_ok():
+                return False
             record = self._active
             if record is None or record.config['session'] != session_id:
                 return False
@@ -282,7 +315,7 @@ class UdpLanSessions:
         with self._lock:
             record.starting = False
             now = self._clock()
-            if not start_ok or record.phase == 'closed':
+            if not start_ok or not self._scope_ok() or record.phase == 'closed':
                 cleanup = self._close_locked(record, now)
                 accepted = False
             elif (now >= record.hard_deadline
@@ -299,6 +332,8 @@ class UdpLanSessions:
         """A authenticated ALIVE may renew silence only, never the hard deadline."""
         self.reap()
         with self._lock:
+            if not self._scope_ok():
+                return False
             record = self._active
             if (record is None or record.config['session'] != session_id
                     or record.phase not in ('starting', 'active')):
@@ -310,7 +345,7 @@ class UdpLanSessions:
         self.reap()
         with self._lock:
             record = self._active
-            return bool(record is not None and record.config['session'] == session_id
+            return bool(self._scope_ok() and record is not None and record.config['session'] == session_id
                         and record.phase == 'active' and record.config['touch_enabled'])
 
     def dispatch_touch(self, session_id: str, write: Callable[[], None]) -> bool:
@@ -334,7 +369,7 @@ class UdpLanSessions:
             if cleanup is not None:
                 self._pending_cleanup.append(cleanup)
             record = self._active
-            accepted = bool(record is not None and record.config['session'] == session_id
+            accepted = bool(self._scope_ok() and record is not None and record.config['session'] == session_id
                             and record.phase == 'active' and record.config['touch_enabled'])
             if accepted:
                 write()
@@ -380,6 +415,8 @@ class UdpLanSessions:
         self._account(account)
         self.reap()
         with self._lock:
+            if not self._scope_ok():
+                return None
             record = self._active
             if (record is None or record.config['session'] != session_id
                     or record.account != account or record.phase == 'closed'):

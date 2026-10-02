@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Isolated, opt-in authenticated LAN UDP candidate; never replaces gateway.py.
+"""Isolated authenticated LAN or registered-Tailnet UDP candidate.
 
 Uses the existing account verifier and M1 certificate for HTTPS signaling only.
 No public tunnel, cloud rule, display setting, or production listener is changed.
+Never replaces gateway.py or silently falls back to TCP media.
 """
 import argparse
 import ipaddress
@@ -21,14 +22,24 @@ from http.server import ThreadingHTTPServer
 from gateway import Handler as ExistingHandler, CERT, KEY
 from udp_lan_sessions import UdpLanSessions, SessionError
 from udp_lan_worker import LanMediaWorker
+from udp_network_scope import LanScope, TailnetScope, ScopeUnavailable, same_private_lan
 
 
 class BoundedTlsServer(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, address, handler, context):
+    def __init__(self, address, handler, context, interface=None):
         self.context = context
+        self.interface = interface
         super().__init__(address, handler)
+
+    def server_bind(self):
+        if self.interface is not None:
+            index = socket.if_nametoindex(self.interface)
+            self.socket.setsockopt(socket.IPPROTO_IP, 25, index)
+            if self.socket.getsockopt(socket.IPPROTO_IP, 25) != index:
+                raise ScopeUnavailable('tailnet_HTTPS_interface_bind_mismatch')
+        super().server_bind()
 
     def get_request(self):
         connection, peer = self.socket.accept()
@@ -55,16 +66,6 @@ def physical_lan_address(host, interface):
     return str(address)
 
 
-def same_private_lan(peer, host):
-    """Initial candidate admits same /24 only; this is not a Tailnet service."""
-    try:
-        address = ipaddress.IPv4Address(peer)
-        subnet = ipaddress.IPv4Network(host + '/24', strict=False)
-        return address in subnet and address not in (subnet.network_address, subnet.broadcast_address)
-    except ValueError:
-        return False
-
-
 def formal_busy():
     """Conservative read-only gate: any established formal M1 socket is busy.
 
@@ -78,20 +79,39 @@ def formal_busy():
     return bool(result.stdout.strip())
 
 
-def handler_for(registry, worker_factory, host, busy=formal_busy):
+def handler_for(registry, worker_factory, host, busy=formal_busy, *, scope=None):
+    scope = scope or LanScope(host)
     class Handler(ExistingHandler):
+        def verify_network_scope(self):
+            try:
+                scope.verify()
+                return True
+            except ScopeUnavailable:
+                # Revoke only this candidate's reservation. DELETE remains
+                # available for authenticated owner cleanup on an exact peer.
+                registry.close()
+                self.reply(503, {'error': 'udp_network_scope_unavailable'})
+                return False
+
         def do_CONNECT(self):
             self.reply(404, {'error': 'candidate_has_no_TCP_media'})
 
         def do_GET(self):
             if self.path == '/ping':
-                self.reply(200, {'ok': True, 'node': 'M1-LAN-UDP-candidate',
+                self.reply(200, {'ok': True, 'node': ('M1-LAN-UDP-candidate' if scope.name == 'lan'
+                                                    else 'M1-Tailnet-UDP-candidate'),
                                  'protocol': 'HGUE_UDP_V1', 'media': 'UDP',
-                                 'scope': 'isolated_same_subnet_LAN_not_WAN'})
+                                 'scope': scope.ping_scope, 'network_scope': scope.name})
                 return
             if self.path.startswith('/udp/session/'):
                 if not self.auth():
                     return
+                if scope.name == 'tailnet':
+                    if not scope.permits_peer(self.client_address[0]):
+                        self.reply(403, {'error': 'candidate_requires_registered_Tailnet_peer'})
+                        return
+                    if not self.verify_network_scope():
+                        return
                 try:
                     status = registry.status(self.account, self.path[len('/udp/session/'):])
                     self.reply(200 if status else 404, status or {'error': 'session_not_found'})
@@ -104,10 +124,13 @@ def handler_for(registry, worker_factory, host, busy=formal_busy):
             if self.path != '/udp/session':
                 self.reply(404, {'error': 'unknown_candidate_route'})
                 return
-            if not same_private_lan(self.client_address[0], host):
-                self.reply(403, {'error': 'candidate_requires_same_physical_LAN'})
+            if not scope.permits_peer(self.client_address[0]):
+                self.reply(403, {'error': ('candidate_requires_same_physical_LAN' if scope.name == 'lan'
+                                         else 'candidate_requires_registered_Tailnet_peer')})
                 return
             if not self.auth():
+                return
+            if not self.verify_network_scope():
                 return
             try:
                 lengths = self.headers.get_all('Content-Length', [])
@@ -142,6 +165,9 @@ def handler_for(registry, worker_factory, host, busy=formal_busy):
                 return
             if not self.auth():
                 return
+            if scope.name == 'tailnet' and not scope.permits_peer(self.client_address[0]):
+                self.reply(403, {'error': 'candidate_requires_registered_Tailnet_peer'})
+                return
             sid = self.path[len('/udp/session/'):]
             try:
                 closed = registry.cancel(self.account, sid)
@@ -156,7 +182,8 @@ def handler_for(registry, worker_factory, host, busy=formal_busy):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', required=True)
-    parser.add_argument('--interface', choices=('en7', 'en0'), required=True)
+    parser.add_argument('--interface', required=True)
+    parser.add_argument('--network-scope', choices=('lan', 'tailnet'), default='lan')
     parser.add_argument('--https-port', type=int, default=15560)
     parser.add_argument('--udp-port', type=int, default=15963)
     parser.add_argument('--runtime', type=Path, required=True,
@@ -170,8 +197,17 @@ def main():
         parser.error('fixed isolated ports and bounded lifetime required')
     if not os.environ.get('DIRECT_AUTH_FILE'):
         parser.error('use the existing restricted account file; do not create an account')
-    host = physical_lan_address(args.host, args.interface)
-    registry = UdpLanSessions(host, args.udp_port)
+    try:
+        if args.network_scope == 'lan':
+            host = physical_lan_address(args.host, args.interface)
+            scope = LanScope(host)
+        else:
+            scope = TailnetScope(args.host, args.interface)
+            host = scope.host
+    except (ValueError, ScopeUnavailable) as error:
+        parser.error(str(error))
+    registry = UdpLanSessions(host, args.udp_port, network_scope=scope.name,
+                              scope_guard=scope.healthy)
     def factory(config, peer):
         return LanMediaWorker(config, peer, host, args.interface, args.runtime,
                               args.packetizer, args.native_encoder, registry,
@@ -179,11 +215,25 @@ def main():
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(CERT, KEY)
-    server = BoundedTlsServer((host, args.https_port), handler_for(registry, factory, host), context)
+    server = BoundedTlsServer((host, args.https_port),
+                              handler_for(registry, factory, host, scope=scope), context,
+                              interface=args.interface if scope.name == 'tailnet' else None)
     stop = threading.Event()
     def reap():
         deadline = time.monotonic() + args.max_runtime
+        next_scope_check = time.monotonic() + 1
         while not stop.wait(.1):
+            if scope.name == 'tailnet' and time.monotonic() >= next_scope_check:
+                next_scope_check = time.monotonic() + scope.CHECK_SECONDS
+                try:
+                    scope.verify()
+                except ScopeUnavailable:
+                    registry.close()
+                    print(json.dumps({'event': 'candidate_scope_revoked',
+                                      'network_scope': scope.name,
+                                      'reason': scope.last_failure}), flush=True)
+                    server.shutdown()
+                    break
             registry.reap()
             if time.monotonic() >= deadline:
                 server.shutdown()
@@ -195,7 +245,8 @@ def main():
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
     print(json.dumps({'event': 'listening', 'host': host, 'https_port': args.https_port,
-                      'udp_port': args.udp_port, 'scope': 'isolated_LAN_candidate'}), flush=True)
+                      'udp_port': args.udp_port, 'scope': scope.ping_scope,
+                      'network_scope': scope.name, 'inner_interface': args.interface}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)
     finally:

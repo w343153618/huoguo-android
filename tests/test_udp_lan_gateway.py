@@ -14,6 +14,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from udp_lan_gateway import BoundedTlsServer, handler_for, physical_lan_address, same_private_lan
+from udp_network_scope import ScopeUnavailable
 from udp_lan_sessions import UdpLanSessions
 
 
@@ -212,6 +213,84 @@ class HandlerChecks(unittest.TestCase):
         self.assertEqual(request.auth_calls, 0)
 
 
+class TailnetHandlerChecks(unittest.TestCase):
+    request = HandlerChecks.request
+    dispatch = HandlerChecks.dispatch
+
+    def setUp(self):
+        self.worker = Worker()
+        self.factory_calls = []
+        self.healthy = True
+        self.scope = Mock()
+        self.scope.name = 'tailnet'
+        self.scope.ping_scope = 'isolated_registered_Tailnet_UDP_not_public_UDP'
+        self.scope.permits_peer.side_effect = lambda peer: peer == '100.65.0.3'
+        self.scope.verify.return_value = True
+        self.registry = UdpLanSessions('100.65.0.2', network_scope='tailnet',
+                                       scope_guard=lambda: self.healthy)
+        self.busy = Mock(return_value=False)
+        def factory(config, peer):
+            self.factory_calls.append((config, peer))
+            return self.worker
+        self.handler = handler_for(self.registry, factory, '100.65.0.2', self.busy, scope=self.scope)
+
+    def tailnet_request(self, **kwargs):
+        kwargs.setdefault('peer', '100.65.0.3')
+        kwargs.setdefault('body', b'{"network_scope":"tailnet"}')
+        return self.request(**kwargs)
+
+    def create(self):
+        status, result = self.dispatch(self.tailnet_request())
+        self.assertEqual(status, 201)
+        return result
+
+    def test_only_registered_peer_is_allowed_without_auth_or_localapi_for_unknown_peer(self):
+        for peer in ('100.65.0.4', '100.65.0.11', '100.64.0.3', '192.168.9.149'):
+            with self.subTest(peer=peer):
+                request = self.tailnet_request(peer=peer)
+                self.assertEqual(self.dispatch(request)[0], 403)
+                self.assertEqual(request.auth_calls, 0)
+                self.assertEqual(request.rfile.read_calls, [])
+        self.scope.verify.assert_not_called()
+        self.assertEqual(self.factory_calls, [])
+
+    def test_tailnet_request_descriptor_and_peer_are_exact_and_media_waits_for_ready(self):
+        descriptor = self.create()
+        self.assertEqual((descriptor['network_scope'], descriptor['peer_host'], descriptor['peer_port']),
+                         ('tailnet', '100.65.0.2', 15963))
+        self.assertEqual(self.factory_calls[0][1], '100.65.0.3')
+        self.scope.verify.assert_called_once_with()
+        self.assertEqual(self.worker.starts, 0)
+
+    def test_missing_or_mismatched_request_scope_never_allocates_worker(self):
+        for body in (b'{}', b'{"network_scope":"lan"}'):
+            self.assertEqual(self.dispatch(self.tailnet_request(body=body))[0], 400)
+        self.assertEqual(self.factory_calls, [])
+
+    def test_scope_failure_before_body_read_allocates_nothing_and_stops_existing_owned_session(self):
+        descriptor = self.create()
+        self.registry.authenticated_ready(descriptor['session'])
+        self.scope.verify.side_effect = ScopeUnavailable('fixed_test_code')
+        request = self.tailnet_request()
+        self.assertEqual(self.dispatch(request), (503, {'error': 'udp_network_scope_unavailable'}))
+        self.assertEqual(request.rfile.read_calls, [])
+        self.assertEqual(self.worker.stops, 1)
+        self.assertEqual(len(self.factory_calls), 1)
+        # Cleanup remains available even if the scope cannot be reverified.
+        path = '/udp/session/' + descriptor['session']
+        self.assertEqual(self.dispatch(self.tailnet_request(path=path), 'DELETE'),
+                         (200, {'closed': True}))
+
+    def test_status_revalidates_and_unknown_peer_cannot_status_or_delete(self):
+        descriptor = self.create()
+        path = '/udp/session/' + descriptor['session']
+        self.assertEqual(self.dispatch(self.tailnet_request(path=path), 'GET')[0], 200)
+        self.assertEqual(self.scope.verify.call_count, 2)
+        for method in ('GET', 'DELETE'):
+            self.assertEqual(self.dispatch(self.tailnet_request(path=path, peer='100.65.0.4'), method)[0], 403)
+        self.assertEqual(self.worker.stops, 0)
+
+
 class PhysicalScopeChecks(unittest.TestCase):
     def test_physical_interface_must_match_exact_requested_address(self):
         with patch('udp_lan_gateway.subprocess.run', return_value=SimpleNamespace(stdout='192.168.9.128\n')) as run:
@@ -238,6 +317,27 @@ class PhysicalScopeChecks(unittest.TestCase):
 
 
 class TlsDeadlineChecks(unittest.TestCase):
+    def test_tailnet_listener_verifies_exact_inner_kernel_interface_before_bind(self):
+        server = BoundedTlsServer.__new__(BoundedTlsServer)
+        server.interface, server.socket = 'utun0', Mock()
+        server.socket.getsockopt.return_value = 20
+        with patch('udp_lan_gateway.socket.if_nametoindex', return_value=20), \
+                patch('udp_lan_gateway.ThreadingHTTPServer.server_bind') as bind:
+            server.server_bind()
+        server.socket.setsockopt.assert_called_once_with(0, 25, 20)
+        server.socket.getsockopt.assert_called_once_with(0, 25)
+        bind.assert_called_once_with()
+
+    def test_tailnet_listener_bind_mismatch_fails_before_listening(self):
+        server = BoundedTlsServer.__new__(BoundedTlsServer)
+        server.interface, server.socket = 'utun0', Mock()
+        server.socket.getsockopt.return_value = 7
+        with patch('udp_lan_gateway.socket.if_nametoindex', return_value=20), \
+                patch('udp_lan_gateway.ThreadingHTTPServer.server_bind') as bind:
+            with self.assertRaises(ScopeUnavailable):
+                server.server_bind()
+        bind.assert_not_called()
+
     def test_accepted_connection_gets_deadline_before_tls_handshake(self):
         # __new__ deliberately avoids socket creation or an HTTP listener.
         server = BoundedTlsServer.__new__(BoundedTlsServer)

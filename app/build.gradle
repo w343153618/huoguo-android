@@ -10,6 +10,20 @@ def authenticatedLanUdp = project.findProperty('authenticatedLanUdp') == 'true'
 if (authenticatedLanUdp && probeApplicationId != 'local.remoteandroid.direct.experiment') {
     throw new GradleException('authenticatedLanUdp requires isolated probeApplicationId')
 }
+def experimentalVersionName = project.findProperty('experimentalVersionName')
+def experimentalVersionCode = project.findProperty('experimentalVersionCode')
+if ((experimentalVersionName == null) != (experimentalVersionCode == null)) {
+    throw new GradleException('Experimental version name and code must be provided together')
+}
+if ((experimentalVersionName != null || experimentalVersionCode != null) && !authenticatedLanUdp) {
+    throw new GradleException('Experimental versions require the isolated authenticated UDP build')
+}
+if (experimentalVersionName != null && !(experimentalVersionName ==~ /[0-9]+\.[0-9]+(?:\.[0-9]+)?-[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*/)) {
+    throw new GradleException('Invalid experimental version name')
+}
+if (experimentalVersionCode != null && (!(experimentalVersionCode ==~ /[1-9][0-9]{0,8}/))) {
+    throw new GradleException('Invalid experimental version code')
+}
 
 android {
     namespace 'local.remoteandroid.direct'
@@ -20,9 +34,15 @@ android {
         targetSdk 37
         versionCode 31
         versionName '1.30'
+        if (authenticatedLanUdp && experimentalVersionName != null && experimentalVersionCode != null) {
+            versionName experimentalVersionName
+            versionCode experimentalVersionCode.toInteger()
+        }
+        manifestPlaceholders = [appLabel: authenticatedLanUdp ? '给火锅的安卓 · 实验版' : '@string/app_name']
+        buildConfigField 'String', 'RELEASE_CHANNEL', authenticatedLanUdp ? '"experimental"' : '"formal"'
         buildConfigField 'boolean', 'AUTHENTICATED_LAN_UDP', authenticatedLanUdp ? 'true' : 'false'
         if (authenticatedLanUdp) { ndk { abiFilters 'arm64-v8a' } }
-        buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: 'https://146.56.249.175:15556/updates/update.json').replace('"', '') + '"'
+        buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: (authenticatedLanUdp ? 'https://146.56.249.175:15556/experimental/experiment.json' : 'https://146.56.249.175:15556/updates/update.json')).replace('"', '') + '"'
     }
     buildFeatures { buildConfig true }
     signingConfigs {

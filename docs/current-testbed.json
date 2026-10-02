@@ -369,5 +369,33 @@
     "tests_passed": 557,
     "candidate_and_formal_debug_assemble_lint_passed": true,
     "formal_build_excludes_udp_symbols_and_jni": true
+  },
+  "dual_release_channels": {
+    "formal": {
+      "branch": "main",
+      "published_version": "1.30",
+      "version_code": 31,
+      "media": "TLS/TCP",
+      "update_path": "/updates/update.json"
+    },
+    "experimental": {
+      "branch": "codex/experimental-udp",
+      "candidate_version": "1.31-alpha.1",
+      "version_code": 32,
+      "package": "local.remoteandroid.direct.experiment",
+      "media": "authenticated UDP, LAN or exact registered Tailnet",
+      "update_path": "/experimental/experiment.json",
+      "public_download_deployed": false,
+      "release_published": false,
+      "current_version_validation": "built/linted, isolated OnePlus12 installation and login UI readback; no current-version media A/B or public/V50 acceptance"
+    }
+  },
+  "nps_provenance_audit": {
+    "report": "nps-provenance-audit-20261002.md",
+    "official_version": "djylb/nps v0.34.7",
+    "live_official_binary_sha256": "9b9a36a2cae50c5e66f35c3450c9c4ddccc2ff04c839cb0df03592069c674b12",
+    "formal_and_isolated_binary_match_official": true,
+    "web_files_match": 55,
+    "audit_was_read_only": true
   }
 }

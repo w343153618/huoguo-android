@@ -491,8 +491,10 @@ class LanMediaWorker:
             'missing_after_forced_exit' if self.native_shutdown['terminate_used'] else
             'missing_after_graceful_exit' if self.native_shutdown['process_exit_confirmed'] else
             'missing_process_exit_unconfirmed')
-        report = {'scope': 'authenticated_App_LAN_UDP_candidate_not_WAN_or_optical_acceptance',
-                  'source': 'M1_emulator_5556', 'path': 'physical_LAN_AESGCM_UDP',
+        network_scope = self.config.get('network_scope', 'lan')
+        report = {'scope': 'authenticated_App_'+network_scope+'_UDP_candidate_not_public_or_optical_acceptance',
+                  'network_scope': network_scope,
+                  'source': 'M1_emulator_5556', 'path': ('physical_LAN_AESGCM_UDP' if network_scope=='lan' else 'registered_Tailnet_inner_AESGCM_UDP_outer_path_unverified'),
                   'counts': dict(self.counts), 'failure_class': self.failure,
                   'native_summaries': list(self.native_summaries),
                   'native_shutdown': dict(self.native_shutdown), 'native_final_status': final_status,

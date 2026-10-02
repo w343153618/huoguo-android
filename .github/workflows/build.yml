@@ -1,9 +1,14 @@
 name: Android build verification
 on:
   push:
-    branches: [main]
-    tags: ['v*']
+    branches: [main, 'experimental/**', 'codex/udp-*', 'codex/experimental-*']
+    tags: ['v*', 'udp-alpha-*', 'experimental-v*']
   workflow_dispatch:
+    inputs:
+      build_udp_candidate:
+        description: 'Verify the isolated UDP candidate with temporary CI signing; never publish'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -65,3 +70,57 @@ jobs:
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/InputQueue.java tests/InputQueueCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.InputQueueCheck
 # This job never publishes its temporary CI-signed APK. Upgrade signing stays on the owner's Mac.
+  udp_candidate:
+    needs: build
+    if: ${{ startsWith(github.ref, 'refs/heads/experimental/') || startsWith(github.ref, 'refs/heads/codex/udp-') || startsWith(github.ref, 'refs/heads/codex/experimental-') || startsWith(github.ref, 'refs/tags/udp-alpha-') || startsWith(github.ref, 'refs/tags/experimental-v') || (github.event_name == 'workflow_dispatch' && inputs.build_udp_candidate) }}
+    runs-on: ubuntu-latest
+    env:
+      # Owner distribution signing is intentionally unavailable in this job.
+      ANDROID_KEYSTORE_FILE: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Install locked Android toolchain for isolated candidate
+        run: |
+          sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0' 'ndk;29.0.14206865'
+          printf 'ANDROID_NDK_ROOT=%s/ndk/29.0.14206865\n' "$ANDROID_HOME" >> "$GITHUB_ENV"
+          printf 'HUOGUO_UDP_SOURCE=%s/huoguo-udp-sources/moonlight-common-c\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Explicitly bootstrap public pinned native dependencies into fresh CI checkout
+        run: python3 experiments/moonlight-v2/transport/android-udp/build.py --bootstrap-dependencies --source "$HUOGUO_UDP_SOURCE"
+      - name: Verify pinned sources and Linux NDK discovery without building
+        run: python3 experiments/moonlight-v2/transport/android-udp/build.py --android --check-only
+      - name: Compile and lint isolated UDP candidate with temporary CI signing
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleRelease :app:lintRelease -PprobeApplicationId=local.remoteandroid.direct.experiment -PauthenticatedLanUdp=true -PexperimentalVersionName=0.0-alpha.1 -PexperimentalVersionCode=1
+      - name: Verify isolated package and required arm64 JNI contents
+        run: |
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging app/build/outputs/apk/release/app-release.apk > "$RUNNER_TEMP/udp-candidate-badging.txt"
+          python3 - <<'PY'
+          import os, pathlib, zipfile
+          line = (pathlib.Path(os.environ['RUNNER_TEMP'])/'udp-candidate-badging.txt').read_text().splitlines()[0]
+          assert "name='local.remoteandroid.direct.experiment'" in line
+          assert "versionName='0.0-alpha.1'" in line and "versionCode='1'" in line
+          with zipfile.ZipFile('app/build/outputs/apk/release/app-release.apk') as apk:
+              assert 'lib/arm64-v8a/libhuoguo_udp_fec.so' in apk.namelist()
+          assert not os.environ.get('ANDROID_KEYSTORE_FILE')
+          print('Isolated CI candidate package, alpha version and JNI verified; no release publication')
+          PY
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify app/build/outputs/apk/release/app-release.apk
+      - name: Retain dependency and native build manifest only
+        uses: actions/upload-artifact@v4
+        with:
+          name: udp-candidate-native-build-manifest
+          path: app/build/udpCandidateNative/android-arm64/native-build-manifest.json
+          if-no-files-found: error
+          retention-days: 3

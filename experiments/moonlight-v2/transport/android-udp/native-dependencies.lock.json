@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "scope": "public_native_candidate_build_dependencies_only",
+  "dependencies": [
+    {
+      "name": "moonlight-common-c",
+      "path": ".",
+      "repository": "https://github.com/moonlight-stream/moonlight-common-c.git",
+      "commit": "f900dd4767759c7b9d0e93bcea666b55c69ea62f"
+    },
+    {
+      "name": "nanors",
+      "path": "nanors",
+      "repository": "https://github.com/sleepybishop/nanors.git",
+      "commit": "b1e3c22ca0cdc0bb83e3cd6ed1a2fc77869ed99a"
+    }
+  ],
+  "android": {
+    "ndk_version": "29.0.14206865",
+    "abi": "arm64-v8a",
+    "platform": "android-23",
+    "stl": "c++_static"
+  }
+}
