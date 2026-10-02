@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Poll a selected app's SurfaceFlinger video layer, without saving screen pixels.
 
-The present timestamps measure the source layer, not the phone or network. The
+The present timestamps measure the selected source or phone layer. The
 first poll is a baseline: historical ring entries are excluded from the window.
 """
 import argparse
@@ -87,7 +87,7 @@ def main():
     ordered = sorted(seen)
     gaps = [(b-a)/1e6 for a,b in zip(ordered, ordered[1:])]
     elapsed = (time.monotonic_ns()-start_ns)/1e9
-    report = {'scope':'source app SurfaceFlinger layer actual present timestamps; NOT remote display FPS',
+    report = {'scope':'selected app SurfaceFlinger layer actual present timestamps; not unique decoded content, network latency or optical measurement',
               'serial':args.serial, 'package':args.package, 'layer':layer,
               'unix_ms':time.time_ns()//1_000_000, 'seconds':round(elapsed,3),
               'display_vsync_ns':vsync_ns, 'presented_frames':len(seen),

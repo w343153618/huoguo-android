@@ -22,12 +22,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private EditText address,user,password;
     private TextView status;
     private Spinner fps,quality,rate,buffer;
-    private CheckBox sound;
+    private CheckBox sound,pcmQueue;
     private static final class Attempt {
         final long generation;final String endpoint,credential;
+        final boolean boundedPcmQueueEnabled;
         volatile boolean cancelled;volatile SSLSocket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
-        Attempt(long generation,String endpoint,String credential){this.generation=generation;this.endpoint=endpoint;this.credential=credential;}
+        Attempt(long generation,String endpoint,String credential,boolean pcmQueue){this.generation=generation;this.endpoint=endpoint;this.credential=credential;boundedPcmQueueEnabled=pcmQueue;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
@@ -47,6 +48,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         fps=choice(box,"串流上限（不代表实际内容帧率）",new String[]{"60 FPS","120 FPS"},0);
         buffer=choice(box,"播放缓冲",new String[]{"30 ms","50 ms","80 ms · 推荐","100 ms"},2);
         sound=new CheckBox(activity);sound.setText("UDP 音频");sound.setChecked(true);box.addView(sound);
+        pcmQueue=new CheckBox(activity);pcmQueue.setText("实验：有界 PCM 输出队列（默认关闭）");pcmQueue.setChecked(false);box.addView(pcmQueue);
         Button start=new Button(activity);start.setText("启动认证 UDP 测试");box.addView(start);status=new TextView(activity);box.addView(status);
         start.setOnClickListener(v->start());
         ScrollView scroll=new ScrollView(activity);scroll.addView(box);activity.setContentView(scroll);
@@ -69,7 +71,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             activity.initTLS();
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential);current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,pcmQueue.isChecked());current=attempt;}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();
@@ -81,7 +83,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             validateDescriptor(descriptor,Endpoint.parse(attempt.endpoint).host);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
-                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,(report,failed)->finished(attempt,report,failed));
+                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,(report,failed)->finished(attempt,report,failed));
             }
         }catch(Exception failure){
             finishRemote(attempt);
@@ -120,6 +122,11 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         }catch(Exception ignored){}
         final boolean reportWritten=written;
         finishRemote(attempt);
+        if(report.optInt("audio_cleanup_confirmed",0)!=1){
+            synchronized(lock){attempt.stopped=true;retiring=attempt;if(current==attempt){current=null;generation++;}}
+            activity.ui.post(()->{showLogin();status.setText("UDP 已停止，但本机音频资源收尾未确认。此次候选需结束进程后再测，暂时禁止重连；未回退 TCP。");});
+            return;
+        }
         synchronized(lock){if(retiring==attempt)retiring=null;}
         activity.ui.post(()->{synchronized(lock){if(current!=attempt||generation!=attempt.generation)return;attempt.stopped=true;current=null;}
             showLogin();status.setText(!reportWritten?"UDP 已结束，但数值报告保存失败；未回退 TCP。":failed?"UDP 测试中断，数值报告已保存；未回退 TCP。":"UDP 测试结束，数值报告已保存在 App 私有目录。");});

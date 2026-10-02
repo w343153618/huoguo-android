@@ -30,17 +30,18 @@
     "sampling_boundary": "Dynamic CPU max/current, approx5s non-atomic sysfs readbacks only. Current experiment observer uses explicit CLOCK_MONOTONIC host-before/after brackets; no host-phone time subtraction. Earlier lower-cpu evidence used Python monotonic_ns with an observed offset from capture CLOCK_MONOTONIC and must not be retroactively aligned.",
     "equivalence_verified": false,
     "last_observed_policy_max_khz": {
-      "policy0": 672000,
-      "policy2": 960000,
-      "policy5": 960000,
-      "policy7": 902400
+      "policy0": 1689600,
+      "policy2": 1612800,
+      "policy5": 1824000,
+      "policy7": 1939200
     },
     "preflight_policy_max_khz": {
       "policy0": 672000,
       "policy2": 729600,
       "policy5": 614400,
       "policy7": 672000
-    }
+    },
+    "last_observed_policy_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json"
   },
   "resource_fields_scope": "cpu_cores and memory_mib above describe Android VM on M1, not physical phone",
   "last_completed_test": {
@@ -80,7 +81,7 @@
     "source_requested_seek_verified": false,
     "native_final_summaries_complete": false
   },
-  "updated_from_evidence_utc": "2026-10-02T07:53:31.917046+00:00",
+  "updated_from_evidence_utc": "2026-10-02T11:27:33Z",
   "user_authorized_buffer_max_ms": 100,
   "experimental_buffer_options_ms": [
     30,
@@ -95,7 +96,7 @@
   "source_qos_boundary": "Interactive remains experimental. Multiple real phone windows near60 now observed; this does not isolate ProcessType effect or establish WAN/V50/continuous stability.",
   "renderer": "skiavk",
   "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
-  "final_health_evidence": "evidence/overnight-20261002/final-health.json",
+  "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
   "independent_experimental_app_sha256": "2dc1e0e8a60d7996195a74d486b4c15973cc90b880be9a722f71a94a4d722f0e",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
@@ -148,7 +149,7 @@
     "kernel_tailnet_interface": "utun0",
     "kernel_tailnet_ipv4_route_verified": true,
     "domestic_cloud_route_readback": "146.56.249.175 via192.168.9.1/en7; route readback only, not packet source-country acceptance",
-    "latest_routing_evidence": "docs/evidence/authenticated-lan-udp-20261002/tailnet-routing-preflight.json"
+    "latest_routing_evidence": "docs/evidence/authenticated-lan-udp-followup-20261002/tailnet-routing-readback.json"
   },
   "formal_app_version": "1.30",
   "formal_app_version_code": 31,
@@ -289,6 +290,84 @@
     "diagnostic_overhead_scope": "ART numeric operations only; not complete codec/PCM concurrent AB",
     "formal_udp_release_published": false,
     "physical_lip_sync_or_touch_to_photon_measured": false,
-    "retained_cpu_limits_not_written": true
+    "retained_cpu_limits_not_written": true,
+    "followup_report": "docs/authenticated-lan-udp-followup-20261002.md"
+  },
+  "latest_authenticated_udp_followup": {
+    "report": "docs/authenticated-lan-udp-followup-20261002.md",
+    "evidence": "docs/evidence/authenticated-lan-udp-followup-20261002",
+    "scope": "Normal App existing-account authentication on physical M1 LAN only; kernel-generated phone touch plus real Morphe video; not formal/public/Tailnet/V50/optical acceptance",
+    "measured_apk_sha256": "2dc1e0e8a60d7996195a74d486b4c15973cc90b880be9a722f71a94a4d722f0e",
+    "new_pcm_candidate_apk_sha256": "9108a6919a632dce08c7f9590520d2e0bb47a0e2d1fc52e770fad2f00cd33f32",
+    "new_pcm_apk_installed": false,
+    "bounded_pcm_default_enabled": false,
+    "phone_os_kernel_one_and_two_contacts_correlated": true,
+    "ten_contacts_direct_View_guest_verified": true,
+    "ten_contacts_phone_os_verified": false,
+    "corners_guest_confirmed_of_four": 3,
+    "corners_guest_full_acceptance": false,
+    "rotation_verified": false,
+    "guest_local_four_corners_after_4s_window_warmup": true,
+    "local_corner_test_does_not_resolve_udp_missing_corner": true,
+    "authenticated_reconnect_and_two_contacts_cancel_verified": true,
+    "native_final_summaries_confirmed_completed_sessions": 4,
+    "clock_domain": "host_clock_gettime_CLOCK_UPTIME_RAW_us",
+    "native_stop_natural_exit_zero": true,
+    "native_stop_forced_term_or_kill_used": false,
+    "stop_invoker_thread_excluded_from_join": true,
+    "formal_busy_monitor_interval_seconds": 2,
+    "formal_busy_monitor_is_atomic": false,
+    "steady_media_phone_sf_fps_12m_8m": [
+      24.386,
+      26.944
+    ],
+    "steady_media_source_sf_fps_12m_8m": [
+      28.83,
+      29.21
+    ],
+    "source_sf_vsync_ms": 33.333,
+    "phone_max_gap_ms_12m_8m": [
+      1806.684,
+      671.283
+    ],
+    "phone_gaps_over100ms_12m_8m": [
+      4,
+      4
+    ],
+    "native_max_wire_frame_bytes_12m_8m": [
+      656392,
+      575196
+    ],
+    "minimum_serialization_ms_at32m_12m_8m": [
+      164.098,
+      143.799
+    ],
+    "native_budget_drops_12m_8m": [
+      9,
+      8
+    ],
+    "native_output_deadline_drops_12m_8m": [
+      2,
+      1
+    ],
+    "native_dependency_drops_12m_8m": [
+      80,
+      63
+    ],
+    "socket_guard_deadline_drops_12m_8m": [
+      3,
+      1
+    ],
+    "rates_are_controlled_abba": false,
+    "source_selected_actual_format_complete": false,
+    "new_audio_queue_phone_ab_tested": false,
+    "lip_sync_or_optical_touch_latency_measured": false,
+    "formal_udp_release_published": false,
+    "gateway_running_after_test": false,
+    "cpu_limits_written": false,
+    "source_restore_focus_verified": true,
+    "tests_passed": 557,
+    "candidate_and_formal_debug_assemble_lint_passed": true,
+    "formal_build_excludes_udp_symbols_and_jni": true
   }
 }

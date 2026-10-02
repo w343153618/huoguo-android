@@ -174,8 +174,11 @@ public final class UdpVideoProbe extends Instrumentation {
     private volatile int appGeneration=-1;
     public interface AppListener { void complete(JSONObject numericReport, boolean failed); }
     public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,AppListener listener)throws Exception {
+        return startApp(activity,descriptor,false,listener);
+    }
+    public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,AppListener listener)throws Exception {
         UdpVideoProbe runner=new UdpVideoProbe();runner.appActivity=activity;
-        runner.appSession=parseSession(descriptor,true);runner.appListener=listener;
+        runner.appSession=parseSession(descriptor,true);runner.appSession.boundedPcmQueueEnabled=boundedPcmQueueEnabled;runner.appListener=listener;
         new Thread(runner::onStart,"authenticated-lan-udp").start();return runner;
     }
     public void cancelApp(){
@@ -265,7 +268,7 @@ public final class UdpVideoProbe extends Instrumentation {
             socket.setReceiveBufferSize(4*1024*1024);socket.bind(new InetSocketAddress(session.bindPort));socket.setSoTimeout(20);
             report.put("socket_receive_buffer_bytes",socket.getReceiveBufferSize());
             security=new UdpVideoSecurity(session.key,session.tag);
-            if(session.audioEnabled)audioReceiver=new UdpAudioReceiver(activity,generation[0]);
+            if(session.audioEnabled)audioReceiver=new UdpAudioReceiver(activity,generation[0],session.boundedPcmQueueEnabled);
             if(session.touchEnabled){
                 DatagramSocket sharedSocket=socket;Session sharedSession=session;MainActivity target=activity;UdpVideoSecurity sharedSecurity=security;
                 mainSync(()->touchControl=new UdpTouchControl(target.screen,
@@ -328,7 +331,11 @@ public final class UdpVideoProbe extends Instrumentation {
                 report.put("content_hint_applications",contentHintApplications)
                     .put("content_hint_application_status",contentHintFps<0?"inherited_main_activity_configure"
                         :contentHintApplications>0?"explicit_request_applied":"explicit_request_not_applied");
-                if(audioReceiver!=null)report.put("udp_audio",audioReceiver.snapshot()).put("audio_tested",audioReceiver.hasDecodedAudio());
+                if(audioReceiver!=null){JSONObject audioReport=audioReceiver.snapshot();
+                    report.put("udp_audio",audioReport).put("audio_tested",audioReceiver.hasDecodedAudio());
+                    report.put("audio_cleanup_confirmed",audioReport.optBoolean("pcm_cleanup_incomplete",false)?0:1);
+                    if(audioReport.optBoolean("pcm_cleanup_incomplete",false))result.putString("failure","UdpVideoProbe audio cleanup unconfirmed");
+                }else report.put("audio_cleanup_confirmed",1);
                 if(touchControl!=null)report.put("udp_touch",touchControl.snapshot());
                 if(nativeHandle!=0){
                     if(diagnosticEvents){drainNativeEvents(nativeHandle);report.put("native_frame_events",new JSONArray(nativeFrameEvents))
@@ -793,7 +800,7 @@ public final class UdpVideoProbe extends Instrumentation {
         String[] scalars={"start_ns","first_server_packet_ns","receive_end_ns","observation_end_ns","fps_limit","buffer_ms",
             "udp_packets","udp_payload_bytes","foreign_peer_packets","authentication_errors","replay_errors","received_media_frames",
             "queued_media_frames","source_width","source_height","decoder_input_timeouts","late_discarded_count","codec_callback_count","receive_loop_max_ms",
-            "receive_processing_max_ms","receive_socket_wait_max_ms","video_worker_expired_frames","video_worker_stale_epoch_drops"};
+            "receive_processing_max_ms","receive_socket_wait_max_ms","video_worker_expired_frames","video_worker_stale_epoch_drops","audio_cleanup_confirmed"};
         for(String key:scalars)if(report.opt(key) instanceof Number)out.put(key,report.get(key));
         out.put("hardware_video",report.optBoolean("hardware",false)?1:0);
         for(String key:new String[]{"native_fec","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end"}){
@@ -817,6 +824,6 @@ public final class UdpVideoProbe extends Instrumentation {
 
     private static final class Session{
         byte[] key;long tag;InetAddress peer;int peerPort,bindPort,seconds,fps,buffer,displayHz,contentHintFps,surfaceSubmitLeadMs;String release,profile;
-        boolean audioEnabled,touchEnabled,asyncVideo,decoderReanchorEnabled,diagnosticEvents,networkFeedback;
+        boolean audioEnabled,touchEnabled,asyncVideo,decoderReanchorEnabled,diagnosticEvents,networkFeedback,boundedPcmQueueEnabled;
     }
 }

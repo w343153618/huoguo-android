@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.MotionEvent;
+import android.view.Window;
+import android.widget.Spinner;
 import android.widget.Button;
 import android.widget.EditText;
 import org.json.JSONArray;
@@ -20,7 +22,11 @@ import java.nio.charset.StandardCharsets;
  * Reads one owner-only existing-account input, removes it before HTTPS login.
  * Never provisions a media key or exports any credential. */
 public final class LanUiAcceptance extends Instrumentation {
-    public void onCreate(Bundle arguments){super.onCreate(arguments);start();}
+    private Bundle arguments;
+    private final JSONArray injected=new JSONArray(),delivered=new JSONArray();
+    private int osCleanupFailures;private boolean osCleanup;
+    public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
+    private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
         Field field=target.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(target);
@@ -47,14 +53,27 @@ public final class LanUiAcceptance extends Instrumentation {
         final int[] location=new int[2],size=new int[2];
         runOnMainSync(()->{a.screen.getLocationOnScreen(location);size[0]=a.screen.getWidth();size[1]=a.screen.getHeight();});
         long down=SystemClock.uptimeMillis();
-        for(int n=1;n<=count;n++)event(a,location,size,n,n==1?MotionEvent.ACTION_DOWN:MotionEvent.ACTION_POINTER_DOWN|((n-1)<<8),down,false,osInjection);
-        event(a,location,size,count,MotionEvent.ACTION_MOVE,down,true,osInjection);
-        if(!cancel)return;
-        event(a,location,size,count,MotionEvent.ACTION_CANCEL,down,true,osInjection);
-        // New gesture proves the old contact IDs can be reused after true CANCEL.
-        long freshDown=SystemClock.uptimeMillis();
-        event(a,location,size,1,MotionEvent.ACTION_DOWN,freshDown,false,osInjection);
-        event(a,location,size,1,MotionEvent.ACTION_UP,freshDown,false,osInjection);
+        int lastCount=0,attemptedCount=0;boolean ended=false;long activeDown=down;
+        try{
+            for(int n=1;n<=count;n++){
+                attemptedCount=n;
+                event(a,location,size,n,n==1?MotionEvent.ACTION_DOWN:MotionEvent.ACTION_POINTER_DOWN|((n-1)<<8),down,false,osInjection);
+                lastCount=n;
+            }
+            event(a,location,size,count,MotionEvent.ACTION_MOVE,down,true,osInjection);
+            if(!cancel){ended=true;return;}
+            event(a,location,size,count,MotionEvent.ACTION_CANCEL,down,true,osInjection);
+            // New gesture proves contact IDs can be reused after true CANCEL.
+            activeDown=SystemClock.uptimeMillis();lastCount=0;attemptedCount=1;
+            event(a,location,size,1,MotionEvent.ACTION_DOWN,activeDown,false,osInjection);lastCount=1;
+            event(a,location,size,1,MotionEvent.ACTION_UP,activeDown,false,osInjection);ended=true;
+        }finally{
+            // UDP session cancellation cannot clear a phone InputDispatcher
+            // gesture. Always try local OS CANCEL after an injection failure.
+            if(osInjection&&!ended&&attemptedCount>0){osCleanup=true;
+                try{event(a,location,size,Math.max(1,lastCount),MotionEvent.ACTION_CANCEL,activeDown,true,true);}
+                catch(Exception failure){osCleanupFailures++;}finally{osCleanup=false;}}
+        }
     }
     private void event(MainActivity a,int[] location,int[] size,int count,int action,long down,boolean moved,boolean osInjection)throws Exception{
         MotionEvent.PointerProperties[] properties=new MotionEvent.PointerProperties[count];
@@ -62,18 +81,38 @@ public final class LanUiAcceptance extends Instrumentation {
         for(int i=0;i<count;i++){
             properties[i]=new MotionEvent.PointerProperties();properties[i].id=i;properties[i].toolType=MotionEvent.TOOL_TYPE_FINGER;
             coords[i]=new MotionEvent.PointerCoords();coords[i].pressure=1;coords[i].size=1;
-            coords[i].x=(osInjection?location[0]:0)+size[0]*(.05f+.09f*i)+(moved?2:0);
-            coords[i].y=(osInjection?location[1]:0)+size[1]*(.10f+.07f*i)+(moved?2:0);
+            coords[i].x=(osInjection?location[0]:0)+size[0]*(osInjection?.4f+.1f*i:.05f+.09f*i)+(moved?2:0);
+            coords[i].y=(osInjection?location[1]:0)+size[1]*(osInjection?.4f+.05f*i:.10f+.07f*i)+(moved?2:0);
         }
         MotionEvent event=MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,count,properties,coords,
-            0,0,1,1,0,0,android.view.InputDevice.SOURCE_TOUCHSCREEN,0);
-        try{if(osInjection){if(!getUiAutomation().injectInputEvent(event,true))throw new IllegalStateException("OS_touch_injection_rejected");}
+            0,0,1,1,-1,0,android.view.InputDevice.SOURCE_TOUCHSCREEN,0);
+        try{if(osInjection){long start=SystemClock.elapsedRealtimeNanos();boolean ok=getUiAutomation().injectInputEvent(event,true);
+                injected.put(new JSONObject().put("action",event.getActionMasked()).put("count",count).put("accepted",ok)
+                    .put("actual_event_flags",event.getFlags()).put("activity_display_id",a.getDisplay().getDisplayId())
+                    .put("event_time_ms",event.getEventTime()).put("down_time_ms",event.getDownTime()).put("cleanup",osCleanup)
+                    .put("duration_ns",SystemClock.elapsedRealtimeNanos()-start).put("activity_has_focus",a.hasWindowFocus()));
+                if(!ok)throw new IllegalStateException("OS_touch_injection_rejected");}
             else runOnMainSync(()->a.screen.dispatchTouchEvent(event));}
         finally{event.recycle();}Thread.sleep(45);
     }
+    private void cornerTaps(MainActivity a)throws Exception{
+        for(float[] corner:new float[][]{{.01f,.01f},{.99f,.01f},{.01f,.99f},{.99f,.99f}}){
+            final float[] point=new float[2];runOnMainSync(()->{
+            int w=a.screen.getWidth(),h=a.screen.getHeight();float scale=Math.min(w/1080f,h/1920f);
+            float shownW=1080*scale,shownH=1920*scale,left=(w-shownW)/2,top=(h-shownH)/2;
+                point[0]=left+shownW*corner[0];point[1]=top+shownH*corner[1];});
+            long down=SystemClock.uptimeMillis();
+            for(int action:new int[]{MotionEvent.ACTION_DOWN,MotionEvent.ACTION_UP}){
+                runOnMainSync(()->{
+                    MotionEvent e=MotionEvent.obtain(down,SystemClock.uptimeMillis(),action,point[0],point[1],0);
+                    e.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);a.screen.dispatchTouchEvent(e);e.recycle();
+                });Thread.sleep(45);
+            }
+        }Thread.sleep(800);
+    }
     public void onStart(){
         JSONObject report=new JSONObject();Bundle result=new Bundle();MainActivity a=null;
-        File credential=new File(getTargetContext().getFilesDir(),"udp-test-login.json");
+        File credential=new File(getTargetContext().getFilesDir(),"udp-test-login.json");Window.Callback original=null;
         try{
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
             for(boolean enabled:new boolean[]{false,true,true,false})rows.put(new JSONObject()
@@ -86,12 +125,25 @@ public final class LanUiAcceptance extends Instrumentation {
             if(!credential.delete())throw new IllegalStateException("input_cleanup");
             a=(MainActivity)startActivitySync(new Intent().setClassName(getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();MainActivity target=a;testActivity=a;
+            final Window.Callback[] previous={null};runOnMainSync(()->previous[0]=target.getWindow().getCallback());
+            original=previous[0];final Window.Callback delegate=original;
+            runOnMainSync(()->target.getWindow().setCallback((Window.Callback)java.lang.reflect.Proxy.newProxyInstance(
+                Window.Callback.class.getClassLoader(),new Class[]{Window.Callback.class},(proxy,method,values)->{
+                    if(method.getName().equals("dispatchTouchEvent")&&values!=null&&values[0] instanceof MotionEvent){
+                        MotionEvent e=(MotionEvent)values[0];try{if(delivered.length()<128)delivered.put(new JSONObject()
+                            .put("action",e.getActionMasked()).put("count",e.getPointerCount()).put("source",e.getSource())
+                            .put("event_time_ms",e.getEventTime()).put("down_time_ms",e.getDownTime()).put("action_index",e.getActionIndex())
+                            .put("device_id",e.getDeviceId()).put("window_display_id",target.getDisplay().getDisplayId()));}catch(Exception ignored){}
+                    }
+                    try{return method.invoke(delegate,values);}catch(java.lang.reflect.InvocationTargetException failure){throw failure.getCause();}
+                })));
             final Throwable[] problem={null};int oldGeneration=target.generation;
             runOnMainSync(()->{try{
                 Object ui=target.lanUdpEntry;
                 ((EditText)field(ui,"address")).setText("192.168.9.128:15560");
                 ((EditText)field(ui,"user")).setText(login.getString("username"));
                 ((EditText)field(ui,"password")).setText(login.getString("password"));
+                ((Spinner)field(ui,"rate")).setSelection(rateIndex());
                 android.view.ViewGroup decor=(android.view.ViewGroup)target.getWindow().getDecorView();
                 if(!clickStart(decor))throw new IllegalStateException("normal_UI_start_button_missing");
             }catch(Throwable e){problem[0]=e;}});
@@ -101,7 +153,9 @@ public final class LanUiAcceptance extends Instrumentation {
             long deadline=SystemClock.elapsedRealtime()+25000;
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("no_authenticated_media");
-            report.put("normal_UI_login_received_media",true);Thread.sleep(25000);
+            report.put("normal_UI_login_received_media",true);Thread.sleep(3000);
+            try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
+            Thread.sleep(22000);
             report.put("before_touch_received_frames",target.receivedFrames.get()).put("before_touch_callback_count",target.presentedFrames.get());
             File phase=new File(getTargetContext().getFilesDir(),"udp-ui-phase-ready-touch");
             try(FileOutputStream out=new FileOutputStream(phase)){out.write(1);}
@@ -112,10 +166,35 @@ public final class LanUiAcceptance extends Instrumentation {
             // OS delivery is a separate layer. The phone vendor's intercepting
             // gesture panel has made repeated OS injection fail; do not silently
             // count direct View dispatch as OS or physical finger acceptance.
+            String touchMode=arguments.getString("touch_mode","direct");
+            boolean osAttempt=touchMode.equals("os"),osSuccess=false;
+            if(touchMode.equals("adb")||touchMode.equals("kernel")){
+                final int[] centre=new int[2];runOnMainSync(()->{target.screen.getLocationOnScreen(centre);
+                    centre[0]+=target.screen.getWidth()/2;centre[1]+=target.screen.getHeight()/2;});
+                try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-adb-tap"))){
+                    out.write(new JSONArray().put(centre[0]).put(centre[1]).toString().getBytes(StandardCharsets.US_ASCII));}
+                File tapped=new File(getTargetContext().getFilesDir(),"udp-ui-phase-adb-tap-done");deadline=SystemClock.elapsedRealtime()+10000;
+                while(!tapped.exists()&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
+                if(!tapped.exists())throw new IllegalStateException("adb_OS_tap_driver_not_ready");tapped.delete();Thread.sleep(700);
+                report.put("OS_shell_single_tap_attempted",touchMode.equals("adb"))
+                    .put("OS_kernel_test_touch_attempted",touchMode.equals("kernel"));
+            }
+            if(osAttempt){try{
+                pointers(target,1,true,true);Thread.sleep(300);pointers(target,2,true,true);Thread.sleep(400);
+                osSuccess=osCleanupFailures==0;
+            }catch(Exception failure){report.put("OS_failure_class",failure.getClass().getSimpleName())
+                .put("OS_bounded_failure_label",failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+")?failure.getMessage():"unclassified");}}
             pointers(target,2,false,true);Thread.sleep(400);
             pointers(target,10,false,true);Thread.sleep(2000);
-            report.put("OS_injected_two_contacts_cancel_and_fresh_down",false)
-                .put("OS_injection_attempted_this_round",false)
+            cornerTaps(target);
+            final String[] callbackCopy={null};runOnMainSync(()->callbackCopy[0]=delivered.toString());
+            report.put("OS_inject_API_accepted_two_contacts_cancel_and_fresh_down",osSuccess)
+                .put("OS_to_App_to_guest_acceptance_requires_correlated_receipt_review",true)
+                .put("OS_injection_attempted_this_round",osAttempt)
+                .put("OS_shell_single_tap_attempted",touchMode.equals("adb"))
+                .put("OS_cleanup_failures",osCleanupFailures)
+                .put("OS_injection_events",injected).put("phone_Window_Callback_deliveries",new JSONArray(callbackCopy[0]))
+                .put("four_video_corners_one_percent_inset_direct_View_dispatch",true)
                 .put("App_dispatched_two_and_ten_native_MotionEvent_contacts_cancel_and_fresh_down",true)
                 .put("ten_contacts_delivered_through_phone_OS",false);
             runOnMainSync(()->target.handleBack());
@@ -132,6 +211,7 @@ public final class LanUiAcceptance extends Instrumentation {
                 Object ui=target.lanUdpEntry;
                 ((EditText)field(ui,"address")).setText("192.168.9.128:15560");
                 ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
+                ((Spinner)field(ui,"rate")).setSelection(rateIndex());
                 if(!clickStart(target.getWindow().getDecorView()))throw new IllegalStateException("reconnect_UI_button_missing");
             }catch(Throwable e){problem[0]=e;}});
             if(problem[0]!=null)throw new IllegalStateException("normal_UI_reconnect",problem[0]);
@@ -143,7 +223,7 @@ public final class LanUiAcceptance extends Instrumentation {
             runOnMainSync(()->target.handleBack());waitReport(first);
             report.put("disconnect_with_two_contacts_still_down",true).put("running_after_second_leave",target.running);
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
-        finally{credential.delete();if(a!=null){MainActivity target=a;runOnMainSync(()->{if(target.lanUdpEntry!=null)target.lanUdpEntry.cancel(true);});}}
+        finally{credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);if(target.lanUdpEntry!=null)target.lanUdpEntry.cancel(true);});}}
         result.putString("numeric_result",report.toString());finish(report.has("failure_class")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
     }
     private static boolean clickStart(android.view.View view){

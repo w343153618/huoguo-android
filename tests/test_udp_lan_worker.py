@@ -7,11 +7,13 @@ phone, listener, emulator or timing/performance acceptance is accessed.
 import base64
 from collections import deque
 import hashlib
+import io
 import json
 from pathlib import Path
 import socket
 import stat
 import subprocess
+import sys
 import tempfile
 import threading
 from types import SimpleNamespace
@@ -71,12 +73,24 @@ def bare_worker():
     worker.peer = None
     worker.started = worker.closed = False
     worker.failure = ''
+    worker.native_shutdown = worker._native_shutdown_state()
+    worker.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
+                                check_failures=0, max_check_duration_ms=0.0)
     worker.last_idr = 0.0
     worker.counts = dict(authenticated_ready=0, authenticated_alive=0, invalid_packets=0,
                          foreign_peer=0, authenticated_stop=0, touch_revoked=0)
     worker.busy = Mock(return_value=False)
     worker.udp = FakeSocket(stop_event=worker.stop_event)
     return worker
+
+
+def fake_native():
+    native = Mock()
+    native.stdin = io.BytesIO()
+    native.stdout = io.BytesIO()
+    native.stderr = io.BytesIO()
+    native.wait.return_value = 0
+    return native
 
 
 class ConstructorChecks(unittest.TestCase):
@@ -344,7 +358,7 @@ class OwnershipChecks(unittest.TestCase):
         worker = bare_worker()
         worker.hardware, worker.sender = Mock(), Mock()
         worker.sender.snapshot.return_value = {'video': {'datagrams': 3}}
-        worker.native = Mock()
+        worker.native = fake_native()
         worker.native.poll.return_value = None
         worker.native.wait.return_value = 0
         with tempfile.TemporaryDirectory() as root:
@@ -363,7 +377,7 @@ class OwnershipChecks(unittest.TestCase):
                 self.assertNotIn(field, raw)
         worker.hardware.close.assert_called_once()
         worker.sender.close.assert_called_once()
-        worker.native.terminate.assert_called_once()
+        worker.native.terminate.assert_not_called()
         self.assertEqual(worker.udp.closed, 1)
         self.assertIsNone(worker.key)
         self.assertEqual(worker.config, {})
@@ -376,15 +390,18 @@ class OwnershipChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             worker.evidence_dir = Path(root)
             with self.assertRaises(TimeoutError): worker.stop()
-            self.assertEqual(list(Path(root).glob('host-session-*.json')), [])
+            report = json.loads(next(Path(root).glob('host-session-*.json')).read_text())
+            self.assertFalse(report['cleanup_confirmed'])
+            self.assertTrue(any(error['stage'] == 'startup_quiescence' for error in report['cleanup_errors']))
         worker.startup_done.wait.assert_called_once_with(25)
         self.assertTrue(worker.stop_event.is_set())
 
     def test_packetizer_termination_timeout_kills_only_the_owned_process_handle(self):
         worker = bare_worker()
-        worker.native = Mock()
+        worker.native = fake_native()
         worker.native.poll.return_value = None
-        worker.native.wait.side_effect = [subprocess.TimeoutExpired('fake-owned-packetizer', 2), 0]
+        worker.native.wait.side_effect = [subprocess.TimeoutExpired('fake-owned-packetizer', 2),
+                                        subprocess.TimeoutExpired('fake-owned-packetizer', 1), 0]
         with tempfile.TemporaryDirectory() as root:
             worker.evidence_dir = Path(root)
             with patch('udp_lan_worker.subprocess.run') as run, \
@@ -394,17 +411,20 @@ class OwnershipChecks(unittest.TestCase):
             popen.assert_not_called()
         worker.native.terminate.assert_called_once()
         worker.native.kill.assert_called_once()
-        self.assertEqual(worker.native.wait.call_count, 2)
+        self.assertEqual(worker.native.wait.call_count, 3)
 
     def test_unconfirmed_touch_thread_prevents_claiming_clean_shutdown(self):
         worker = bare_worker()
         worker.touch = Mock()
+        worker.touch.stats.return_value = {'writer_alive': True}
         worker.touch.thread.is_alive.return_value = True
         worker.hardware = Mock()
         with tempfile.TemporaryDirectory() as root:
             worker.evidence_dir = Path(root)
             with self.assertRaises(TimeoutError): worker.stop()
-            self.assertEqual(list(Path(root).glob('host-session-*.json')), [])
+            report = json.loads(next(Path(root).glob('host-session-*.json')).read_text())
+            self.assertFalse(report['cleanup_confirmed'])
+            self.assertTrue(any(error['stage'] == 'touch_quiescence' for error in report['cleanup_errors']))
         worker.touch.close.assert_called_once()
         worker.hardware.close.assert_called_once()
 
@@ -419,6 +439,176 @@ class OwnershipChecks(unittest.TestCase):
         self.assertEqual(observations, [True])
         self.assertEqual(worker.failure, 'OSError')
         self.assertTrue(worker.startup_done.is_set())
+
+
+class NativeEofChecks(unittest.TestCase):
+    def test_feed_owns_stdin_eof_even_when_source_ends_with_error(self):
+        worker = bare_worker()
+        worker.native = fake_native()
+        worker.channels = {'video': Mock()}
+        worker.channels['video'].recv.return_value = b''
+        with self.assertRaises(EOFError): worker._feed()
+        self.assertTrue(worker.native.stdin.closed)
+        self.assertTrue(worker.native_shutdown['stdin_eof_closed'])
+
+    def test_revoked_video_reader_keeps_draining_without_udp_forwarding(self):
+        worker = bare_worker()
+        worker.stop_event.set()
+        worker.native = fake_native()
+        payload = b'x' * 1000
+        worker.native.stdout = io.BytesIO((len(payload).to_bytes(2, 'big') + payload) * 3)
+        worker.gate = Mock()
+        worker._video()
+        worker.gate.send.assert_not_called()
+        self.assertEqual(worker.native_shutdown['stdout_drained_records'], 3)
+        self.assertEqual(worker.native_shutdown['stdout_drained_bytes'], 3006)
+        self.assertTrue(worker.native_shutdown['stdout_eof_observed'])
+
+    def test_unexpected_runtime_output_eof_still_triggers_owned_failure_path(self):
+        worker = bare_worker()
+        worker.native = fake_native()
+        with self.assertRaises(EOFError):
+            worker._video()
+        self.assertTrue(worker.native_shutdown['stdout_eof_observed'])
+
+    def test_final_summary_is_real_clock_checked_input_and_never_drives_closed_control(self):
+        worker = bare_worker()
+        worker.stop_event.set()
+        worker.config['bitrate_mode'] = 'ADAPTIVE_VBR'
+        worker.recovery, worker.network = Mock(), Mock()
+        worker._request_idr = Mock()
+        worker.native = fake_native()
+        events = [{'event': 'request_idr'}, {'event': 'summary', 'final': False,
+                  'clock_domain': 'host_clock_gettime_CLOCK_UPTIME_RAW_us'},
+                  {'event': 'summary', 'final': True,
+                  'clock_domain': 'host_clock_gettime_CLOCK_UPTIME_RAW_us', 'source_frames': 3}]
+        worker.native.stderr = io.BytesIO(b''.join(json.dumps(event).encode() + b'\n' for event in events))
+        worker._events()
+        self.assertTrue(worker.native_shutdown['stderr_eof_observed'])
+        self.assertTrue(worker.native_shutdown['final_summary_observed'])
+        self.assertEqual(worker.native_summaries[-1]['source_frames'], 3)
+        worker.recovery.consume.assert_not_called()
+        worker._request_idr.assert_not_called()
+
+    def test_wrong_clock_or_string_final_never_counts_as_valid_final(self):
+        for clock, final in (('wrong_clock', True), ('host_clock_gettime_CLOCK_UPTIME_RAW_us', 'true')):
+            with self.subTest(clock=clock, final=final):
+                worker = bare_worker()
+                worker.stop_event.set()
+                worker.native = fake_native()
+                worker.native.stderr = io.BytesIO(json.dumps({'event': 'summary',
+                    'clock_domain': clock, 'final': final}).encode() + b'\n')
+                if clock == 'wrong_clock':
+                    with self.assertRaises(ValueError): worker._events()
+                else:
+                    worker._events()
+                self.assertFalse(worker.native_shutdown['final_summary_observed'])
+
+    def test_missing_native_final_is_explicit_in_successful_resource_cleanup_report(self):
+        worker = bare_worker()
+        worker.native = fake_native()
+        worker.native.stderr = io.BytesIO(json.dumps({'event': 'summary', 'final': False,
+            'clock_domain': 'host_clock_gettime_CLOCK_UPTIME_RAW_us'}).encode() + b'\n')
+        with tempfile.TemporaryDirectory() as root:
+            worker.evidence_dir = Path(root)
+            worker.stop()
+            report = json.loads(next(Path(root).glob('host-session-*.json')).read_text())
+        self.assertTrue(report['cleanup_confirmed'])
+        self.assertEqual(report['native_final_status'], 'missing_after_graceful_exit')
+        self.assertFalse(report['native_shutdown']['final_summary_observed'])
+        self.assertFalse(report['native_summaries'][-1]['final'])
+
+    def test_failing_events_thread_invoking_stop_is_not_mistaken_for_an_active_pipe_reader(self):
+        worker = bare_worker()
+        worker.native = fake_native()
+        invoking_thread = Mock()
+        invoking_thread.name = 'udp_events'
+        invoking_thread.is_alive.return_value = True
+        worker.threads = [invoking_thread]
+        worker._background = Mock()
+        with patch('udp_lan_worker.threading.current_thread', return_value=invoking_thread):
+            worker._finish_native()
+        names = [call.args[0] for call in worker._background.call_args_list]
+        self.assertIn('native_shutdown_stderr_drain', names)
+        self.assertIn('native_shutdown_stdout_drain', names)
+
+    def test_owned_child_exceeding_pipe_capacity_gets_eof_and_final_without_terminate(self):
+        # Real owned subprocess/stdio regression, no native binary, sockets or
+        # credentials. Output exceeds pipe capacity, recreating the drain bug.
+        script = (
+            "import sys,json,struct\n"
+            "record=struct.pack('>H',1000)+b'x'*1000\n"
+            "for i in range(256): sys.stdout.buffer.write(record)\n"
+            "sys.stdout.buffer.flush()\n"
+            "sys.stdin.buffer.read()\n"
+            "print(json.dumps({'event':'summary','clock_domain':"
+            "'host_clock_gettime_CLOCK_UPTIME_RAW_us','final':True,"
+            "'fixture_records':256}),file=sys.stderr,flush=True)\n"
+        )
+        worker = bare_worker()
+        worker.stop_event.set()
+        worker.native = subprocess.Popen([sys.executable, '-c', script],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        worker.gate = Mock()
+        worker.gate.counts = {}
+        worker._background('udp_video', worker._video)
+        worker._background('udp_events', worker._events)
+        try:
+            with tempfile.TemporaryDirectory() as root:
+                worker.evidence_dir = Path(root)
+                worker.stop()
+                report = json.loads(next(Path(root).glob('host-session-*.json')).read_text())
+            self.assertEqual(report['native_final_status'], 'confirmed')
+            self.assertTrue(report['native_shutdown']['stdin_eof_closed'])
+            self.assertTrue(report['native_shutdown']['stdout_eof_observed'])
+            self.assertTrue(report['native_shutdown']['stderr_eof_observed'])
+            self.assertEqual(report['native_shutdown']['stdout_drained_records'], 256)
+            self.assertTrue(report['native_shutdown']['process_exit_confirmed'])
+            self.assertFalse(report['native_shutdown']['terminate_used'])
+            self.assertFalse(report['native_shutdown']['kill_used'])
+            self.assertEqual(report['native_summaries'][-1]['fixture_records'], 256)
+            self.assertTrue(report['cleanup_confirmed'])
+            self.assertFalse(any(item['alive'] for item in report['thread_cleanup']))
+            worker.gate.send.assert_not_called()
+        finally:
+            if worker.native.poll() is None:
+                worker.native.kill(); worker.native.wait(timeout=2)
+            for stream in (worker.native.stdin, worker.native.stdout, worker.native.stderr):
+                stream.close()
+
+
+class FormalMonitorChecks(unittest.TestCase):
+    def test_monitor_uses_low_frequency_wait_and_cancels_only_candidate_on_new_formal_session(self):
+        worker = bare_worker()
+        worker.stop_event = Mock()
+        worker.stop_event.wait.side_effect = [False, False]
+        worker.busy.side_effect = [False, True]
+        with patch('udp_lan_worker.time.monotonic', side_effect=[0, .010, 2, 2.030]):
+            worker._monitor_formal()
+        self.assertEqual(worker.stop_event.wait.call_count, 2)
+        self.assertTrue(all(call.args == (2.0,) for call in worker.stop_event.wait.call_args_list))
+        self.assertEqual(worker.formal_monitor['checks'], 2)
+        self.assertEqual(worker.formal_monitor['busy_seen'], 1)
+        self.assertAlmostEqual(worker.formal_monitor['max_check_duration_ms'], 30)
+        worker.registry.revoke.assert_called_once_with(SESSION)
+        self.assertEqual(worker.failure, 'formal_session_started_cancel_candidate')
+
+    def test_monitor_check_failure_fails_closed_without_exception_detail(self):
+        worker = bare_worker()
+        worker.stop_event = Mock()
+        worker.stop_event.wait.return_value = False
+        worker.busy.side_effect = subprocess.TimeoutExpired('fake secret-command-detail', 2)
+        worker._monitor_formal()
+        worker.registry.revoke.assert_called_once_with(SESSION)
+        self.assertEqual(worker.formal_monitor['check_failures'], 1)
+        self.assertEqual(worker.failure, 'formal_busy_check_unavailable_cancel_candidate')
+        self.assertNotIn('secret-command-detail', json.dumps(worker.formal_monitor))
+
+    def test_stopped_monitor_never_queries_formal_service(self):
+        worker = bare_worker()
+        worker.stop_event.set()
+        worker._monitor_formal()
+        worker.busy.assert_not_called()
 
 
 if __name__ == '__main__':

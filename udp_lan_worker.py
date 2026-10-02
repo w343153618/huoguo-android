@@ -31,6 +31,9 @@ from recovery_controller import RecoveryController
 
 
 class LanMediaWorker:
+    FORMAL_CHECK_SECONDS = 2.0
+    NATIVE_GRACE_SECONDS = 2.0
+
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy):
         self.config = dict(config)
@@ -50,6 +53,9 @@ class LanMediaWorker:
         self.started = self.closed = False
         self.last_idr = 0.
         self.failure = ''
+        self.native_shutdown = self._native_shutdown_state()
+        self.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
+                                   check_failures=0, max_check_duration_ms=0.0)
         self.counts = dict(authenticated_ready=0, authenticated_alive=0, invalid_packets=0,
                            foreign_peer=0, authenticated_stop=0, touch_revoked=0)
         # Require an independently built guest capability manifest. Stock scrcpy
@@ -147,6 +153,15 @@ class LanMediaWorker:
             self.started = True
         self._background('owned_LAN_UDP_media', self._start_media)
 
+    @staticmethod
+    def _native_shutdown_state():
+        return dict(stdin_eof_closed=False, stdin_error_class='',
+                    stdout_eof_observed=False, stderr_eof_observed=False,
+                    stdout_drained_records=0, stdout_drained_bytes=0,
+                    final_summary_observed=False, stderr_error_class='',
+                    graceful_exit=False, terminate_used=False, kill_used=False,
+                    process_exit_confirmed=False, returncode=None)
+
     def _request_idr(self, origin):
         with self.control_lock:
             if self.stop_event.is_set() or not self.hardware:
@@ -196,6 +211,29 @@ class LanMediaWorker:
                                     ('control', self._control), ('events', self._events), ('ping', self._ping)):
                 self._background('udp_'+name, operation)
             hardware.start()
+            self._background('formal_session_monitor', self._monitor_formal)
+
+    def _monitor_formal(self):
+        """Low-frequency fail-closed cancellation; never touches formal sessions."""
+        while not self.stop_event.wait(self.FORMAL_CHECK_SECONDS):
+            before = time.monotonic()
+            self.formal_monitor['checks'] += 1
+            try:
+                busy = self.busy()
+            except Exception:
+                self.formal_monitor['check_failures'] += 1
+                busy = True
+            finally:
+                elapsed = max(0.0, (time.monotonic() - before) * 1000)
+                self.formal_monitor['max_check_duration_ms'] = max(
+                    elapsed, self.formal_monitor['max_check_duration_ms'])
+            if busy:
+                self.formal_monitor['busy_seen'] += 1
+                self.failure = ('formal_busy_check_unavailable_cancel_candidate'
+                    if self.formal_monitor['check_failures'] else
+                    'formal_session_started_cancel_candidate')
+                self.registry.revoke(self.sid)
+                return
 
     def _send_control(self, data):
         """Bound local input writes without timing out an otherwise idle reader."""
@@ -229,22 +267,59 @@ class LanMediaWorker:
                 raise PermissionError('owned_touch_lease_revoked')
 
     def _feed(self):
-        while not self.stop_event.is_set():
-            try:
-                chunk = self.channels['video'].recv(65536)
-            except socket.timeout:
-                continue
-            if not chunk:
-                raise EOFError('owned_video_source_closed')
-            self.native.stdin.write(chunk)
-            self.native.stdin.flush()
+        try:
+            while not self.stop_event.is_set():
+                try:
+                    chunk = self.channels['video'].recv(65536)
+                except socket.timeout:
+                    continue
+                if not chunk:
+                    raise EOFError('owned_video_source_closed')
+                self.native.stdin.write(chunk)
+                self.native.stdin.flush()
+        finally:
+            # This writer owns stdin close: another thread must not deadlock on
+            # BufferedWriter's lock while a full pipe is awaiting stdout drain.
+            self._close_native_input()
+
+    def _close_native_input(self):
+        if self.native is None or self.native.stdin is None:
+            return
+        try:
+            if not self.native.stdin.closed:
+                self.native.stdin.close()
+            self.native_shutdown['stdin_eof_closed'] = True
+        except Exception as error:
+            self.native_shutdown['stdin_error_class'] = type(error).__name__
 
     def _video(self):
-        while not self.stop_event.is_set():
-            size = struct.unpack('>H', read_exact(self.native.stdout, 2))[0]
-            if not 56 < size <= 1080:
-                raise ValueError('native_shard_bound')
-            self.gate.send(read_exact(self.native.stdout, size))
+        while True:
+            try:
+                size = struct.unpack('>H', read_exact(self.native.stdout, 2))[0]
+                if not 56 < size <= 1080:
+                    raise ValueError('native_shard_bound')
+                payload = read_exact(self.native.stdout, size)
+            except EOFError:
+                self.native_shutdown['stdout_eof_observed'] = True
+                if not self.stop_event.is_set():
+                    raise EOFError('owned_packetizer_output_closed') from None
+                return
+            if self.stop_event.is_set():
+                # Keep the owned pipe moving so EOF can yield the real final
+                # counters; never send queued media after revocation.
+                self.native_shutdown['stdout_drained_records'] += 1
+                self.native_shutdown['stdout_drained_bytes'] += size + 2
+            else:
+                self.gate.send(payload)
+
+    def _drain_native_stdout(self):
+        """Fallback after a missing/failed framed reader; no forwarding."""
+        while True:
+            data = self.native.stdout.read(65536)
+            if not data:
+                self.native_shutdown['stdout_eof_observed'] = True
+                return
+            self.native_shutdown['stdout_drained_bytes'] += len(data)
 
     def _audio(self):
         stream = self.channels['audio']
@@ -282,23 +357,41 @@ class LanMediaWorker:
                     self.network.acknowledge(value)
 
     def _events(self):
-        for line in self.native.stderr:
-            if len(line) > 8192:
-                raise ValueError('native_summary_bound')
-            value = json.loads(line)
-            if value.get('event') == 'summary':
-                if value.get('clock_domain') != 'host_clock_gettime_CLOCK_UPTIME_RAW_us':
-                    raise ValueError('candidate_native_clock_contract')
-                self.native_summaries.append(value)
-            with self.control_lock:
-                decision = self.recovery.consume(value) if self.config.get('bitrate_mode') == 'ADAPTIVE_VBR' else None
-                if decision:
-                    self.network.set_recovery_ceiling(decision.requested_bitrate_bps)
-                    self._apply_bitrate(min(decision.requested_bitrate_bps, self.network.target_bps))
-                    if decision.request_idr:
+        try:
+            while True:
+                line = self.native.stderr.readline(8193)
+                if not line:
+                    self.native_shutdown['stderr_eof_observed'] = True
+                    return
+                if len(line) > 8192:
+                    raise ValueError('native_summary_bound')
+                value = json.loads(line)
+                if not isinstance(value, dict):
+                    raise ValueError('native_event_object_required')
+                if value.get('event') == 'summary':
+                    if value.get('clock_domain') != 'host_clock_gettime_CLOCK_UPTIME_RAW_us':
+                        raise ValueError('candidate_native_clock_contract')
+                    self.native_summaries.append(value)
+                    if value.get('final') is True:
+                        self.native_shutdown['final_summary_observed'] = True
+                # Draining a final event cannot request input/IDR/bitrate from
+                # the guest whose control channel was already closed.
+                if self.stop_event.is_set():
+                    continue
+                with self.control_lock:
+                    if self.stop_event.is_set():
+                        continue
+                    decision = self.recovery.consume(value) if self.config.get('bitrate_mode') == 'ADAPTIVE_VBR' else None
+                    if decision:
+                        self.network.set_recovery_ceiling(decision.requested_bitrate_bps)
+                        self._apply_bitrate(min(decision.requested_bitrate_bps, self.network.target_bps))
+                        if decision.request_idr:
+                            self._request_idr('native')
+                    elif value.get('event') == 'request_idr':
                         self._request_idr('native')
-                elif value.get('event') == 'request_idr':
-                    self._request_idr('native')
+        except Exception as error:
+            self.native_shutdown['stderr_error_class'] = type(error).__name__
+            raise
 
     def _ping(self):
         while not self.stop_event.wait(.1):
@@ -307,39 +400,104 @@ class LanMediaWorker:
             if query:
                 self.sender.send(query, 'network_feedback')
 
+    def _finish_native(self):
+        if self.native is None:
+            return
+        # Existing readers keep draining after stop. If startup failed before
+        # they were created, install only owned no-forwarding pipe readers.
+        video_reader = any(thread.name == 'udp_video' and thread.is_alive()
+                           and thread is not threading.current_thread()
+                           for thread in self.threads)
+        if not video_reader and not self.native_shutdown['stdout_eof_observed']:
+            self._background('native_shutdown_stdout_drain', self._drain_native_stdout)
+        event_reader = any(thread.name == 'udp_events' and thread.is_alive()
+                           and thread is not threading.current_thread()
+                           for thread in self.threads)
+        if not event_reader and not self.native_shutdown['stderr_eof_observed']:
+            self._background('native_shutdown_stderr_drain', self._events)
+
+        feed_threads = [thread for thread in self.threads if thread.name == 'udp_feed']
+        for thread in feed_threads:
+            if thread is not threading.current_thread():
+                thread.join(timeout=1.5)
+        if not feed_threads:
+            self._close_native_input()
+        # If the sole stdin writer is still blocked, never take its buffered I/O
+        # lock here. Draining should free it; bounded TERM/KILL is the fallback.
+        try:
+            code = self.native.wait(timeout=self.NATIVE_GRACE_SECONDS)
+            self.native_shutdown['graceful_exit'] = True
+        except subprocess.TimeoutExpired:
+            self.native_shutdown['terminate_used'] = True
+            self.native.terminate()
+            try:
+                code = self.native.wait(timeout=1)
+            except subprocess.TimeoutExpired:
+                self.native_shutdown['kill_used'] = True
+                self.native.kill()
+                code = self.native.wait(timeout=2)
+        self.native_shutdown['process_exit_confirmed'] = True
+        self.native_shutdown['returncode'] = code
+
     def stop(self):
         with self.lifecycle_lock:
             if self.closed:
                 return
             self.closed = True
             self.stop_event.set()
+        errors = []
+        def attempt(stage, operation):
+            try:
+                operation()
+                return True
+            except Exception as error:
+                errors.append({'stage': stage, 'error_class': type(error).__name__})
+                return False
         if self.touch:
-            self.touch.close()
+            attempt('touch_close', self.touch.close)
         if self.hardware:
-            self.hardware.close()
-        if self.touch:
-            self.touch.thread.join(timeout=1)
-            if self.touch.thread.is_alive():
-                raise TimeoutError('owned_touch_writer_cleanup_unconfirmed')
-        self.udp.close()
+            attempt('hardware_close', self.hardware.close)
+        if self.touch and self.touch.thread is not threading.current_thread():
+            attempt('touch_join', lambda: self.touch.thread.join(timeout=1))
+        if self.touch and self.touch.thread.is_alive():
+            errors.append({'stage': 'touch_quiescence', 'error_class': 'Unconfirmed'})
+        attempt('udp_close', self.udp.close)
         # A canceled constructor may still own an initializing subprocess.
         # Hold the registry reservation until it observes closed and tears down.
         if self.started and not self.startup_done.wait(25):
-            raise TimeoutError('owned_media_startup_cleanup_unconfirmed')
-        if self.native and self.native.poll() is None:
-            self.native.terminate()
-            try:
-                self.native.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.native.kill()
-                self.native.wait(timeout=2)
-        for thread in self.threads:
+            errors.append({'stage': 'startup_quiescence', 'error_class': 'Unconfirmed'})
+        attempt('native_finish', self._finish_native)
+        deadline = time.monotonic() + 2
+        thread_state = []
+        for thread in list(self.threads):
             if thread is not threading.current_thread():
-                thread.join(timeout=2)
+                attempt('thread_join', lambda thread=thread:
+                    thread.join(timeout=max(0.0, deadline-time.monotonic())))
+                if thread.is_alive():
+                    errors.append({'stage': 'thread_quiescence', 'error_class': 'Unconfirmed'})
+            thread_state.append({'name': thread.name, 'alive': thread.is_alive(),
+                                 'stop_invoker_excluded': thread is threading.current_thread()})
+        if self.native is not None:
+            if not self.native_shutdown['process_exit_confirmed']:
+                errors.append({'stage': 'native_exit', 'error_class': 'Unconfirmed'})
+            # Only close pipe handles after their owned readers/writer exited;
+            # close() itself may acquire a held BufferedIO lock otherwise.
+            if not any(item['alive'] and not item['stop_invoker_excluded'] for item in thread_state):
+                for pipe in (self.native.stdin, self.native.stdout, self.native.stderr):
+                    if pipe is not None:
+                        attempt('native_pipe_close', pipe.close)
+        final_status = ('not_started' if self.native is None else
+            'confirmed' if self.native_shutdown['final_summary_observed'] else
+            'missing_after_forced_exit' if self.native_shutdown['terminate_used'] else
+            'missing_after_graceful_exit' if self.native_shutdown['process_exit_confirmed'] else
+            'missing_process_exit_unconfirmed')
         report = {'scope': 'authenticated_App_LAN_UDP_candidate_not_WAN_or_optical_acceptance',
                   'source': 'M1_emulator_5556', 'path': 'physical_LAN_AESGCM_UDP',
                   'counts': dict(self.counts), 'failure_class': self.failure,
                   'native_summaries': list(self.native_summaries),
+                  'native_shutdown': dict(self.native_shutdown), 'native_final_status': final_status,
+                  'thread_cleanup': thread_state, 'cleanup_errors': errors,
+                  'cleanup_confirmed': not errors, 'formal_session_monitor': dict(self.formal_monitor),
                   'native_clock': 'CLOCK_UPTIME_RAW', 'tcp_media_used': False,
                   'requested': {key: self.config[key] for key in ('max_size','fps','video_bit_rate','buffer_ms','seconds')},
                   'socket_pacer_wait_enabled': True, 'assembly_lifetime_ms': 80}
@@ -358,3 +516,5 @@ class LanMediaWorker:
         with os.fdopen(fd, 'w') as output:
             json.dump(report, output, indent=2)
             output.write('\n')
+        if errors:
+            raise TimeoutError('owned_cleanup_unconfirmed')
