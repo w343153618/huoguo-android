@@ -8,6 +8,12 @@
 
 ## 2026-10-02 最新实验结果
 
+后续 **1080P／12Mbps 四轮独立ABBA** 的手机固定窗口约59.62–59.76FPS，四轮均无>100ms间隔；A/B接近，关闭第二层等待没有明确收益，因此保留默认机制。新Darwin时钟契约在同一binary下验证，不与旧720P统计混合。见[1080P独立记录](docs/socket-wait-1080p-real-video-20261002.md)。Tailnet迁移连通与媒体性能分开，后续[产品化验收计划](docs/next-iteration-20261002.md)已更新。
+
+新增八轮真实视频 **socket wait 单因素 ABBA**：保持原生 pacing、发送预算及参考链 guard，只关闭第二层 Python 定时等待的四轮平均手机呈现约 **59.805 FPS**，主要窗口未见超过 100 ms 的呈现间隔；原设置四轮约 **58.340 FPS**，超过 100 ms 的间隔共 28 次。源端供给也同时改善，手机 CPU 上限读回有变化，所以保留为候选，不宣布纯因果收益或公网达标。详见 [完整单因素记录](docs/socket-wait-real-video-20261002.md)。
+
+维护版 v1.30 已通过 M1、M5 公网 manifest 和完整 APK 实读校验；旧 Headscale Mac profile 已移除，统一使用 yilufa。见 [实际发布核对](docs/release-1.30-delivery-20261002.md) 与 [网络迁移](docs/headscale-yilufa-migration-20261002.md)。正式 App 与独立 UDP 实验的发布状态分别记录。
+
 完整结果见 [PDF 报告](output/pdf/huoguo-android-overnight-report-20261002.pdf)、[可滚动 HTML 报告](output/pdf/huoguo-android-overnight-report-20261002.html) 和 [本轮证据索引](docs/evidence/overnight-20261002/README.md)。本轮完成 **33 次独立真实 LAN UDP 会话、16 次固定文件解码对照**；真实视频累计请求时长 **1325 秒**，其中 31 次为 35 秒、两次为 120 秒，每轮分别建立会话，**不是整夜不中断播放**。测试机为 M1 与用户降频的一加 12，保留手机限频；不能把它等同于真我 V50。
 
 手机独立 SF 固定窗口中，1080×1920 两轮约 **59.32 / 59.12 FPS**；720×1280 两次两分钟会话的首包后 [5,110) 秒窗口约 **59.31 / 59.67 FPS**。这些是所测窗口的呈现率，不能证明严格持续 60/120 FPS、120 张不同内容帧或物理延迟。继续推荐 **80 ms** 为折中设置，**100 ms** 为用户已允许的流畅优先选项；源供给漂移限制了缓冲收益的因果结论。同文件 SPS 对照确认现行 UDP 实验早已启用的低延时声明机制，本次不是正式 UDP 的新修复；双/单 pacer 组合也未证明移除 socket pacing 与 guard 有稳定收益。
@@ -107,7 +113,7 @@ GitHub Actions 的 `Android build verification` 负责构建、lint、Python 与
 
 NPS 可运行于 Mac，并将云端 TCP 端口映射到 Mac 回环的 `127.0.0.1:15556`。客户端到 Mac 保持 TLS。不能公开 ADB 端口。LAN 监听应限制到预期物理网卡；Clash 规则需要针对实际隧道服务器和本地网段设置 DIRECT。
 
-本部署的 Tailscale 选项通过 M1 上的 tailnet 内 TCP Serve 把 `100.65.0.2:15556` 转到本机 `127.0.0.1:15556`，保留 App 对同一服务证书的校验。当前 M1 服务版使用 `https://hs.yilufa.site`，M5 也已使用同一服务。旧域名配置清理见 [迁移记录](docs/headscale-yilufa-migration-20261002.md)。一加 15 的历史测试来自先前网络，当前替换测试的一加 12 尚无活动尾网地址；火锅的 V50 只有入网后才能点选这个地址。家中同 Wi-Fi 测试显示 Tailscale 更平稳；手机流量测试未证明它比 NPS 稳定，故不自动选路、不改变公网默认地址。两条路线都仍承载当前 TLS/TCP 视频流，Tailscale 的 UDP 隧道并未把 App 视频协议变成 UDP/QUIC。详见 [同机实测](docs/evidence/tailscale-nps-ab-20260930.md)。
+本部署的 Tailscale 选项通过 M1 上的 tailnet 内 TCP Serve 把 `100.65.0.2:15556` 转到本机 `127.0.0.1:15556`，保留 App 对同一服务证书的校验。当前 M1 服务版使用 `https://hs.yilufa.site`，M5 也已使用同一服务。旧域名配置清理见 [迁移记录](docs/headscale-yilufa-migration-20261002.md)。一加 15 的历史测试来自先前网络；当前一加 12 已加入新 yilufa 尾网，地址为 `100.65.0.3`，节点名 `oneplus12-test`，原生界面 Connected，并已核对同家 Wi-Fi 的 UDP 直连握手。火锅的 V50 只有入网后才能点选这个地址。过去家中同 Wi-Fi 对照显示 Tailscale 更平稳；手机流量测试未证明它比 NPS 稳定，故不自动选路、不改变公网默认地址。两条路线都仍承载当前 TLS/TCP 视频流，Tailscale 的 UDP 隧道并未把 App 视频协议变成 UDP/QUIC；这次新路线的握手不代表已完成视频性能验收。详见 [历史同机实测](docs/evidence/tailscale-nps-ab-20260930.md)。
 
 `app/src/main/res/raw` 只有客户端用于验证服务器的公开证书，服务端私钥不在仓库中。换成自己的服务器时需要建立并更新相应信任关系。
 

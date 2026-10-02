@@ -1,15 +1,16 @@
 # 当前 M1 部署状态
 
-更新：2026-10-02。主工程为 huoguo-android；当前 M1 公网入口为15556，M5已恢复为独立备选入口15558，用户可手选，见 [双主机方案](dual-host-nps-plan-20261002.md)。历史虚拟机和数据保留。
+更新：2026-10-02。主工程为 huoguo-android；当前 M1 公网入口为15556，M5已恢复为独立备选入口15558，用户可手选，见 [双主机方案](dual-host-nps-plan-20261002.md)。Headscale 当前仅使用 `https://hs.yilufa.site`，M1 尾网入口为 `100.65.0.2:15556`，见 [线路迁移记录](headscale-yilufa-migration-20261002.md)。历史虚拟机和数据保留。
 
 ## 已读回的入口
 
 | 入口 | 当前结果 |
 |---|---|
 | https://146.56.249.175:15556/ping | M1 / emulator-5556 / videotoolbox |
+| https://146.56.249.175:15558/ping | M5，独立 NPC 身份与公网端口；v1.30 清单和完整 APK 已核对 |
 | https://192.168.9.128:15556/ping | M1，有线 en7 |
 | https://192.168.9.125:15556/ping | M1，无线 en0 |
-| https://100.64.0.2:15556/ping | M1，10月2日已读回的 Tailnet 入口；不据此推断 direct/DERP |
+| https://100.65.0.2:15556/ping | M1，yilufa 尾网入口；旧 GUI profile 删除后已验证 TLS 与 ping，不据此推断公网 direct/DERP 或 UDP 媒体 |
 | http://192.168.9.128:8089/ | 下载页 HTTP 200 |
 | http://192.168.9.125:8089/ | 下载页 HTTP 200 |
 
@@ -39,7 +40,7 @@ LaunchAgent 文件位于用户 Library/LaunchAgents；自动恢复运行不等�
 
 ## 版本与验收边界
 
-本轮准备发布1.29维护版；正式交付以GitHub版本、服务端清单、APK摘要和真机读回一致为准。现有 App 视频、音频、控制仍是 TLS TCP 流；不能因为有 Tailscale/QUIC 外层就宣传为原生 UDP 视频。独立原生 UDP 视频探针已在一加 15 + M1 局域网真实 YouTube 上跑通，8 Mbps 样本源端呈现节奏 55.569 FPS、手机 54.601 FPS；它还不是包含音频、触控、公网 P2P 的新产品。用户最新要求新版实时视频和声音必须使用 UDP，信令与认证可以使用 HTTPS；不得回退 TCP 媒体。
+当前已发布 v1.30 维护版，版本码 31；GitHub、M1/M5 公网清单、完整 APK 摘要和实际一加 12 覆盖安装已核对，见 [发布记录](release-1.30-delivery-20261002.md)。这次正式发布修正线路和升级分发；现有 App 视频、音频、控制仍是 TLS TCP 流，不能因为有 Tailscale/QUIC 外层就宣传为原生 UDP 视频。独立原生 UDP 视频探针已在一加 15 + M1 局域网真实 YouTube 上跑通，8 Mbps 样本源端呈现节奏 55.569 FPS、手机 54.601 FPS；它还不是包含音频、触控、公网 P2P 的新产品。用户最新要求新版实时视频和声音必须使用 UDP，信令与认证可以使用 HTTPS；不得回退 TCP 媒体。
 
 本地 App 已移除 40 Mbps 固定档位，旧保存的 40 Mbps 数值按自定义保留；未继续追加 24 Mbps 性能测试。应用发布状态与实验探针状态须分别报告。
 

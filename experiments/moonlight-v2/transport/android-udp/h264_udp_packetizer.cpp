@@ -1,5 +1,6 @@
 #include "h264_baseline_gate.hpp"
 #include "phone_receiver.hpp"
+#include "host_clock.hpp"
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -11,7 +12,7 @@
 
 using namespace huoguo::android_udp;
 namespace {
-uint64_t nowUs() { return uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count()); }
+uint64_t nowUs() { return hostMonotonicUs(); }
 constexpr size_t EncryptedIpOverhead=24+16+28;
 struct Counters {
     uint64_t source=0,config=0,idr=0,frames=0,packets=0,plainBytes=0,wireBytes=0;
@@ -24,6 +25,7 @@ struct Counters {
         if(!final && at-lastReport<1000000) return;
         lastReport=at;
         std::cerr<<"{\"event\":\"summary\",\"scope\":\"packetizer_stdout_not_WAN\",\"elapsed_us\":"<<(at-started)
+            <<",\"clock_domain\":\""<<HostClockDomain<<"\""
             <<",\"wire_bitrate\":"<<bitrate<<",\"source_frames\":"<<source<<",\"config_messages\":"<<config
             <<",\"source_idr\":"<<idr<<",\"output_frames\":"<<frames<<",\"output_packets\":"<<packets
             <<",\"plaintext_bytes\":"<<plainBytes<<",\"estimated_ipv4_encrypted_wire_bytes\":"<<wireBytes

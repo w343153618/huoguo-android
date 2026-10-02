@@ -1,5 +1,9 @@
 # 下一轮有界实验与 UDP 产品化验收计划
 
+2026-10-02后续状态：v1.30线路维护版已发布并实读M1/M5公网APK；Mac与测试手机统一yilufa，旧控制域已清理。720P两组socket wait单因素ABBA与1080P一组ABBA已经完成，分别见[720P记录](socket-wait-real-video-20261002.md)、[1080P记录](socket-wait-1080p-real-video-20261002.md)。前者B有关联收益，后者A/B接近且B无明确收益，保留默认wait/guard，不无目的重复同一矩阵。Mac native时钟契约已修并单独验证，见[clock记录](native-host-clock-contract-20261002.md)；音频新分原因计数仍只完成源码检查。
+
+接下来优先将已验证的UDP组件接入受认证App LAN入口，明确会话取消/重连、坐标/多指与音画验收；然后再测Tailnet媒体和国内UDP中继/P2P。当前手机Tailnet100.65.0.3与M1直连8ms只是连通性，现行Serve15556仍是TCP。先核对M1实际kernel/userspace路由能力，不能直接将物理接口bound sender换成Tailnet目标后宣称完成UDP路径。下面保留初始提案与完整验收清单，已执行部分以各自新记录为准。
+
 本计划基于 [10月2日真实视频证据](evidence/overnight-20261002/README.md) 与 [发布通道审计](release-channel-audit-20261002.md)。它是待执行方案，不能作为已有实现或性能验收。本轮实验主机仍为 M1；正式入口按用户最新要求同时保留 M1 与 M5，由 App 手选，两个 NPC 必须使用独立身份，见 [双主机方案](dual-host-nps-plan-20261002.md)。M5的历史性能证据与M1新测结果分别标记。V50没有参加该局域网实验，一加12限频也不能自动证明等效V50。
 
 ## 先保持可用发布，再隔离候选

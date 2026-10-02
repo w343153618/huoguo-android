@@ -19,7 +19,7 @@
   "buffer_ms": 80,
   "experimental_client_package": "local.remoteandroid.direct.experiment",
   "instrumentation_package": "local.remoteandroid.phoneprobe.experiment",
-  "note": "Current retained experiment profile; IPs must be freshly verified before each test; no production defaults or credentials included",
+  "note": "Canonical M1 testbed; formal v1.30 route fix and separate UDP experiments. Physical guest 1080x1920, 6 cores/16GiB. CPU-limited OnePlus12 is a proxy device, not an actual V50 acceptance result. Historic experiment fields retain their own evidence scope.",
   "phone_performance_profile": {
     "user_declared_cpu_throttled": true,
     "surrogate_target": "realme V50",
@@ -80,7 +80,7 @@
     "source_requested_seek_verified": false,
     "native_final_summaries_complete": false
   },
-  "updated_from_evidence_utc": "2026-10-01T23:59:08.076943+00:00",
+  "updated_from_evidence_utc": "2026-10-02T06:18:57.286643+00:00",
   "user_authorized_buffer_max_ms": 100,
   "experimental_buffer_options_ms": [
     30,
@@ -125,13 +125,132 @@
   },
   "instrumentation_package_sha256": "2395f75a97b2850b514a2bf488083e2ee4623fee0d989f41f936c471d291d38f",
   "latest_network_readback": {
-    "evidence": "evidence/overnight-20261002/network-readback.json",
-    "host_tailnet_ipv4": [
-      "100.64.0.2"
+    "readback_date": "2026-10-02",
+    "headscale_control_url": "https://hs.yilufa.site",
+    "m1_tailnet_ipv4": [
+      "100.65.0.2"
     ],
-    "phone_tailnet_ipv4": [],
-    "formal_app_legacy_tailnet_shortcut": "100.65.0.2:15556",
-    "legacy_shortcut_verified_this_campaign": false,
-    "tailnet_udp_media_test_completed": false
+    "m1_tailscale_client": "Homebrew explicit /var/run/tailscaled.socket",
+    "m5_tailnet_ipv4": [
+      "100.65.0.11"
+    ],
+    "old_mac_profiles_deleted": true,
+    "tailnet_tcp_serve_target": "127.0.0.1:15556",
+    "phone_tailnet_ipv4": [
+      "100.65.0.3"
+    ],
+    "phone_tailnet_status": "OnePlus12 joined https://hs.yilufa.site as existing user wyw; node48 oneplus12-test; native Connected UI and tun0 IPv4 verified; M1 direct UDP ping8ms on home WiFi; media path not yet accepted",
+    "media_udp_tailnet_test_completed": false,
+    "evidence": "docs/evidence/yilufa-migration-20261002",
+    "formal_public_m1": "146.56.249.175:15556",
+    "formal_public_m5": "146.56.249.175:15558",
+    "formal_tailnet_m1": "100.65.0.2:15556"
+  },
+  "formal_app_version": "1.30",
+  "formal_app_version_code": 31,
+  "formal_media_transport": "TLS/TCP maintenance release; isolated UDP experiment is separate",
+  "current_source_display_setting_readback": {
+    "min_hz": 60.0,
+    "peak_hz": 60.0,
+    "scope": "live read-only ABBA preflight; not proof of 120 unique source FPS",
+    "evidence": "docs/evidence/socket-wait-20261002/preflight-live.json"
+  },
+  "latest_socket_wait_experiment": {
+    "scope": "M1 real YouTube1080p60 UI selection; encoded720x1280, physicalLAN AES-GCM UDP to user CPU-limited OnePlus12; not WAN/V50/unique120FPS",
+    "evidence": "docs/evidence/socket-wait-20261002/aggregate-review.json",
+    "trials": 8,
+    "requested_seconds_per_trial": 120,
+    "steady_window_seconds_per_trial": 105,
+    "A_socket_timed_wait": true,
+    "B_socket_timed_wait": false,
+    "native_wire_bps": 32000000,
+    "video_bps": 8000000,
+    "socket_guard_preserved": true,
+    "buffer_ms": 80,
+    "phone_fps_means": {
+      "A": 58.340476,
+      "B": 59.804762
+    },
+    "source_fps_means": {
+      "A": 58.385714,
+      "B": 59.828571
+    },
+    "phone_gaps_over100ms": {
+      "A": 28,
+      "B": 0
+    },
+    "candidate_only_not_default_promoted": true,
+    "source_supply_also_varied": true,
+    "cpu_limit_readbacks_changed_trials": [
+      1,
+      2,
+      6,
+      7
+    ],
+    "cpu_limit_written": false,
+    "native_detail_rings_prefix_cropped": true,
+    "packetizer_final_snapshot_complete": false,
+    "touch_exercised": false,
+    "optical_latency_and_acoustic_sync_measured": false
+  },
+  "audio_diagnostics_source_only": {
+    "scope": "Reason split + bounded numeric histograms; no playback behavior changes; not installed in frozen experimental APK",
+    "source_check": "docs/evidence/socket-wait-20261002/audio-diagnostics-source-check.json",
+    "offline_checks": 22,
+    "apk_built": false,
+    "apk_installed": false
+  },
+  "formal_release_delivery": {
+    "version_name": "1.30",
+    "version_code": 31,
+    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/v1.30",
+    "public_m1_and_m5_actual_full_apk_sha_verified": true,
+    "evidence": "docs/evidence/release-1.30-20261002/public-delivery-check.json",
+    "apk_in_new_updates_git": false
+  },
+  "latest_1080p_socket_wait_experiment": {
+    "evidence": "docs/evidence/socket-wait-1080p-20261002/aggregate-review.json",
+    "scope": "4x120s real M1 LAN UDP to user-limited OnePlus12; steady4x105s; not Tailnet/WAN/V50/unique120FPS",
+    "encoded_resolution": [
+      1080,
+      1920
+    ],
+    "video_bps": 12000000,
+    "wire_bps": 32000000,
+    "buffer_ms": 80,
+    "phone_fps": {
+      "A": [
+        59.666667,
+        59.761905
+      ],
+      "B": [
+        59.733333,
+        59.619048
+      ]
+    },
+    "phone_mean_fps": {
+      "A": 59.714286,
+      "B": 59.67619
+    },
+    "phone_gaps_over100ms_all_trials": 0,
+    "default_socket_wait_retained": true,
+    "B_has_clear_benefit": false,
+    "cpu_limits_written": false,
+    "cpu_observer_sample_count": 116,
+    "cpu_observer_includes_preparation_and_cleanup": true,
+    "cpu_ceiling_changes_observed": true,
+    "tailnet_media_test": false,
+    "touch_exercised": false,
+    "optical_latency_and_acoustic_sync_measured": false
+  },
+  "native_clock_candidate": {
+    "path": "/private/tmp/huoguo-udp-uptime-credit/host/h264_udp_packetizer",
+    "sha256": "567231ae8165bd09c46e343f436db647210e70d7f60d74a144950c8ca84c8142",
+    "darwin_clock_domain": "CLOCK_UPTIME_RAW, matches Python mach_absolute uptime",
+    "phone_lan_1080p_trials_validated": 4,
+    "real_host_sleep_resume_tested": false,
+    "previous_frozen_binary_preserved": true,
+    "not_a_cause_for_historical_720p_A_B_difference": true,
+    "evidence": "docs/evidence/socket-wait-20261002/clock-build-validation.json"
   }
 }

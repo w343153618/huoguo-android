@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Experimental UDP AAC receiver. No audio payload/logging is persisted.
@@ -27,9 +28,77 @@ final class UdpAudioReceiver implements AutoCloseable {
     private volatile boolean closed;private volatile MediaCodec decoder;private volatile AudioTrack output;
     private volatile String failure="",decoderName="";private volatile boolean configured;
     private byte[] config;private long lastInputPts=-1;private volatile long lastPlaybackFrames;
-    private final AtomicLong queueDrops=new AtomicLong(),lateDrops=new AtomicLong(),beforeConfig=new AtomicLong(),
+    private final AtomicLong queueDrops=new AtomicLong(),beforeConfig=new AtomicLong(),
         invalidConfigs=new AtomicLong(),configurations=new AtomicLong(),inputFrames=new AtomicLong(),pcmBytes=new AtomicLong(),
-        timestampObservations=new AtomicLong(),validTimestamps=new AtomicLong(),pcmLateDrops=new AtomicLong();
+        timestampObservations=new AtomicLong(),validTimestamps=new AtomicLong();
+    private final AudioDiagnostics diagnostics=new AudioDiagnostics();
+
+    /** Fixed-memory numeric diagnostics only: no samples, PCM, or packet content.
+     * The legacy drop totals and split reasons come from one synchronized copy.
+     * Deadline reads used below never replace the original scheduling target.
+     */
+    static final class AudioDiagnostics {
+        static final int ARRIVAL_AGE_EXPIRED=0,NONMONOTONIC_PTS=1,CODEC_INPUT_UNAVAILABLE=2;
+        static final int PCM_TARGET_LATE=0,PCM_WRITE_TIMEOUT=1;
+        final long[] workerReasons=new long[3],pcmReasons=new long[2];
+        final NumericTiming firstArrivalAge=new NumericTiming(),completeToWorker=new NumericTiming(),
+            inputWait=new NumericTiming(),inputPtsStep=new NumericTiming(),outputHold=new NumericTiming(),
+            targetLead=new NumericTiming(),targetMinusTail=new NumericTiming(),freshTargetDelta=new NumericTiming(),
+            schedulingWait=new NumericTiming(),sleepRequested=new NumericTiming(),sleepObserved=new NumericTiming(),
+            sleepOvershoot=new NumericTiming(),pcmWrite=new NumericTiming();
+        private long tailTimestampUses,tailFallbackUses;
+        synchronized void workerStart(long arrivalAgeNs,long completeAgeNs){firstArrivalAge.add(arrivalAgeNs);completeToWorker.add(completeAgeNs);}
+        synchronized void workerLate(int reason){if(reason<0||reason>=workerReasons.length)throw new IllegalArgumentException("worker reason");workerReasons[reason]++;}
+        synchronized void pcmLate(int reason){if(reason<0||reason>=pcmReasons.length)throw new IllegalArgumentException("PCM reason");pcmReasons[reason]++;}
+        synchronized long[] lateCounts(){
+            return new long[]{workerReasons[0]+workerReasons[1]+workerReasons[2],workerReasons[0],workerReasons[1],workerReasons[2],
+                pcmReasons[0]+pcmReasons[1],pcmReasons[0],pcmReasons[1]};
+        }
+        synchronized void input(long waitedNs,long ptsStepNs){inputWait.add(waitedNs);if(ptsStepNs>=0)inputPtsStep.add(ptsStepNs);}
+        synchronized void output(long heldNs){outputHold.add(heldNs);}
+        synchronized void target(long leadNs){targetLead.add(leadNs);}
+        synchronized void tail(long waitNs,long freshDeltaNs,boolean fallback){
+            targetMinusTail.add(waitNs);freshTargetDelta.add(freshDeltaNs);
+            if(fallback)tailFallbackUses++;else tailTimestampUses++;
+        }
+        synchronized void waited(long elapsedNs){schedulingWait.add(elapsedNs);}
+        synchronized void slept(long requestedNs,long observedNs){
+            sleepRequested.add(requestedNs);sleepObserved.add(observedNs);sleepOvershoot.add(Math.max(0,observedNs-requestedNs));
+        }
+        synchronized void wrote(long elapsedNs){pcmWrite.add(elapsedNs);}
+        synchronized JSONObject timingSnapshot()throws Exception{
+            return new JSONObject().put("scope","Phone-local numeric pipeline diagnostics; fixed histograms, no payload or retained frame events. Fresh deadline reads do not alter scheduling.")
+                .put("worker_first_arrival_age",firstArrivalAge.json()).put("complete_to_worker_start",completeToWorker.json())
+                .put("codec_input_wait",inputWait.json()).put("attempted_input_pts_step",inputPtsStep.json())
+                .put("codec_output_dequeue_to_release",outputHold.json()).put("pcm_target_lead_at_output",targetLead.json())
+                .put("original_target_minus_queue_tail",targetMinusTail.json()).put("fresh_shared_target_minus_original",freshTargetDelta.json())
+                .put("output_scheduling_wait",schedulingWait.json()).put("sleep_requested",sleepRequested.json())
+                .put("sleep_observed",sleepObserved.json()).put("sleep_overshoot",sleepOvershoot.json()).put("pcm_write",pcmWrite.json())
+                .put("queue_tail_timestamp_uses",tailTimestampUses).put("queue_tail_fallback_uses",tailFallbackUses)
+                .put("complete_to_worker_scope","Includes the existing 10ms audio reorder wait and worker queue; not pure queue residence.")
+                .put("tail_sample_scope","One observation per output wait-loop iteration; repeated observations are not independent PCM frames.")
+                .put("output_hold_scope","Dequeue return through release call, including scheduling and writes; not AAC decoder execution time.");
+        }
+    }
+    /** Signed bins preserve early/late target differences instead of clamping.
+     * Counts cover the whole run; constant storage does not evict early events.
+     */
+    static final class NumericTiming {
+        static final long[] UPPER_NS={-80_000_000L,-20_000_000L,0,2_000_000L,5_000_000L,10_000_000L,
+            20_000_000L,40_000_000L,80_000_000L,160_000_000L,320_000_000L,640_000_000L};
+        final long[] bins=new long[UPPER_NS.length+1];
+        private long count,minNs=Long.MAX_VALUE,maxNs=Long.MIN_VALUE;private double totalNs;
+        void add(long ns){count++;totalNs+=ns;minNs=Math.min(minNs,ns);maxNs=Math.max(maxNs,ns);
+            int bin=0;while(bin<UPPER_NS.length&&ns>UPPER_NS[bin])bin++;bins[bin]++;}
+        long[] values(){return new long[]{count,count==0?0:minNs,count==0?0:maxNs};}
+        double meanNs(){return count==0?0:totalNs/count;}
+        JSONObject json()throws Exception{
+            JSONArray bounds=new JSONArray(),counts=new JSONArray();for(long ns:UPPER_NS)bounds.put(ns/1e6);for(long n:bins)counts.put(n);
+            return new JSONObject().put("count",count).put("min_ms",count==0?JSONObject.NULL:minNs/1e6)
+                .put("max_ms",count==0?JSONObject.NULL:maxNs/1e6).put("mean_ms",count==0?JSONObject.NULL:meanNs()/1e6)
+                .put("histogram_upper_inclusive_ms",bounds).put("histogram_counts",counts);
+        }
+    }
 
     UdpAudioReceiver(MainActivity activity,int generation){
         this.activity=activity;this.generation=generation;
@@ -54,18 +123,21 @@ final class UdpAudioReceiver implements AutoCloseable {
         try{
             while(active()){
                 UdpAudioAssembler.Frame frame=queue.poll(20,TimeUnit.MILLISECONDS);if(frame==null)continue;
-                if(System.nanoTime()-frame.firstArrivalNs>=UdpAudioAssembler.DEADLINE_NS){lateDrops.incrementAndGet();continue;}
+                long workerStartedNs=System.nanoTime();diagnostics.workerStart(workerStartedNs-frame.firstArrivalNs,workerStartedNs-frame.completeNs);
+                if(workerStartedNs-frame.firstArrivalNs>=UdpAudioAssembler.DEADLINE_NS){diagnostics.workerLate(AudioDiagnostics.ARRIVAL_AGE_EXPIRED);continue;}
                 if(frame.config){
                     if(!UdpAudioAssembler.supportedConfig(frame.data)){invalidConfigs.incrementAndGet();continue;}
                     if(!Arrays.equals(config,frame.data))configure(frame.data);
                     continue;
                 }
                 MediaCodec current=decoder;if(current==null){beforeConfig.incrementAndGet();continue;}
-                if(frame.ptsUs<=lastInputPts){lateDrops.incrementAndGet();continue;}
+                if(frame.ptsUs<=lastInputPts){diagnostics.workerLate(AudioDiagnostics.NONMONOTONIC_PTS);continue;}
                 activity.playback.observeAudio(frame.ptsUs,frame.completeNs);
                 long deadline=frame.firstArrivalNs+UdpAudioAssembler.DEADLINE_NS;int index=-1;
+                long inputWaitStartedNs=System.nanoTime();
                 while(active()&&decoder==current&&System.nanoTime()<deadline){index=current.dequeueInputBuffer(1000);if(index>=0)break;}
-                if(index<0){lateDrops.incrementAndGet();continue;}
+                diagnostics.input(System.nanoTime()-inputWaitStartedNs,lastInputPts<0?-1:(frame.ptsUs-lastInputPts)*1000L);
+                if(index<0){diagnostics.workerLate(AudioDiagnostics.CODEC_INPUT_UNAVAILABLE);continue;}
                 ByteBuffer input=current.getInputBuffer(index);
                 if(input==null||input.capacity()<frame.data.length)throw new IOException("audio_input_capacity");
                 input.clear();input.put(frame.data);current.queueInputBuffer(index,0,frame.data.length,frame.ptsUs,0);
@@ -109,6 +181,7 @@ final class UdpAudioReceiver implements AutoCloseable {
         try{
             while(active()&&decoder==current){
                 int index=current.dequeueOutputBuffer(info,10000);if(index<0)continue;
+                long outputAcquiredNs=System.nanoTime();
                 try{
                     if(info.size==0)continue;
                     ByteBuffer pcm=current.getOutputBuffer(index);if(pcm==null||info.size%4!=0)throw new IOException("audio_pcm_alignment");
@@ -116,9 +189,11 @@ final class UdpAudioReceiver implements AutoCloseable {
                     if(activity.audioGain!=1f){if(amplified.capacity()<pcm.remaining())amplified=ByteBuffer.allocateDirect(pcm.remaining());
                         PcmGain.process(pcm,amplified,activity.audioGain);pcm=amplified;}
                     long target=activity.playback.audioDeadline(info.presentationTimeUs);
+                    diagnostics.target(target-System.nanoTime());
                     // A frame arriving too late must not increase playout delay
                     // forever. Dropping this PCM record is bounded and explicit.
-                    if(System.nanoTime()-target>80_000_000L){pcmLateDrops.incrementAndGet();continue;}
+                    if(System.nanoTime()-target>80_000_000L){diagnostics.pcmLate(AudioDiagnostics.PCM_TARGET_LATE);continue;}
+                    long schedulingStartedNs=System.nanoTime();
                     while(active()&&decoder==current){
                         long now=System.nanoTime();boolean valid=track.getTimestamp(stamp);
                         timestampObservations.incrementAndGet();if(valid)validTimestamps.incrementAndGet();
@@ -128,35 +203,47 @@ final class UdpAudioReceiver implements AutoCloseable {
                         long tail=valid&&estimate.valid&&track.getPlayState()==AudioTrack.PLAYSTATE_PLAYING
                             ?AudioSubmissionClock.timestampQueueTailNs(now,stamp.nanoTime,writtenFrames,estimate.timestampFramePosition,48000)
                             :AudioSubmissionClock.UNAVAILABLE;
-                        if(tail==AudioSubmissionClock.UNAVAILABLE){long queued=Math.max(0,writtenFrames-(track.getPlaybackHeadPosition()&0xffffffffL));
+                        boolean tailFallback=tail==AudioSubmissionClock.UNAVAILABLE;
+                        if(tailFallback){long queued=Math.max(0,writtenFrames-(track.getPlaybackHeadPosition()&0xffffffffL));
                             tail=now+queued*1_000_000_000L/48000L+25_000_000L;}
-                        long wait=target-tail;if(wait<=2_000_000L)break;
-                        Thread.sleep(Math.min(10,Math.max(1,wait/1_000_000L)));
+                        long wait=target-tail;
+                        diagnostics.tail(wait,activity.playback.audioDeadline(info.presentationTimeUs)-target,tailFallback);
+                        if(wait<=2_000_000L)break;
+                        long sleepMs=Math.min(10,Math.max(1,wait/1_000_000L)),sleepStartedNs=System.nanoTime();
+                        Thread.sleep(sleepMs);diagnostics.slept(sleepMs*1_000_000L,System.nanoTime()-sleepStartedNs);
                     }
+                    diagnostics.waited(System.nanoTime()-schedulingStartedNs);
                     long chunkFrames=0,writeDeadline=System.nanoTime()+80_000_000L;
+                    long writeStartedNs=System.nanoTime();
                     while(pcm.hasRemaining()&&active()&&decoder==current){
                         int count=track.write(pcm,pcm.remaining(),AudioTrack.WRITE_NON_BLOCKING);
                         if(count<0||count%4!=0)throw new IOException("audio_write");
-                        if(count==0){if(System.nanoTime()>writeDeadline){pcmLateDrops.incrementAndGet();break;}Thread.sleep(1);continue;}
+                        if(count==0){if(System.nanoTime()>writeDeadline){diagnostics.pcmLate(AudioDiagnostics.PCM_WRITE_TIMEOUT);break;}Thread.sleep(1);continue;}
                         long frames=count/4;
                         activity.presentationMetrics.audioWritten(epoch,writtenFrames,frames,info.presentationTimeUs+chunkFrames*1_000_000L/48000L);
                         writtenFrames+=frames;chunkFrames+=frames;pcmBytes.addAndGet(count);activity.audioOutputBytes.addAndGet(count);
                     }
+                    diagnostics.wrote(System.nanoTime()-writeStartedNs);
                     lastPlaybackFrames=track.getPlaybackHeadPosition()&0xffffffffL;
-                }finally{if(decoder==current)current.releaseOutputBuffer(index,false);}
+                }finally{if(decoder==current)current.releaseOutputBuffer(index,false);diagnostics.output(System.nanoTime()-outputAcquiredNs);}
             }
         }catch(InterruptedException stop){Thread.currentThread().interrupt();}
         catch(Throwable error){if(active()&&decoder==current)failure=error.getClass().getSimpleName();}
     }
     synchronized JSONObject snapshot()throws Exception{
+        long[] late=diagnostics.lateCounts();
         return new JSONObject().put("protocol","HGUA_AAC_over_authenticated_UDP").put("configuration_received",configured)
             .put("codec",decoderName).put("decoder_configurations",configurations.get()).put("accepted_fragments",assembler.acceptedFragments)
             .put("malformed",assembler.malformed).put("duplicates",assembler.duplicate).put("assembly_expired",assembler.expired)
             .put("assembly_evicted",assembler.evicted).put("complete_records",assembler.completed).put("reorder_drops",assembler.reorderDrops)
             .put("pending_records",assembler.pendingCount()).put("pending_complete_records",assembler.readyCount())
-            .put("worker_queue_drops",queueDrops.get()).put("worker_late_drops",lateDrops.get()).put("media_before_configuration",beforeConfig.get())
+            .put("worker_queue_drops",queueDrops.get()).put("worker_late_drops",late[0])
+            .put("worker_late_drop_reasons",new JSONObject().put("arrival_age_expired",late[1]).put("nonmonotonic_pts",late[2]).put("codec_input_unavailable",late[3]))
+            .put("media_before_configuration",beforeConfig.get())
             .put("unsupported_configurations",invalidConfigs.get()).put("decoder_input_records",inputFrames.get()).put("pcm_written_bytes",pcmBytes.get())
-            .put("pcm_late_drops",pcmLateDrops.get()).put("timestamp_observations",timestampObservations.get()).put("valid_audio_timestamps",validTimestamps.get())
+            .put("pcm_late_drops",late[4]).put("pcm_late_drop_reasons",new JSONObject().put("target_late",late[5]).put("write_timeout",late[6]))
+            .put("diagnostic_timing",diagnostics.timingSnapshot())
+            .put("timestamp_observations",timestampObservations.get()).put("valid_audio_timestamps",validTimestamps.get())
             .put("last_playback_head_frames",lastPlaybackFrames).put("failure_class",failure)
             .put("actual_acoustic_output_measured",false).put("actual_lip_sync_measured",false);
     }

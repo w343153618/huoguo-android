@@ -18,6 +18,7 @@ from scripts.probes.source_playback_state import collect
 from scripts.probes.compare_udp_iterations import summarize
 from scripts.probes.analyze_udp_stalls import analyze
 from scripts.probes.source_probe_guards import require_no_source_capture
+from scripts.probes.source_player_quality import collect as collect_quality
 
 PLAYBACK_DURATION_TOLERANCE_S = 1.0
 
@@ -201,6 +202,9 @@ def main():
     parser.add_argument('--exercise-touch', action='store_true', help='One bounded real phone swipe; results include source interaction')
     parser.add_argument('--disable-socket-pacing-bundle', action='store_true',
                         help='LAN experiment only: native pacing stays; socket pacing AND SocketVideoGate guard disabled together')
+    parser.add_argument('--disable-socket-wait', action='store_true',
+                        help='LAN single-variable experiment: skip only socket timed waits, '
+                             'retaining deadline/reference guard and native pacing')
     parser.add_argument('--fps', type=int, choices=(60, 120), default=60,
                         help='Requested encoder FPS cap; source and displayed FPS require readback')
     parser.add_argument('--raw-submit-fps', type=int, choices=(30, 60, 120), default=None,
@@ -223,7 +227,11 @@ def main():
                         help='Requested encoded long edge; actual dimensions come from encoder readback')
     parser.add_argument('--source-quality-label', choices=('unverified', '1080p60-ui', '720p60-ui'),
                         default='unverified', help='Observed player setting; not a decoded-frame FPS assertion')
+    parser.add_argument('--verify-source-quality', action='store_true',
+                        help='Read the actual player menu each run and require the selected 60FPS format')
     args = parser.parse_args()
+    if args.disable_socket_wait and (not args.experimental_client or args.disable_socket_pacing_bundle):
+        parser.error('--disable-socket-wait requires the isolated client and retained socket pacing guard')
     if args.disable_socket_pacing_bundle and not args.experimental_client:
         parser.error('Single native pacer experiment requires matched experimental client')
     try:
@@ -258,6 +266,8 @@ def main():
                                'expected_effective_raw_submit_fps': (args.fps if args.raw_submit_fps is None
                                                                      else args.raw_submit_fps),
                                'requested_max_size': args.max_size, 'display_hz': args.display_hz, 'buffer_ms': args.buffer_ms,
+                               'socket_wait_enabled_requested': not (args.disable_socket_wait or args.disable_socket_pacing_bundle),
+                               'socket_guard_enabled_requested': not args.disable_socket_pacing_bundle,
                                'requested_encoder_prioritize_speed': (None if args.encoder_prioritize_speed is None
                                                                      else args.encoder_prioritize_speed == 'true'),
                                'capture_trace': not args.no_trace, 'hint_order_first_round': args.hints,
@@ -305,6 +315,13 @@ def main():
                                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
                 time.sleep(1)
                 before = collect(adb, 'emulator-5556', 8)
+            quality = collect_quality(adb) if args.verify_source_quality else None
+            if args.verify_source_quality and not (quality.get('known') is True and quality.get('fps') == 60):
+                manifest['runs'].append({'source_format': quality, 'source_state_before': before,
+                                         'valid_real_video_test': False, 'failure': 'source_60fps_quality_unverified'})
+                manifest['matrix_failed'] = True
+                (args.output_dir/'matrix.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
+                return 1
             command = [sys.executable, str(runner), '--serial', args.serial, '--bind-ip', args.bind_ip, '--peer-ip', args.peer_ip,
                 '--interface', args.interface, '--packetizer', str(args.packetizer), '--native-encoder', str(args.encoder),
                 '--burst-bytes', '100000', '--burst-seconds', '.08', '--seconds', str(args.seconds), '--fps', str(args.fps),
@@ -316,6 +333,8 @@ def main():
                 '--output', str(path)]
             if not args.disable_socket_pacing_bundle:
                 command.append('--socket-pacing')
+            if args.disable_socket_wait:
+                command.append('--disable-socket-wait')
             if args.drop_video_every:
                 command.extend(['--drop-video-every', str(args.drop_video_every)])
             if args.exercise_touch:
@@ -343,6 +362,7 @@ def main():
                                                          else args.encoder_prioritize_speed == 'true'),
                    'requested_encoder_fps': args.fps, 'requested_raw_submit_fps': args.raw_submit_fps,
                    'source_prepare_exit': result.returncode, 'source_state_before': before,
+                   'source_format': quality,
                    'source_state_after': collect(adb, 'emulator-5556', 8),
                    'elapsed_s': round(time.monotonic()-started,3)}
             if path.is_file():

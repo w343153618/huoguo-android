@@ -12,8 +12,10 @@ from pathlib import Path
 
 try:
     from scripts.probes.run_phone_transport import distribution
+    from scripts.probes.udp_event_coverage import coverage, phone_window_coverage
 except ModuleNotFoundError:
     from run_phone_transport import distribution
+    from udp_event_coverage import coverage, phone_window_coverage
 
 
 def positive(value):
@@ -54,6 +56,7 @@ def analyze(report, surface, threshold_ms=60):
     if type(threshold_ms) not in (int, float) or not 20 <= threshold_ms <= 1000:
         raise ValueError('Stall threshold outside 20..1000 ms')
     threshold_ns = int(threshold_ms*1e6)
+    event_coverage = coverage(report)
     presents = [value for value in presents if begin <= value <= finish]
     inputs = [row for row in phone.get('media_input_observations', []) if isinstance(row, dict)]
     received = [row.get('received_ns') for row in inputs]
@@ -123,6 +126,7 @@ def analyze(report, surface, threshold_ms=60):
         stalls.append({'phone_start_ns': left, 'phone_end_ns': right,
                        'seconds_from_first_packet': round((left-begin)/1e9, 6),
                        'gap_ms': round((right-left)/1e6, 3),
+                       'diagnostic_window_coverage': phone_window_coverage(event_coverage, window_start, right),
                        'associated_observations': associations,
                        'accepted_complete_frame_supply_gaps': receiver_gaps,
                        'codec_input_supply_gaps': input_gaps,
@@ -143,6 +147,7 @@ def analyze(report, surface, threshold_ms=60):
         'inbox_events_evicted': phone.get('video_input_queue', {}).get('epoch_events_evicted'),
         'delivered_frame_packet_span_ms': distribution(spans),
         'diagnostic_events_available': bool(native or epochs),
+        'event_coverage': event_coverage,
         'limits': [
             'Temporal associations are not proof of a single cause',
             'Accepted input observations omit reconstructed frames rejected before codec admission',

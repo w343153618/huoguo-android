@@ -1,10 +1,22 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>给火锅的安卓 · 下载与连接</title>
-<style>body{font-family:system-ui;margin:28px auto;max-width:640px;padding:0 20px;line-height:1.75;background:#f5fbf9;color:#285c62}a{color:#237973}.button{display:block;background:#ddf4ee;padding:16px;border-radius:24px;text-align:center;text-decoration:none}code{background:#e6f2ef;padding:2px 6px;border-radius:4px}</style></head>
-<body><h1>给火锅的安卓</h1><p>这是源码中的连接说明。运行中的下载页由升级清单自动生成，显示当前实际发布版本与文件校验值。</p>
-<p><a class="button" href="AndroidDirect.apk">下载当前签名版本 · 覆盖安装</a></p>
-<ol><li>无需卸载或清除数据，也可以在App里点“检查更新”，查看内容后确认更新。</li><li>公网M1默认：<code>146.56.249.175:15556</code>；公网M5备选：<code>146.56.249.175:15558</code>。两个按钮可直接点选。</li><li>Tailscale M1备选：<code>100.64.0.2:15556</code>；手机需先加入相同Headscale网络。</li><li>用户名默认<code>huoguo</code>，填写已有远程安卓密码。点击“保存密码”加密保存。</li><li>地址可以自行填写IP、主机名与端口；局域网使用各台Mac当前IP和15556，无需重新安装。</li></ol>
-<p>V50新安装推荐540P/4Mbps/自适应VBR/30FPS/80ms；30/60/120FPS和30–100ms缓冲可手动选择，升级保留已有设置。声音、声音增强与性能指标在连接前设置。标准竖屏档位为432×768、540×960、720×1280和1080×1920，实际比例按远端画面缩放。</p>
-<p>正式媒体仍使用TLS/TCP；原生UDP/P2P是独立实验，尚未替换正式通道。M1与M5各保留一个活动会话，选择的不同主机拥有各自安卓数据。</p>
-<p>Mac需要保持开机、接通电源并登录。NPC仅通过绑定家庭物理网卡的专用relay连接腾讯云；Clash代理与安卓上网路径另行处理。</p>
-<p><a href="https://github.com/w343153618/huoguo-android/releases/latest">GitHub发布页</a> · <a href="AndroidDirect-SHA256SUMS.txt">当前文件校验</a></p></body></html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-store"><title>给火锅的安卓 · v1.30</title>
+<style>body{font-family:system-ui;margin:28px auto;max-width:640px;padding:0 20px;line-height:1.75;background:#f5fbf9;color:#285c62}a{color:#237973}.button{display:block;background:#ddf4ee;padding:16px;border-radius:24px;text-align:center;text-decoration:none;font-size:20px}code{background:#e6f2ef;padding:2px 6px;border-radius:4px}pre{white-space:pre-wrap;font-family:inherit}small{overflow-wrap:anywhere}</style></head>
+<body><h1>给火锅的安卓</h1><p>最新发布：<strong>v1.30</strong>。当前安装版本请看 App 首页“已安装版本”。</p>
+<p><a class="button" href="https://146.56.249.175:15556/updates/HuoguoAndroid-v1.30.apk">下载最新版 v1.30 · 覆盖安装</a></p>
+<p><a href="AndroidDirect-v1.30.apk">局域网下载 v1.30</a> · <a href="AndroidDirect-SHA256SUMS.txt">文件校验</a></p>
+<ol><li>取消旧的安装窗口，再下载本页最新版覆盖安装；无需卸载或清除 App 数据。</li><li>安装后重新打开 App，确认首页显示“已安装版本 v1.30”。</li><li>默认公网 M1 为 <code>146.56.249.175:15556</code>，可点选公网 M5 <code>146.56.249.175:15558</code>，也可自行填写 IP 和端口，用户名 <code>huoguo</code>；填写已有密码，点“保存密码”可加密保存。</li><li>清晰度、编码模式、码率、帧率、缓冲和声音／指标勾选都在连接前设置，选择会保存。</li></ol>
+<details open><summary>本次更新内容</summary><pre># 给火锅的安卓 v1.30
+
+修正 Tailscale 备选入口，统一使用 yilufa 尾网。
+
+- “Tailscale M1 · yilufa”现在连接 100.65.0.2:15556；手机需先加入 https://hs.yilufa.site 的同一尾网。
+- 已保存的旧 M1 固定尾网快捷地址会迁移到新入口；其他手填地址、端口和清晰度、码率、帧率、缓冲等选择保持原值。
+- huoguo 已保存密码仍可在三个固定授权入口恢复；任意其他主机、端口及账号不会继承密码。
+- 公网 M1 默认 146.56.249.175:15556、公网 M5 备选 146.56.249.175:15558 保持可手选。
+
+这是线路维护更新，继续使用原签名，可以覆盖升级。正式 App 媒体仍为现有 TLS/TCP；独立 UDP 视频、音频及原生触控实验继续验证，本版不承诺公网 60/120FPS。
+</pre></details>
+<p>本轮 M1 有线地址为 <code>192.168.9.128:15556</code>；地址变化时可在 App 手动修改，无需重新安装。当前虚拟安卓支持一个活动串流，新连接会断开旧连接。</p>
+<p>M1 保持开机、接通电源并登录；当前测试虚拟安卓已按要求关闭自动息屏，保留运行环境。</p>
+<small>版本码 31 · SHA-256 717660dc9c343fc601638346b2fbda041469b10bb89a3385c82cc92db388ff44</small>
+</body></html>

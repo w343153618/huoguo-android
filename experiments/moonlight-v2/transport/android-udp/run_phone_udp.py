@@ -285,6 +285,36 @@ def worker_timing_samples(path):
             'samples': list(rows), 'samples_evicted': evicted}
 
 
+def pacing_configuration(socket_pacer, video_gate, native_events, wire_bitrate):
+    """Separate socket waits, dependency guard and observed native budget.
+
+    A requested packetizer budget is not proof of its actual scheduling. Only
+    native summary readback and optional frame-output events establish what was
+    reported by the process; neither is a WAN packet-capture measurement.
+    """
+    summaries = [event for event in native_events if event.get('event') == 'summary'
+                 and type(event.get('wire_bitrate')) is int]
+    budget_readback = summaries[-1]['wire_bitrate'] if summaries else None
+    frame_outputs = [event for event in native_events if event.get('event') == 'frame_output'
+                     and type(event.get('actual_sleep_us')) is int]
+    return {
+        'socket_pacing_requested': socket_pacer is not None,
+        'socket_wait_enabled': bool(socket_pacer and socket_pacer.wait_enabled),
+        'socket_deadline_reference_guard_enabled': bool(video_gate and video_gate.guard),
+        'socket_reservation_and_serialization_checks_enabled': socket_pacer is not None,
+        'native_pacing_requested': True,
+        'native_wire_budget_requested_bps': wire_bitrate,
+        'native_wire_budget_readback_bps': budget_readback,
+        'native_wire_budget_readback_matches': (budget_readback == wire_bitrate if summaries else None),
+        'native_timed_wait_observed': (any(event['actual_sleep_us'] > 0 for event in frame_outputs)
+                                       if frame_outputs else None),
+        'native_wait_observation_frame_events': len(frame_outputs),
+        'native_frame_deadline_requested_us': 80_000,
+        'native_bounds_modified_by_socket_wait_experiment': False,
+        'scope': 'configuration_and_native_process_readback_not_WAN_pacing_acceptance',
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--serial', default='3B15AL00M9U00000')
@@ -327,6 +357,9 @@ def main():
     parser.add_argument('--adapt-budget', action='store_true', help='Reduce encoder target for rejected recovery frames')
     parser.add_argument('--network-feedback', action='store_true', help='Experimental authenticated interval-pressure policy and host-clock UDP RTT; not GCC')
     parser.add_argument('--socket-pacing', action='store_true', help='Enforce estimated full IPv4 wire pacing at actual video socket sends; audio/touch have priority')
+    parser.add_argument('--disable-socket-wait', action='store_true',
+                        help='Single-variable experiment with --socket-pacing: skip only Python socket timed waits; '
+                             'retain socket deadlines/reference guard, reservations and native pacing')
     parser.add_argument('--pacing-burst-bytes', type=int, choices=(0, 2048, 4096), default=0,
                         help='Explicit bounded catch-up credit for native and optional socket pacing; default strict')
     parser.add_argument('--diagnostic-events', action='store_true', help='Bounded numeric native frame, socket frame and phone inbox events')
@@ -336,6 +369,8 @@ def main():
     parser.add_argument('--source', required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
+    if args.disable_socket_wait and not args.socket_pacing:
+        parser.error('--disable-socket-wait requires --socket-pacing so deadline/reference guards stay enabled')
     if args.surface_submit_lead_ms > 0 and not args.experimental_client:
         parser.error('--surface-submit-lead-ms > 0 requires --experimental-client')
     prioritize_speed = None if args.encoder_prioritize_speed is None else args.encoder_prioritize_speed == 'true'
@@ -413,7 +448,8 @@ def main():
     recovery_cooldown_s = args.recovery_cooldown_ms / 1000
     recovery = RecoveryController(args.bitrate, args.wire_bitrate, cooldown_s=recovery_cooldown_s)
     network_policy = NetworkFeedbackController(args.bitrate, args.wire_bitrate) if args.network_feedback else None
-    socket_pacer = SocketPacer(args.wire_bitrate, burst_bytes=args.pacing_burst_bytes, wait=done.wait) if args.socket_pacing else None
+    socket_pacer = SocketPacer(args.wire_bitrate, burst_bytes=args.pacing_burst_bytes, wait=done.wait,
+                              wait_enabled=not args.disable_socket_wait) if args.socket_pacing else None
     last_encoder_target = args.bitrate
     pressure_observed = 0
     recovery_actions = []
@@ -805,6 +841,10 @@ def main():
                           'audio_enabled': args.audio, 'touch_enabled': args.touch, 'adaptive_recovery_enabled': args.adapt_budget,
                           'network_feedback_enabled': args.network_feedback,
                           'socket_pacing_enabled': args.socket_pacing,
+                          'socket_wait_enabled': bool(socket_pacer and socket_pacer.wait_enabled),
+                          'socket_guard_enabled': bool(video_gate and video_gate.guard),
+                          'pacing_configuration': pacing_configuration(socket_pacer, video_gate,
+                                                                       native_events, args.wire_bitrate),
                           'pacing_catchup_credit_bytes': args.pacing_burst_bytes,
                           'diagnostic_events_enabled': args.diagnostic_events,
                           'async_video_enabled': args.async_video,
@@ -857,6 +897,11 @@ def main():
                 'hardware_encoder_readback': encoder_readback(worker_log) if worker_log else [],
                 'host_worker_timing_samples': worker_timing_samples(worker_log) if worker_log else {},
                 'network_feedback': network_policy.report() if network_policy else {},
+                'socket_pacing_enabled': args.socket_pacing,
+                'socket_wait_enabled': bool(socket_pacer and socket_pacer.wait_enabled),
+                'socket_guard_enabled': bool(video_gate and video_gate.guard),
+                'pacing_configuration': pacing_configuration(socket_pacer, video_gate,
+                                                             native_events, args.wire_bitrate),
                 'socket_pacing': socket_pacer.snapshot() if socket_pacer else {},
                 'socket_video': video_gate.snapshot() if video_gate else {},
                 'requested_video_bps': args.bitrate,

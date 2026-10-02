@@ -23,20 +23,26 @@ class SocketPacer:
     bounded priority policy, not a guarantee that every sub-millisecond window
     stays under the rate. IPv4/UDP plus HGUE/GCM overhead is included by caller.
     """
-    def __init__(self, bitrate_bps, *, burst_bytes=0, clock=time.monotonic, wait=None):
+    def __init__(self, bitrate_bps, *, burst_bytes=0, clock=time.monotonic, wait=None,
+                 wait_enabled=True):
         if type(bitrate_bps) is not int or not 500_000 <= bitrate_bps <= 40_000_000:
             raise ValueError('socket pacing budget bound')
         if type(burst_bytes) is not int or not 0 <= burst_bytes <= 4096:
             raise ValueError('socket catch-up credit byte bound')
+        if type(wait_enabled) is not bool:
+            raise ValueError('socket wait selection must be boolean')
         self.bitrate_bps = bitrate_bps
         self.burst_bytes = burst_bytes
         self.clock = clock
         self.wait = wait or time.sleep
+        self.wait_enabled = wait_enabled
         self.next_at = 0.
         self.lock = threading.Lock()
         self.counts = dict(video_reservations=0, video_waits=0, video_wait_us=0, planned_video_wait_us=0,
                            max_video_wait_us=0, max_wait_overshoot_us=0, deadline_rejections=0,
-                           priority_wire_bytes=0, reserved_video_wire_bytes=0)
+                           priority_wire_bytes=0, reserved_video_wire_bytes=0,
+                           skipped_video_waits=0, skipped_planned_video_wait_us=0,
+                           max_skipped_planned_video_wait_us=0)
 
     def video(self, wire_bytes, deadline_us=None):
         cost = wire_bytes*8/self.bitrate_bps
@@ -51,7 +57,18 @@ class SocketPacer:
             self.counts['video_reservations'] += 1
             self.counts['reserved_video_wire_bytes'] += wire_bytes
         remaining = at-self.clock()
-        if remaining > 0:
+        if remaining > 0 and not self.wait_enabled:
+            # Single-variable experiment: skip this Python timed wait only.
+            # Reservations, serialization deadline checks and priority debt
+            # remain identical. This mode relies on the unchanged, bounded
+            # native pacer upstream; it does not enforce socket send spacing.
+            with self.lock:
+                skipped_us = round(remaining*1_000_000)
+                self.counts['skipped_video_waits'] += 1
+                self.counts['skipped_planned_video_wait_us'] += skipped_us
+                self.counts['max_skipped_planned_video_wait_us'] = max(
+                    self.counts['max_skipped_planned_video_wait_us'], skipped_us)
+        elif remaining > 0:
             # No authentication or pacer lock is held across the sleep.
             wait_start = self.clock()
             self.wait(remaining)
@@ -88,6 +105,11 @@ class SocketPacer:
     def snapshot(self):
         with self.lock:
             return dict(self.counts, bitrate_bps=self.bitrate_bps, burst_bytes=self.burst_bytes,
+                        wait_enabled=self.wait_enabled,
+                        wait_policy=('socket_timed_wait' if self.wait_enabled else
+                                     'skip_socket_timed_wait_keep_reservations_and_deadlines'),
+                        socket_send_spacing_enforced=self.wait_enabled,
+                        skipped_wait_scope='sum_of_skipped_plans_not_measured_latency_saved',
                         scope='actual_socket_scheduling_estimated_IPv4_wire_bytes',
                         priority_policy='audio_touch_ping_immediate_with_video_debt',
                         reservation_includes_injected_test_loss=True)

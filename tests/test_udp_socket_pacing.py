@@ -1,14 +1,19 @@
 """Actual-send scheduling and reference-chain safety, fake clocks/sockets only."""
 from pathlib import Path
+from contextlib import redirect_stderr
+import io
 import struct
 import sys
 import threading
 import unittest
+from unittest.mock import patch
 
 DIRECTORY = Path(__file__).resolve().parents[1]/'experiments/moonlight-v2/transport/android-udp'
 sys.path.insert(0, str(DIRECTORY))
 from udp_session_sender import AuthenticatedSender, SocketPacer, SocketVideoGate, PacingDeadline
 from udp_probe_protocol import HEADER, ReplayWindow, SERVER_NONCE, open_packet
+import run_phone_udp
+import udp_session_sender
 
 
 class Clock:
@@ -264,6 +269,170 @@ class PacingChecks(unittest.TestCase):
         self.assertGreater(values[1],0)
         self.assertFalse(self.gate.needs_idr)
         self.assertEqual(self.sender.snapshot()['video']['test_dropped_datagrams'],1)
+
+
+class SocketWaitIsolationChecks(unittest.TestCase):
+    def make_sender(self, wait_enabled=True, wait=None):
+        clock=Clock(); sock=Socket(clock)
+        pacer=SocketPacer(1_000_000,clock=clock,wait=wait or clock.sleep,wait_enabled=wait_enabled)
+        sender=AuthenticatedSender(sock,bytes(range(32)),3,pacer=pacer,clock_ns=clock.ns)
+        recovery=[]
+        gate=SocketVideoGate(sender,recovery.append,clock_us=lambda:clock.ns()//1000)
+        return clock,sock,pacer,sender,gate,recovery
+
+    def test_omitted_wait_selection_is_equivalent_to_explicit_current_default(self):
+        def trace(explicit):
+            clock=Clock(); sock=Socket(clock)
+            kwargs={'clock':clock,'wait':clock.sleep}
+            if explicit: kwargs['wait_enabled']=True
+            pacer=SocketPacer(1_000_000,**kwargs)
+            sender=AuthenticatedSender(sock,bytes(range(32)),3,pacer=pacer,clock_ns=clock.ns)
+            for _ in range(4): sender.send(b'x'*1000,'video')
+            sender.send(b'a'*100,'audio')
+            clock.sleep(.01)
+            sender.send(b'x'*1000,'video')
+            return sock.sent,pacer.snapshot(),sender.snapshot()
+        self.assertEqual(trace(False),trace(True))
+
+    def test_wait_disabled_never_calls_wait_but_retains_byte_reservations_and_priority_debt(self):
+        def no_wait(_): raise AssertionError('socket timed wait must be disabled')
+        clock,sock,pacer,sender,_,_=self.make_sender(False,no_wait)
+        sender.send(b'x'*1000,'video')
+        sender.send(b'a'*100,'audio')
+        for _ in range(9): sender.send(b'x'*1000,'video')
+        report=pacer.snapshot()
+        self.assertTrue(all(at == 10. for at,_ in sock.sent))
+        self.assertFalse(report['wait_enabled'])
+        self.assertFalse(report['socket_send_spacing_enforced'])
+        self.assertEqual(report['video_waits'],0)
+        self.assertEqual(report['video_wait_us'],0)
+        self.assertEqual(report['video_reservations'],10)
+        self.assertEqual(report['reserved_video_wire_bytes'],10*1068)
+        self.assertEqual(report['priority_wire_bytes'],168)
+        self.assertEqual(report['skipped_video_waits'],9)
+        self.assertGreater(report['skipped_planned_video_wait_us'],0)
+        self.assertAlmostEqual(pacer.next_at-10,(10*1068+168)*8/1_000_000)
+
+    def test_disabling_wait_does_not_disable_admission_deadline_or_grow_debt_after_rejections(self):
+        for enabled in (True,False):
+            with self.subTest(wait_enabled=enabled):
+                clock,sock,pacer,sender,_,_=self.make_sender(enabled)
+                sender.send(b'x'*1000,'video')
+                reserved=pacer.next_at; sequence=sender.sequence
+                for _ in range(3):
+                    with self.assertRaises(PacingDeadline):
+                        sender.send(b'x'*1000,'video',deadline_us=clock.ns()//1000+1_000)
+                self.assertEqual(pacer.next_at,reserved)
+                self.assertEqual(sender.sequence,sequence)
+                self.assertEqual(len(sock.sent),1)
+                self.assertEqual(pacer.snapshot()['deadline_rejections'],3)
+
+    def test_wait_disabled_still_rejects_expired_data_and_requires_complete_idr(self):
+        for enabled in (True,False):
+            with self.subTest(wait_enabled=enabled):
+                clock,sock,pacer,sender,gate,recovery=self.make_sender(enabled)
+                def send_frame(frame,key=False,reference=0):
+                    capture=clock.ns()//1000
+                    return [gate.send(shard(frame,capture,key=key,reference=reference,index=i))
+                            for i in range(3)]
+                self.assertTrue(all(send_frame(1,key=True)))
+                capture=clock.ns()//1000
+                self.assertGreater(gate.send(shard(2,capture,reference=1,index=0,data=3)),0)
+                clock.sleep(.081)
+                self.assertEqual(gate.send(shard(2,capture,reference=1,index=1,data=3)),0)
+                self.assertTrue(gate.needs_idr)
+                self.assertEqual(send_frame(3,reference=2),[0,0,0])
+                # A partial IDR is not sufficient to release its P chain.
+                capture=clock.ns()//1000
+                self.assertGreater(gate.send(shard(4,capture,key=True,index=0,data=3)),0)
+                self.assertEqual(send_frame(5,reference=4),[0,0,0])
+                self.assertTrue(gate.needs_idr)
+                self.assertTrue(all(send_frame(6,key=True)))
+                self.assertFalse(gate.needs_idr)
+                self.assertTrue(all(send_frame(7,reference=6)))
+                self.assertIn('socket_frame_deadline',recovery)
+                self.assertIn('incomplete_native_frame',recovery)
+                self.assertTrue(gate.snapshot()['guard_enabled'])
+
+    def test_wait_disabled_preserves_parity_only_expiry_reference_and_nonce_policy(self):
+        clock,sock,_,sender,gate,recovery=self.make_sender(False)
+        capture=clock.ns()//1000
+        self.assertGreater(gate.send(shard(1,capture,key=True,index=0)),0)
+        clock.sleep(.081)
+        for index in (1,2):
+            self.assertEqual(gate.send(shard(1,capture,key=True,index=index)),0)
+        self.assertFalse(gate.needs_idr)
+        capture=clock.ns()//1000
+        self.assertTrue(all(gate.send(shard(2,capture,reference=1,index=i)) for i in range(3)))
+        self.assertEqual(recovery,[])
+        sequences=[HEADER.unpack(packet[:HEADER.size])[3] for _,packet in sock.sent]
+        self.assertEqual(sequences,list(range(1,len(sequences)+1)))
+        self.assertEqual(gate.counts['deadline_dropped_frames'],0)
+        self.assertEqual(gate.counts['tail_parity_deadline_datagrams'],2)
+
+    def test_wait_disabled_cannot_bypass_payload_or_frame_bounds(self):
+        clock,sock,pacer,sender,gate,_=self.make_sender(False)
+        for payload in (b'',b'x'*1081):
+            with self.assertRaises(ValueError): sender.send(payload,'video')
+        with self.assertRaises(ValueError):
+            gate.send(shard(1,clock.ns()//1000,key=True,blocks=104))
+        self.assertEqual(sock.sent,[])
+        self.assertEqual(sender.sequence,1)
+        self.assertEqual(pacer.snapshot()['video_reservations'],0)
+
+    def test_wait_disabled_retains_deadline_recheck_after_seal_and_reference_recovery(self):
+        clock,sock,_,sender,gate,recovery=self.make_sender(False)
+        original=udp_session_sender.seal
+        def late_seal(*args):
+            packet=original(*args)
+            clock.sleep(.081)
+            return packet
+        capture=clock.ns()//1000
+        with patch.object(udp_session_sender,'seal',side_effect=late_seal):
+            self.assertEqual(gate.send(shard(1,capture,key=True,index=0,data=3)),0)
+        self.assertEqual(sock.sent,[])
+        self.assertEqual(sender.sequence,2) # Seal consumed a nonce; rejection cannot reuse it.
+        self.assertTrue(gate.needs_idr)
+        self.assertIn('socket_frame_deadline',recovery)
+        self.assertEqual(sender.snapshot()['video']['send_errors'],0)
+
+    def test_reporting_distinguishes_skipped_socket_wait_from_disabled_guard_or_missing_native_readback(self):
+        for enabled in (True,False):
+            with self.subTest(wait_enabled=enabled):
+                _,_,pacer,_,gate,_=self.make_sender(enabled)
+                events=[{'event':'summary','wire_bitrate':1_000_000},
+                        {'event':'frame_output','actual_sleep_us':4_000}]
+                report=run_phone_udp.pacing_configuration(pacer,gate,events,1_000_000)
+                self.assertEqual(report['socket_wait_enabled'],enabled)
+                self.assertTrue(report['socket_deadline_reference_guard_enabled'])
+                self.assertTrue(report['socket_reservation_and_serialization_checks_enabled'])
+                self.assertTrue(report['native_pacing_requested'])
+                self.assertTrue(report['native_wire_budget_readback_matches'])
+                self.assertTrue(report['native_timed_wait_observed'])
+                self.assertFalse(report['native_bounds_modified_by_socket_wait_experiment'])
+                empty=run_phone_udp.pacing_configuration(pacer,gate,[],1_000_000)
+                self.assertIsNone(empty['native_timed_wait_observed'])
+                self.assertIsNone(empty['native_wire_budget_readback_matches'])
+                mismatch=run_phone_udp.pacing_configuration(pacer,gate,[
+                    {'event':'summary','wire_bitrate':2_000_000}],1_000_000)
+                self.assertFalse(mismatch['native_wire_budget_readback_matches'])
+
+    def test_cli_refuses_wait_experiment_without_existing_guard_bundle_before_any_device_access(self):
+        argv=['run_phone_udp.py','--disable-socket-wait','--bind-ip','192.168.9.128',
+              '--peer-ip','192.168.9.149','--packetizer','unused','--source','unit','--output','unused.json']
+        with patch.object(sys,'argv',argv), patch.object(run_phone_udp.subprocess,'run') as run, \
+                patch.object(run_phone_udp.subprocess,'Popen') as spawn, \
+                patch.object(run_phone_udp.socket,'socket') as sock:
+            output=io.StringIO()
+            with redirect_stderr(output),self.assertRaises(SystemExit) as error:
+                run_phone_udp.main()
+            self.assertEqual(error.exception.code,2)
+            self.assertIn('--disable-socket-wait requires --socket-pacing',output.getvalue())
+            run.assert_not_called(); spawn.assert_not_called(); sock.assert_not_called()
+
+    def test_wait_selection_requires_actual_boolean(self):
+        for invalid in (0,1,None,'false'):
+            with self.assertRaises(ValueError): SocketPacer(1_000_000,wait_enabled=invalid)
 
 
 if __name__ == '__main__': unittest.main()
