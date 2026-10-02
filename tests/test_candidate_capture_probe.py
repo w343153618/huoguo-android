@@ -1,6 +1,7 @@
 """Owned/mocked fixtures only; no candidate socket, PID, root action or secret read."""
 from contextlib import redirect_stdout
 import io
+import errno
 import json
 import os
 from pathlib import Path
@@ -71,6 +72,39 @@ class CandidateFixture(unittest.TestCase):
                 SocketFixture(reply(b'fixture')), SocketFixture(reply(rows))]))
             with self.assertRaises(probe.Refused):
                 client.connect_candidate()
+
+    def test_transport_state_is_closed_and_unknown_guest_text_never_echoed(self):
+        for state, expected in ((b'unauthorized', 'unauthorized'), (b'offline', 'offline'),
+                                (b'private-secret-unknown-state', 'other_not_ready')):
+            client = probe.CandidateAdb(connector=Mock(side_effect=[
+                SocketFixture(reply(b'connected')), SocketFixture(reply(probe.ADB_TARGET.encode()+b'\t'+state+b'\n'))]))
+            with self.assertRaises(probe.Refused) as caught:
+                client.connect_candidate()
+            self.assertEqual(str(caught.exception), 'candidate_adb_not_ready')
+            self.assertEqual(client.last_transport_state, expected)
+            self.assertNotIn('private', str(caught.exception))
+            self.assertNotIn('private', client.last_transport_state)
+        client = probe.CandidateAdb(connector=Mock(side_effect=[
+            SocketFixture(reply(b'connected')), SocketFixture(reply(b''))]))
+        with self.assertRaises(probe.Refused):
+            client.connect_candidate()
+        self.assertEqual(client.last_transport_state, 'not_present')
+
+    def test_probe_report_only_accepts_closed_transport_states(self):
+        for state, expected in (('unauthorized', 'unauthorized'), ('offline', 'offline'),
+                                ('private-secret-unknown-state', 'other_not_ready'),
+                                ({'private': 'secret'}, 'other_not_ready')):
+            client = Mock(connect_candidate=Mock(side_effect=probe.Refused('candidate_adb_not_ready')))
+            client.last_transport_state = state
+            with patch.object(probe.os, 'getuid', return_value=601), \
+                    patch.object(probe.os, 'geteuid', return_value=601), \
+                    patch.object(probe, '_read_attestation', return_value={'server_pid': 10, 'vm_pid': 11}), \
+                    patch.object(probe, '_check_live_pids'), patch.object(probe.time, 'sleep'):
+                result = probe.probe_boot(1, client)
+            self.assertFalse(result['boot_completed'])
+            self.assertEqual(result['last_transport_state'], expected)
+            self.assertEqual(result['last_readiness_reason'], 'candidate_adb_not_ready')
+            self.assertNotIn('private', json.dumps(result))
 
     def test_fixed_read_only_shell_commands_and_reply_bounds(self):
         for kind in ('boot', 'size', 'gles'):
@@ -212,6 +246,178 @@ class CandidateFixture(unittest.TestCase):
             probe.main()
         self.assertNotIn('private-token-fixture', output.getvalue())
 
+    def test_diagnostic_fixed_stage_category_errno_never_error_text(self):
+        cases = [(TimeoutError('private timeout'), 'timeout', None),
+                 (probe.subprocess.TimeoutExpired(['private-command'], 2,
+                                                  output=b'private-output'), 'timeout', None),
+                 (PermissionError(errno.EACCES, 'private path'), 'permission_denied', errno.EACCES),
+                 (OSError(errno.EBADF, 'private fd'), 'descriptor_unavailable', errno.EBADF),
+                 (ConnectionRefusedError(errno.ECONNREFUSED, 'private endpoint'),
+                  'endpoint_unavailable', errno.ECONNREFUSED),
+                 (FileNotFoundError(errno.ENOENT, 'private dependency'),
+                  'path_or_exec_unavailable', errno.ENOENT),
+                 (UnicodeDecodeError('ascii', b'\xffprivate', 0, 1, 'private'),
+                  'invalid_encoding', None),
+                 (OSError(9000, 'private-large-errno'), 'io_failure', None)]
+        for original, category, code in cases:
+            with self.subTest(category=category, code=code):
+                with self.assertRaises(probe.DependencyFailure) as caught:
+                    with probe._diagnostic('adb_connect'):
+                        raise original
+                report = caught.exception.report()
+                self.assertEqual(report['failure_stage'], 'adb_connect')
+                self.assertEqual(report['failure_category'], category)
+                self.assertEqual(report['errno'], code)
+                self.assertFalse(report['accepted'])
+                self.assertNotIn('private', json.dumps(report))
+        with self.assertRaises(probe.Refused):
+            with probe._diagnostic('private-unbounded-stage'):
+                self.fail('unknown stage should fail before yield')
+
+    def test_connect_inventory_and_shell_dependency_stages_stay_distinct(self):
+        client = probe.CandidateAdb(connector=Mock(side_effect=TimeoutError('private-connect')))
+        with self.assertRaises(probe.DependencyFailure) as caught:
+            client.connect_candidate()
+        self.assertEqual(caught.exception.stage, 'adb_connect')
+        client = probe.CandidateAdb(connector=Mock(side_effect=[
+            SocketFixture(reply(b'connected')), ConnectionRefusedError(errno.ECONNREFUSED, 'private')]))
+        with self.assertRaises(probe.DependencyFailure) as caught:
+            client.connect_candidate()
+        self.assertEqual(caught.exception.stage, 'adb_inventory')
+        for kind in ('boot', 'size', 'gles'):
+            client = probe.CandidateAdb(connector=Mock(side_effect=TimeoutError('private-read')))
+            with self.assertRaises(probe.DependencyFailure) as caught:
+                client.read(probe.ADB_TARGET, kind)
+            self.assertEqual(caught.exception.stage, 'adb_' + kind + '_read')
+
+    def test_attestation_and_pid_dependency_stages_do_not_hide_refusals(self):
+        with patch.object(probe.os, 'getuid', return_value=601), \
+                patch.object(probe.os, 'geteuid', return_value=601), \
+                patch.object(probe, '_read_attestation', side_effect=OSError(errno.EBADF, 'private')):
+            with self.assertRaises(probe.DependencyFailure) as caught:
+                probe.probe_boot(1, ownership_fd=4)
+        self.assertEqual(caught.exception.stage, 'attestation_read')
+        with patch.object(probe.os, 'getuid', return_value=601), \
+                patch.object(probe.os, 'geteuid', return_value=601), \
+                patch.object(probe, '_read_attestation', return_value={'server_pid': 10, 'vm_pid': 11}), \
+                patch.object(probe, '_check_live_pids', side_effect=PermissionError(errno.EPERM, 'private')):
+            with self.assertRaises(probe.DependencyFailure) as caught:
+                probe.probe_boot(1, ownership_fd=4)
+        self.assertEqual(caught.exception.stage, 'pid_precheck')
+        with self.assertRaises(probe.Refused) as caught:
+            with probe._diagnostic('pid_precheck'):
+                raise probe.Refused('managed_candidate_pid_not_alive')
+        self.assertNotIsInstance(caught.exception, probe.DependencyFailure)
+
+    def test_cli_structured_dependency_report_never_embeds_raw_fields(self):
+        failure = probe.DependencyFailure('adb_connect', TimeoutError('private key token path'))
+        with patch.object(sys, 'argv', ['probe', 'boot', '--ownership-fd', '4']), \
+                patch.object(probe, 'probe_boot', side_effect=failure), \
+                redirect_stdout(io.StringIO()) as output, self.assertRaises(SystemExit):
+            probe.main()
+        report = json.loads(output.getvalue())
+        self.assertEqual(report['failure_stage'], 'adb_connect')
+        self.assertEqual(report['failure_category'], 'timeout')
+        self.assertEqual(report['error_class'], 'system_io_or_dependency_unavailable')
+        self.assertNotIn('private', output.getvalue())
+
+    def test_connect_timeout_then_ready_preserves_readback_and_counter(self):
+        failure = probe.DependencyFailure('adb_connect', TimeoutError('private timeout'))
+        client = Mock(connect_candidate=Mock(side_effect=[failure, probe.ADB_TARGET]),
+                      read=Mock(side_effect=['1', 'Physical size: 1080x1920', 'GLES: Metal ANGLE']))
+        with patch.object(probe.os, 'getuid', return_value=601), \
+                patch.object(probe.os, 'geteuid', return_value=601), \
+                patch.object(probe, '_read_attestation', return_value={'server_pid': 10, 'vm_pid': 11}), \
+                patch.object(probe, '_check_live_pids'), patch.object(probe.time, 'sleep') as pause:
+            result = probe.probe_boot(1, client)
+        self.assertTrue(result['boot_completed'])
+        self.assertEqual(result['connect_timeout_attempts'], 1)
+        self.assertEqual(result['last_readiness_reason'], 'boot_completed')
+        self.assertEqual(client.connect_candidate.call_count, 2)
+        self.assertEqual(pause.call_args.args, (.25,))
+
+    def test_connect_timeout_exhaustion_uses_absolute_twenty_second_budget(self):
+        clock = SimpleNamespace(now=10.0)
+        class TimeoutClient(probe.CandidateAdb):
+            def __init__(self):
+                super().__init__()
+                self.calls = 0
+                self.seen_deadlines = []
+            def connect_candidate(self):
+                self.calls += 1
+                self.seen_deadlines.append(self.overall_boot_deadline)
+                clock.now += min(2, self.overall_boot_deadline-clock.now)
+                raise probe.DependencyFailure('adb_connect', TimeoutError('private'))
+            def read(self, *_):
+                raise AssertionError('no read when every fixed connect times out')
+        client = TimeoutClient()
+        with patch.object(probe.os, 'getuid', return_value=601), \
+                patch.object(probe.os, 'geteuid', return_value=601), \
+                patch.object(probe, '_read_attestation', return_value={'server_pid': 10, 'vm_pid': 11}), \
+                patch.object(probe, '_check_live_pids'), \
+                patch.object(probe.time, 'monotonic', side_effect=lambda: clock.now), \
+                patch.object(probe.time, 'sleep', side_effect=lambda seconds: setattr(clock, 'now', clock.now+seconds)):
+            result = probe.probe_boot(20, client)
+        self.assertFalse(result['boot_completed'])
+        self.assertFalse(result['hvf_accepted'] or result['capture_accepted'])
+        self.assertEqual(result['elapsed_ms'], 20000)
+        self.assertEqual(result['connect_timeout_attempts'], client.calls)
+        self.assertEqual(result['last_readiness_reason'], 'adb_connect_timeout')
+        self.assertTrue(all(value == 30 for value in client.seen_deadlines))
+        self.assertIsNone(client.overall_boot_deadline)
+
+    def test_permission_and_non_connect_timeout_fail_immediately(self):
+        for failure in (probe.DependencyFailure('adb_connect', PermissionError(errno.EACCES, 'private')),
+                        probe.DependencyFailure('adb_connect', PermissionError(errno.EPERM, 'private')),
+                        probe.DependencyFailure('adb_inventory', TimeoutError('private')),
+                        probe.DependencyFailure('adb_connect', ConnectionRefusedError(errno.ECONNREFUSED, 'private'))):
+            client = Mock(connect_candidate=Mock(side_effect=failure))
+            with patch.object(probe.os, 'getuid', return_value=601), \
+                    patch.object(probe.os, 'geteuid', return_value=601), \
+                    patch.object(probe, '_read_attestation', return_value={'server_pid': 10, 'vm_pid': 11}), \
+                    patch.object(probe, '_check_live_pids'), patch.object(probe.time, 'sleep') as pause:
+                with self.assertRaises(probe.DependencyFailure) as caught:
+                    probe.probe_boot(20, client)
+            self.assertIs(caught.exception, failure)
+            self.assertEqual(client.connect_candidate.call_count, 1)
+            client.read.assert_not_called()
+            pause.assert_not_called()
+
+    def test_host_operation_deadline_is_common_across_subphases(self):
+        clock = SimpleNamespace(now=10.0)
+        class DelayedSocket(SocketFixture):
+            def settimeout(self, timeout):
+                self.timeout = timeout
+                self.timeouts.append(timeout)
+            def sendall(self, data):
+                clock.now += .6
+                super().sendall(data)
+            def recv(self, length):
+                clock.now += .6
+                return super().recv(length)
+        sock = DelayedSocket(reply(b'fixture')); sock.timeouts = []
+        def connector(*_, **kwargs):
+            self.assertLessEqual(kwargs['timeout'], 2)
+            clock.now += .3
+            return sock
+        client = probe.CandidateAdb(connector=connector)
+        with patch.object(probe.time, 'monotonic', side_effect=lambda: clock.now):
+            with self.assertRaises(TimeoutError):
+                client._host('host:devices')
+        self.assertTrue(sock.closed)
+        self.assertLessEqual(clock.now, 12.1)
+        # Status and length consumed the same original2s deadline; payload is
+        # never granted a fresh2s timeout. The fake does not actually block.
+        self.assertLess(sock.timeouts[-1], .6)
+        clock.now = 10
+        never = Mock(side_effect=AssertionError('exhausted budget must not connect'))
+        client = probe.CandidateAdb(connector=never)
+        client.overall_boot_deadline = 10
+        with patch.object(probe.time, 'monotonic', side_effect=lambda: clock.now):
+            with self.assertRaises(TimeoutError):
+                client._host('host:devices')
+        never.assert_not_called()
+
     def test_endpoint_owner_exact_pid_uid_and_loopback_listener(self):
         valid = 'p123\nu601\nn127.0.0.1:15037\n'
         with patch.object(probe.subprocess, 'run', return_value=SimpleNamespace(
@@ -277,7 +483,8 @@ class CandidateFixture(unittest.TestCase):
         client.connect_candidate.assert_not_called()
         sock = SocketFixture(b'partial')
         actual = probe.CandidateAdb()
-        with patch.object(probe.time, 'monotonic', return_value=3), self.assertRaises(probe.Refused):
+        # Expired I/O budgets now enter the fixed dependency-timeout category.
+        with patch.object(probe.time, 'monotonic', return_value=3), self.assertRaises(TimeoutError):
             actual._exact(sock, 8, deadline=2)
 
     def test_starting_candidate_retries_only_fixed_transport(self):

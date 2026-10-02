@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+import errno
 import fcntl
 import json
 import math
@@ -45,25 +46,96 @@ class Refused(RuntimeError):
     """Only fixed error codes, never raw server/discovery content."""
 
 
+_DIAGNOSTIC_STAGES = frozenset(('attestation_read', 'pid_precheck', 'adb_connect',
+                               'adb_inventory', 'adb_boot_read', 'adb_size_read',
+                               'adb_gles_read', 'pid_postcheck'))
+_TRANSPORT_STATES = frozenset(('not_attempted', 'not_present', 'device',
+                              'unauthorized', 'offline', 'other_not_ready'))
+
+
+class DependencyFailure(Refused):
+    """A closed stage/category and bounded errno; no exception text or path."""
+
+    def __init__(self, stage, error):
+        if stage not in _DIAGNOSTIC_STAGES:
+            raise Refused('diagnostic_stage_not_fixed')
+        self.stage = stage
+        code = getattr(error, 'errno', None)
+        self.errno = (code if isinstance(code, int) and not isinstance(code, bool)
+                      and 0 < code < 4096 else None)
+        if isinstance(error, (TimeoutError, socket.timeout, subprocess.TimeoutExpired)):
+            self.category = 'timeout'
+        elif isinstance(error, UnicodeError):
+            self.category = 'invalid_encoding'
+        elif self.errno in (errno.EACCES, errno.EPERM):
+            self.category = 'permission_denied'
+        elif self.errno == errno.EBADF:
+            self.category = 'descriptor_unavailable'
+        elif self.errno in (errno.ECONNREFUSED, errno.ECONNRESET, errno.EPIPE,
+                             errno.ENETUNREACH, errno.EHOSTUNREACH):
+            self.category = 'endpoint_unavailable'
+        elif self.errno == errno.ENOENT:
+            self.category = 'path_or_exec_unavailable'
+        elif isinstance(error, subprocess.SubprocessError):
+            self.category = 'subprocess_failure'
+        else:
+            self.category = 'io_failure'
+        super().__init__('system_io_or_dependency_unavailable')
+
+    def report(self):
+        return {'schema': 1, 'status': 'refused', 'accepted': False,
+                'error_class': 'system_io_or_dependency_unavailable',
+                'failure_stage': self.stage, 'failure_category': self.category,
+                'errno': self.errno}
+
+
+@contextmanager
+def _diagnostic(stage):
+    if stage not in _DIAGNOSTIC_STAGES:
+        raise Refused('diagnostic_stage_not_fixed')
+    try:
+        yield
+    except (OSError, UnicodeError, subprocess.SubprocessError) as error:
+        raise DependencyFailure(stage, error) from None
+
+
 class CandidateAdb:
     def __init__(self, timeout: float = 2.0, connector=None):
-        self.timeout = timeout
+        if not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
+            raise Refused('adb_timeout_config')
+        self.timeout = min(2.0, timeout)
         self.connector = connector or socket.create_connection
+        self.overall_boot_deadline = None
+        self.last_transport_state = 'not_attempted'
 
-    def _open(self):
-        sock = self.connector(ADB_SERVER, timeout=self.timeout)
-        sock.settimeout(self.timeout)
+    def _operation_deadline(self):
+        deadline = time.monotonic() + self.timeout
+        if self.overall_boot_deadline is not None:
+            deadline = min(deadline, self.overall_boot_deadline)
+        return deadline
+
+    def _remaining(self, deadline):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError()
+        return min(self.timeout, remaining)
+
+    def _open(self, deadline=None):
+        deadline = self._operation_deadline() if deadline is None else deadline
+        sock = self.connector(ADB_SERVER, timeout=self._remaining(deadline))
+        try:
+            sock.settimeout(self._remaining(deadline))
+        except BaseException:
+            sock.close()
+            raise
         return sock
 
     def _recv(self, sock, size, deadline):
-        remaining = deadline-time.monotonic()
-        if remaining <= 0:
-            raise Refused('adb_command_deadline')
-        sock.settimeout(remaining)
+        sock.settimeout(self._remaining(deadline))
         return sock.recv(size)
 
     def _exact(self, sock, size, deadline=None):
-        deadline = deadline or time.monotonic()+self.timeout
+        deadline = self._operation_deadline() if deadline is None else deadline
         result = bytearray()
         while len(result) < size:
             block = self._recv(sock, size-len(result), deadline)
@@ -72,42 +144,54 @@ class CandidateAdb:
             result.extend(block)
         return bytes(result)
 
-    def _length_reply(self, sock):
-        deadline = time.monotonic()+self.timeout
+    def _length_reply(self, sock, deadline=None):
+        deadline = self._operation_deadline() if deadline is None else deadline
         length = self._exact(sock, 4, deadline)
         if not _HEX.fullmatch(length) or int(length, 16) > MAX_REPLY:
             raise Refused('adb_reply_size')
         return self._exact(sock, int(length, 16), deadline)
 
-    def _request(self, sock, service):
+    def _request(self, sock, service, deadline=None):
+        deadline = self._operation_deadline() if deadline is None else deadline
         data = service.encode('ascii')
         if len(data) > 1024:
             raise Refused('adb_request_size')
+        sock.settimeout(self._remaining(deadline))
         sock.sendall(('%04x' % len(data)).encode('ascii') + data)
-        if self._exact(sock, 4) != b'OKAY':
+        if self._exact(sock, 4, deadline) != b'OKAY':
             # Do not print FAIL payloads: an untrusted server can include data.
             raise Refused('adb_service_refused')
 
     def _host(self, service):
-        sock = self._open()
+        # One common operation deadline covers connect, send, status, length
+        # and payload. Historically these subphases each restarted a 2s clock.
+        deadline = self._operation_deadline()
+        sock = self._open(deadline)
         try:
-            self._request(sock, service)
-            return self._length_reply(sock)
+            self._request(sock, service, deadline)
+            return self._length_reply(sock, deadline)
         finally:
             sock.close()
 
     def connect_candidate(self):
         # Fixed HOST connect only; no pairing, mDNS, scan or server startup.
-        self._host('host:connect:' + ADB_TARGET)
-        lines = self._host('host:devices').decode('ascii', errors='strict').splitlines()
+        with _diagnostic('adb_connect'):
+            self._host('host:connect:' + ADB_TARGET)
+        with _diagnostic('adb_inventory'):
+            lines = self._host('host:devices').decode('ascii', errors='strict').splitlines()
+        if not lines:
+            self.last_transport_state = 'not_present'
         found = []
         for line in lines:
             parts = line.split()
             if len(parts) != 2 or parts[0] not in ADB_SERIALS:
                 raise Refused('dedicated_adb_has_other_transport')
             if parts[1] == 'device':
+                self.last_transport_state = 'device'
                 found.append(parts[0])
             else:
+                self.last_transport_state = (parts[1] if parts[1] in ('unauthorized', 'offline')
+                                             else 'other_not_ready')
                 raise Refused('candidate_adb_not_ready')
         if not found:
             raise Refused('candidate_adb_not_present')
@@ -116,15 +200,21 @@ class CandidateAdb:
         return found[0]
 
     def read(self, serial, kind):
+        if serial not in ADB_SERIALS or kind not in ('boot', 'size', 'gles'):
+            raise Refused('adb_command_not_fixed')
+        with _diagnostic('adb_' + kind + '_read'):
+            return self._read(serial, kind)
+
+    def _read(self, serial, kind):
         commands = {'boot': 'getprop sys.boot_completed', 'size': 'wm size',
                     'gles': "dumpsys SurfaceFlinger | grep -m 1 'GLES:'"}
         if serial not in ADB_SERIALS or kind not in commands:
             raise Refused('adb_command_not_fixed')
-        sock = self._open()
+        deadline = self._operation_deadline()
+        sock = self._open(deadline)
         try:
-            self._request(sock, 'host:transport:' + serial)
-            self._request(sock, 'shell:' + commands[kind])
-            deadline = time.monotonic()+self.timeout
+            self._request(sock, 'host:transport:' + serial, deadline)
+            self._request(sock, 'shell:' + commands[kind], deadline)
             output = bytearray()
             while len(output) <= MAX_REPLY:
                 block = self._recv(sock, min(1024, MAX_REPLY+1-len(output)), deadline)
@@ -141,51 +231,88 @@ def probe_boot(seconds=20.0, client=None, ownership_fd=None) -> dict:
         raise Refused('trusted_media_uid_required')
     if not isinstance(seconds, (int, float)) or not math.isfinite(seconds) or not 1 <= seconds <= 60:
         raise Refused('boot_probe_duration')
-    ownership = _read_attestation(ownership_fd)
-    _check_live_pids(ownership)
+    with _diagnostic('attestation_read'):
+        ownership = _read_attestation(ownership_fd)
+    with _diagnostic('pid_precheck'):
+        _check_live_pids(ownership)
     client = client or CandidateAdb(timeout=min(2.0, seconds))
     started = time.monotonic()
+    deadline = started + seconds
+    budgeted = isinstance(client, CandidateAdb)
+    previous_deadline = client.overall_boot_deadline if budgeted else None
+    if budgeted:
+        client.overall_boot_deadline = min(deadline, previous_deadline) if previous_deadline is not None else deadline
     serial = None
-    ready, attempts = False, 0
-    for _ in range(int(math.ceil(seconds * 4))):
-        if time.monotonic()-started >= seconds:
-            break
-        attempts += 1
-        if serial is None:
-            try:
-                serial = client.connect_candidate()
-            except Refused as error:
-                if str(error) not in ('candidate_adb_not_present', 'candidate_adb_not_ready'):
-                    raise
-                time.sleep(.25)
-                continue
-        value = client.read(serial, 'boot')
-        if value == '1':
-            ready = True
-            break
-        if value not in ('', '0'):
-            raise Refused('unexpected_boot_property')
-        time.sleep(.25)
-    result = {'schema': 1, 'scope': 'candidate boot readback only', 'adb_server': '127.0.0.1:15037',
-              'serial': serial, 'boot_completed': ready, 'attempts': attempts,
-              'verified_server_pid': ownership['server_pid'], 'managed_vm_pid': ownership['vm_pid'],
-              'elapsed_ms': round((time.monotonic()-started)*1000, 3),
-              'hvf_accepted': False, 'capture_accepted': False, 'services_started': False,
-              'guest_changed': False, 'production_changed': False}
-    if ready:
-        size = client.read(serial, 'size')
-        match = re.fullmatch(r'Physical size: (\d{1,4})x(\d{1,4})(?:\s+Override size: (\d{1,4})x(\d{1,4}))?', size)
-        if not match:
-            raise Refused('candidate_size_reply')
-        result['physical_size'] = [int(match[1]), int(match[2])]
-        if match[3]:
-            result['override_size'] = [int(match[3]), int(match[4])]
-        gles = client.read(serial, 'gles')
-        # Renderer capabilities only, never include arbitrary guest text in reports.
-        result['gles_markers'] = {name: name.lower() in gles.lower()
-                                  for name in ('GLES', 'Metal', 'ANGLE', 'SwiftShader')}
-    _check_live_pids(ownership)
-    return result
+    ready, attempts, connect_timeouts = False, 0, 0
+    last_reason = 'not_attempted'
+    try:
+        for _ in range(int(math.ceil(seconds * 4))):
+            if time.monotonic() >= deadline:
+                break
+            attempts += 1
+            if serial is None:
+                try:
+                    with _diagnostic('adb_connect'):
+                        serial = client.connect_candidate()
+                except DependencyFailure as error:
+                    if error.stage != 'adb_connect' or error.category != 'timeout':
+                        raise
+                    connect_timeouts += 1
+                    last_reason = 'adb_connect_timeout'
+                    remaining = deadline - time.monotonic()
+                    if remaining > 0:
+                        time.sleep(min(.25, remaining))
+                    continue
+                except Refused as error:
+                    if str(error) not in ('candidate_adb_not_present', 'candidate_adb_not_ready'):
+                        raise
+                    last_reason = str(error)
+                    remaining = deadline - time.monotonic()
+                    if remaining > 0:
+                        time.sleep(min(.25, remaining))
+                    continue
+            with _diagnostic('adb_boot_read'):
+                value = client.read(serial, 'boot')
+            if value == '1':
+                ready, last_reason = True, 'boot_completed'
+                break
+            if value not in ('', '0'):
+                raise Refused('unexpected_boot_property')
+            last_reason = 'boot_property_pending'
+            remaining = deadline - time.monotonic()
+            if remaining > 0:
+                time.sleep(min(.25, remaining))
+        transport_state = getattr(client, 'last_transport_state', 'not_attempted')
+        if not isinstance(transport_state, str) or transport_state not in _TRANSPORT_STATES:
+            transport_state = 'other_not_ready'
+        result = {'schema': 1, 'scope': 'candidate boot readback only', 'adb_server': '127.0.0.1:15037',
+                  'serial': serial, 'boot_completed': ready, 'attempts': attempts,
+                  'connect_timeout_attempts': connect_timeouts, 'last_readiness_reason': last_reason,
+                  'last_transport_state': transport_state,
+                  'verified_server_pid': ownership['server_pid'], 'managed_vm_pid': ownership['vm_pid'],
+                  'elapsed_ms': round((time.monotonic()-started)*1000, 3),
+                  'hvf_accepted': False, 'capture_accepted': False, 'services_started': False,
+                  'guest_changed': False, 'production_changed': False}
+        if ready:
+            with _diagnostic('adb_size_read'):
+                size = client.read(serial, 'size')
+            match = re.fullmatch(r'Physical size: (\d{1,4})x(\d{1,4})(?:\s+Override size: (\d{1,4})x(\d{1,4}))?', size)
+            if not match:
+                raise Refused('candidate_size_reply')
+            result['physical_size'] = [int(match[1]), int(match[2])]
+            if match[3]:
+                result['override_size'] = [int(match[3]), int(match[4])]
+            with _diagnostic('adb_gles_read'):
+                gles = client.read(serial, 'gles')
+            # Renderer capabilities only; never arbitrary guest text in reports.
+            result['gles_markers'] = {name: name.lower() in gles.lower()
+                                      for name in ('GLES', 'Metal', 'ANGLE', 'SwiftShader')}
+        with _diagnostic('pid_postcheck'):
+            _check_live_pids(ownership)
+        return result
+    finally:
+        if budgeted:
+            client.overall_boot_deadline = previous_deadline
 
 
 @contextmanager
@@ -458,6 +585,9 @@ def main():
             result = broker_token(args.pid, args.token_fd, args.location)
         else:
             result = plan()
+    except DependencyFailure as error:
+        print(json.dumps(error.report(), sort_keys=True))
+        raise SystemExit(1)
     except Refused as error:
         print(json.dumps({'schema': 1, 'status': 'refused', 'accepted': False,
                           'error_class': str(error)}))

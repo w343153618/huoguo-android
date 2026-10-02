@@ -22,7 +22,17 @@ App 账号 `huoguo` 供火锅使用，`wyw` 只供机主测试。拟建的三个
 | 固定身份权限 canary | [isolated_uid_canary.py](../scripts/security/isolated_uid_canary.py) | 29 项；离线 fixture／mock，Darwin legacy kernel groups、18 项必需 case 和 inode 清理契约 |
 | 候选监督器 | [isolation_candidate_supervisor.py](../scripts/security/isolation_candidate_supervisor.py) | 50 项；离线 fixture／mock、实际owned进程组与双族DNS回复fixture、阶段receipt与正式会话保护 |
 
-| 固定 controller 骨架 | [candidate_capture_probe.py](../scripts/security/candidate_capture_probe.py) | 14项，Python3.9／3.14分别通过；固定端点描述／ADB smart socket／token管道，未live连接 |
+| 固定 controller 骨架 | [candidate_capture_probe.py](../scripts/security/candidate_capture_probe.py) | 24项，Python3.9／3.14分别通过；闭集阶段/状态、readiness及operation deadline，真实ADB读回offline，非boot/capture验收 |
+
+当前阶段最新结果：**独立UID600文件/socket canary及UID602固定DNS53双族回复已实际通过；候选600 guest与601 ADB固定回环端点关联通过、60秒运行及recorded组收尾通过。安卓控制通道仍offline，未取得boot属性、截图/HVF或rootguest网络负向验收；正式实例仍个人UID501，未迁移。** 新源码仅推实验分支，不能称新公网UDP正式版本或朋友的宿主隔离完成。
+
+| 新增组件 | 源码 | 当前范围 |
+| --- | --- | --- |
+| LocalOnly系统解析委托canary | [localonly_resolver_canary.py](../scripts/security/localonly_resolver_canary.py) | 21项离线/owned inert子进程；未DNS注册/query/root/600执行；默认describe |
+
+九套源码/owned fixtures最终 **246项全通过（10.909秒；外层11.046秒）**，全程SHA不变，见`source-checks-phase-final-20261003.json`。capture source为`f7af4149e54b42d8f8b5b56153b5aeb2c9518cfcca59585581f7cf8933eba612`，installed仍`4a749...`。LocalOnly源码为`f4294345aad419d7f37ef0ac8f105cfafa073bf8d6686dd59112794f27990749`，需另一个root-owned0700私有副本/source及guest profile full pin才能run；精确fresh TXT/IN且两positivecontrols先成功，未知格式/超时为inconclusive。只准备源码，不代表guest/LAN/OS daemon隔离通过。
+
+最新仅加探针闭集诊断后八组件 **219项全部通过（10.492秒；外层10.626秒）**，整轮源码SHA前后相同；旧215项证据保留。capture source新SHA为`5825fbb7d32afbd867986f784589dc89b44e2d7c976a48dc4ff27517e1a82bbe`，实际安装仍`4a749...`。诊断字段只允许8个固定阶段、固定category与1..4095数值errno，时间／命令／权限不变，不输出异常原文。新证据为`source-checks-diagnostic-20261003.json`。
 
 最初五组件的111项检查通过（4.265秒）；后续172项记录仍保留。最新八组件 **215项全部通过（10.442秒；外层10.565秒）**，整轮源码SHA前后相同。196项中间轮曾因owned进程组fixture收尾探测报错失败，未当作通过；修复后才取得215项新结果。实际系统 Python 3.9.6 另已完成新的 private-temp prepare-only、loader／helper 编译及19个顶层模块、2个helper和profile精确SHA验证，未执行该新staging包。profile fallback本机实际未触发，只在fixture中验收。证据目录为 `evidence/m1-host-isolation-20261002/`，原始敏感日志、凭据及 AVD 不进入 Git。
 
@@ -80,6 +90,18 @@ Seatbelt 候选只读指定 SDK／代码与明确系统依赖，只写自己的 
 另发现已安装guard profile的兼容性缺陷：只允许目标UDP53会阻止DNS从已绑定53的listener向回环client临时端口回复。自有无root、非53 socket fixture实测baseline回复`EPERM`；最小`require-all(local udp localhost:53, remote udp localhost:*)`例外（fixture只替换local53为自有端口）在IPv4／IPv6均允许listener回复，同时新建未绑定socket仍被拒绝。这个例外仅限定源端点与回环目标，不表达query身份；DNS源码仍校验client并仅回复其peer。10月3日00:45后已在独立候选更新监督器与egress策略，真实固定53双族验证均成功：DNS uid/ruid/gid/rgid全602，回复peer与本轮listener精确一致、完整记录校验通过并有公网A Answer，IPv4／IPv6分别15.264／17.463ms。见`guard-dns-live-readback.json`；没有读kernel附加组，没有guest Android DNS／Web DNS验收，guest profile保持不变。
 
 固定候选45秒运行已记录`experiment_completed`，随后收尾记录`stop_failed/candidate_group_probe_failed`。独立后续killpg0对本轮三个PGID均ESRCH，ps未显示这些进程组；这只能证明读回时已不在，不能消除原收尾异常。源码owned-process-group组合检查也出现同一探测异常。已确认fixture成功收尾后重复probe／异常跳过stdout.close的问题并修复；一次fresh数值对照只看到killpg与ps约10ms非原子窗口，未复现EPERM。新监督器只在有界等待中把EPERM当pending，唯一ESRCH代表absence；到期仍拒绝、signal前身份与permission仍严格。原root探测异常具体原因未证实，最新源码保留数值errno／PGID／固定stage供下一次诊断，不能说已找到根因。新receipt已成功提供实际阶段证据，见`guard-trial-events-readback.jsonl`。本轮只更新独立helper（`b4df3add8da6072bc3a389579bbeedfc2e0ddaeabe7e2d21478d1c5c15eee630`）和egress profile（`357f5cd637028ef33d525a5839968e334482a77069b7974becc93852bf3c2a14`），有旧文件备份；两个文件分别原子更新，并非多文件事务。旧19个staged模块与journal未替换，Web解析前新增拒绝目前只在源码。
+
+后续独立90秒候选实际完成运行，并记录`experiment_completed/stop_returned`；新监督器已在整个recorded PGID层核验消失，root observer自己的601组也清理完成。见`boot-trial-events-readback.jsonl`与`boot-trial-actual-readback.json`。旧45秒探测故障本轮未复现，不能由新轮通过倒推旧故障根因；任意detached／launchd进程仍未验收。实际安装supervisor为`15e81b5d748bc2a7ac4938dc835508cfcdbdb28b329a7b16d04a9c1d8a9df114`，capture helper为`4a7494524a4bf8155307f914b059cc8393a0bb9fd9deeaddd0f61790bee9ee3b`，原19个模块与两profile字节不变。
+
+这轮boot observer在新15037 ADB server监听前失败，未连接guest。独立UID501、自有Home／端口SDK fixture复现精确错误：此Mac SDK不支持`-L tcp:127.0.0.1:PORT`的specified hostname，不能归因guest授权、601身份或GPU。改用`-L tcp:PORT`、不加`-a`后的fixture实际仅监听127.0.0.1，收尾成功，见`adb-socket-spec-fixture.json`；后续真实601监听验收通过，但guest boot探针仍未通过，见下一段。
+
+最新60秒单因素socket参数重试没有重装代码或修改profile：专用SDK ADB真实UID601/PID10908仅loopback15037、受管VM UID600/PID10834的5567由root attester核验；helper已到main并生成结构化JSON，但退出1，generic `system_io_or_dependency_unavailable`仍不能区分attestation FD、ps或socket阶段，因此guest boot/HVF/capture仍不接受。候选supervisor全程receipt再次为`experiment_completed/stop_returned`。observer的probe组10932收尾通过，ADB组10908先报`Refused`，root fallback及独立killpg0读回均确认所有本轮recorded组ESRCH；不得把fallback消失混作observer首次成功。只读审查发现observer自有Popen等待顺序缺少group等待内poll/reap，源级缺口确认，但旧row丢了fixed reason／errno，zombie原因尚未实证。见`boot-retry-actual-readback.json`、`boot-retry-observer-actual-readback.json`、`boot-retry-events-readback.jsonl`。独立health确认原guest boot=1、5556/5557/8556与15556/8089保留、候选管理TCP端口无监听、云端146.56.249.175路由仍en7/192.168.9.1；route不是出口国家抓包验收。随后fresh-owned数值fixture实际复现了源级机制：TERM后未reap的同UID/PGID zombie令killpg0为EPERM1，仅Popen.poll回收后变ESRCH3；这是机制对照，不能回填原10908缺失的errno；有序单例保存在`observer-owned-zombie-probe-7a0f368ed8b58f94.json`，修复helper同型fixture保存在`observer-owned-reap-fixture-ecba1eb0ee66f434.json`（58.246ms只为owned子进程收尾，不是媒体延时）。下一轮只补固定阶段诊断及observer自有child回收，不放宽guest profile／identity或改正式入口。
+
+随后独立60秒ephemeral5825诊断得到具体失点：`failure_stage=adb_connect`、`failure_category=timeout`、`errno=null`；attestation与PID precheck已经通过，不能再把generic错误说成Python导入或FD/权限失败。仅凭connect timeout仍不能判断guest adbd是否已就绪、guest已授权或Android是否boot。observer仅补ownPopen poll/reap后，两条601 cleanup均首次`group_gone=true`，supervisor全程`experiment_completed/stop_returned`且独立readback各recorded PGID ESRCH3。安装的19modules、15e81监督器、4a749root attester、两profile均保持字节不变；新的5825 boot脚本只经验证bytes临时在601运行。见`boot-diagnostic-actual-readback.json`与`boot-diagnostic-events-readback.jsonl`。下一轮仅在原20秒readiness预算中重试指定connect-timeout，保留其它权限/端点失败即时拒绝，命令2秒上限、guest策略与正式入口不变。
+
+新e127把connect-timeout重试限制在原20秒readiness内，并将socket open/send/status/length/payload统一到每operation最多2秒的共同deadline；历史5825各subphase曾分别续2秒，不能混作同预算。e127真实71次attempt/一次timeout后仍notready。仅补闭合transport-state的f7下一轮确认`offline`，而非`unauthorized`；readiness 20004.667ms、71次attempt/一次timeout、serialnull/bootfalse。计时不包括之前attestation/PID与之后boundedPID核验；这也不证明Android没有boot，只证明固定ADB通道在窗口内不能读命令。两次60秒监督器与601 ownPopen收尾均通过，installed19modules/4a/15/357/a5字节不变，见`boot-readiness-actual-readback.json`、`boot-transport-state-actual-readback.json`及各JSONL。下一步改为有界host/guest ADB通道诊断，不复制个人keys、不开放共享5037/控制器15037给guest，不扩大策略或延长窗口来替代根因。
+
+阶段结束独立readback确认f7全部recorded Web/DNS/guest/media PGID均ESRCH3、候选TCP管理端口及UDP53无监听；原UID501 guest `boot_completed=1`，5556/5557/8556、15556与8089仍在原PID监听，安装pins精确一致。云端路由仍物理en7/192.168.9.1，未对country/source或手机媒体作验收。见`phase-final-health.json`与`phase-final-guard-cleanup.json`。下一诊断只读取固定closed候选日志并输出闭合数字/flags；不把日志初始化标记当boot或HVF通过。
 
 本轮候选源码只推送 `codex/experimental-udp`；正式 `main` 与v1.30保持原提交。源码推送不构成新APK发布或隔离验收。
 
