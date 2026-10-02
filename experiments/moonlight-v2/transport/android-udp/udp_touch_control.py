@@ -3,7 +3,9 @@
 Call only after the enclosing session AES-GCM/replay/peer checks. This module
 does not open any network listener, spawn shell input, or control the Mac mouse.
 Each snapshot has unique per-contact tracking tokens. Missing DOWN/UP datagrams
-are repaired by later complete snapshots; a bounded lease releases stuck fingers.
+are repaired by later complete snapshots; a bounded lease cancels stuck gestures.
+True ACTION_CANCEL requires the explicitly advertised patched guest capability.
+Legacy guest cleanup remains UP-based and is separately counted, never called cancel.
 """
 from dataclasses import dataclass
 import queue
@@ -81,12 +83,17 @@ class TouchState:
     sender_us is not a shared clock. Excess arrival delay relative to the best
     local observation can discard old MOVE/HOLD, but is not one-way latency.
     """
-    def __init__(self, width, height, lease_seconds=.75, excess_move_delay_seconds=.10):
+    def __init__(self, width, height, lease_seconds=.75, excess_move_delay_seconds=.10,
+                 cancel_capable=False):
         if not 1 <= width <= 65535 or not 1 <= height <= 65535:
             raise ValueError('touch geometry')
         if not .1 <= lease_seconds <= 2 or not .02 <= excess_move_delay_seconds <= .5:
             raise ValueError('touch time bound')
+        if not isinstance(cancel_capable, bool):
+            raise ValueError('touch cancel capability')
         self.width, self.height = width, height
+        self.cancel_capable = cancel_capable
+        self.maximum_token = 0
         self.lease_seconds = lease_seconds
         self.excess_move_delay_us = excess_move_delay_seconds * 1e6
         self.active = {}
@@ -96,7 +103,10 @@ class TouchState:
         self.minimum_offset_us = None
         self.lock = threading.Lock()
         self.counts = dict(snapshots=0, superseded=0, expired_moves=0, injected_down=0,
-                           injected_move=0, injected_up=0, lease_releases=0, cancels=0)
+                           injected_move=0, injected_up=0, injected_cancel=0,
+                           cancelled_pointers=0, legacy_releases=0,
+                           lease_releases=0, cancels=0, abandoned_gestures=0,
+                           rejected_tracking=0)
 
     def _point(self, point, rotation):
         token, x, y, pressure = point
@@ -112,11 +122,28 @@ class TouchState:
         x, y, pressure = point
         # action_button=buttons=0 is a touchscreen, never a Mac mouse.
         return struct.pack('>BBQiiHHHII', 2, action, token, x, y, self.width, self.height,
-                           0 if action == 1 else pressure, 0, 0)
+                           0 if action in (1, 3) else pressure, 0, 0)
 
     def _release(self):
-        frames = [self._frame(token, 1, point) for token, point in self.active.items()]
-        self.counts['injected_up'] += len(frames)
+        """Abandon the whole gesture; never synthesize tap-completing UPs on a capable guest.
+
+        The patched guest snapshots every active pointer into one ACTION_CANCEL
+        and clears its PointersState afterwards. Stock scrcpy accepts action 3
+        but fails to clear that bookkeeping, so capability is opt-in, not guessed.
+        Legacy UP cleanup is retained only for historical callers and counted.
+        """
+        if not self.active:
+            self.last_applied = None
+            return []
+        if self.cancel_capable:
+            token, point = next(iter(self.active.items()))
+            frames = [self._frame(token, 3, point)]
+            self.counts['injected_cancel'] += 1
+            self.counts['cancelled_pointers'] += len(self.active)
+        else:
+            frames = [self._frame(token, 1, point) for token, point in self.active.items()]
+            self.counts['injected_up'] += len(frames)
+            self.counts['legacy_releases'] += len(frames)
         self.active.clear()
         self.last_applied = None
         return frames
@@ -132,6 +159,16 @@ class TouchState:
                 return (ACK.pack(ACK_MAGIC, VERSION, SUPERSEDED, 0, snapshot.sequence) if critical else None), []
             if snapshot.sender_us < self.sender_us:
                 raise ValueError('sender time moved backwards')
+            if snapshot.action == CANCEL and not self.cancel_capable:
+                raise ValueError('guest does not advertise touch_cancel_clears_pointers_v1')
+            # Java assigns strictly increasing uint32 tokens for the whole UDP
+            # session. A token that disappeared, expired, or was cancelled may
+            # never be resurrected by a later snapshot, even with a new seq.
+            # One maximum plus <=10 live contacts bounds this replay state.
+            tokens = [point[0] for point in snapshot.points]
+            if any(token not in self.active and token <= self.maximum_token for token in tokens):
+                self.counts['rejected_tracking'] += 1
+                raise ValueError('retired touch tracking token')
             self.sequence, self.sender_us = snapshot.sequence, snapshot.sender_us
             offset = now * 1e6 - snapshot.sender_us
             if self.minimum_offset_us is None or offset < self.minimum_offset_us:
@@ -143,9 +180,20 @@ class TouchState:
             transformed = [self._point(point, snapshot.rotation) for point in snapshot.points]
             wanted = {point[0]: point[1:] for point in transformed}
             frames = []
-            # Release first, so reused MotionEvent IDs cannot combine gestures.
-            for token in list(self.active):
-                if token not in wanted:
+            if snapshot.action == CANCEL:
+                self.counts['cancels'] += 1
+                frames = self._release()
+                return ACK.pack(ACK_MAGIC, VERSION, APPLIED, 0, snapshot.sequence), frames
+            missing = set(self.active).difference(wanted)
+            explicit_up = ({snapshot.changed} if snapshot.action == UP else set())
+            if missing.difference(explicit_up):
+                # A missing UP, missing CANCEL, new gesture or empty HOLD is an
+                # abandonment, not permission to manufacture a click/UP. Cancel
+                # all pointers atomically before repairing the complete state.
+                self.counts['abandoned_gestures'] += 1
+                frames.extend(self._release())
+            else:
+                for token in missing:
                     frames.append(self._frame(token, 1, self.active.pop(token)))
                     self.counts['injected_up'] += 1
             for token, point in wanted.items():
@@ -156,8 +204,7 @@ class TouchState:
                     frames.append(self._frame(token, 2, point))
                     self.counts['injected_move'] += 1
                 self.active[token] = point
-            if snapshot.action == CANCEL:
-                self.counts['cancels'] += 1
+            self.maximum_token = max([self.maximum_token, *wanted])
             self.last_applied = now if self.active else None
             ack = ACK.pack(ACK_MAGIC, VERSION, APPLIED, 0, snapshot.sequence) if critical else None
             return ack, frames
@@ -178,7 +225,8 @@ class TouchState:
 
     def stats(self):
         with self.lock:
-            return dict(self.counts, active_pointers=len(self.active))
+            return dict(self.counts, active_pointers=len(self.active),
+                        cancel_capable=self.cancel_capable)
 
 
 class UdpTouchBridge:
@@ -189,8 +237,8 @@ class UdpTouchBridge:
     send lock/sequence. Only acknowledge after local input frames were written.
     Counts contain no coordinates or event timing history.
     """
-    def __init__(self, width, height, writer, send_ack, lease_seconds=.75):
-        self.state = TouchState(width, height, lease_seconds)
+    def __init__(self, width, height, writer, send_ack, lease_seconds=.75, cancel_capable=False):
+        self.state = TouchState(width, height, lease_seconds, cancel_capable=cancel_capable)
         self.writer, self.send_ack = writer, send_ack
         self.queue = queue.Queue(maxsize=64)
         self.stop = threading.Event()

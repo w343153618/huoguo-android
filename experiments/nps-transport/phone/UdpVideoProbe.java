@@ -168,15 +168,41 @@ public final class UdpVideoProbe extends Instrumentation {
         }
     }
 
+    // App mode is memory-only; instrumentation retains its restrictive temporary file contract.
+    private MainActivity appActivity; private Session appSession; private AppListener appListener;
+    private volatile boolean appCancelled;
+    private volatile int appGeneration=-1;
+    public interface AppListener { void complete(JSONObject numericReport, boolean failed); }
+    public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,AppListener listener)throws Exception {
+        UdpVideoProbe runner=new UdpVideoProbe();runner.appActivity=activity;
+        runner.appSession=parseSession(descriptor,true);runner.appListener=listener;
+        new Thread(runner::onStart,"authenticated-lan-udp").start();return runner;
+    }
+    public void cancelApp(){
+        appCancelled=true;
+        MainActivity a=appActivity;
+        if(a!=null&&appGeneration>=0&&a.generation==appGeneration){a.running=false;}
+        // Keep the socket open until close sends CANCEL and STOP; 20ms receive timeout bounds exit.
+    }
+    private void mainSync(Runnable runnable){
+        if(appActivity==null){runOnMainSync(runnable);return;}
+        if(android.os.Looper.myLooper()==android.os.Looper.getMainLooper()){runnable.run();return;}
+        final Throwable[] failure={null};java.util.concurrent.CountDownLatch done=new java.util.concurrent.CountDownLatch(1);
+        appActivity.ui.post(()->{try{runnable.run();}catch(Throwable e){failure[0]=e;}finally{done.countDown();}});
+        try{if(!done.await(5,java.util.concurrent.TimeUnit.SECONDS))throw new IllegalStateException("UI timeout");}
+        catch(InterruptedException e){Thread.currentThread().interrupt();throw new IllegalStateException(e);}
+        if(failure[0]!=null)throw new IllegalStateException(failure[0]);
+    }
+
     public void onCreate(Bundle args){super.onCreate(args);start();}
 
     public void onStart(){
         Bundle result=new Bundle();JSONObject report=new JSONObject();MainActivity activity=null;
-        File keyFile=new File(getTargetContext().getFilesDir(),SESSION);
-        DatagramSocket socket=null;Session session=null;long nativeHandle=0;
+        File keyFile=appActivity==null?new File(getTargetContext().getFilesDir(),SESSION):null;
+        DatagramSocket socket=null;Session session=null;UdpVideoSecurity security=null;long nativeHandle=0;JSONObject appReport=null;
         int oldFps=0,oldBuffer=0,oldDisplayModeId=0,oldSubmissionLeadMs=0;boolean oldImmediate=false;float oldRefresh=0;
         try{
-            session=readSession(keyFile);diagnosticEvents=session.diagnosticEvents;
+            session=appActivity==null?readSession(keyFile):appSession;if(appCancelled)throw new IOException("cancelled");diagnosticEvents=session.diagnosticEvents;
             contentHintFps=session.contentHintFps;completed="session_validated";
             report.put("test_scope",session.audioEnabled||session.touchEnabled
                     ?"isolated_real_phone_authenticated_udp_media_and_touch_components"
@@ -199,21 +225,21 @@ public final class UdpVideoProbe extends Instrumentation {
                 .put("tcp_video_used",false).put("tcp_audio_used",false)
                 .put("transport","AES256_GCM_authenticated_UDP_native_10_plus_2_FEC")
                 .put("assembly_clock_limitation","80ms assembly budget starts at first phone packet arrival; not a WAN one-way latency measurement");
-            NativeUdpFec.load(getContext().getApplicationInfo().nativeLibraryDir);
+            if(appActivity==null)NativeUdpFec.load(getContext().getApplicationInfo().nativeLibraryDir);else NativeUdpFec.loadApp();
             nativeHandle=NativeUdpFec.nativeCreate();if(nativeHandle==0)throw new IOException("native_create");
             if(session.diagnosticEvents)NativeUdpFec.nativeSetDiagnostics(nativeHandle,true);
-            activity=(MainActivity)startActivitySync(new Intent().setClassName(
+            activity=appActivity!=null?appActivity:(MainActivity)startActivitySync(new Intent().setClassName(
                 getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity")
                 .putExtra("huoguo_codec_component_probe",true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            waitForIdleSync();completed="activity_started";
+            if(appActivity==null)waitForIdleSync();completed="activity_started";
             oldFps=activity.maxFps;oldBuffer=activity.bufferMs;oldImmediate=activity.probeImmediateVideoRelease;
             oldSubmissionLeadMs=activity.probeVideoSubmissionLeadMs;
             oldRefresh=activity.getWindow().getAttributes().preferredRefreshRate;
             oldDisplayModeId=activity.getWindow().getAttributes().preferredDisplayModeId;
             MainActivity a=activity;Session settings=session;final int[] generation={-1};
             final Throwable[] displayFailure={null};
-            runOnMainSync(()->{
-                a.stop();a.maxFps=settings.fps;a.bufferMs=settings.buffer;
+            mainSync(()->{
+                if(appCancelled)return;a.stop();a.maxFps=settings.fps;a.bufferMs=settings.buffer;
                 a.probeImmediateVideoRelease=settings.release.equals("immediate");a.adaptive=null;a.diagnostics=null;
                 a.probeVideoSubmissionLeadMs=settings.surfaceSubmitLeadMs;
                 a.probeVideoSubmissionWaits.set(0);a.probeVideoSubmissionWaitNs.set(0);a.probeVideoSubmissionWaitedOutputs.set(0);
@@ -221,24 +247,29 @@ public final class UdpVideoProbe extends Instrumentation {
                 a.playback=new PlaybackClock(settings.buffer,0,settings.decoderReanchorEnabled);a.presentationMetrics=new MediaPresentationMetrics(48000);
                 a.receivedFrames.set(0);a.receivedVideoBytes.set(0);a.presentedFrames.set(0);a.lateDiscardedFrames.set(0);
                 a.audioOutputBytes.set(0);
-                a.running=true;generation[0]=++a.generation;
+                a.running=true;generation[0]=++a.generation;appGeneration=generation[0];
                 a.canvas=new FrameLayout(a);a.screen=new SurfaceView(a);
-                a.canvas.addView(a.screen,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));a.setContentView(a.canvas);
+                a.canvas.addView(a.screen,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
+                if(appActivity!=null){android.widget.Button leave=new android.widget.Button(a);leave.setText("离开 UDP 测试");
+                    leave.setOnClickListener(v->a.lanUdpEntry.cancel(true));
+                    FrameLayout.LayoutParams button=new FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.END);a.canvas.addView(leave,button);}
+                a.setContentView(a.canvas);
                 try{requestDisplayMode(a,settings.displayHz,settings.fps,report);}
                 catch(Throwable failure){displayFailure[0]=failure;}
             });
+            if(appCancelled||generation[0]<0)throw new IOException("cancelled");
             if(displayFailure[0]!=null)throw new IOException("requested_display_mode_unavailable",displayFailure[0]);
             recordDisplayStart(activity,session.displayHz,report);
             completed="surface_created";
             socket=new DatagramSocket(null);socket.setReuseAddress(false);
             socket.setReceiveBufferSize(4*1024*1024);socket.bind(new InetSocketAddress(session.bindPort));socket.setSoTimeout(20);
             report.put("socket_receive_buffer_bytes",socket.getReceiveBufferSize());
-            UdpVideoSecurity security=new UdpVideoSecurity(session.key,session.tag);
+            security=new UdpVideoSecurity(session.key,session.tag);
             if(session.audioEnabled)audioReceiver=new UdpAudioReceiver(activity,generation[0]);
             if(session.touchEnabled){
-                DatagramSocket sharedSocket=socket;Session sharedSession=session;MainActivity target=activity;
-                runOnMainSync(()->touchControl=new UdpTouchControl(target.screen,
-                    plaintext->sendPayload(sharedSocket,sharedSession,security,plaintext)));
+                DatagramSocket sharedSocket=socket;Session sharedSession=session;MainActivity target=activity;UdpVideoSecurity sharedSecurity=security;
+                mainSync(()->touchControl=new UdpTouchControl(target.screen,
+                    plaintext->sendPayload(sharedSocket,sharedSession,sharedSecurity,plaintext)));
             }
             if(session.asyncVideo)startVideoWorker(activity,generation[0]);
             receive(activity,generation[0],socket,session,security,nativeHandle);
@@ -260,6 +291,9 @@ public final class UdpVideoProbe extends Instrumentation {
                 try{report.put("video_worker_failure_class",failure.getClass().getSimpleName());}catch(Exception ignored){}}
             if(touchControl!=null){try{touchControl.close();}catch(Exception ignored){}}
             if(audioReceiver!=null)audioReceiver.close();
+            if(appActivity!=null&&socket!=null&&session!=null&&security!=null){
+                for(int i=0;i<3;i++)try{sendPayload(socket,session,security,"STOP".getBytes(StandardCharsets.US_ASCII));}catch(Exception ignored){}
+            }
             if(socket!=null)socket.close();
             try{
                 report.put("last_completed_stage",completed).put("start_ns",startNs).put("first_server_packet_ns",firstServerNs)
@@ -309,11 +343,11 @@ public final class UdpVideoProbe extends Instrumentation {
                     .put("network_feedback_scope","RX-only cumulative video counters; loss proxies are FEC recovered shards/reference expiry, not measured packet loss; IPv4 bytes exclude Ethernet/VPN/radio overhead.");
                 if(activity!=null){
                     MainActivity displayActivity=activity;final JSONObject[] currentDisplay={null};
-                    runOnMainSync(()->currentDisplay[0]=displayReadback(displayActivity));
+                    mainSync(()->currentDisplay[0]=displayReadback(displayActivity));
                     report.put("display_mode_end",currentDisplay[0]);
                     report.put("display_mode_end_matches_requested",displayMatches(currentDisplay[0],session==null?0:session.displayHz));
                     report.put("codec_callback_count",activity.presentedFrames.get()).put("late_discarded_count",activity.lateDiscardedFrames.get())
-                        .put("source_geometry",width+"x"+height).put("decoder",activity.videoDecoderName).put("hardware",activity.hardwareVideo);
+                        .put("source_geometry",width+"x"+height).put("source_width",width).put("source_height",height).put("decoder",activity.videoDecoderName).put("hardware",activity.hardwareVideo);
                     long submissionWaits=activity.probeVideoSubmissionWaits.get(),waitedOutputs=activity.probeVideoSubmissionWaitedOutputs.get();
                     report.put("surface_submit_applications",waitedOutputs).put("surface_submit_wait_count",submissionWaits)
                         .put("surface_submit_wait_total_ms",activity.probeVideoSubmissionWaitNs.get()/1e6)
@@ -324,26 +358,29 @@ public final class UdpVideoProbe extends Instrumentation {
                             :submissionWaits>0?"applied_bounded_wait":"enabled_no_wait_observed");
                     if(activity.presentationMetrics!=null)CodecFileProbe.appendPresentation(report,activity.presentationMetrics.snapshot());
                 }
-                writeReport(new File(getTargetContext().getFilesDir(),REPORT),report,result);
+                if(appActivity==null)writeReport(new File(getTargetContext().getFilesDir(),REPORT),report,result);
+                else appReport=numericAppSummary(report);
             }catch(Throwable failure){result.putString("failure","UdpVideoProbe report "+failure.getClass().getSimpleName());}
             finally{
                 if(nativeHandle!=0)NativeUdpFec.nativeDestroy(nativeHandle);
                 if(session!=null)Arrays.fill(session.key,(byte)0);
                 // Fixed temporary test key file only. Never delete arbitrary app files.
-                if(keyFile.exists()&&!keyFile.delete())result.putString("key_cleanup","fixed_session_delete_failed");
+                if(keyFile!=null&&keyFile.exists()&&!keyFile.delete())result.putString("key_cleanup","fixed_session_delete_failed");
                 if(activity!=null){
                     MainActivity a=activity;int fps=oldFps,buffer=oldBuffer,modeId=oldDisplayModeId,submissionLead=oldSubmissionLeadMs;boolean immediate=oldImmediate;float refresh=oldRefresh;
-                    runOnMainSync(()->{
+                    try{mainSync(()->{
+                        if(appActivity!=null&&a.generation!=appGeneration)return;
                         a.stop();a.maxFps=fps;a.bufferMs=buffer;a.probeImmediateVideoRelease=immediate;
                         a.probeVideoSubmissionLeadMs=submissionLead;
                         WindowManager.LayoutParams window=a.getWindow().getAttributes();window.preferredRefreshRate=refresh;
                         window.preferredDisplayModeId=modeId;a.getWindow().setAttributes(window);
-                        a.getIntent().removeExtra("huoguo_codec_component_probe");a.login();
-                    });
+                        if(appActivity==null){a.getIntent().removeExtra("huoguo_codec_component_probe");a.login();}
+                    });}catch(Throwable cleanupFailure){result.putString("failure","UdpVideoProbe cleanup "+cleanupFailure.getClass().getSimpleName());}
                 }
             }
         }
-        finish(result.containsKey("failure")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
+        if(appActivity==null)finish(result.containsKey("failure")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
+        else if(appListener!=null)appListener.complete(appReport==null?new JSONObject():appReport,result.containsKey("failure"));
     }
 
     /** Window-only experiment request; never changes global display settings. */
@@ -400,7 +437,7 @@ public final class UdpVideoProbe extends Instrumentation {
     private void recordDisplayStart(MainActivity activity,int requestedHz,JSONObject report)throws Exception{
         final JSONObject[] readback={null};long deadline=System.nanoTime()+500_000_000L;
         do{
-            runOnMainSync(()->readback[0]=displayReadback(activity));
+            mainSync(()->readback[0]=displayReadback(activity));
             if(requestedHz==0||displayMatches(readback[0],requestedHz)||System.nanoTime()>=deadline)break;
             Thread.sleep(20);
         }while(true);
@@ -411,11 +448,12 @@ public final class UdpVideoProbe extends Instrumentation {
 
     private void receive(MainActivity a,int gen,DatagramSocket socket,Session session,UdpVideoSecurity security,long handle)throws Exception{
         startNs=System.nanoTime();networkIntervalStartNs=startNs;long overall=startNs+(session.seconds+30L)*1_000_000_000L,nextReady=0;
-        long[] previous={startNs,0,0,0,0};byte[] data=new byte[UdpVideoSecurity.MAX_DATAGRAM+1];DatagramPacket packet=new DatagramPacket(data,data.length);
-        while(a.running&&a.generation==gen){
+        long nextAlive=0;long[] previous={startNs,0,0,0,0};byte[] data=new byte[UdpVideoSecurity.MAX_DATAGRAM+1];DatagramPacket packet=new DatagramPacket(data,data.length);
+        while(a.running&&a.generation==gen&&!appCancelled){
             checkVideoWorker();
             long now=System.nanoTime();long deadline=firstServerNs==0?overall:Math.min(overall,firstServerNs+session.seconds*1_000_000_000L);
             if(now>=deadline)break;
+            if(appActivity!=null&&now>=nextAlive){sendPayload(socket,session,security,"ALIVE".getBytes(StandardCharsets.US_ASCII));nextAlive=now+750_000_000L;}
             if(firstServerNs==0&&now>=nextReady){sendPayload(socket,session,security,"READY".getBytes(StandardCharsets.US_ASCII));readySent++;nextReady=now+500_000_000L;}
             packet.setLength(data.length);
             long iterationStarted=System.nanoTime(),processingStarted=iterationStarted,socketStarted=iterationStarted;
@@ -720,6 +758,9 @@ public final class UdpVideoProbe extends Instrumentation {
         byte[] bytes=new byte[(int)stat.st_size];
         try(DataInputStream input=new DataInputStream(new FileInputStream(file))){input.readFully(bytes);if(input.read()!=-1)throw new IOException("session_file_changed");}
         JSONObject json=new JSONObject(new String(bytes,StandardCharsets.UTF_8));Arrays.fill(bytes,(byte)0);
+        return parseSession(json,false);
+    }
+    private static Session parseSession(JSONObject json,boolean appMode)throws Exception{
         String encoded=json.getString("key_b64"),tag=json.getString("session_tag_hex"),host=json.getString("peer_host");
         if(!encoded.matches("[A-Za-z0-9+/]{43}=")||!tag.matches("[0-9a-fA-F]{16}"))throw new IOException("session_key_encoding");
         Session result=new Session();result.key=Base64.getDecoder().decode(encoded);
@@ -740,13 +781,40 @@ public final class UdpVideoProbe extends Instrumentation {
         result.asyncVideo=json.optBoolean("async_video",false);result.decoderReanchorEnabled=json.optBoolean("decoder_reanchor_enabled",true);
         for(String option:new String[]{"diagnostic_events","network_feedback"})if(json.has(option)&&!(json.get(option) instanceof Boolean))throw new IOException("feedback_option_boolean_required");
         result.diagnosticEvents=json.optBoolean("diagnostic_events",false);result.networkFeedback=json.optBoolean("network_feedback",false);
-        if(result.peerPort!=15961||result.bindPort!=15960||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
+        if(result.peerPort!=(appMode?15963:15961)||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
                 ||result.buffer<30||result.buffer>100||!result.release.equals("scheduled")&&!result.release.equals("immediate")||result.profile.length()>160
                 ||result.displayHz!=0&&result.displayHz!=60&&result.displayHz!=90&&result.displayHz!=120)
             throw new IOException("session_options_invalid");
         if(result.surfaceSubmitLeadMs>0&&!result.release.equals("scheduled"))throw new IOException("surface_submit_requires_scheduled_release");
         return result;
     }
+    static JSONObject numericAppSummary(JSONObject report)throws Exception{
+        JSONObject out=new JSONObject();
+        String[] scalars={"start_ns","first_server_packet_ns","receive_end_ns","observation_end_ns","fps_limit","buffer_ms",
+            "udp_packets","udp_payload_bytes","foreign_peer_packets","authentication_errors","replay_errors","received_media_frames",
+            "queued_media_frames","source_width","source_height","decoder_input_timeouts","late_discarded_count","codec_callback_count","receive_loop_max_ms",
+            "receive_processing_max_ms","receive_socket_wait_max_ms","video_worker_expired_frames","video_worker_stale_epoch_drops"};
+        for(String key:scalars)if(report.opt(key) instanceof Number)out.put(key,report.get(key));
+        out.put("hardware_video",report.optBoolean("hardware",false)?1:0);
+        for(String key:new String[]{"native_fec","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end"}){
+            Object value=report.opt(key);if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
+        }
+        return out;
+    }
+    private static JSONObject numericTree(JSONObject input)throws Exception{
+        JSONObject out=new JSONObject();java.util.Iterator<String> keys=input.keys();
+        while(keys.hasNext()){
+            String key=keys.next();Object value=input.get(key);
+            if(value instanceof Number)out.put(key,value);
+            else if(value instanceof Boolean)out.put(key,(Boolean)value?1:0);
+            else if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
+            else if(value instanceof JSONArray){JSONArray numeric=new JSONArray(),items=(JSONArray)value;
+                for(int i=0;i<items.length()&&i<128;i++)if(items.get(i) instanceof Number)numeric.put(items.get(i));
+                if(numeric.length()>0)out.put(key,numeric);
+            }
+        }return out;
+    }
+
     private static final class Session{
         byte[] key;long tag;InetAddress peer;int peerPort,bindPort,seconds,fps,buffer,displayHz,contentHintFps,surfaceSubmitLeadMs;String release,profile;
         boolean audioEnabled,touchEnabled,asyncVideo,decoderReanchorEnabled,diagnosticEvents,networkFeedback;

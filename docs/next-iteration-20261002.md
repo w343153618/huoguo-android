@@ -1,5 +1,7 @@
 # 下一轮有界实验与 UDP 产品化验收计划
 
+后续认证LAN入口已有实际正常UI测试，见[认证UDP记录](authenticated-lan-udp-results-20261002.md)。第五次尝试验证App内十指→guest真CANCEL、generation推进后的新认证重连、两指未抬起退出清理；重复OS注入受系统页面干扰，十指物理/OS、旋转与边缘尚未实测。新候选未发布，正式v1.30仍TLS/TCP。M1实际内核Tailnet路由已读回utun0，不应继续描述为只能userspace Serve；实际Tailnet媒体仍未验收。新的可行动短板为80ms预算下较大IDR与codec输出持有期间的音频背压；下一轮分别做12M→8M与有界PCM队列单因素，不混改、不中途默默换TCP。
+
 2026-10-02后续状态：v1.30线路维护版已发布并实读M1/M5公网APK；Mac与测试手机统一yilufa，旧控制域已清理。720P两组socket wait单因素ABBA与1080P一组ABBA已经完成，分别见[720P记录](socket-wait-real-video-20261002.md)、[1080P记录](socket-wait-1080p-real-video-20261002.md)。前者B有关联收益，后者A/B接近且B无明确收益，保留默认wait/guard，不无目的重复同一矩阵。Mac native时钟契约已修并单独验证，见[clock记录](native-host-clock-contract-20261002.md)；音频新分原因计数仍只完成源码检查。
 
 接下来优先将已验证的UDP组件接入受认证App LAN入口，明确会话取消/重连、坐标/多指与音画验收；然后再测Tailnet媒体和国内UDP中继/P2P。当前手机Tailnet100.65.0.3与M1直连8ms只是连通性，现行Serve15556仍是TCP。先核对M1实际kernel/userspace路由能力，不能直接将物理接口bound sender换成Tailnet目标后宣称完成UDP路径。下面保留初始提案与完整验收清单，已执行部分以各自新记录为准。

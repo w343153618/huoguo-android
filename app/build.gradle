@@ -6,6 +6,11 @@ if (project.hasProperty('probeApplicationId') && probeApplicationId != 'local.re
     throw new GradleException('probeApplicationId only accepts local.remoteandroid.direct.experiment')
 }
 
+def authenticatedLanUdp = project.findProperty('authenticatedLanUdp') == 'true'
+if (authenticatedLanUdp && probeApplicationId != 'local.remoteandroid.direct.experiment') {
+    throw new GradleException('authenticatedLanUdp requires isolated probeApplicationId')
+}
+
 android {
     namespace 'local.remoteandroid.direct'
     compileSdk 37
@@ -15,6 +20,8 @@ android {
         targetSdk 37
         versionCode 31
         versionName '1.30'
+        buildConfigField 'boolean', 'AUTHENTICATED_LAN_UDP', authenticatedLanUdp ? 'true' : 'false'
+        if (authenticatedLanUdp) { ndk { abiFilters 'arm64-v8a' } }
         buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: 'https://146.56.249.175:15556/updates/update.json').replace('"', '') + '"'
     }
     buildFeatures { buildConfig true }
@@ -29,4 +36,30 @@ android {
         }
     }
     buildTypes { release { signingConfig System.getenv('ANDROID_KEYSTORE_FILE') ? signingConfigs.distribution : signingConfigs.debug; minifyEnabled false } }
+}
+
+// This source/JNI set is absent from the signed formal v1.30 build.
+if (authenticatedLanUdp) {
+    def generatedJava = layout.buildDirectory.dir('generated/udpCandidateJava')
+    def generatedJni = layout.buildDirectory.dir('generated/udpCandidateJni')
+    android.sourceSets.main.java.srcDirs += ['src/udp/java', generatedJava.get().asFile]
+    android.sourceSets.main.jniLibs.srcDir generatedJni.get().asFile
+    def generateUdpCandidateJava = tasks.register('generateUdpCandidateJava', Copy) {
+        from(rootProject.file('experiments/nps-transport/phone')) {
+            include 'UdpVideoProbe.java', 'UdpVideoSecurity.java', 'NativeUdpFec.java',
+                    'UdpAudioAssembler.java', 'UdpAudioReceiver.java', 'UdpTouchControl.java',
+                    'CodecFileProbe.java', 'FramedH264Fixture.java'
+        }
+        into(generatedJava.map { it.dir('local/remoteandroid/direct') })
+    }
+    def buildUdpCandidateNative = tasks.register('buildUdpCandidateNative', Exec) {
+        commandLine 'python3', rootProject.file('experiments/moonlight-v2/transport/android-udp/build.py'),
+                '--android', '--build', layout.buildDirectory.dir('udpCandidateNative').get().asFile
+    }
+    def packageUdpCandidateNative = tasks.register('packageUdpCandidateNative', Copy) {
+        dependsOn buildUdpCandidateNative
+        from(layout.buildDirectory.file('udpCandidateNative/android-arm64/libhuoguo_udp_fec.so'))
+        into(generatedJni.map { it.dir('arm64-v8a') })
+    }
+    tasks.named('preBuild').configure { dependsOn generateUdpCandidateJava, packageUdpCandidateNative }
 }

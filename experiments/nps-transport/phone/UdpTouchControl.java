@@ -66,7 +66,7 @@ public final class UdpTouchControl implements AutoCloseable {
             if(closed)return;
             int nextRotation=rotationDegrees/90;
             if(!contacts.isEmpty()&&(streamWidth!=width||streamHeight!=height||rotation!=nextRotation)){
-                contacts.clear();latestMove=null;geometryCancels++;enqueue(CANCEL,0);
+                contacts.clear();pending.clear();latestMove=null;geometryCancels++;enqueue(CANCEL,0);
             }
             streamWidth=width;streamHeight=height;rotation=nextRotation;
         }
@@ -77,7 +77,7 @@ public final class UdpTouchControl implements AutoCloseable {
             if(closed)return true;
             motionEvents++;
             int action=event.getActionMasked(),index=event.getActionIndex();
-            if(action==MotionEvent.ACTION_CANCEL){contacts.clear();latestMove=null;enqueue(CANCEL,0);return true;}
+            if(action==MotionEvent.ACTION_CANCEL){contacts.clear();pending.clear();latestMove=null;enqueue(CANCEL,0);return true;}
             if(streamWidth==0||streamHeight==0||surface.getWidth()==0||surface.getHeight()==0)return true;
             // Refresh every existing pointer from the same native MotionEvent.
             for(int i=0;i<event.getPointerCount();i++){
@@ -87,7 +87,7 @@ public final class UdpTouchControl implements AutoCloseable {
             if(action==MotionEvent.ACTION_DOWN||action==MotionEvent.ACTION_POINTER_DOWN){
                 int id=event.getPointerId(index);
                 if(action==MotionEvent.ACTION_DOWN&&!contacts.isEmpty()){
-                    contacts.clear();enqueue(CANCEL,0);
+                    contacts.clear();pending.clear();latestMove=null;enqueue(CANCEL,0);
                 }
                 if(contacts.size()>=10||contacts.containsKey(id)||nextToken>0xffffffffL)return true;
                 Contact contact=new Contact((int)nextToken++);

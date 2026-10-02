@@ -2,6 +2,7 @@ package local.remoteandroid.direct;
 import android.app.*;import android.os.*;import android.media.*;import android.view.*;import android.widget.*;import android.text.InputType;import android.util.Base64;import org.json.JSONObject;import java.io.*;import java.nio.*;import java.nio.charset.StandardCharsets;import java.security.*;import java.security.cert.*;import java.util.*;import javax.net.ssl.*;
 /** Native scrcpy 4.1 client. The only input endpoint is Android's control socket. */
 public class MainActivity extends Activity {
+ LanUdpEntry lanUdpEntry;
  static final String PUBLIC_HOST=ConnectionRoutes.PUBLIC_HOST,TAILSCALE_HOST=ConnectionRoutes.TAILSCALE_HOST;
  final java.util.concurrent.atomic.AtomicLong receivedVideoBytes=new java.util.concurrent.atomic.AtomicLong(),receivedFrames=new java.util.concurrent.atomic.AtomicLong(),presentedFrames=new java.util.concurrent.atomic.AtomicLong(),lateDiscardedFrames=new java.util.concurrent.atomic.AtomicLong(),audioOutputBytes=new java.util.concurrent.atomic.AtomicLong();
  final Handler ui=new Handler(Looper.getMainLooper());final HandlerThread statsThread=new HandlerThread("render-stats");long lastMoveMs;volatile boolean hardwareVideo;volatile long networkRttMs=-1;volatile PlaybackClock playback;volatile float audioGain=1f;TextView perf;
@@ -20,6 +21,10 @@ public class MainActivity extends Activity {
  PasswordStore passwordStore;
  int maxSize=960,bitRate=4000000;int maxFps=30,bufferMs=80;String bitrateMode="VBR";volatile AdaptiveBitrate adaptive;volatile int acceptedBitrate;volatile boolean adaptiveRejected;boolean metricsVisible;volatile boolean soundEnabled=true;int avSyncOffsetMs=0;
  void login(){
+  if(BuildConfig.AUTHENTICATED_LAN_UDP&&!componentProbeRequested()){
+   try{if(lanUdpEntry==null)lanUdpEntry=(LanUdpEntry)Class.forName("local.remoteandroid.direct.AuthenticatedLanUdpUi").getConstructor(MainActivity.class).newInstance(this);lanUdpEntry.showLogin();}
+   catch(Exception failure){status=new TextView(this);status.setText("隔离 UDP 候选构建无法启动："+failure.getClass().getSimpleName());setContentView(status);}return;
+  }
   if(componentProbeRequested()){
    status=new TextView(this);setContentView(status);return;
   }
@@ -302,7 +307,7 @@ public class MainActivity extends Activity {
  void touch(MotionEvent e,int gen){synchronized(controlWriteLock){DataOutputStream writer=control;if(writer==null||!running||gen!=generation)return;try{int a=e.getActionMasked();if(a==2){for(int i=0;i<e.getPointerCount();i++)pointer(writer,e,i,2);}else if(a==0||a==5)pointer(writer,e,e.getActionIndex(),0);else if(a==1||a==6)pointer(writer,e,e.getActionIndex(),1);else if(a==3){for(int i=0;i<e.getPointerCount();i++)pointer(writer,e,i,1);}writer.flush();}catch(Exception ex){if(running&&gen==generation)fail(ex);}}}
  void pointer(DataOutputStream writer,MotionEvent e,int i,int a)throws IOException{int x=Math.max(0,Math.min(width-1,Math.round(e.getX(i)*width/screen.getWidth()))),y=Math.max(0,Math.min(height-1,Math.round(e.getY(i)*height/screen.getHeight())));writer.writeByte(2);writer.writeByte(a);writer.writeLong(e.getPointerId(i));writer.writeInt(x);writer.writeInt(y);writer.writeShort(width);writer.writeShort(height);writer.writeShort(a==1?0:65535);writer.writeInt(0);writer.writeInt(0);}
  void key(int code,int gen){synchronized(controlWriteLock){DataOutputStream writer=control;if(writer==null||!running||gen!=generation)return;try{for(int a=0;a<2;a++){writer.writeByte(0);writer.writeByte(a);writer.writeInt(code);writer.writeInt(0);writer.writeInt(0);}writer.flush();}catch(Exception e){if(running&&gen==generation)fail(e);}}}
- void fail(Exception e){int failedGeneration=generation;runOnUiThread(()->{if(!running||failedGeneration!=generation)return;if(diagnostics!=null){diagnostics.streamFailed(e);return;}stop();login();status.setText("连接中断："+message(e));});}
+ void fail(Exception e){if(lanUdpEntry!=null&&lanUdpEntry.active()){lanUdpEntry.failed(e);return;}int failedGeneration=generation;runOnUiThread(()->{if(!running||failedGeneration!=generation)return;if(diagnostics!=null){diagnostics.streamFailed(e);return;}stop();login();status.setText("连接中断："+message(e));});}
  void rotateRemoteDevice(int gen){input.execute(()->{synchronized(controlWriteLock){DataOutputStream writer=control;if(writer==null||!running||gen!=generation)return;try{writer.writeByte(11);writer.flush();}catch(Exception e){if(running&&gen==generation)fail(e);}}});}
  void toggleOrientation(int gen){boolean isLandscape=getResources().getConfiguration().orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE;if(isLandscape){setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);if(width>height)rotateRemoteDevice(gen);}else{setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);if(width<height)rotateRemoteDevice(gen);}}
  @Override public void onConfigurationChanged(android.content.res.Configuration newConfig){super.onConfigurationChanged(newConfig);if(rotateButton!=null){rotateButton.setText(newConfig.orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE?"竖屏":"横屏");}if(canvas!=null){canvas.post(this::fit);}}
@@ -312,8 +317,8 @@ public class MainActivity extends Activity {
  // API33+ is registered with the platform dispatcher above; this fallback serves API30-32.
  @android.annotation.SuppressLint("GestureBackNavigation")
  public void onBackPressed(){handleBack();}
- void handleBack(){if(diagnostics!=null){if(diagnostics.finished)diagnostics.leave();else diagnostics.cancel();return;}if(transfer!=null){transfer.back();return;}if(running){int gen=generation;input.execute(()->{if(running&&gen==generation)key(4,gen);});}else finish();}
- protected void onResume(){super.onResume();if(!componentProbeRequested()&&updater!=null)updater.resumeInstall();}
- protected void onStop(){if(diagnostics!=null&&!diagnostics.finished)diagnostics.cancel();super.onStop();}
- protected void onDestroy(){if(diagnostics!=null)diagnostics.close();if(transfer!=null)transfer.close();stop();input.shutdownNow();statsThread.quitSafely();super.onDestroy();}
+ void handleBack(){if(lanUdpEntry!=null&&lanUdpEntry.active()){lanUdpEntry.cancel(true);return;}if(diagnostics!=null){if(diagnostics.finished)diagnostics.leave();else diagnostics.cancel();return;}if(transfer!=null){transfer.back();return;}if(running){int gen=generation;input.execute(()->{if(running&&gen==generation)key(4,gen);});}else finish();}
+ protected void onResume(){super.onResume();if(!BuildConfig.AUTHENTICATED_LAN_UDP&&!componentProbeRequested()&&updater!=null)updater.resumeInstall();}
+ protected void onStop(){if(lanUdpEntry!=null&&lanUdpEntry.active())lanUdpEntry.cancel(true);if(diagnostics!=null&&!diagnostics.finished)diagnostics.cancel();super.onStop();}
+ protected void onDestroy(){if(lanUdpEntry!=null)lanUdpEntry.cancel(false);if(diagnostics!=null)diagnostics.close();if(transfer!=null)transfer.close();stop();input.shutdownNow();statsThread.quitSafely();super.onDestroy();}
 }

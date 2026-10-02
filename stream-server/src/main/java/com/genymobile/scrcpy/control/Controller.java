@@ -108,6 +108,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     private final Object displayDataAvailable = new Object(); // condition variable
 
     private long lastTouchDown;
+    private int lastTouchDisplayId = Device.DISPLAY_ID_NONE;
     private final PointersState pointersState = new PointersState();
     private final MotionEvent.PointerProperties[] pointerProperties = new MotionEvent.PointerProperties[PointersState.MAX_POINTERS];
     private final MotionEvent.PointerCoords[] pointerCoords = new MotionEvent.PointerCoords[PointersState.MAX_POINTERS];
@@ -520,6 +521,36 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
     private boolean injectTouch(int action, long pointerId, Position position, float pressure, int actionButton, int buttons) {
         long now = SystemClock.uptimeMillis();
 
+        // Capability touch_cancel_clears_pointers_v1: one touchscreen CANCEL
+        // contains every current pointer, then clears the gesture bookkeeping.
+        // Do this before geometry mapping and getPointerIndex(): cancel must
+        // still work if the image size/rotation changed since the initial DOWN;
+        // unknown/duplicate cancel must never
+        // allocate a new contact, and subsequent DOWN must start at local ID 0.
+        if (action == MotionEvent.ACTION_CANCEL) {
+            int pointerCount = pointersState.cancel(pointerProperties, pointerCoords);
+            int cancelDisplayId = lastTouchDisplayId;
+            long cancelDownTime = lastTouchDown;
+            lastTouchDown = 0;
+            lastTouchDisplayId = Device.DISPLAY_ID_NONE;
+            if (pointerCount == 0) {
+                return true;
+            }
+            if (cancelDisplayId == Device.DISPLAY_ID_NONE) {
+                return false;
+            }
+            for (int i = 0; i < pointerCount; ++i) {
+                pointerProperties[i].toolType = MotionEvent.TOOL_TYPE_FINGER;
+            }
+            MotionEvent cancelEvent = MotionEvent.obtain(cancelDownTime, now, MotionEvent.ACTION_CANCEL, pointerCount,
+                    pointerProperties, pointerCoords, 0, 0, 1f, 1f, DEFAULT_DEVICE_ID, 0, InputDevice.SOURCE_TOUCHSCREEN, 0);
+            try {
+                return Device.injectEvent(cancelEvent, cancelDisplayId, Device.INJECT_MODE_ASYNC);
+            } finally {
+                cancelEvent.recycle();
+            }
+        }
+
         Pair<Point, Integer> pair = getEventPointAndDisplayId(position);
         if (pair == null) {
             return false;
@@ -557,6 +588,7 @@ public class Controller implements AsyncProcessor, VirtualDisplayListener {
         if (pointerCount == 1) {
             if (action == MotionEvent.ACTION_DOWN) {
                 lastTouchDown = now;
+                lastTouchDisplayId = targetDisplayId;
             }
         } else {
             // secondary pointers must use ACTION_POINTER_* ORed with the pointerIndex

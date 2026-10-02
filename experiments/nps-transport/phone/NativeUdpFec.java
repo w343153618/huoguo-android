@@ -2,7 +2,7 @@ package local.remoteandroid.direct;
 
 import java.io.File;
 
-/** JNI component loaded from the instrumentation APK, never the production app's library directory. */
+/** JNI component loaded only by instrumentation or the opt-in isolated UDP App. */
 public final class NativeUdpFec {
     private static boolean loaded;
     private NativeUdpFec() { }
@@ -12,6 +12,9 @@ public final class NativeUdpFec {
             System.load(new File(instrumentationNativeDirectory,"libhuoguo_udp_fec.so").getAbsolutePath());
             loaded=true;
         }
+    }
+    static synchronized void loadApp(){
+        if(!loaded){System.loadLibrary("huoguo_udp_fec");loaded=true;}
     }
     public static native long nativeCreate();
     public static native byte[][] nativeAccept(long handle,byte[] authenticatedPacket,long arrivalUs);

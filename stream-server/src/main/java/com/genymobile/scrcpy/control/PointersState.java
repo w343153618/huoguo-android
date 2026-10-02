@@ -92,6 +92,18 @@ public class PointersState {
     }
 
     /**
+     * Snapshot the entire active gesture for a single ACTION_CANCEL, then clear
+     * all local IDs. Cancel is not a series of UPs: UP may complete a click,
+     * while a cancelled gesture must leave no pointer bookkeeping for the next
+     * DOWN. Empty/duplicate cancellation does not create a phantom pointer.
+     */
+    public int cancel(MotionEvent.PointerProperties[] props, MotionEvent.PointerCoords[] coords) {
+        int count = update(props, coords);
+        pointers.clear();
+        return count;
+    }
+
+    /**
      * Remove all pointers which are UP.
      */
     private void cleanUp() {
