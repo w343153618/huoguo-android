@@ -1,12 +1,14 @@
 # 下一轮有界实验与 UDP 产品化验收计划
 
+2026-10-03用户最新决定：日常机主性能实验可继续使用原有UID501的M1 `RemoteAndroid17Compare`，通过独立实验客户端和有界LAN／已登记Tailnet会话测试。证据标为“机主测试环境，宿主隔离未验收”，不作为朋友安全部署验收。隔离候选另行保留，其ADB offline不阻挡上述媒体实验；新版朋友／公众部署仍须完成宿主及局域网隔离。认证、完整性、防重放、正式在线会话保护和国内云端物理出口规则继续保留。M1现有Headscale节点46已改名`Macbook-m1-64`，地址仍`100.65.0.2`；与M5节点23／`100.65.0.11`同时保留，见[M1节点核对](tailscale-m1-retained-20261003.md)。
+
 新增隔离候选见 [M1 staging 与出口验收](m1-isolation-candidate-20261002.md)。专用身份、只读SDK与独立AVD冷拷贝已实际完成；UID600/profile18项无害子进程canary与UID602固定53双族DNS回复通过。独立90秒及后续60秒候选运行/recorded组收尾通过，ownPopen poll/reap修复在真实601控制器中通过；原45秒探测错误的精确原因和detached/launchd边界仍未验收。正式实例仍个人UID501，没有迁入候选。
 
 最新闭合状态探针f7确认固定ADB transport为offline，非unauthorized：20秒readiness内71次attempt、一次connect-timeout，没有读到boot。不能据此说Android没有启动，也不能归因GPU/HVF。下一轮仅对这个候选的固定受限日志/端点作有界host/guest ADB通道诊断，不继续增加重试时长、不复制ownerkeys或扩大策略。受限启动日志曾显示Metal/ANGLE；boot/HVF/capture/编码仍需独立证据。246项源码/owned fixtures通过不代表这些实际验收。
 
 最后一次固定closed日志读回的管理员调用120秒超时，固定root报告仍缺失；`boot-marker-final-receipt-check.json`只记录报告缺失，不宣称payload未执行或日志无错误。下一次先核对该固定receipt是否迟到，再决定是否准备fresh nonce；禁止自动重用O_EXCL目标。日志分类取得后，分开核验guest adbd虚拟通道、host regular ADB listener与专用601 server的握手状态。上游机制不支持仅因拒绝5037／随机JDWP端口或泛socketpair警告就放宽guest profile；SDK版本对应关系仍待核对，见候选报告的官方源码链接。
 
-另准备了 [LocalOnly系统解析委托canary](../scripts/security/localonly_resolver_canary.py)：21项源码/owned inert检查通过，未注册/query/root/600执行。后续先取得boot和该API正向/负向结果，再做guest DNS/root网络与文件负向检查、media身份/策略、GPU/HV及隔离媒体。最后才推进新公网UDP；现有正式v1.30仍TLS/TCP。
+另准备了 [LocalOnly系统解析委托canary](../scripts/security/localonly_resolver_canary.py)：21项源码/owned inert检查通过，未注册/query/root/600执行。隔离候选后续先取得boot和该API正向/负向结果，再做guest DNS/root网络与文件负向检查、media身份/策略、GPU/HV及隔离媒体；这些是正式推广前的门槛，不阻挡已授权的机主性能实验。现有正式v1.30仍TLS/TCP。
 
 最新用户优先事项：`huoguo` 只给火锅，`wyw` 仅机主测试。远程安卓（含 root）不能访问 M1 无关文件或成为宿主／LAN 跳板。见 [宿主隔离设计](m1-host-isolation-design-20261002.md)。现有 guest 与 gateway 共用个人 UID；两个新建 host-owned TCP canary 在 guest 中均可达。正式入口 owner 隔离与更新文件 nofollow 已通过100项范围检查并只重载 gateway，原证书／ping／清单正常；这不是 OS／网络隔离完成。管理员读回PF enabled，但尚无经验证的guest UID策略。独立合成 sandbox 子进程可拒绝文件和本机IPv4／IPv6 TCP，但没有套到VM，runner为deprecated，不可直接推广。后续先完成隔离身份、文件与受限出口候选及负向验收，不为新公网UDP开放原始ADB／shell／任意转发；不去除认证、完整性或防重放。保留既有服务，忙时跳过迁移；不能把不同App账号视为macOS边界。
 

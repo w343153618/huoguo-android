@@ -126,7 +126,7 @@
   },
   "instrumentation_package_sha256": "2395f75a97b2850b514a2bf488083e2ee4623fee0d989f41f936c471d291d38f",
   "latest_network_readback": {
-    "readback_date": "2026-10-02",
+    "readback_date": "2026-10-03",
     "headscale_control_url": "https://hs.yilufa.site",
     "m1_tailnet_ipv4": [
       "100.65.0.2"
@@ -140,7 +140,7 @@
     "phone_tailnet_ipv4": [
       "100.65.0.3"
     ],
-    "phone_tailnet_status": "OnePlus12 joined https://hs.yilufa.site as existing user wyw; node48 oneplus12-test; native Connected UI and tun0 IPv4 verified; M1 direct UDP ping8ms on home WiFi; media path not yet accepted",
+    "phone_tailnet_status": "Existing registeredOnePlus12node48 online; M1 discovery directendpoint192.168.9.149:35621 observed64/78/45ms, not mediaFPS or physicaltouch latency",
     "media_udp_tailnet_test_completed": false,
     "evidence": "docs/evidence/yilufa-migration-20261002",
     "formal_public_m1": "146.56.249.175:15556",
@@ -149,7 +149,20 @@
     "kernel_tailnet_interface": "utun0",
     "kernel_tailnet_ipv4_route_verified": true,
     "domestic_cloud_route_readback": "146.56.249.175 via192.168.9.1/en7; route readback only, not packet source-country acceptance",
-    "latest_routing_evidence": "docs/evidence/authenticated-lan-udp-followup-20261002/tailnet-routing-readback.json"
+    "latest_routing_evidence": "docs/evidence/authenticated-lan-udp-followup-20261002/tailnet-routing-readback.json",
+    "m1_node_id": 46,
+    "m1_node_name": "macbook-m1-64",
+    "m1_client_hostname": "Macbook-m1-64",
+    "m1_active_identity_preserved": true,
+    "m1_background_state": "Running; online; TUN true; health empty; currentGUI separate empty legacy profile stillNeedsLogin",
+    "m5_node_id": 23,
+    "m5_node_name": "macbook-m5-128",
+    "m5_active_identity_preserved": true,
+    "m1_node_rename_scope": "Only existing46 hostname/given_name; no node deletion/re-registration or address change",
+    "latest_retained_node_evidence": "docs/evidence/tailscale-m1-retained-20261003/retained-node-readback.json",
+    "m1_trusted_tailnet_ping": "HTTP200, nodeM1/emulator-5556/videotoolbox, exactbundledcert chainrequired, hostnamecheckdisabled; existingTLS/TCP only",
+    "tailnet_scope_after_rename_readonly_accepted": true,
+    "tailnet_scope_after_rename_evidence": "docs/evidence/tailscale-m1-retained-20261003/tailnet-scope-readback.json"
   },
   "formal_app_version": "1.30",
   "formal_app_version_code": 31,
@@ -499,6 +512,17 @@
     "candidate_closed_log_readback_native_call": "Started2026-10-03T01:56:59+08:00; caller timed out120s; fixed root receipt still absent on later readback. Payload execution state unknown; no actual marker counts accepted.",
     "candidate_closed_log_readback_receipt_obtained": false,
     "candidate_closed_log_readback_evidence": "evidence/m1-host-isolation-20261002/boot-marker-final-receipt-check.json",
-    "candidate_adb_upstream_review_scope": "Upstream master separates guest-adbd vsock liveness from host-server notification; optional random JDWP listener failure does not alone fail regular ADB listener. SDK37.1.11 branch equivalence unverified; no permission widening inferred from generic markers."
+    "candidate_adb_upstream_review_scope": "Upstream master separates guest-adbd vsock liveness from host-server notification; optional random JDWP listener failure does not alone fail regular ADB listener. SDK37.1.11 branch equivalence unverified; no permission widening inferred from generic markers.",
+    "owner_performance_test_policy": {
+      "existing_owner_test_environment_allowed": true,
+      "host_isolation_is_precondition": false,
+      "scope": "Owner-only bounded existingUID501 M1 experiments, labeled nonisolated; not production acceptance",
+      "retain_isolation_candidate": true,
+      "retain_auth_integrity_replay_and_formal_busy_guard": true,
+      "retain_domestic_cloud_physical_exit": true,
+      "release_to_friend_requires_isolation_acceptance": true,
+      "decision_date": "2026-10-03",
+      "no_runtime_security_checks_disabled": true
+    }
   }
 }
