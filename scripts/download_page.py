@@ -21,10 +21,10 @@ def render_page(metadata):
 <body><h1>给火锅的安卓</h1><p>最新发布：<strong>v{version}</strong>。当前安装版本请看 App 首页“已安装版本”。</p>
 <p><a class="button" href="{html.escape(url, quote=True)}">下载最新版 v{version} · 覆盖安装</a></p>
 <p><a href="AndroidDirect-v{version}.apk">局域网下载 v{version}</a> · <a href="AndroidDirect-SHA256SUMS.txt">文件校验</a></p>
-<ol><li>取消旧的安装窗口，再下载本页最新版覆盖安装；无需卸载或清除 App 数据。</li><li>安装后重新打开 App，确认首页显示“已安装版本 v{version}”。</li><li>默认公网地址为 <code>146.56.249.175:15556</code>，用户名 <code>huoguo</code>；填写已有密码，点“保存密码”可加密保存。</li><li>清晰度、编码模式、码率、帧率、缓冲和声音／指标勾选都在连接前设置，选择会保存。</li></ol>
+<ol><li>取消旧的安装窗口，再下载本页最新版覆盖安装；无需卸载或清除 App 数据。</li><li>安装后重新打开 App，确认首页显示“已安装版本 v{version}”。</li><li>默认公网 M1 为 <code>146.56.249.175:15556</code>，可点选公网 M5 <code>146.56.249.175:15558</code>，也可自行填写 IP 和端口，用户名 <code>huoguo</code>；填写已有密码，点“保存密码”可加密保存。</li><li>清晰度、编码模式、码率、帧率、缓冲和声音／指标勾选都在连接前设置，选择会保存。</li></ol>
 <details open><summary>本次更新内容</summary><pre>{notes}</pre></details>
-<p>局域网地址可手动填写 <code>192.168.9.99:15556</code>。当前虚拟安卓支持一个活动串流，新连接会断开旧连接。</p>
-<p>M5 保持开机、接通电源并登录；最后一个连接退出后 5 分钟息屏，重新连接时唤醒。</p>
+<p>本轮 M1 有线地址为 <code>192.168.9.128:15556</code>；地址变化时可在 App 手动修改，无需重新安装。当前虚拟安卓支持一个活动串流，新连接会断开旧连接。</p>
+<p>M1 保持开机、接通电源并登录；当前测试虚拟安卓已按要求关闭自动息屏，保留运行环境。</p>
 <small>版本码 {int(metadata['version_code'])} · SHA-256 {html.escape(str(metadata['sha256']))}</small>
 </body></html>'''
 
@@ -54,4 +54,5 @@ def sync_downloads(updates, download, metadata):
     atomic('AndroidDirect.apk', apk)
     atomic('AndroidDirect-SHA256SUMS.txt', (metadata['sha256']+'  '+name+'\n').encode())
     atomic('index.html', page)
-    atomic('index-m5.html', page)
+    atomic('index-m1.html', page)
+    atomic('index-m5.html', page)  # Preserve both host download bookmarks

@@ -87,7 +87,7 @@ def main():
     parser.add_argument('--duration', type=float, default=10)
     parser.add_argument('--repeats', type=int, default=2)
     parser.add_argument('--fps', type=int, choices=(30, 60, 120), default=30)
-    parser.add_argument('--avd', default='phone17-root', help='running AVD name for hardware capture')
+    parser.add_argument('--avd', default='RemoteAndroid17Compare', help='running AVD name for hardware capture')
     parser.add_argument('--source-clock', choices=('floor', 'nearest'), default='floor')
     parser.add_argument('--capture', choices=('none', 'hardware'), default='none')
     parser.add_argument('--renderer', choices=('skiagl', 'skiavk'))

@@ -1,10 +1,11 @@
 """Serve only on IPv4 addresses of explicitly selected physical LAN NICs."""
-import ipaddress,os,socket,subprocess,threading,time
+import ipaddress,os,re,socket,subprocess,threading,time
 from http.server import ThreadingHTTPServer
 
 def serve(handler,tls=None):
     interfaces=os.environ['DIRECT_INTERFACES'].split(',')
-    if interfaces!=['en11','en0']:raise RuntimeError('Unexpected M5 interface set')
+    if not interfaces or any(not re.fullmatch(r'en[0-9]+', name) for name in interfaces):
+        raise RuntimeError('Only explicit physical Ethernet/Wi-Fi interfaces are allowed')
     subnet=ipaddress.ip_network('192.168.8.0/23')
     port=int(os.environ['DIRECT_PORT'])
     servers={}

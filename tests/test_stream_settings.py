@@ -4,6 +4,10 @@ from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
 class StreamSettingsTest(unittest.TestCase):
     def test_old_client_default(self):
         self.assertEqual(parse_settings({'max_size':1600},960),(1600,2500000))
+    def test_standard_and_legacy_resolution_presets(self):
+        for size in (768, 960, 1200, 1280, 1600, 1920, 2400):
+            with self.subTest(size=size):
+                self.assertEqual(parse_settings({'max_size':size},960),(size,2500000))
     def test_custom_bitrate_and_boundaries(self):
         for rate in (500000, 2500000, 5123000, 12000000, 24000000, 40000000):
             self.assertEqual(parse_settings({'max_size':1200,'video_bit_rate':rate},960),(1200,rate))

@@ -1,13 +1,20 @@
 apply plugin: 'com.android.application'
+
+// Test-only package override for isolated probe installs that preserve formal app data.
+def probeApplicationId = project.findProperty('probeApplicationId')
+if (project.hasProperty('probeApplicationId') && probeApplicationId != 'local.remoteandroid.direct.experiment') {
+    throw new GradleException('probeApplicationId only accepts local.remoteandroid.direct.experiment')
+}
+
 android {
     namespace 'local.remoteandroid.direct'
     compileSdk 37
     defaultConfig {
-        applicationId 'local.remoteandroid.direct'
+        applicationId(probeApplicationId == null ? 'local.remoteandroid.direct' : probeApplicationId)
         minSdk 30
         targetSdk 37
-        versionCode 29
-        versionName '1.28'
+        versionCode 30
+        versionName '1.29'
         buildConfigField 'String', 'UPDATE_MANIFEST_URL', '"' + (project.findProperty('updateManifestUrl') ?: 'https://146.56.249.175:15556/updates/update.json').replace('"', '') + '"'
     }
     buildFeatures { buildConfig true }

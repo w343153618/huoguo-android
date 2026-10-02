@@ -8,7 +8,8 @@ def parse_settings(settings, default_size):
         raise ValueError('Invalid settings object')
     size = settings.get('max_size', default_size)
     bitrate = settings.get('video_bit_rate', DEFAULT_BIT_RATE)
-    if type(size) is not int or size not in (960, 1200, 1600, 2400):
+    # Standard 16:9 presets plus legacy saved long-edge values.
+    if type(size) is not int or size not in (768, 960, 1200, 1280, 1600, 1920, 2400):
         raise ValueError('Invalid resolution')
     if type(bitrate) is not int or not MIN_BIT_RATE <= bitrate <= MAX_BIT_RATE:
         raise ValueError('Video bitrate must be 500000 to 40000000 bits/s')

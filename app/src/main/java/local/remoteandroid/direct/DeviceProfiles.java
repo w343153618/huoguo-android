@@ -39,36 +39,36 @@ final class DeviceProfiles {
         }
     }
 
-    // 方案一：一加 15 / 高通骁龙旗舰满血 60 帧方案
+    // 方案一：一加 15 / 高通骁龙旗舰 60 FPS 上限方案
     static final Profile ONEPLUS_60FPS = new Profile(
         "oneplus_60fps",
-        "一加 15 · 满血 60 帧",
+        "一加 15 · 60 FPS 上限",
         "高通旗舰专属",
-        "60 FPS 满血输出 · 8.0 Mbps 极清码率 · 60ms 极低延时缓冲 · QTI 极低延时硬解。实测刷抖音、快手满 60 帧丝滑跟手。",
-        1200,      // 540P (540x1200)
-        8000000,   // 8 Mbps
+        "540P · 4 Mbps · 60 FPS 上限 · 60 ms 缓冲。优先硬解，实际流畅度需结合片源和网络测量。",
+        960,       // 540P at a 16:9 source aspect ratio
+        4000000,   // 4 Mbps
         60,        // 60 FPS
         60,        // 60 ms
         "VBR",
         1.0f,
-        -50,       // 声音超前 50ms 达到绝对精准音画同步
+        0,         // Calibrate only after observing actual A/V skew
         true,
         true
     );
 
-    // 方案二：真我 V50 / 联发科天玑稳定 30 帧方案
+    // 方案二：真我 V50 / 联发科天玑 30 FPS 上限方案
     static final Profile REALME_V50_30FPS = new Profile(
         "realme_v50_30fps",
-        "真我 V50 · 稳定 30 帧",
+        "真我 V50 · 30 FPS 上限",
         "联发科天玑专属",
-        "30 FPS 锁定恒稳 · 3.5 Mbps 均衡码率 · 80ms 弹性平滑缓冲 · MTK 安全硬解 · 声音 1.5 倍增强。久刷不热、不卡、不跳帧。",
-        1200,      // 540P (540x1200)
-        3500000,   // 3.5 Mbps
+        "540P · 自适应 VBR · 4 Mbps 目标上限 · 30 FPS 上限 · 80 ms 缓冲 · 声音 1.5 倍。实际效果以 V50 检测为准。",
+        960,       // 540P at a 16:9 source aspect ratio
+        4000000,   // 4 Mbps
         30,        // 30 FPS
         80,        // 80 ms (严格 <= 80ms)
-        "VBR",
+        "ADAPTIVE_VBR",
         1.5f,
-        -50,       // 声音超前 50ms 达到绝对精准音画同步
+        0,         // Calibrate only after observing actual A/V skew
         false,
         false
     );

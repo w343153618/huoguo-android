@@ -229,12 +229,17 @@ public final class DiagnosticSourceActivity extends Activity {
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-            if (event.getActionMasked() == MotionEvent.ACTION_DOWN
-                    || event.getActionMasked() == MotionEvent.ACTION_UP) {
-                Log.i(TAG, "synthetic_touch run_id=" + runId
-                        + " action=" + event.getActionMasked()
-                        + " x=" + event.getX() + " y=" + event.getY());
+            StringBuilder pointers = new StringBuilder();
+            for (int index = 0; index < event.getPointerCount(); index++) {
+                if (index > 0) pointers.append(',');
+                pointers.append(event.getPointerId(index));
             }
+            // Dedicated diagnostic scene only; no unrelated app input is recorded.
+            Log.i(TAG, "synthetic_touch run_id=" + runId
+                    + " action=" + event.getActionMasked()
+                    + " count=" + event.getPointerCount()
+                    + " ids=" + pointers + " source=" + event.getSource()
+                    + " x=" + event.getX() + " y=" + event.getY());
             return true;
         }
 

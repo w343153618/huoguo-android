@@ -1,4 +1,4 @@
-"""Remove the emulator's Pixel 6 display decoration from the physical 540p profile.
+"""Remove Pixel 6 display decoration from opted-in physical display profiles.
 
 Called after Android finishes booting. This only disables the two installed Pixel
 6 overlays; it does not create overlays, change display geometry, or start a
@@ -14,13 +14,19 @@ import threading
 
 
 class PhysicalDisplayProfileError(RuntimeError):
-    """An explicitly requested physical 540p profile is missing or inconsistent."""
+    """An explicitly requested physical display profile is inconsistent."""
 
 
 _log = logging.getLogger(__name__)
 _lock = threading.Lock()
 _attempted_boot_id = None
+_attempted_profile = None
 _last_result = None
+_PROFILES = {
+    "540x1200": (("540", "1200"), "210", "540p"),
+    "720x1280": (("720", "1280"), "320", "720p"),
+    "1080x1920": (("1080", "1920"), "480", "1080p"),
+}
 _PIXEL6_OVERLAYS = (
     "com.android.internal.emulation.pixel_6",
     "com.android.systemui.emulation.pixel_6",
@@ -54,43 +60,46 @@ def _lookup(adb, resource):
     return value.strip()
 
 
-def _verify_geometry(size, density):
+def _verify_geometry(size, density, requested="540x1200"):
+    expected_size, expected_density, _ = _PROFILES[requested]
     physical_size = re.search(r"^Physical size:\s*(\d+)x(\d+)\s*$", size, re.M)
     physical_density = re.search(r"^Physical density:\s*(\d+)\s*$", density, re.M)
-    if (not physical_size or physical_size.groups() != ("540", "1200")
-            or not physical_density or physical_density.group(1) != "210"):
+    if (not physical_size or physical_size.groups() != expected_size
+            or not physical_density or physical_density.group(1) != expected_density):
         raise PhysicalDisplayProfileError(
-            "DIRECT_PHYSICAL_DISPLAY=540x1200 requires Physical size 540x1200 "
-            "and Physical density 210; received size=%r, density=%r. "
+            "DIRECT_PHYSICAL_DISPLAY=%s requires Physical size %s "
+            "and Physical density %s; received size=%r, density=%r. "
             "Restore the AVD physical display profile and cold boot before connecting."
-            % (size.strip(), density.strip())
+            % (requested, requested, expected_density, size.strip(), density.strip())
         )
     override_size = re.search(r"^Override size:\s*(\d+)x(\d+)\s*$", size, re.M)
     override_density = re.search(r"^Override density:\s*(\d+)\s*$", density, re.M)
-    if ((override_size and override_size.groups() != ("540", "1200"))
-            or (override_density and override_density.group(1) != "210")):
+    if ((override_size and override_size.groups() != expected_size)
+            or (override_density and override_density.group(1) != expected_density)):
         raise PhysicalDisplayProfileError(
-            "The physical 540x1200/210 display has a conflicting wm override: "
+            "The physical %s/%s display has a conflicting wm override: "
             "size=%r, density=%r. Reset the conflicting override before connecting."
-            % (size.strip(), density.strip())
+            % (requested, expected_density, size.strip(), density.strip())
         )
 
 
 def apply_540_profile(adb, *, environ=None):
-    """Apply the opted-in display adjustment, using an adb(*args) callable.
+    """Apply an opted-in display adjustment through the legacy public name.
 
     adb must return subprocess.CompletedProcess with text output (raising on
     failure is also supported). An invalid physical profile raises
     PhysicalDisplayProfileError before any mutation. Optional decoration and
     diagnostic failures produce a warning result so remote access remains usable.
-    Successful and unsuccessful overlay attempts are memoized per boot ID to
+    Successful and unsuccessful overlay attempts are memoized per boot/profile to
     avoid repeating UI changes on each connection. Restarting the gateway allows
     a failed attempt to be retried after its cause has been fixed.
     """
-    global _attempted_boot_id, _last_result
+    global _attempted_boot_id, _attempted_profile, _last_result
     env = os.environ if environ is None else environ
-    if env.get("DIRECT_PHYSICAL_DISPLAY") != "540x1200":
-        return {"status": "skipped", "reason": "physical 540p profile not requested"}
+    requested = env.get("DIRECT_PHYSICAL_DISPLAY")
+    if requested not in _PROFILES:
+        return {"status": "skipped", "reason": "supported physical profile not requested"}
+    _, expected_density, label = _PROFILES[requested]
 
     with _lock:
         try:
@@ -100,21 +109,21 @@ def apply_540_profile(adb, *, environ=None):
             if not boot_id:
                 raise ValueError("Android kernel boot ID is unavailable")
         except Exception as exc:
-            reason = "Cannot check Android boot for the 540p display profile: " + _failure(exc)
+            reason = "Cannot check Android boot for the %s display profile: " % label + _failure(exc)
             _log.warning(reason)
             return {"status": "deferred", "reason": reason}
 
-        if boot_id == _attempted_boot_id:
+        if boot_id == _attempted_boot_id and requested == _attempted_profile:
             return dict(_last_result, cached=True)
 
         try:
             size = _run(adb, "shell", "wm", "size")
             density = _run(adb, "shell", "wm", "density")
         except Exception as exc:
-            reason = "Cannot verify the physical 540p display; overlays unchanged: " + _failure(exc)
+            reason = "Cannot verify the physical %s display; overlays unchanged: " % label + _failure(exc)
             _log.warning(reason)
             return {"status": "deferred", "boot_id": boot_id, "reason": reason}
-        _verify_geometry(size, density)
+        _verify_geometry(size, density, requested)
 
         errors = []
         for overlay in _PIXEL6_OVERLAYS:
@@ -130,8 +139,8 @@ def apply_540_profile(adb, *, environ=None):
                 value = _lookup(adb, resource)
                 cutouts[resource] = value
                 if value:
-                    errors.append("The 540p display still has a cutout in %s: %s"
-                                  % (resource, value[:250]))
+                    errors.append("The %s display still has a cutout in %s: %s"
+                                  % (label, resource, value[:250]))
             except Exception as exc:
                 errors.append("Cannot verify empty cutout %s: %s" % (resource, _failure(exc)))
 
@@ -142,15 +151,16 @@ def apply_540_profile(adb, *, environ=None):
                 heights[orientation] = _lookup(adb, resource)
             except Exception as exc:
                 # Height lookup is diagnostic; it does not determine success.
-                _log.warning("Cannot read 540p %s status bar height: %s",
-                             orientation, _failure(exc))
+                _log.warning("Cannot read %s %s status bar height: %s",
+                             label, orientation, _failure(exc))
 
         result = {"status": "warning" if errors else "applied", "boot_id": boot_id,
+                  "profile": requested, "physical_density": int(expected_density),
                   "cutouts": cutouts, "status_bar_heights": heights}
         if errors:
             result["errors"] = errors
-            _log.warning("540p display decoration adjustment incomplete: %s", "; ".join(errors))
+            _log.warning("%s display decoration adjustment incomplete: %s", label, "; ".join(errors))
         else:
-            _log.info("540p display profile applied; status bar heights: %s", heights)
-        _attempted_boot_id, _last_result = boot_id, result
+            _log.info("%s display profile applied; status bar heights: %s", label, heights)
+        _attempted_boot_id, _attempted_profile, _last_result = boot_id, requested, result
         return dict(result)

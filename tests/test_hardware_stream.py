@@ -1,12 +1,14 @@
 import pathlib
+import collections
+import io
 import socket
 import struct
 import tempfile
 import unittest
 
 from hardware_stream import (CONFIG_FLAG, PTS_MASK, HostHardwareSession,
-                             FrameRateBudget, audio_timestamp, clock_mapping,
-                             guest_server_pids, read_control, scale_touch)
+                             FrameRateBudget, audio_timestamp, clock_mapping, experimental_burst_arguments,
+                             guest_server_pids, read_control, read_exact, scale_touch, take_raw_frame)
 
 
 class FragmentedInput:
@@ -20,6 +22,27 @@ class FragmentedInput:
 
 
 class HardwareProtocolTest(unittest.TestCase):
+    def test_experimental_burst_is_omitted_for_the_deployed_encoder(self):
+        self.assertEqual(experimental_burst_arguments(None, 'VBR', None, None), [])
+        self.assertEqual(experimental_burst_arguments(None, 'CBR', None, None), [])
+
+    def test_burst_requires_supported_window_and_explicit_vbr_binary(self):
+        for native, mode, size, duration in ((None, 'VBR', 100000, .08),
+                ('native', 'CBR', 100000, .08), ('native', 'VBR', None, .08),
+                ('native', 'VBR', 100000, None), ('native', 'VBR', 10, .08),
+                ('native', 'VBR', 100000, float('nan')), ('native', 'VBR', True, .08)):
+            with self.subTest(native=native, mode=mode, size=size, duration=duration):
+                with self.assertRaises(ValueError):
+                    experimental_burst_arguments(native, mode, size, duration)
+        self.assertEqual(experimental_burst_arguments('native', 'ADAPTIVE_VBR', 100000, .08),
+                         ['--burst-bytes', '100000', '--burst-seconds', '0.08'])
+
+    def test_native_pipe_reads_exact_bytes_and_refuses_truncated_access_unit(self):
+        source = io.BytesIO(b'h264\x00\x01')
+        self.assertEqual(read_exact(source, 4), b'h264')
+        with self.assertRaises(EOFError):
+            read_exact(source, 3)
+
     def test_interleaved_variable_messages_keep_next_control_aligned(self):
         name = b'keyboard'
         descriptor = b'\x05\x01\x09\x06'
@@ -95,6 +118,17 @@ class HardwareProtocolTest(unittest.TestCase):
         now[0] += 100
         budget.consume(); budget.consume()
         self.assertAlmostEqual(budget.delay(), 1 / 60)
+
+    def test_latest_raw_frame_drops_stale_images_before_the_encoder(self):
+        frames = collections.deque(['older', 'newest'], maxlen=2)
+        self.assertEqual(take_raw_frame(frames, 'latest'), ('newest', 1))
+        self.assertFalse(frames)
+        self.assertEqual(take_raw_frame(frames, 'latest'), (None, 0))
+        frames.extend(['older', 'newest'])
+        self.assertEqual(take_raw_frame(frames, 'fifo'), ('older', 0))
+        self.assertEqual(list(frames), ['newest'])
+        with self.assertRaises(ValueError):
+            take_raw_frame(frames, 'unsafe')
 
 
 if __name__ == '__main__':

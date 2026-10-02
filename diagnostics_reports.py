@@ -107,6 +107,7 @@ def validate_report(report):
     integer_ranges = {
         'elapsed_ms': (0, 3_600_000), 'received_frames': (0, 1_000_000_000),
         'rendered_frames': (0, 1_000_000_000), 'video_bytes': (0, 1_000_000_000_000),
+        'codec_callback_frames': (0, 1_000_000_000),
         'render_gap_count': (0, 1_000_000_000), 'discarded_frames': (0, 1_000_000_000),
         'thermal_start': (-1, 6), 'thermal_end': (-1, 6),
         'battery_start': (-1, 100), 'battery_end': (-1, 100),
@@ -115,6 +116,7 @@ def validate_report(report):
     }
     number_ranges = {
         'received_fps': (0, 1000), 'rendered_fps': (0, 1000), 'receive_mbps': (0, 10_000),
+        'codec_callback_fps': (0, 1000),
         'max_render_gap_ms': (0, 3_600_000), 'rtt_p50_ms': (-1, 120_000), 'rtt_p95_ms': (-1, 120_000),
         'last_receive_ago_ms': (-1, 3_600_000), 'last_render_ago_ms': (-1, 3_600_000),
         'receive_interval_jitter_ms': (0, 3_600_000), 'render_interval_jitter_ms': (0, 3_600_000),
@@ -124,11 +126,14 @@ def validate_report(report):
         'client_pipeline_p50_ms': (0, 60_000), 'client_pipeline_p95_ms': (0, 60_000),
         'app_heap_peak_mb': (0, 16_384), 'native_heap_peak_mb': (0, 16_384),
     }
-    flags = ('hardware_decoder', 'network_changed', 'vpn_present', 'adaptive_rejected', 'valid')
+    flags = ('hardware_decoder', 'network_changed', 'vpn_present', 'adaptive_rejected', 'valid',
+             'actual_display_fps_measured', 'actual_audio_video_skew_measured')
+    timing_enums = {'codec_timing_basis': ('java_codec_callback_receipt',),
+                    'vendor_timestamp_status': ('not_used_for_diagnostic_timing',)}
     texts = {'decoder_name': 160, 'error': 160, 'invalid_reason': 160, 'transport': 32}
     sample_ranges = {'app_cpu_percent': (0, 6400), 'java_heap_mb': (0, 16_384), 'native_heap_mb': (0, 16_384), 'signal_strength_dbm': (-150, 0)}
     for stage in stages:
-        _object(stage, (*core, *integer_ranges, *number_ranges, *flags, *texts, 'dimensions', 'samples'), core)
+        _object(stage, (*core, *integer_ranges, *number_ranges, *flags, *texts, *timing_enums, 'dimensions', 'samples'), core)
         _text(stage['label'], 120, False)
         _number(stage['max_size'], 128, 4096, True)
         _number(stage['bitrate'], 500_000, 40_000_000, True)
@@ -144,6 +149,12 @@ def validate_report(report):
         for key in flags:
             if key in stage:
                 _boolean(stage[key])
+        for key in ('actual_display_fps_measured', 'actual_audio_video_skew_measured'):
+            if stage.get(key) is True:
+                raise DiagnosticsError(400, 'Codec callbacks cannot certify physical display or audio/video timing')
+        for key, choices in timing_enums.items():
+            if key in stage:
+                _enum(stage[key], choices)
         for key, limit in texts.items():
             if key in stage:
                 _text(stage[key], limit)
@@ -153,8 +164,8 @@ def validate_report(report):
         if not isinstance(samples, list) or len(samples) > MAX_SAMPLES:
             raise DiagnosticsError(400, 'Too many diagnostic samples')
         for sample in samples:
-            _object(sample, ('elapsed_ms', 'received_frames', 'rendered_frames', 'video_bytes', 'rtt_ms', 'thermal_status', *sample_ranges), ('elapsed_ms',))
-            for key in ('elapsed_ms', 'received_frames', 'rendered_frames', 'video_bytes'):
+            _object(sample, ('elapsed_ms', 'received_frames', 'rendered_frames', 'codec_callback_frames', 'video_bytes', 'rtt_ms', 'thermal_status', *sample_ranges), ('elapsed_ms',))
+            for key in ('elapsed_ms', 'received_frames', 'rendered_frames', 'codec_callback_frames', 'video_bytes'):
                 if key in sample:
                     _number(sample[key], *integer_ranges[key], integer=True)
             if 'rtt_ms' in sample:

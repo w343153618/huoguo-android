@@ -260,7 +260,7 @@ def main():
     parser.add_argument("--discovery", required=True, type=pathlib.Path)
     parser.add_argument("--target", help="optional localhost endpoint; must match discovery")
     parser.add_argument("--duration", type=float, default=10.0)
-    parser.add_argument("--serial", default="emulator-5554")
+    parser.add_argument("--serial", default="emulator-5556")
     parser.add_argument("--adb", type=pathlib.Path,
                         default=pathlib.Path.home() / "Library/Android/sdk/platform-tools/adb")
     args = parser.parse_args()

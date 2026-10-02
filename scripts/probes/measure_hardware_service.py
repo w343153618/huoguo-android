@@ -16,8 +16,9 @@ import threading
 import time
 import uuid
 
-BASE = pathlib.Path.home() / 'Library/Application Support/AndroidRemote/direct'
-sys.path.insert(0, str(BASE))
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+BASE = pathlib.Path(os.environ.get('DIRECT_STATE_DIR', str(pathlib.Path.home() / 'Documents/ChatGPT/others/android-remote/m1-compare')))
+sys.path.insert(0, str(ROOT))
 from hardware_stream import CONFIG_FLAG, PTS_MASK, HostHardwareSession, read_exact
 
 
@@ -27,8 +28,7 @@ class GatewaySession:
         password = os.environ.get('HUOGUO_TEST_PASSWORD')
         if not password:
             raise RuntimeError('existing account password missing from test environment')
-        config = plistlib.loads((pathlib.Path.home() / 'Library/LaunchAgents/local.remoteandroid.direct.plist').read_bytes())
-        certificate = config['EnvironmentVariables']['DIRECT_CERT']
+        certificate = os.environ.get('DIRECT_CERT', str(pathlib.Path.home() / '.config/sunshine/credentials/cacert.pem'))
         self.context = ssl.create_default_context(cafile=certificate)
         self.context.check_hostname = False  # Exact private CA is pinned; LAN IPs may change.
         self.authorization = 'Basic ' + base64.b64encode(('huoguo:' + password).encode()).decode()
@@ -92,7 +92,7 @@ def main():
     adb_path = str(pathlib.Path.home() / 'Library/Android/sdk/platform-tools/adb')
 
     def adb(*words):
-        return subprocess.run([adb_path, '-s', 'emulator-5554', *words],
+        return subprocess.run([adb_path, '-s', 'emulator-5556', *words],
                               capture_output=True, text=True, check=True, timeout=20).stdout.strip()
 
     if 'com.genymobile.scrcpy.Server' in adb('shell', 'ps', '-A', '-o', 'NAME,ARGS'):
@@ -124,7 +124,7 @@ def main():
             '--es', 'run_id', run_id, '--ei', 'source_fps', str(args.fps), '--es', 'source_clock', 'nearest',
             '--ez', 'audio_probe', 'true')
         session = (GatewaySession(args.fps, args.mode, args.bitrate) if args.gateway else
-                   HostHardwareSession(BASE, 'emulator-5554', 'phone17-root',
+                   HostHardwareSession(BASE, 'emulator-5556', 'RemoteAndroid17Compare',
                                        1200, args.bitrate, args.fps, args.mode))
         channels = {role: session.channel(role) for role in ('video', 'audio', 'control')}
 
@@ -241,7 +241,7 @@ def main():
                           'adaptive_acknowledgements': acknowledgements,
                           'touch_events': touch, 'back_key_exited': back_exited,
                           'hardware_readback': hardware, 'local_h264_decode_exit': decode.returncode,
-                          'scope': 'M5 local production adapter and optional loopback TLS with synthetic video, AAC and input; excludes WAN and real-phone playback',
+                          'scope': 'M1 local production adapter and optional loopback TLS with synthetic video, AAC and input; excludes WAN and real-phone playback',
                           'pixels_or_compressed_video_saved': False}, indent=2))
     finally:
         done.set()

@@ -1,4 +1,4 @@
-"""Build/sign on the owner's Mac, publish private releases, push updates for M5 polling.
+"""Build/sign on the owner's Mac, publish private releases, push updates for M1 polling.
 The existing signing key never leaves the local machine.
 """
 import argparse,hashlib,json,os,pathlib,re,shutil,subprocess,tempfile
@@ -43,4 +43,4 @@ with tempfile.TemporaryDirectory(prefix='huoguo-release-') as directory:
     for argv in (['config','user.name','Huoguo release'],['config','user.email','release@users.noreply.github.com'],['add','HuoguoAndroid.apk','update.json'],['commit','-m','Signed release '+tag],['remote','add','origin','https://github.com/'+args.repository+'.git']):
         subprocess.run(['git','-C',directory,*argv],check=True,capture_output=True)
     subprocess.run(['git','-C',directory,'-c','credential.helper=!gh auth git-credential','push','origin','HEAD:updates','--force'],check=True)
-print('Published '+tag+'; M5 polls the private update branch; signing key remained on the Mac')
+print('Published '+tag+'; M1 polls the private update branch; signing key remained on the Mac')

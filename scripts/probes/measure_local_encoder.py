@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure the existing guest encoder on a synthetic scene, without server accounts.
 
-Run on the Mac hosting emulator-5554. This is a local capture/encode measurement;
+Run on the Mac hosting emulator-5556. This is a local capture/encode measurement;
 it does not measure a real phone's decoder, Internet transit, or touch latency.
 """
 import argparse
@@ -20,7 +20,7 @@ import uuid
 HOME = pathlib.Path.home()
 ADB = str(HOME / 'Library/Android/sdk/platform-tools/adb')
 BASE = HOME / 'Library/Application Support/AndroidRemote'
-SERIAL = 'emulator-5554'
+SERIAL = 'emulator-5556'
 SCENE = 'local.remoteandroid.benchmark/.DiagnosticSourceActivity'
 
 
@@ -35,7 +35,7 @@ def guest_cpu():
     return sum(values), values[3] + values[4]
 
 
-def qemu_pid(avd='phone17-root', serial=SERIAL):
+def qemu_pid(avd='RemoteAndroid17Compare', serial=SERIAL):
     port = serial.removeprefix('emulator-')
     rows = subprocess.run(['pgrep', '-f', 'qemu-system-aarch64'],
                           text=True, capture_output=True).stdout.split()

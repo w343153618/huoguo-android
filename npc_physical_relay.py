@@ -15,7 +15,7 @@ import time
 
 DESTINATION = ('146.56.249.175', 8024)
 LISTEN = ('127.0.0.1', 18024)
-INTERFACES = tuple(os.environ.get('NPC_PHYSICAL_INTERFACES', 'en11,en0').split(','))
+INTERFACES = tuple(os.environ.get('NPC_PHYSICAL_INTERFACES', 'en7,en0').split(','))
 IP_BOUND_IF = 25  # Apple XNU bsd/netinet/in.h
 LINK_CHECK_SECONDS = 5
 FAILBACK_STABLE_SECONDS = 15

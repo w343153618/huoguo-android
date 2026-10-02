@@ -9,15 +9,15 @@ from performance_profile import apply_performance_profile
 from stream_settings import parse_settings, parse_bitrate_mode, parse_max_fps
 from hardware_stream import HostHardwareSession
 from diagnostics_reports import DiagnosticSource, DiagnosticsError, ReportStore, read_json
-BASE = pathlib.Path(__file__).resolve().parent
+BASE = pathlib.Path(os.environ.get('DIRECT_STATE_DIR', str(pathlib.Path(__file__).resolve().parent)))
 SDK = pathlib.Path.home() / 'Library/Android/sdk'
 ADB = str(SDK / 'platform-tools/adb')
 CREDS = pathlib.Path.home() / '.config/sunshine/credentials'
 CERT, KEY = os.environ.get('DIRECT_CERT',str(CREDS/'cacert.pem')), os.environ.get('DIRECT_KEY',str(CREDS/'cakey.pem'))
 AUTH_FILE = os.environ.get('DIRECT_AUTH_FILE')
-SERIAL = os.environ.get('DIRECT_SERIAL','emulator-5554')
-AVD = os.environ.get('DIRECT_AVD','RemoteAndroid17')
-VIDEO_MAX_SIZE = int(os.environ.get('DIRECT_MAX_SIZE','960'))
+SERIAL = os.environ.get('DIRECT_SERIAL','emulator-5556')
+AVD = os.environ.get('DIRECT_AVD','RemoteAndroid17Compare')
+VIDEO_MAX_SIZE = int(os.environ.get('DIRECT_MAX_SIZE','1200'))
 VIDEO_BACKEND = os.environ.get('DIRECT_VIDEO_BACKEND', 'guest')
 if VIDEO_BACKEND not in ('guest', 'videotoolbox'):
     raise ValueError('Invalid video backend')
@@ -37,7 +37,7 @@ def sleep_guest():
     try: adb('shell','input','keyevent','127')
     except Exception: pass
     adb('shell','input','keyevent','223')
-idle_screen = IdleScreen(lock, lambda: bool(sessions), sleep_guest, delay=int(os.environ.get('DIRECT_IDLE_DELAY','15')))
+idle_screen = IdleScreen(lock, lambda: bool(sessions), sleep_guest, delay=int(os.environ.get('DIRECT_IDLE_DELAY','300')))
 def ensure_android():
     global vm_proc
     device_present=False
@@ -138,7 +138,8 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(401,{'error':'Login rejected'}); return False
     def do_GET(self):
         if self.path == "/ping":
-            self.reply(200, {"ok": True}); return
+            self.reply(200, {"ok": True, "node": os.environ.get('DIRECT_NODE_NAME', 'unconfigured'),
+                             "serial": SERIAL, "video_backend": VIDEO_BACKEND}); return
         if self.path == '/diagnostics/reports' or self.path.startswith('/diagnostics/reports/'):
             if not self.auth(): return
             try:
@@ -313,7 +314,7 @@ class Handler(BaseHTTPRequestHandler):
         threading.Thread(target=pump,args=(self.connection,upstream),daemon=True).start()
         pump(upstream,self.connection); self.close_connection=True
 if __name__=='__main__':
-    if os.environ.get('DIRECT_PHYSICAL_DISPLAY') == '540x1200':
+    if os.environ.get('DIRECT_PHYSICAL_DISPLAY') in ('540x1200', '720x1280', '1080x1920'):
         def prepare_display():
             try: ensure_android()
             except Exception as error: print('Physical display preparation: '+type(error).__name__,flush=True)

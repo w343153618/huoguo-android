@@ -53,7 +53,8 @@ class DisplayProfileTest(unittest.TestCase):
     def setUp(self):
         self.adb = FakeAdb()
         self.env = {"DIRECT_PHYSICAL_DISPLAY": "540x1200"}
-        self.memo = patch.multiple(profile, _attempted_boot_id=None, _last_result=None)
+        self.memo = patch.multiple(profile, _attempted_boot_id=None,
+                                   _attempted_profile=None, _last_result=None)
         self.memo.start()
         self.addCleanup(self.memo.stop)
 
@@ -147,6 +148,67 @@ class DisplayProfileTest(unittest.TestCase):
         self.assertEqual(self.adb.mutations(), [])
         self.adb.boot_id = "recovered-boot-id\n"
         self.assertEqual(self.apply()["status"], "applied")
+
+    def test_explicit_1080_profile_preserves_physical_geometry(self):
+        self.env = {"DIRECT_PHYSICAL_DISPLAY": "1080x1920"}
+        self.adb.size = "Physical size: 1080x1920\n"
+        self.adb.density = "Physical density: 480\n"
+        result = self.apply()
+        self.assertEqual(result["status"], "applied")
+        self.assertEqual(result["profile"], "1080x1920")
+        self.assertEqual(result["physical_density"], 480)
+        self.assertEqual([args for args in self.adb.calls if args[:2] == ("shell", "wm")],
+                         [("shell", "wm", "size"), ("shell", "wm", "density")])
+
+    def test_1080_rejects_an_old_720_override(self):
+        self.env = {"DIRECT_PHYSICAL_DISPLAY": "1080x1920"}
+        self.adb.size = "Physical size: 1080x1920\nOverride size: 720x1280\n"
+        self.adb.density = "Physical density: 480\n"
+        with self.assertRaises(profile.PhysicalDisplayProfileError):
+            self.apply()
+        self.assertEqual(self.adb.mutations(), [])
+
+    def test_explicit_720_profile_preserves_physical_geometry(self):
+        self.env = {"DIRECT_PHYSICAL_DISPLAY": "720x1280"}
+        self.adb.size = "Physical size: 720x1280\n"
+        self.adb.density = "Physical density: 320\n"
+        result = self.apply()
+        self.assertEqual(result["status"], "applied")
+        self.assertEqual(result["profile"], "720x1280")
+        self.assertEqual(result["physical_density"], 320)
+        self.assertEqual(result["cutouts"], dict.fromkeys(profile._CUTOUT_RESOURCES, ""))
+        self.assertEqual(len(self.adb.mutations()), 2)
+        self.assertEqual([args for args in self.adb.calls if args[:2] == ("shell", "wm")],
+                         [("shell", "wm", "size"), ("shell", "wm", "density")])
+        self.assertTrue(self.apply()["cached"])
+        self.assertEqual(len(self.adb.mutations()), 2)
+
+    def test_720_requires_physical_mode_and_rejects_conflicting_overrides(self):
+        self.env = {"DIRECT_PHYSICAL_DISPLAY": "720x1280"}
+        for size, density in (
+            ("Physical size: 540x1200\nOverride size: 720x1280\n", "Physical density: 320\n"),
+            ("Physical size: 720x1280\n", "Physical density: 210\nOverride density: 320\n"),
+            ("Physical size: 720x1280\nOverride size: 540x1200\n", "Physical density: 320\n"),
+            ("Physical size: 720x1280\n", "Physical density: 320\nOverride density: 210\n"),
+            ("Override size: 720x1280\n", "Physical density: 320\n"),
+        ):
+            with self.subTest(size=size, density=density):
+                self.adb.size, self.adb.density = size, density
+                with self.assertRaises(profile.PhysicalDisplayProfileError):
+                    self.apply()
+                self.assertEqual(self.adb.mutations(), [])
+
+    def test_profile_change_cannot_reuse_prior_geometry_validation(self):
+        self.assertEqual(self.apply()["status"], "applied")
+        self.env = {"DIRECT_PHYSICAL_DISPLAY": "720x1280"}
+        with self.assertRaises(profile.PhysicalDisplayProfileError):
+            self.apply()
+        self.assertEqual(len(self.adb.mutations()), 2)
+        self.adb.size, self.adb.density = "Physical size: 720x1280\n", "Physical density: 320\n"
+        result = self.apply()
+        self.assertEqual(result["profile"], "720x1280")
+        self.assertNotIn("cached", result)
+        self.assertEqual(len(self.adb.mutations()), 4)
 
 
 if __name__ == "__main__":

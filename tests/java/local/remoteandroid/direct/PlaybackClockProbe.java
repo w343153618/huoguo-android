@@ -6,17 +6,17 @@ public final class PlaybackClockProbe {
         if (expected != actual) throw new AssertionError(label + ": " + actual + " != " + expected);
     }
 
-    public static void main(String[] args) {
-        PlaybackClock clock = new PlaybackClock(100);
+    public static void main(String[] args) throws Exception {
+        PlaybackClock clock = new PlaybackClock(80);
         clock.observeAudio(0, 900_000_000L);
-        equal(1_000_000_000L, clock.deadline(0), "audio can initialize playback");
+        equal(980_000_000L, clock.deadline(0), "audio can initialize playback");
         clock.observe(0, 1_000_000_000L);
-        equal(1_100_000_000L, clock.deadline(0), "first video anchors its arrival");
+        equal(1_080_000_000L, clock.deadline(0), "first video anchors its arrival");
         clock.observeAudio(0, 800_000_000L);
-        equal(1_100_000_000L, clock.deadline(0), "early audio cannot pull video earlier");
+        equal(1_080_000_000L, clock.deadline(0), "early audio cannot pull video earlier");
 
         // A hardware decoder with a steady extra 150 ms delay must not have
-        // every output discarded merely because the initial buffer was 100 ms.
+        // every output discarded merely because the initial buffer was 80 ms.
         long frameNs = 33_333_000L;
         for (int i = 0; i < 3; i++) {
             long ready = 1_250_000_000L + i * frameNs;
@@ -53,6 +53,18 @@ public final class PlaybackClockProbe {
             if (i >= 3 && target < ready - 40_000_000L)
                 throw new AssertionError("decoder backlog never resynchronized at frame " + i);
         }
+        java.lang.reflect.Field hold=PlaybackClock.class.getDeclaredField("decoderHoldNs");
+        hold.setAccessible(true);
+        if(hold.getLong(overloaded)>30_000_000L)throw new AssertionError("hidden hold exceeds 30ms");
+        long finalReady=1_000_000_000L+11*33_333_000L+500_000_000L;
+        if(target-finalReady>33_000_000L)throw new AssertionError("recovery adds another full buffer");
+        PlaybackClock calibrated=new PlaybackClock(80,25);
+        calibrated.observe(0,1_000_000_000L);
+        equal(calibrated.deadline(0)+25_000_000L,calibrated.audioDeadline(0),"positive calibration delays audio");
+        calibrated.setAvSyncOffsetMs(-25);
+        equal(calibrated.deadline(0)-25_000_000L,calibrated.audioDeadline(0),"negative calibration advances audio");
+        try { new PlaybackClock(120); throw new AssertionError("120ms accepted"); }
+        catch(IllegalArgumentException expected) { }
         System.out.println("PlaybackClockProbe PASS");
     }
 }

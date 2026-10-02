@@ -33,8 +33,8 @@ def main():
     parser.add_argument('--duration', type=float, default=10)
     parser.add_argument('--fps', type=int, choices=(30, 60, 120), default=30)
     parser.add_argument('--source-fps', type=int, choices=(30, 60, 120), default=30)
-    parser.add_argument('--serial', default='emulator-5554')
-    parser.add_argument('--avd', default='phone17-root')
+    parser.add_argument('--serial', default='emulator-5556')
+    parser.add_argument('--avd', default='RemoteAndroid17Compare')
     args = parser.parse_args()
     if not 3 <= args.duration <= 20 or not args.encoder.is_file():
         parser.error('requires a compiled encoder and a 3-20 second duration')

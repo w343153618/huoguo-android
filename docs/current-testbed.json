@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "canonical_host": "M1",
+  "guest_serial": "emulator-5556",
+  "phone_name": "OnePlus12 PJD110",
+  "phone_serial": "f7fc9469",
+  "phone_android": "16",
+  "phone_wifi_ipv4": "192.168.9.149",
+  "host_bind_ipv4": "192.168.9.128",
+  "host_interface": "en7",
+  "stream_fps_cap": 120,
+  "requested_phone_hz": 120,
+  "physical_guest_resolution": [
+    1080,
+    1920
+  ],
+  "cpu_cores": 6,
+  "memory_mib": 16384,
+  "buffer_ms": 80,
+  "experimental_client_package": "local.remoteandroid.direct.experiment",
+  "instrumentation_package": "local.remoteandroid.phoneprobe.experiment",
+  "note": "Current retained experiment profile; IPs must be freshly verified before each test; no production defaults or credentials included",
+  "phone_performance_profile": {
+    "user_declared_cpu_throttled": true,
+    "surrogate_target": "realme V50",
+    "preserve_user_cpu_limits": true,
+    "do_not_raise_cpu_frequency_or_disable_limiters": true,
+    "online_cpu_ids": "0-7",
+    "cpu_limit_evidence": "evidence/overnight-20261002/final-health.json",
+    "sampling_boundary": "Dynamic CPU max/current, approx5s non-atomic sysfs readbacks only. Current experiment observer uses explicit CLOCK_MONOTONIC host-before/after brackets; no host-phone time subtraction. Earlier lower-cpu evidence used Python monotonic_ns with an observed offset from capture CLOCK_MONOTONIC and must not be retroactively aligned.",
+    "equivalence_verified": false,
+    "last_observed_policy_max_khz": {
+      "policy0": 672000,
+      "policy2": 960000,
+      "policy5": 960000,
+      "policy7": 902400
+    },
+    "preflight_policy_max_khz": {
+      "policy0": 672000,
+      "policy2": 729600,
+      "policy5": 614400,
+      "policy7": 672000
+    }
+  },
+  "resource_fields_scope": "cpu_cores and memory_mib above describe Android VM on M1, not physical phone",
+  "last_completed_test": {
+    "evidence": "evidence/overnight-20261002/pacing-analysis.json",
+    "encoded_resolution": [
+      720,
+      1280
+    ],
+    "bitrate_target_bps": 8000000,
+    "bitrate_mode": "VBR",
+    "requested_fps_cap": 120,
+    "raw_submit_fps": 120,
+    "native_expected_fps": 120,
+    "phone_surface_hint_hz": 120,
+    "phone_panel_hz": 120,
+    "buffer_ms": 80,
+    "encoder_pixel_pool": "manual",
+    "socket_pacing": true,
+    "socket_deadline_dependency_guard": true,
+    "native_wire_mbps": 32,
+    "phone_sf_fps": [
+      59.64,
+      59.56,
+      59.6,
+      59.8
+    ],
+    "phone_sf_gaps_over_100ms": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "scope": "Real YouTube on M1 physicalLAN encrypted UDP, fixed phone [5,30) windows; four runs compare socket pacing plus guard bundle. Not stable120/WAN/V50/optical latency acceptance.",
+    "native_touch_enabled": true,
+    "automated_touch_exercise": false,
+    "cpu_frequency_locked": false,
+    "source_requested_seek_verified": false,
+    "native_final_summaries_complete": false
+  },
+  "updated_from_evidence_utc": "2026-10-01T23:59:08.076943+00:00",
+  "user_authorized_buffer_max_ms": 100,
+  "experimental_buffer_options_ms": [
+    30,
+    50,
+    60,
+    80,
+    100
+  ],
+  "buffer_choice_scope": "Independent experiment App UI/save/reopen verified; 80 ms balanced recommendation, 100 ms optional; formal release not published",
+  "emulator_experimental_process_type": "Interactive",
+  "emulator_process_type_evidence": "evidence/latency-refinement-20261001/final-retained-state.json",
+  "source_qos_boundary": "Interactive remains experimental. Multiple real phone windows near60 now observed; this does not isolate ProcessType effect or establish WAN/V50/continuous stability.",
+  "renderer": "skiavk",
+  "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
+  "final_health_evidence": "evidence/overnight-20261002/final-health.json",
+  "independent_experimental_app_sha256": "79deb22e43ec5dc4f0b758f93ee6ff96bfaa9e362445ff59276051184b0a8fd3",
+  "latest_campaign": {
+    "evidence": "evidence/overnight-20261002/real-video-summary.json",
+    "real_video_sessions": 33,
+    "fixed_file_decode_sessions": 16,
+    "requested_real_playback_seconds": 1325,
+    "long_session_requested_seconds": 120,
+    "long_phone_steady_window_seconds": 105,
+    "long_phone_sf_fps_80_100_ms": [
+      59.314286,
+      59.666667
+    ],
+    "long_phone_sf_gaps_over_100ms": [
+      0,
+      0
+    ],
+    "long_receive_fps_complete": false,
+    "long_native_event_history_evicted": true,
+    "1080p_12m_phone_sf_fps": [
+      59.32,
+      59.12
+    ],
+    "not_continuous_overnight_or_24h_acceptance": true,
+    "formal_udp_release_published": false,
+    "new_public_udp_path_tested": false,
+    "audio_visual_optical_sync_tested": false
+  },
+  "instrumentation_package_sha256": "2395f75a97b2850b514a2bf488083e2ee4623fee0d989f41f936c471d291d38f",
+  "latest_network_readback": {
+    "evidence": "evidence/overnight-20261002/network-readback.json",
+    "host_tailnet_ipv4": [
+      "100.64.0.2"
+    ],
+    "phone_tailnet_ipv4": [],
+    "formal_app_legacy_tailnet_shortcut": "100.65.0.2:15556",
+    "legacy_shortcut_verified_this_campaign": false,
+    "tailnet_udp_media_test_completed": false
+  }
+}

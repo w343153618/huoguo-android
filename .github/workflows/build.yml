@@ -32,10 +32,21 @@ jobs:
           mkdir -p /tmp/endpoint-check
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Endpoint.java tests/EndpointCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.EndpointCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/StreamQuality.java tests/StreamQualityCheck.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.StreamQualityCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Endpoint.java app/src/main/java/local/remoteandroid/direct/ConnectionRoutes.java tests/ConnectionRoutesCheck.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.ConnectionRoutesCheck
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/Bitrate.java tests/BitrateCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.BitrateCheck
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/PlaybackClock.java tests/PlaybackClockCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.PlaybackClockCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/PlaybackClock.java tests/java/local/remoteandroid/direct/PlaybackClockProbe.java tests/java/local/remoteandroid/direct/PlaybackClockReanchorCheck.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.PlaybackClockProbe
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.PlaybackClockReanchorCheck
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/AudioSubmissionClock.java tests/java/local/remoteandroid/direct/AudioSubmissionClockProbe.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.AudioSubmissionClockProbe
+          javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/MediaPresentationMetrics.java tests/java/local/remoteandroid/direct/MediaPresentationMetricsProbe.java
+          java -cp /tmp/endpoint-check local.remoteandroid.direct.MediaPresentationMetricsProbe
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/V50Preset.java tests/V50PresetCheck.java
           java -cp /tmp/endpoint-check local.remoteandroid.direct.V50PresetCheck
           javac -d /tmp/endpoint-check app/src/main/java/local/remoteandroid/direct/PcmGain.java tests/PcmGainCheck.java

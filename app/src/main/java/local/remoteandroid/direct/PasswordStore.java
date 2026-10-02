@@ -12,7 +12,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
-/** One explicitly saved account; ciphertext only, with a non-exportable device key. */
+/** One explicitly saved account; new saves bind full endpoint identity in AAD. Legacy keys are read explicitly. */
 final class PasswordStore {
     private static final String ALIAS = "huoguo.saved-password.v1";
     private final SharedPreferences saved;

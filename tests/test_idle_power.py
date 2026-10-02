@@ -19,6 +19,32 @@ class IdlePowerTest(unittest.TestCase):
         self.assertEqual(self.power.timer.delay, 300)
         self.power.timer.callback()
         self.assertEqual(self.sleeps, ['sleep'])
+    def test_zero_delay_keeps_guest_awake_at_startup_and_after_disconnect(self):
+        def forbidden_timer(*args):
+            raise AssertionError('Disabled idle sleep must not create a timer')
+        power = IdleScreen(threading.RLock(), lambda: bool(self.sessions),
+                           lambda: self.sleeps.append('sleep'), delay=0,
+                           timer_factory=forbidden_timer)
+        power.schedule()  # Gateway startup with no sessions.
+        self.sessions.append('active'); power.schedule()
+        self.sessions.clear(); power.schedule()  # Last session disconnected.
+        power.schedule(); power.shutdown(); power.schedule()
+        self.assertIsNone(power.timer)
+        self.assertEqual(self.sleeps, [])
+    def test_disabling_cancels_queued_callback_even_during_active_session(self):
+        self.power.schedule(); stale = self.power.timer
+        self.sessions.append('active')
+        self.power.delay = 0; self.power.schedule()
+        self.assertTrue(stale.cancelled)
+        self.assertIsNone(self.power.timer)
+        self.sessions.clear()
+        stale.callback()  # Timer.cancel() cannot remove an already queued callback.
+        self.power.schedule()
+        self.assertIsNone(self.power.timer)
+        self.assertEqual(self.sleeps, [])
+    def test_negative_delay_is_rejected(self):
+        with self.assertRaises(ValueError):
+            IdleScreen(threading.RLock(), lambda: False, lambda: None, delay=-1)
     def test_reconnect_cancels_stale_timer_even_if_already_queued(self):
         self.power.schedule(); stale = self.power.timer
         self.power.cancel(); self.sessions.append('new')

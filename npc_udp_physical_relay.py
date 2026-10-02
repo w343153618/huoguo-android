@@ -18,7 +18,7 @@ from npc_physical_relay import IP_BOUND_IF, interface_usable
 
 DESTINATION_HOST = '146.56.249.175'
 PORTS = {'quic': (18025, 8025), 'kcp': (18026, 8024)}
-INTERFACES = tuple(os.environ.get('NPC_PHYSICAL_INTERFACES', 'en11,en0').split(','))
+INTERFACES = tuple(os.environ.get('NPC_PHYSICAL_INTERFACES', 'en7,en0').split(','))
 MAX_PEERS = 16
 IDLE_SECONDS = 120
 CHECK_SECONDS = 5

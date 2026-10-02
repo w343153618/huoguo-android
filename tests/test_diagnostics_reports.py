@@ -190,6 +190,34 @@ class ReportTests(unittest.TestCase):
         receipt = self.store.save('huoguo', report)
         self.assertEqual(self.store.get('huoguo', receipt['report_id'])['report'], report)
 
+    def test_explicit_codec_metrics_keep_legacy_schema_roundtrip(self):
+        legacy = copy.deepcopy(self.report)
+        self.assertEqual(validate_report(legacy), legacy)
+        report = copy.deepcopy(self.report)
+        stage = report['stages'][0]
+        stage.update(codec_callback_frames=stage['rendered_frames'], codec_callback_fps=stage['rendered_fps'],
+            codec_timing_basis='java_codec_callback_receipt', vendor_timestamp_status='not_used_for_diagnostic_timing',
+            actual_display_fps_measured=False, actual_audio_video_skew_measured=False)
+        stage['samples'][0]['codec_callback_frames'] = stage['samples'][0]['rendered_frames']
+        receipt = self.store.save('huoguo', report)
+        self.assertEqual(self.store.get('huoguo', receipt['report_id'])['report'], report)
+
+    def test_codec_metadata_cannot_certify_physical_display_or_unknown_timing_basis(self):
+        cases = {
+            'actual_display_fps_measured': (True, 0, 'false'),
+            'actual_audio_video_skew_measured': (True, 0, 'false'),
+            'codec_timing_basis': ('physical_display', 'vendor_requested_target', None),
+            'vendor_timestamp_status': ('valid_actual_display', 'unknown arbitrary data', None),
+            'codec_callback_frames': (-1, 1.5, True, 1_000_000_001),
+            'codec_callback_fps': (-1, float('nan'), True, 1001),
+        }
+        for key, values in cases.items():
+            for value in values:
+                report = copy.deepcopy(self.report)
+                report['stages'][0][key] = value
+                with self.subTest(key=key, value=value), self.assertRaises(DiagnosticsError):
+                    validate_report(report)
+
     def test_extended_metrics_remain_finite_typed_and_bounded(self):
         fields = {
             'device': {'total_memory_mb': (0, 131_072)},

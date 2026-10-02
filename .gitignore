@@ -13,3 +13,11 @@ npc.conf
 *.log
 .env*
 diagnostics-reports/
+/tmp/
+/output/
+/docs/evidence/
+*.h264
+*.rgba
+*.nv12
+*.pcap
+*.perfetto-trace

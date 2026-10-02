@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Explicit, foreground-only stream tests; no screen recording or background telemetry. */
+/** Foreground synthetic stream tests. Codec callbacks do not measure physical display presentation. */
 final class DiagnosticRunner {
     static final String LAST_REPORT = "diagnostic-last.json";
     final MainActivity activity;
@@ -62,11 +62,11 @@ final class DiagnosticRunner {
         this.networkLabel = networkLabel; this.mode = full ? "full" : "quick";
         seconds = full ? 30 : 20;
         http = new DiagnosticHttp(activity, credential, host);
-        profiles.add(new Profile("540P · 2.5 Mbps · VBR", 1200, 2500000, "VBR"));
-        profiles.add(new Profile("540P · 4 Mbps · VBR", 1200, 4000000, "VBR"));
-        profiles.add(new Profile("540P · 8 Mbps · VBR", 1200, 8000000, "VBR"));
-        profiles.add(new Profile("720P · 4 Mbps · VBR", 1600, 4000000, "VBR"));
-        profiles.add(new Profile("540P · 4 Mbps · 自适应 VBR", 1200, 4000000, "ADAPTIVE_VBR"));
+        profiles.add(new Profile("540P · 2.5 Mbps · VBR", 960, 2500000, "VBR"));
+        profiles.add(new Profile("540P · 4 Mbps · VBR", 960, 4000000, "VBR"));
+        profiles.add(new Profile("540P · 8 Mbps · VBR", 960, 8000000, "VBR"));
+        profiles.add(new Profile("720P · 4 Mbps · VBR", 1280, 4000000, "VBR"));
+        profiles.add(new Profile("540P · 4 Mbps · 自适应 VBR", 960, 4000000, "ADAPTIVE_VBR"));
         if (full) for (int i = 4; i >= 0; i--) profiles.add(profiles.get(i));
         else profiles.add(profiles.get(0));
     }
@@ -91,7 +91,7 @@ final class DiagnosticRunner {
 
     static void begin(MainActivity activity, String label, boolean full) {
         try {
-            activity.host = Endpoint.host(activity.address.getText().toString());
+            activity.host = Endpoint.destination(activity.address.getText().toString());
             String name = activity.user.getText().toString(), secret = activity.password.getText().toString();
             if (name.isEmpty() || secret.isEmpty()) throw new IllegalArgumentException("请填写账号和密码，或先保存密码");
             String auth = "Basic " + android.util.Base64.encodeToString((name + ":" + secret).getBytes(StandardCharsets.UTF_8), 2);
@@ -125,7 +125,7 @@ final class DiagnosticRunner {
         firstRenderNs = 0; phaseNs = System.nanoTime(); endpointNs = 0; samples = new JSONArray(); networkChanged = false;
         long token = ++stageToken;
         activity.auth = credential; activity.maxSize = profile.size; activity.bitRate = profile.bitrate;
-        activity.bitrateMode = profile.mode; activity.maxFps = 30; activity.bufferMs = 100;
+        activity.bitrateMode = profile.mode; activity.maxFps = 30; activity.bufferMs = 80;
         progress.setText("准备第 " + (index + 1) + "/" + profiles.size() + " 组 · " + profile.label);
         worker.execute(() -> {
             try {
@@ -156,7 +156,7 @@ final class DiagnosticRunner {
         long now = System.nanoTime();
         if (firstRenderNs == 0) {
             progress.setText("第 " + (index + 1) + "/" + profiles.size() + " 组 · 等待手机解码首帧…");
-            if (now - phaseNs > 25000000000L) { failedStage(token, "25 秒内没有显示首帧"); return; }
+            if (now - phaseNs > 25000000000L) { failedStage(token, "25 秒内没有收到首帧解码回调"); return; }
             activity.ui.postDelayed(() -> warmup(token), 500); return;
         }
         long warmMs = (now - firstRenderNs) / 1000000;
@@ -184,6 +184,7 @@ final class DiagnosticRunner {
             javaHeapPeak = Math.max(javaHeapPeak, javaMb); nativeHeapPeak = Math.max(nativeHeapPeak, nativeMb);
             JSONObject sample = new JSONObject().put("elapsed_ms", (Math.min(now, endpointNs) - startNs) / 1000000)
                     .put("received_frames", snap.receivedFrames).put("rendered_frames", snap.renderedFrames)
+                    .put("codec_callback_frames", snap.renderedFrames)
                     .put("video_bytes", snap.receivedBytes).put("rtt_ms", activity.networkRttMs).put("thermal_status", thermal())
                     .put("app_cpu_percent", cpuPercent).put("java_heap_mb", javaMb).put("native_heap_mb", nativeMb);
             int signal = signalStrength(); if (signal >= -150 && signal < 0) sample.put("signal_strength_dbm", signal);
@@ -201,15 +202,25 @@ final class DiagnosticRunner {
 
     boolean active(long token) { return !finished && !closed && token == stageToken; }
     void received(int bytes, long pts, long ns, boolean config) { DiagnosticMetrics m = measured; if (m != null) m.received(bytes, pts, ns, config); }
-    void rendered(long pts, long ns) { if (firstRenderNs == 0) firstRenderNs = ns; DiagnosticMetrics m = measured; if (m != null) m.rendered(pts, ns); }
+    void rendered(long pts, long vendorNs) {
+        // Vendor nanoTime can echo the requested future release target. These
+        // foreground diagnostics measure Java callback receipt only; do not
+        // feed that unverified timestamp into cadence or pipeline estimates.
+        long receiptNs = System.nanoTime();
+        if (firstRenderNs == 0) firstRenderNs = receiptNs;
+        DiagnosticMetrics m = measured; if (m != null) m.rendered(pts, receiptNs);
+    }
     void discarded() { DiagnosticMetrics m = measured; if (m != null) m.discarded(); }
     void rtt(long ms) { DiagnosticMetrics m = measured; if (m != null) m.rtt(ms); }
 
     JSONObject baseStage() throws Exception {
         Profile p = profiles.get(index);
         return new JSONObject().put("label", p.label).put("max_size", p.size).put("bitrate", p.bitrate)
-                .put("max_fps", 30).put("mode", p.mode).put("buffer_ms", 100).put("dimensions", activity.width + "x" + activity.height)
+                .put("max_fps", 30).put("mode", p.mode).put("buffer_ms", 80).put("dimensions", activity.width + "x" + activity.height)
                 .put("decoder_name", activity.videoDecoderName).put("hardware_decoder", activity.hardwareVideo)
+                .put("codec_timing_basis", "java_codec_callback_receipt")
+                .put("vendor_timestamp_status", "not_used_for_diagnostic_timing")
+                .put("actual_display_fps_measured", false).put("actual_audio_video_skew_measured", false)
                 .put("accepted_bitrate", activity.acceptedBitrate).put("adaptive_rejected", activity.adaptiveRejected)
                 .put("thermal_start", thermalStart).put("thermal_end", thermal()).put("battery_start", batteryStart).put("battery_end", battery())
                 .put("transport", transport()).put("vpn_present", vpn()).put("network_changed", networkChanged)
@@ -221,8 +232,8 @@ final class DiagnosticRunner {
         try {
             DiagnosticMetrics.Result r = measured.finish(endpoint); measured = null;
             JSONObject stage = baseStage().put("elapsed_ms", r.elapsedMs).put("received_frames", r.receivedFrames)
-                    .put("rendered_frames", r.renderedFrames).put("video_bytes", r.receivedBytes)
-                    .put("received_fps", r.receiveFps).put("rendered_fps", r.renderFps).put("receive_mbps", r.receiveMbps)
+                    .put("rendered_frames", r.renderedFrames).put("codec_callback_frames", r.renderedFrames).put("video_bytes", r.receivedBytes)
+                    .put("received_fps", r.receiveFps).put("rendered_fps", r.renderFps).put("codec_callback_fps", r.renderFps).put("receive_mbps", r.receiveMbps)
                     .put("render_gap_count", r.renderGapCount).put("max_render_gap_ms", r.maxRenderGapMs).put("discarded_frames", r.discardedFrames)
                     .put("valid", r.valid && !networkChanged).put("invalid_reason", networkChanged ? "检测中网络切换" : r.invalidReason);
             finite(stage, "last_receive_ago_ms", r.lastReceiveAgoMs); finite(stage, "last_render_ago_ms", r.lastRenderAgoMs);
@@ -270,8 +281,8 @@ final class DiagnosticRunner {
                 android.app.ActivityManager.MemoryInfo memory = new android.app.ActivityManager.MemoryInfo();
                 ((android.app.ActivityManager) activity.getSystemService(Context.ACTIVITY_SERVICE)).getMemoryInfo(memory);
                 device.put("total_memory_mb", memory.totalMem / 1048576.0);
-                device.put("avc_hardware_advertised", DeviceCodecs.hardware("video/avc", 540, 1200));
-                device.put("hevc_hardware_advertised", DeviceCodecs.hardware("video/hevc", 540, 1200));
+                device.put("avc_hardware_advertised", DeviceCodecs.hardware("video/avc", 540, 960));
+                device.put("hevc_hardware_advertised", DeviceCodecs.hardware("video/hevc", 540, 960));
                 report = new JSONObject().put("schema_version", 1).put("client_report_id", runId).put("created_at", Instant.now().toString())
                         .put("app_version", BuildConfig.VERSION_NAME).put("device", device)
                         .put("network", new JSONObject().put("transport", transport()).put("label", networkLabel).put("vpn_present", vpn()))
@@ -319,10 +330,10 @@ final class DiagnosticRunner {
             JSONObject stage = all.optJSONObject(i); if (stage == null) continue;
             lines.append(stage.optString("label")).append('\n');
             if (!stage.optBoolean("valid")) lines.append("未取得可用样本：").append(stage.optString("error", stage.optString("invalid_reason", "未完成")));
-            else lines.append(String.format(Locale.ROOT, "显示 %.1f FPS · 接收 %.2f Mbps · 停顿 %d 次 · 最长 %.0f ms", stage.optDouble("rendered_fps"), stage.optDouble("receive_mbps"), stage.optInt("render_gap_count"), stage.optDouble("max_render_gap_ms")));
+            else lines.append(String.format(Locale.ROOT, "解码回调 %.1f FPS · 接收 %.2f Mbps · 回调停顿 %d 次 · 最长 %.0f ms", stage.optDouble("codec_callback_fps", stage.optDouble("rendered_fps")), stage.optDouble("receive_mbps"), stage.optInt("render_gap_count"), stage.optDouble("max_render_gap_ms")));
             lines.append("\n\n");
         }
-        lines.append("网络往返不是完整操作延时；显示回调不等于肉眼无撕裂。报告由手机自报，需结合实际听感和长时间使用判断。\n");
+        lines.append("解码回调帧率不是屏幕实际显示帧率，回调停顿也不是肉眼卡顿的直接测量；网络往返不是完整操作延时。本次使用统一测试画面筛选参数，真实视频流畅度与音画同步仍需实测。\n");
         info.setText(lines.toString()); box.addView(info);
         Button retry = button("重新提交报告", () -> {
             retryUpload(report);
@@ -333,7 +344,7 @@ final class DiagnosticRunner {
         if (recommended != null) box.addView(button("应用本次推荐参数", () -> {
             activity.getSharedPreferences("connection", 0).edit().putInt("quality_max_size", recommended.optInt("max_size"))
                     .putInt("video_bit_rate", recommended.optInt("bitrate")).putString("bitrate_mode", recommended.optString("mode"))
-                    .putInt("max_fps", 30).putInt("buffer_ms", recommended.optInt("buffer_ms", 100)).apply();
+                    .putInt("max_fps", 30).putInt("buffer_ms", Math.max(30, Math.min(80, recommended.optInt("buffer_ms", 80)))).apply();
             Toast.makeText(activity, "已保存，下次连接使用本次推荐", Toast.LENGTH_LONG).show();
         }));
         box.addView(button("返回连接页", this::leave));
@@ -355,7 +366,7 @@ final class DiagnosticRunner {
             boolean usable = true;
             for (JSONObject s : group) usable &= s.optBoolean("valid") && s.optBoolean("hardware_decoder")
                     && !s.optBoolean("network_changed") && !s.optBoolean("adaptive_rejected")
-                    && s.optDouble("rendered_fps", 0) >= 25.5 && s.optDouble("max_render_gap_ms", 9999) < 500
+                    && s.optDouble("codec_callback_fps", s.optDouble("rendered_fps", 0)) >= 25.5 && s.optDouble("max_render_gap_ms", 9999) < 500
                     && s.optInt("thermal_end", 0) < PowerManager.THERMAL_STATUS_SEVERE;
             JSONObject s = group.get(0);
             if (usable && (best == null || s.optInt("max_size") < best.optInt("max_size")
@@ -373,9 +384,9 @@ final class DiagnosticRunner {
 
     static void previous(MainActivity activity) {
         try {
-            String host = Endpoint.host(activity.address.getText().toString()), name = activity.user.getText().toString(), secret = activity.password.getText().toString();
+            String host = Endpoint.destination(activity.address.getText().toString()), name = activity.user.getText().toString(), secret = activity.password.getText().toString();
             android.content.SharedPreferences saved = activity.getSharedPreferences("connection", 0);
-            if (!host.equals(saved.getString("diagnostic_report_host", "")) || !name.equals(saved.getString("diagnostic_account", "")))
+            if (!Endpoint.sameDestination(host, saved.getString("diagnostic_report_host", "")) || !name.equals(saved.getString("diagnostic_account", "")))
                 throw new IllegalArgumentException("请使用上次检测的服务器和账号查看报告");
             if (secret.isEmpty()) throw new IllegalArgumentException("请先填写或保存密码，以便重新提交报告");
             activity.host = host; activity.initTLS();

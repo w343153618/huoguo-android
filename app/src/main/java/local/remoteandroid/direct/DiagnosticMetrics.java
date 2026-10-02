@@ -12,9 +12,11 @@ import java.util.Map;
  * Source PTS is kept in microseconds on its own clock; it is never an absolute latency.
  *
  * Start after warm-up, and start a new collector (or reset this one) for every stage.
- * MediaCodec callbacks may be batched: pass their actual render nanoTime, not callback
- * delivery time. To drain callbacks, capture the measurement endpoint, wait briefly,
- * then finish with that captured endpoint. Data after that endpoint is excluded.
+ * Render-event times come from the caller and their measurement basis must be
+ * reported. DiagnosticRunner now passes Java callback receipt time because some
+ * codecs return the requested future release target as an unverified vendor time.
+ * A callback event is not proof of physical display presentation. Capture the
+ * measurement endpoint, then finish with it; data after that endpoint is excluded.
  * Counts cannot establish TCP packet loss, optical tearing, or input-to-photon latency.
  */
 public final class DiagnosticMetrics {
@@ -92,8 +94,10 @@ public final class DiagnosticMetrics {
 
     /**
      * PTS is an identity used to match the encoded frame's local arrival. The resulting
-     * client-pipeline time includes playback buffering and decoding/display work; it
-     * excludes transport before arrival and is not source-to-phone or optical latency.
+     * client-pipeline time includes playback buffering and decoding/output queues
+     * up to the caller's event. With Java callback receipt it also includes callback
+     * delivery. It excludes transport before arrival and does not measure display,
+     * source-to-phone or optical latency. actualRenderNs is a legacy parameter name.
      */
     public synchronized void rendered(long ptsUs, long actualRenderNs) {
         if (!accept(actualRenderNs)) return;
@@ -123,8 +127,9 @@ public final class DiagnosticMetrics {
     /**
      * Counter deltas since the previous snapshot, divided by actual active elapsed time.
      * A delayed render callback is counted once in the next snapshot; final render gap
-     * and jitter statistics use its actual timestamp. Snapshot buckets can therefore
-     * reflect callback batching and must not themselves be used to infer a freeze.
+     * and jitter statistics use the caller's supplied event timestamp. If the caller
+     * supplies Java receipt time, these statistics reflect callback batching rather
+     * than independent physical presentation and cannot themselves certify a freeze.
      */
     public synchronized Snapshot snapshot(long nowNs) {
         if (!collecting || nowNs <= snapshotNs) {
