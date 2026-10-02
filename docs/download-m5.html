@@ -1,16 +1,10 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>给火锅的安卓 · v1.14</title>
-<style>body{font-family:system-ui;margin:32px auto;max-width:620px;padding:0 20px;line-height:1.7;background:#f5fbf9;color:#285c62}a{color:#237973}.button{display:block;background:#ddf4ee;color:#285c62;text-decoration:none;padding:16px;border-radius:24px;text-align:center;font-size:20px}code{background:#e6f2ef;padding:2px 6px;border-radius:4px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #d8eae5;text-align:left}</style></head>
-<body><h1>给火锅的安卓</h1><p>直接操作 M5 上的安卓，竖屏显示。v1.14 默认使用 NPS 公网连接和 huoguo 账号，支持在手机本机加密保存密码。新安装默认使用 V50 均衡参数：540P、VBR 2.5 Mbps、30 FPS；已有安装请点“真我 V50 · 一键优化”。</p>
-<p><a class="button" href="AndroidDirect-v1.14.apk">下载给火锅的安卓 v1.14</a></p>
-<ol><li>下载并覆盖安装，无需卸载旧版；也可以在 App 中点“检查更新”。</li><li>打开 App，默认地址为 <code>146.56.249.175:15556</code>，默认用户名为 <code>huoguo</code>。</li><li>第一次填写你已有的直连密码，点击“保存密码”。下次会自动填入；“清除已保存密码”可删除保存记录。密码使用 Android 本机密钥加密，不写进安装包。</li><li>选择清晰度和码率，再点击“连接虚拟安卓”。</li><li>底部按钮控制返回、主页和任务；“文件”可传照片、视频。</li></ol>
-<table><tr><th>清晰度名称</th><th>实际竖屏尺寸</th><th>建议码率</th></tr><tr><td>432P · 流畅画质</td><td>432 × 960</td><td>1–2 Mbps</td></tr><tr><td>540P · DVD清晰度</td><td>540 × 1200</td><td>2–3 Mbps</td></tr><tr><td>720P · 主流高清（默认）</td><td>720 × 1600</td><td>4–6 Mbps</td></tr><tr><td>1080P · 蓝光</td><td>1080 × 2400</td><td>8–12 Mbps</td></tr></table>
-<p>新版分别显示已安装版本与可升级版本；安装前重新校验文件并拒绝旧包。检查更新先显示更新内容，选择“确认更新”才下载，点“取消更新”不下载。火锅可点“真我 V50 · 一键优化”：读取本机解码能力，应用540P、H.264、2.5Mbps VBR、最高60FPS、100ms缓冲，并默认隐藏指标、使用1.5倍声音增强；能力不足会降30FPS或432P。可点“恢复优化前设置”，账号密码保留。预设属于均衡起点，真实手机发热与耗电仍需使用验证。</p>
-<p>声音偏小时，可在连接页或串流右上角“声音”按钮选择1.5倍/2倍/3倍增强，立即生效并记住；“原声”可关闭增强。手机实体音量键控制媒体音量，大峰值有软限幅以减少破音。</p>
-<p>码率可选 2.5 / 4 / 6 / 8 / 12 / 24 / 40 Mbps，或自定义 0.5–40 Mbps。24 和 40 Mbps 是硬件编码实验档，适合带宽充裕时试用，不保证比低码率更流畅。编码模式可选 CBR 固定目标、VBR 可变码率、网络自适应 VBR（实验）。新安装默认自适应 VBR，原有手动选择保留；自适应根据传输延迟降低或恢复目标，不是原生 AVBR。填写码率是其目标上限，不是严格瞬时峰值限制。清晰度和码率下次连接生效。中文名称用于选择画质，实际编码为 H.264，帧率档位有 30 / 60 / 120 FPS；真实帧率取决于视频内容、编码和网络。连接后可选显示接收、显示和逾期丢帧指标。</p>
-<p>画面流畅优先：约 80 ms 播放缓冲，按时间戳安排显示；左上角显示网络往返 ms、接收及显示 FPS。右上角可一键隐藏／显示整组指标，并记住隐藏状态。网络往返数值并非完整操作延时；缓冲会增加少量画面延时，严重网络掉帧仍需降低清晰度或码率。</p>
-<p>密码与保存时的服务器地址、用户名绑定。改成其他地址或用户名时不会误用旧密码；保存新账号会替换旧保存记录。App 记住地址、用户名、清晰度和码率，修改地址不需要重装。</p>
-<p><strong>需要局域网连接时：</strong>可手动把地址改成 <code>192.168.9.99:15556</code>。公网与局域网使用相同直连账号；无需填写 macOS 的 yawen 账号。</p>
-<p>M5 当前运行 Android 17 / API 37。NPS 串流出口绑定家庭物理网卡，Clash TUN 可继续开启。朋友手机如果开启代理，请把此 App 或 NPS 地址设为直连。</p>
-<p>M5 应接通电源、保持开机并登录 yawen。当前一台虚拟安卓只支持一个活动会话，新连接会断开旧连接。</p>
-<p><a href="https://github.com/w343153618/huoguo-android/releases/tag/v1.14">GitHub v1.14 发布页</a> · <a href="AndroidDirect-SHA256SUMS.txt">文件校验</a> · <a href="AndroidDirect-source.zip">源代码及许可证</a></p></body></html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>给火锅的安卓 · 下载与连接</title>
+<style>body{font-family:system-ui;margin:28px auto;max-width:640px;padding:0 20px;line-height:1.75;background:#f5fbf9;color:#285c62}a{color:#237973}.button{display:block;background:#ddf4ee;padding:16px;border-radius:24px;text-align:center;text-decoration:none}code{background:#e6f2ef;padding:2px 6px;border-radius:4px}</style></head>
+<body><h1>给火锅的安卓</h1><p>这是源码中的连接说明。运行中的下载页由升级清单自动生成，显示当前实际发布版本与文件校验值。</p>
+<p><a class="button" href="AndroidDirect.apk">下载当前签名版本 · 覆盖安装</a></p>
+<ol><li>无需卸载或清除数据，也可以在App里点“检查更新”，查看内容后确认更新。</li><li>公网M1默认：<code>146.56.249.175:15556</code>；公网M5备选：<code>146.56.249.175:15558</code>。两个按钮可直接点选。</li><li>Tailscale M1备选：<code>100.64.0.2:15556</code>；手机需先加入相同Headscale网络。</li><li>用户名默认<code>huoguo</code>，填写已有远程安卓密码。点击“保存密码”加密保存。</li><li>地址可以自行填写IP、主机名与端口；局域网使用各台Mac当前IP和15556，无需重新安装。</li></ol>
+<p>V50新安装推荐540P/4Mbps/自适应VBR/30FPS/80ms；30/60/120FPS和30–100ms缓冲可手动选择，升级保留已有设置。声音、声音增强与性能指标在连接前设置。标准竖屏档位为432×768、540×960、720×1280和1080×1920，实际比例按远端画面缩放。</p>
+<p>正式媒体仍使用TLS/TCP；原生UDP/P2P是独立实验，尚未替换正式通道。M1与M5各保留一个活动会话，选择的不同主机拥有各自安卓数据。</p>
+<p>Mac需要保持开机、接通电源并登录。NPC仅通过绑定家庭物理网卡的专用relay连接腾讯云；Clash代理与安卓上网路径另行处理。</p>
+<p><a href="https://github.com/w343153618/huoguo-android/releases/latest">GitHub发布页</a> · <a href="AndroidDirect-SHA256SUMS.txt">当前文件校验</a></p></body></html>
