@@ -13,9 +13,46 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-from udp_lan_gateway import BoundedTlsServer, handler_for, physical_lan_address, same_private_lan
+from udp_lan_gateway import BoundedTlsServer, handler_for, physical_lan_address, same_private_lan, shutdown_registry
 from udp_network_scope import ScopeUnavailable
-from udp_lan_sessions import UdpLanSessions
+from udp_lan_sessions import SessionError, UdpLanSessions
+
+
+class ShutdownChecks(unittest.TestCase):
+    def test_shutdown_barrier_uses_bounded_default_and_reports_only_closed_result(self):
+        registry = Mock()
+        registry.close_and_wait.return_value = {'quiescence_confirmed': True, 'stop_failures': 0}
+        self.assertEqual(shutdown_registry(registry), {'event': 'candidate_shutdown',
+            'quiescence_confirmed': True, 'stop_failures': 0})
+        registry.close_and_wait.assert_called_once_with(45.0)
+        registry.close.assert_not_called()
+
+    def test_timeout_and_cleanup_failure_are_not_successful_shutdown(self):
+        for reason in ('udp_shutdown_quiescence_timeout', 'udp_cleanup_failed', 'udp_shutdown_worker_unavailable'):
+            with self.subTest(reason=reason):
+                registry = Mock()
+                registry.close_and_wait.side_effect = SessionError(503, reason)
+                self.assertEqual(shutdown_registry(registry, .025), {'event': 'candidate_shutdown',
+                    'quiescence_confirmed': False, 'reason': reason})
+
+    def test_unknown_shutdown_detail_is_not_exported(self):
+        for failure in (SessionError(503, 'untrusted_account_key_detail'), RuntimeError('untrusted detail')):
+            with self.subTest(failure=type(failure).__name__):
+                registry = Mock()
+                registry.close_and_wait.side_effect = failure
+                self.assertEqual(shutdown_registry(registry), {'event': 'candidate_shutdown',
+                    'quiescence_confirmed': False, 'reason': 'udp_shutdown_unclassified_failure'})
+
+    def test_shutdown_result_schema_never_forwards_additional_detail(self):
+        registry = Mock()
+        registry.close_and_wait.return_value = {'quiescence_confirmed': True,
+            'stop_failures': 0, 'untrusted_detail': 'not a public field'}
+        self.assertEqual(shutdown_registry(registry), {'event': 'candidate_shutdown',
+            'quiescence_confirmed': True, 'stop_failures': 0})
+        for result in ({}, {'quiescence_confirmed': False, 'stop_failures': 0},
+                       {'quiescence_confirmed': True, 'stop_failures': True}):
+            registry.close_and_wait.return_value = result
+            self.assertFalse(shutdown_registry(registry)['quiescence_confirmed'])
 
 
 class Worker:

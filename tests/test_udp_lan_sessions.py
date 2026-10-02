@@ -2,6 +2,7 @@
 import base64
 import threading
 import unittest
+from unittest.mock import patch
 
 from udp_lan_sessions import SessionError, UdpLanSessions, parse_udp_settings
 
@@ -583,6 +584,218 @@ class RaceChecks(unittest.TestCase):
         with self.assertRaises(SessionError) as error:
             self.registry.create('wyw', {}, lambda config: Worker())
         self.assertEqual(error.exception.code, 'registry_closed')
+
+
+class ShutdownBarrierChecks(unittest.TestCase):
+    """Owned inert callbacks only; no UDP sockets, media or account input."""
+    def setUp(self):
+        self.registry = UdpLanSessions('192.168.9.128')
+        self.worker = Worker()
+        self.entered, self.release = threading.Event(), threading.Event()
+        self.threads = []
+
+    def tearDown(self):
+        self.release.set()
+        for thread in self.threads:
+            thread.join(2)
+            self.assertFalse(thread.is_alive(), 'owned test callback did not finish')
+
+    def launch(self, operation):
+        results, finished = [], threading.Event()
+        def run():
+            try:
+                results.append(operation())
+            except SessionError as error:
+                results.append(error.code)
+            finally:
+                finished.set()
+        thread = threading.Thread(target=run)
+        self.threads.append(thread)
+        thread.start()
+        return results, finished
+
+    def create(self):
+        return self.registry.create('test-owner', {}, lambda config: self.worker)['session']
+
+    def blocked_stop(self):
+        self.worker.stops += 1
+        self.entered.set()
+        if not self.release.wait(2):
+            raise TimeoutError('owned test release missing')
+
+    def test_idle_shutdown_is_confirmed_and_registry_cannot_reopen(self):
+        self.assertEqual(self.registry.close_and_wait(.5),
+                         {'quiescence_confirmed': True, 'stop_failures': 0})
+        with self.assertRaises(SessionError) as error:
+            self.create()
+        self.assertEqual(error.exception.code, 'registry_closed')
+
+    def test_timeout_argument_is_finite_positive_bounded_and_not_boolean(self):
+        for timeout in (0, -.1, 60.001, float('inf'), float('nan'), True, None, '1'):
+            with self.subTest(timeout=timeout), self.assertRaises(ValueError):
+                self.registry.close_and_wait(timeout)
+        self.assertFalse(self.registry._closed)
+
+    def test_shutdown_owned_stop_does_not_hold_lock_and_waits_for_completion(self):
+        sid = self.create()
+        self.worker.stop = self.blocked_stop
+        results, finished = self.launch(lambda: self.registry.close_and_wait(1))
+        self.assertTrue(self.entered.wait(1))
+        self.assertFalse(finished.wait(.04), 'closed flag is not cleanup completion')
+        self.assertFalse(self.registry.touch_allowed(sid))
+        self.assertTrue(self.registry.cancel('test-owner', sid))
+        self.assertEqual(self.worker.stops, 1)
+        self.release.set()
+        self.assertTrue(finished.wait(1))
+        self.assertEqual(results, [{'quiescence_confirmed': True, 'stop_failures': 0}])
+
+    def test_inflight_udp_revoke_and_shutdown_do_not_repeat_or_abandon_stop(self):
+        sid = self.create()
+        self.registry.authenticated_ready(sid)
+        self.worker.stop = self.blocked_stop
+        revoke_results, revoked = self.launch(lambda: self.registry.revoke(sid))
+        self.assertTrue(self.entered.wait(1))
+        shutdown_results, shutdown = self.launch(lambda: self.registry.close_and_wait(1))
+        self.assertFalse(shutdown.wait(.04), 'gateway must await existing STOP owner')
+        self.assertFalse(self.registry.touch_allowed(sid))
+        self.assertTrue(self.registry.cancel('test-owner', sid))
+        self.assertFalse(revoked.is_set())
+        self.assertEqual(self.worker.stops, 1)
+        self.release.set()
+        self.assertTrue(revoked.wait(1))
+        self.assertTrue(shutdown.wait(1))
+        self.assertEqual(revoke_results, [True])
+        self.assertEqual(shutdown_results, [{'quiescence_confirmed': True, 'stop_failures': 0}])
+
+    def test_factory_and_start_must_finish_before_shutdown_is_confirmed(self):
+        for phase in ('factory', 'start'):
+            with self.subTest(phase=phase):
+                self.registry = UdpLanSessions('192.168.9.128')
+                self.worker = Worker()
+                self.entered.clear(); self.release.clear()
+                def factory(config):
+                    self.entered.set()
+                    if not self.release.wait(2):
+                        raise TimeoutError('owned test release missing')
+                    return self.worker
+                def start():
+                    self.worker.starts += 1
+                    self.entered.set()
+                    if not self.release.wait(2):
+                        raise TimeoutError('owned test release missing')
+                if phase == 'factory':
+                    operation = lambda: self.registry.create('test-owner', {}, factory)
+                else:
+                    sid = self.create()
+                    self.worker.start = start
+                    operation = lambda: self.registry.authenticated_ready(sid)
+                operation_results, operation_done = self.launch(operation)
+                self.assertTrue(self.entered.wait(1))
+                results, finished = self.launch(lambda: self.registry.close_and_wait(1))
+                self.assertFalse(finished.wait(.04))
+                self.assertEqual(self.worker.stops, 0, 'do not stop while factory/start owns setup')
+                self.release.set()
+                self.assertTrue(operation_done.wait(1))
+                self.assertTrue(finished.wait(1))
+                self.assertEqual(operation_results, ['udp_session_revoked'] if phase == 'factory' else [False])
+                self.assertEqual(results, [{'quiescence_confirmed': True, 'stop_failures': 0}])
+                self.assertEqual(self.worker.stops, 1)
+
+    def test_timeout_retains_inflight_stop_and_late_completion_is_not_retried(self):
+        sid = self.create()
+        self.worker.stop = self.blocked_stop
+        _, stop_done = self.launch(lambda: self.registry.revoke(sid))
+        self.assertTrue(self.entered.wait(1))
+        with self.assertRaises(SessionError) as error:
+            self.registry.close_and_wait(.025)
+        self.assertEqual(error.exception.code, 'udp_shutdown_quiescence_timeout')
+        self.assertIsNotNone(self.registry._active)
+        self.assertEqual(self.worker.stops, 1)
+        self.release.set()
+        self.assertTrue(stop_done.wait(1))
+        self.assertEqual(self.registry.close_and_wait(.5),
+                         {'quiescence_confirmed': True, 'stop_failures': 0})
+        self.assertEqual(self.worker.stops, 1)
+
+    def test_timeout_also_bounds_cleanup_claimed_by_shutdown_itself(self):
+        self.create(); self.worker.stop = self.blocked_stop
+        with self.assertRaises(SessionError) as error:
+            self.registry.close_and_wait(.025)
+        self.assertEqual(error.exception.code, 'udp_shutdown_quiescence_timeout')
+        self.assertTrue(self.entered.is_set())
+        self.assertIsNotNone(self.registry._active)
+        self.assertEqual(self.worker.stops, 1)
+        self.release.set()
+        self.assertEqual(self.registry.close_and_wait(.5),
+                         {'quiescence_confirmed': True, 'stop_failures': 0})
+        self.assertEqual(self.worker.stops, 1)
+
+    def test_timeout_covers_pending_factory_and_start_without_early_release(self):
+        for phase in ('factory', 'start'):
+            with self.subTest(phase=phase):
+                self.registry = UdpLanSessions('192.168.9.128')
+                self.worker = Worker()
+                self.entered.clear(); self.release.clear()
+                def factory(config):
+                    self.entered.set(); self.release.wait(2)
+                    return self.worker
+                def start():
+                    self.worker.starts += 1
+                    self.entered.set(); self.release.wait(2)
+                if phase == 'factory':
+                    operation = lambda: self.registry.create('test-owner', {}, factory)
+                else:
+                    sid = self.create(); self.worker.start = start
+                    operation = lambda: self.registry.authenticated_ready(sid)
+                _, finished = self.launch(operation)
+                self.assertTrue(self.entered.wait(1))
+                with self.assertRaises(SessionError) as error:
+                    self.registry.close_and_wait(.025)
+                self.assertEqual(error.exception.code, 'udp_shutdown_quiescence_timeout')
+                self.assertIsNotNone(self.registry._active)
+                self.assertEqual(self.worker.stops, 0)
+                self.release.set()
+                self.assertTrue(finished.wait(1))
+                self.assertEqual(self.registry.close_and_wait(.5),
+                                 {'quiescence_confirmed': True, 'stop_failures': 0})
+                self.assertEqual(self.worker.stops, 1)
+
+    def test_duplicate_shutdown_waiters_share_one_cleanup_owner(self):
+        self.create(); self.worker.stop = self.blocked_stop
+        first, first_done = self.launch(lambda: self.registry.close_and_wait(1))
+        self.assertTrue(self.entered.wait(1))
+        second, second_done = self.launch(lambda: self.registry.close_and_wait(1))
+        self.assertFalse(first_done.wait(.025))
+        self.assertFalse(second_done.wait(.025))
+        self.assertEqual(self.worker.stops, 1)
+        self.release.set()
+        self.assertTrue(first_done.wait(1)); self.assertTrue(second_done.wait(1))
+        self.assertEqual(first, second)
+        self.assertEqual(self.worker.stops, 1)
+
+    def test_completed_stop_failure_is_not_success_or_retried(self):
+        self.create()
+        def fail():
+            self.worker.stops += 1
+            raise RuntimeError('untrusted owned failure detail')
+        self.worker.stop = fail
+        for _ in range(2):
+            with self.assertRaises(SessionError) as error:
+                self.registry.close_and_wait(.5)
+            self.assertEqual(error.exception.code, 'udp_cleanup_failed')
+            self.assertNotIn('detail', str(error.exception))
+        self.assertEqual(self.worker.stops, 1)
+
+    def test_shutdown_thread_start_failure_is_closed_and_not_success(self):
+        self.create()
+        with patch('udp_lan_sessions.threading.Thread.start', side_effect=RuntimeError('untrusted detail')):
+            with self.assertRaises(SessionError) as error:
+                self.registry.close_and_wait(.5)
+        self.assertEqual(error.exception.code, 'udp_shutdown_worker_unavailable')
+        self.assertTrue(self.registry._closed)
+        self.assertTrue(self.registry._cleanup_failed)
+        self.assertFalse(self.registry._quiescent.is_set())
+        self.assertEqual(self.worker.stops, 0)
 
 
 if __name__ == '__main__':

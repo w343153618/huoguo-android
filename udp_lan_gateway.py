@@ -79,6 +79,25 @@ def formal_busy():
     return bool(result.stdout.strip())
 
 
+def shutdown_registry(registry, timeout=45.0):
+    """Closed shutdown result only; neither revocation nor daemon exit is proof."""
+    try:
+        result = registry.close_and_wait(timeout)
+        if (result.get('quiescence_confirmed') is not True or
+                type(result.get('stop_failures')) is not int or result['stop_failures'] < 0):
+            raise ValueError('Closed shutdown result required')
+        return {'event': 'candidate_shutdown', 'quiescence_confirmed': True,
+                'stop_failures': result['stop_failures']}
+    except SessionError as error:
+        known = {'udp_shutdown_quiescence_timeout', 'udp_cleanup_failed',
+                 'udp_shutdown_worker_unavailable'}
+        return {'event': 'candidate_shutdown', 'quiescence_confirmed': False,
+                'reason': error.code if error.code in known else 'udp_shutdown_unclassified_failure'}
+    except Exception:
+        return {'event': 'candidate_shutdown', 'quiescence_confirmed': False,
+                'reason': 'udp_shutdown_unclassified_failure'}
+
+
 def handler_for(registry, worker_factory, host, busy=formal_busy, *, scope=None):
     scope = scope or LanScope(host)
     class Handler(ExistingHandler):
@@ -251,9 +270,14 @@ def main():
         server.serve_forever(poll_interval=.1)
     finally:
         stop.set()
-        registry.close()
-        server.server_close()
-        thread.join(timeout=2)
+        try:
+            server.server_close()
+        finally:
+            outcome = shutdown_registry(registry)
+            print(json.dumps(outcome), flush=True)
+            thread.join(timeout=2)
+            if not outcome['quiescence_confirmed']:
+                raise SystemExit(1)
 
 
 if __name__ == '__main__':

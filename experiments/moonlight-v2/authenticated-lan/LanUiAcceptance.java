@@ -50,6 +50,41 @@ public final class LanUiAcceptance extends Instrumentation {
         while((report.length()<1||field(field(getCurrentActivity(),"lanUdpEntry"),"retiring")!=null)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
         if(report.length()<1||report.length()>65536||field(field(getCurrentActivity(),"lanUdpEntry"),"retiring")!=null)throw new IllegalStateException("report_unavailable_after_leave");
     }
+    /** Independent test-process liveness check, outside the media window.
+     * Never obtain stacks or export names; a full fixed snapshot is inconclusive.
+     */
+    private static void waitAudioThreadsGone(JSONObject report,String stage)throws Exception{
+        ThreadGroup group=Thread.currentThread().getThreadGroup();
+        int parents=0;
+        while(group.getParent()!=null&&parents++<16)group=group.getParent();
+        if(group.getParent()!=null)throw new IllegalStateException("audio_thread_group_bound");
+        Thread[] snapshot=new Thread[1024];
+        long started=SystemClock.elapsedRealtime(),deadline=started+500;
+        int alive=-1,observations=0;
+        do{
+            java.util.Arrays.fill(snapshot,null);
+            int count=group.enumerate(snapshot,true);observations++;
+            if(count>=snapshot.length){
+                report.put(stage+"_audio_threads_alive",-1).put(stage+"_audio_thread_snapshot_bound_hit",1);
+                throw new IllegalStateException("audio_thread_snapshot_bound");
+            }
+            alive=0;
+            for(int i=0;i<count;i++){
+                Thread thread=snapshot[i];if(thread==null||!thread.isAlive())continue;
+                String name=thread.getName();
+                if(name.equals("udp-audio-input")||name.equals("udp-audio-output")||name.equals("udp-audio-pcm"))alive++;
+            }
+            report.put(stage+"_audio_threads_alive",alive)
+                .put(stage+"_audio_thread_observations",observations)
+                .put(stage+"_audio_thread_observation_ms",SystemClock.elapsedRealtime()-started);
+            if(alive==0)return;
+            long remaining=deadline-SystemClock.elapsedRealtime();
+            if(remaining<=0)break;
+            Thread.sleep(Math.min(20,remaining));
+        }while(SystemClock.elapsedRealtime()<deadline);
+        report.put(stage+"_audio_thread_observation_ms",SystemClock.elapsedRealtime()-started);
+        throw new IllegalStateException("audio_threads_alive_after_leave");
+    }
     private MainActivity testActivity;
     private MainActivity getCurrentActivity(){return testActivity;}
     private static long bench(boolean enabled,int count){
@@ -211,6 +246,7 @@ public final class LanUiAcceptance extends Instrumentation {
             }else report.put("media_only_no_touch_exercised",true);
             runOnMainSync(()->target.handleBack());
             File first=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");waitReport(first);
+            waitAudioThreadsGone(report,"first_leave");
             report.put("left_through_App_back",true).put("activity_running_after_leave",target.running)
                 .put("actual_optical_latency_measured",false).put("actual_acoustic_sync_measured",false);
             try(FileInputStream in=new FileInputStream(first);FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-app-first-report.json"))){
@@ -230,6 +266,7 @@ public final class LanUiAcceptance extends Instrumentation {
             Thread.sleep(2500);report.put("normal_UI_reconnected_received_media",true);
             if(!mediaOnly()){pointers(target,2,false,false);Thread.sleep(400);}
             runOnMainSync(()->target.handleBack());waitReport(first);
+            waitAudioThreadsGone(report,"second_leave");
             report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
         finally{credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);if(target.lanUdpEntry!=null)target.lanUdpEntry.cancel(true);});}}

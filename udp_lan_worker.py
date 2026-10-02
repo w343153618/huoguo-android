@@ -33,6 +33,12 @@ from recovery_controller import RecoveryController
 class LanMediaWorker:
     FORMAL_CHECK_SECONDS = 2.0
     NATIVE_GRACE_SECONDS = 2.0
+    # Match native HostReader/logical_frame.hpp and media_datagram.hpp. A
+    # single complete record is buffered, never a queue of access units.
+    FEED_MAX_AU_BYTES = 1024 * 1024
+    FEED_MAX_CONFIG_BYTES = 65536
+    FEED_READ_CHECK_SECONDS = .1
+    FEED_PARTIAL_SECONDS = 2.0
 
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy):
@@ -54,6 +60,7 @@ class LanMediaWorker:
         self.last_idr = 0.
         self.failure = ''
         self.native_shutdown = self._native_shutdown_state()
+        self.feed_state = self._feed_state()
         self.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
                                    check_failures=0, max_check_duration_ms=0.0)
         self.counts = dict(authenticated_ready=0, authenticated_alive=0, invalid_packets=0,
@@ -266,20 +273,151 @@ class LanMediaWorker:
             elif self.stop_event.is_set() or not self.registry.dispatch_touch(self.sid, lambda: self._send_control(data)):
                 raise PermissionError('owned_touch_lease_revoked')
 
-    def _feed(self):
+    @staticmethod
+    def _feed_state():
+        return dict(codec_records=0, geometry_records=0, config_records=0,
+                    media_records=0, published_bytes=0, max_buffered_bytes=0,
+                    cancelled_unpublished_records=0, cancelled_partial_records=0,
+                    cancelled_unpublished_bytes=0, live_eof_records=0,
+                    partial_timeouts=0, invalid_records=0, publish_failures=0,
+                    publish_inflight_bytes=0, publish_written_bytes=0,
+                    exit_reason='not_started')
+
+    def _feed_discard(self, record, partial):
+        self.feed_state['cancelled_unpublished_records'] += bool(record)
+        self.feed_state['cancelled_partial_records'] += bool(record) and partial
+        self.feed_state['cancelled_unpublished_bytes'] += len(record)
+        self.feed_state['exit_reason'] = 'cancelled_partial' if record and partial else 'cancelled_before_publish'
+
+    def _feed_fill(self, record, target, deadline=None):
+        """One record deadline starts with its first byte, not each recv.
+
+        Idle record boundaries remain cancelable without a media-idle timeout.
+        Only this worker's owned video socket receives the 100ms read timeout.
+        """
+        while len(record) < target:
+            if self.stop_event.is_set():
+                self._feed_discard(record, True)
+                return False, deadline
+            if deadline is not None and time.monotonic() >= deadline:
+                self.feed_state['partial_timeouts'] += 1
+                self.feed_state['exit_reason'] = 'live_partial_timeout'
+                raise TimeoutError('owned_video_partial_record_deadline')
+            try:
+                request = min(65536, target-len(record))
+                part = self.channels['video'].recv(request)
+            except socket.timeout:
+                continue
+            except OSError:
+                if self.stop_event.is_set():
+                    self._feed_discard(record, True)
+                    return False, deadline
+                raise
+            if not part:
+                if self.stop_event.is_set():
+                    self._feed_discard(record, True)
+                    return False, deadline
+                self.feed_state['live_eof_records'] += 1
+                self.feed_state['exit_reason'] = 'live_source_eof'
+                raise EOFError('owned_video_source_closed')
+            if len(part) > request:
+                raise ValueError('owned_video_recv_bound')
+            if deadline is None:
+                deadline = time.monotonic()+self.FEED_PARTIAL_SECONDS
+            record.extend(part)
+            self.feed_state['max_buffered_bytes'] = max(
+                self.feed_state['max_buffered_bytes'], len(record))
+            if time.monotonic() >= deadline:
+                self.feed_state['partial_timeouts'] += 1
+                self.feed_state['exit_reason'] = 'live_partial_timeout'
+                raise TimeoutError('owned_video_partial_record_deadline')
+        return True, deadline
+
+    def _feed_publish(self, record, kind):
+        if self.stop_event.is_set():
+            self._feed_discard(record, False)
+            return False
+        # Once publication begins, the sole writer finishes the whole record
+        # even on cancellation. The video reader then drains without sending.
+        # A broken/stalled owned pipe is still a failure; native termination
+        # remains bounded by _finish_native, never an unlimited finish wait.
+        self.feed_state['publish_inflight_bytes'] = len(record)
+        self.feed_state['publish_written_bytes'] = 0
+        view = memoryview(record)
         try:
-            while not self.stop_event.is_set():
-                try:
-                    chunk = self.channels['video'].recv(65536)
-                except socket.timeout:
-                    continue
-                if not chunk:
-                    raise EOFError('owned_video_source_closed')
-                self.native.stdin.write(chunk)
-                self.native.stdin.flush()
+            offset = 0
+            while offset < len(view):
+                count = self.native.stdin.write(view[offset:])
+                if type(count) is not int or not 0 < count <= len(view)-offset:
+                    raise OSError('owned_packetizer_write_closed')
+                offset += count
+                self.feed_state['publish_written_bytes'] = offset
+            self.native.stdin.flush()
+        except Exception:
+            self.feed_state['publish_failures'] += 1
+            self.feed_state['exit_reason'] = 'publish_failure'
+            raise
         finally:
-            # This writer owns stdin close: another thread must not deadlock on
-            # BufferedWriter's lock while a full pipe is awaiting stdout drain.
+            view.release()
+        self.feed_state[kind+'_records'] += 1
+        self.feed_state['published_bytes'] += len(record)
+        self.feed_state['publish_inflight_bytes'] = 0
+        self.feed_state['publish_written_bytes'] = 0
+        return True
+
+    def _feed(self):
+        self.feed_state = self._feed_state()
+        self.feed_state['exit_reason'] = 'running'
+        try:
+            self.channels['video'].settimeout(self.FEED_READ_CHECK_SECONDS)
+            record = bytearray()
+            complete, _ = self._feed_fill(record, 4)
+            if not complete:
+                return
+            if record != b'h264':
+                raise ValueError('owned_video_codec_marker')
+            if not self._feed_publish(record, 'codec'):
+                return
+            while not self.stop_event.is_set():
+                record = bytearray()
+                complete, deadline = self._feed_fill(record, 4)
+                if not complete:
+                    return
+                high = struct.unpack('>I', record)[0]
+                if high != 0x80000000 and high & 0x80000000:
+                    raise ValueError('owned_video_pts_flag')
+                complete, deadline = self._feed_fill(record, 12, deadline)
+                if not complete:
+                    return
+                if high == 0x80000000:
+                    width, height = struct.unpack_from('>II', record, 4)
+                    if not 0 < width <= 8192 or not 0 < height <= 8192:
+                        raise ValueError('owned_video_geometry')
+                    kind = 'geometry'
+                else:
+                    flagged_pts, size = struct.unpack('>QI', record)
+                    kind = 'config' if flagged_pts & (1 << 62) else 'media'
+                    bound = self.FEED_MAX_CONFIG_BYTES if kind == 'config' else self.FEED_MAX_AU_BYTES
+                    if not 0 < size <= bound:
+                        raise ValueError('owned_video_au_bound')
+                    complete, _ = self._feed_fill(record, 12+size, deadline)
+                    if not complete:
+                        return
+                if not self._feed_publish(record, kind):
+                    return
+            self.feed_state['exit_reason'] = 'cancelled_at_record_boundary'
+        except ValueError:
+            if self.feed_state['exit_reason'] != 'publish_failure':
+                self.feed_state['invalid_records'] += 1
+                self.feed_state['exit_reason'] = 'invalid_record'
+            raise
+        except Exception:
+            if self.feed_state['exit_reason'] == 'running':
+                self.feed_state['exit_reason'] = 'source_failure'
+            raise
+        finally:
+            # Only this writer closes stdin, after its last full publication.
+            # stop() must not take BufferedWriter's lock from another thread.
             self._close_native_input()
 
     def _close_native_input(self):
@@ -498,6 +636,7 @@ class LanMediaWorker:
                   'counts': dict(self.counts), 'failure_class': self.failure,
                   'native_summaries': list(self.native_summaries),
                   'native_shutdown': dict(self.native_shutdown), 'native_final_status': final_status,
+                  'host_video_feed': dict(self.feed_state),
                   'thread_cleanup': thread_state, 'cleanup_errors': errors,
                   'cleanup_confirmed': not errors, 'formal_session_monitor': dict(self.formal_monitor),
                   'native_clock': 'CLOCK_UPTIME_RAW', 'tcp_media_used': False,

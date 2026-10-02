@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 import socket
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -74,6 +75,7 @@ def bare_worker():
     worker.started = worker.closed = False
     worker.failure = ''
     worker.native_shutdown = worker._native_shutdown_state()
+    worker.feed_state = worker._feed_state()
     worker.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
                                 check_failures=0, max_check_duration_ms=0.0)
     worker.last_idr = 0.0
@@ -441,6 +443,215 @@ class OwnershipChecks(unittest.TestCase):
         self.assertTrue(worker.startup_done.is_set())
 
 
+class CompleteHostFeedChecks(unittest.TestCase):
+    """Owned framing fixtures; real stream case is not a native/media test."""
+    GEOMETRY = struct.pack('>III', 0x80000000, 1080, 1920)
+
+    class Capture(io.BytesIO):
+        def close(self):
+            self.value = self.getvalue()
+            super().close()
+
+    class Channel:
+        def __init__(self, data, stop, *, fragment=65536, stop_at=None,
+                     cancel_on_eof=True, idle_timeout=False):
+            self.data, self.stop, self.fragment = data, stop, fragment
+            self.position = 0
+            self.stop_at, self.cancel_on_eof = stop_at, cancel_on_eof
+            self.idle_timeout, self.timeout = idle_timeout, None
+        def settimeout(self, value):
+            self.timeout = value
+        def recv(self, size):
+            if self.position == len(self.data):
+                if self.idle_timeout:
+                    raise socket.timeout()
+                if self.cancel_on_eof:
+                    self.stop.set()
+                return b''
+            n = min(size, self.fragment, len(self.data)-self.position)
+            part = self.data[self.position:self.position+n]
+            self.position += n
+            if self.stop_at is not None and self.position >= self.stop_at:
+                self.stop.set()
+            return part
+
+    @staticmethod
+    def au(body, pts=123456):
+        return struct.pack('>QI', pts, len(body))+body
+
+    def fixture(self, data, **options):
+        worker = bare_worker()
+        output = self.Capture()
+        worker.native = SimpleNamespace(stdin=output)
+        worker.channels = {'video': self.Channel(data, worker.stop_event, **options)}
+        return worker, output
+
+    def test_every_byte_fragmentation_preserves_marker_geometry_config_and_au(self):
+        data = b'h264'+self.GEOMETRY+self.au(b'fake-config', 1 << 62)+self.au(b'fake-au')
+        worker, output = self.fixture(data, fragment=1)
+        worker._feed()
+        self.assertEqual(output.value, data)
+        self.assertEqual(worker.channels['video'].timeout, .1)
+        self.assertEqual([worker.feed_state[k] for k in
+            ('codec_records','geometry_records','config_records','media_records')], [1,1,1,1])
+        self.assertEqual(worker.feed_state['max_buffered_bytes'], 23)
+        self.assertEqual(worker.feed_state['publish_inflight_bytes'], 0)
+        self.assertTrue(worker.native_shutdown['stdin_eof_closed'])
+
+    def test_cancel_mid_codec_header_geometry_header_or_payload_never_publishes_partial(self):
+        record = self.au(b'fake-au-payload')
+        data = b'h264'+self.GEOMETRY+record
+        for stop_at, expected in [(2,b''),(6,b'h264'),(10,b'h264'),
+                                  (18,b'h264'+self.GEOMETRY),
+                                  (24,b'h264'+self.GEOMETRY),
+                                  (30,b'h264'+self.GEOMETRY)]:
+            with self.subTest(stop_at=stop_at):
+                worker, output = self.fixture(data, fragment=1, stop_at=stop_at)
+                worker._feed()
+                self.assertEqual(output.value, expected)
+                self.assertEqual(worker.feed_state['cancelled_partial_records'], 1)
+                self.assertEqual(worker.feed_state['live_eof_records'], 0)
+                self.assertTrue(output.closed)
+
+    def test_complete_but_not_yet_published_record_is_discarded_on_cancel(self):
+        data = b'h264'+self.GEOMETRY+self.au(b'fake-au')
+        worker, output = self.fixture(data, stop_at=len(data))
+        worker._feed()
+        self.assertEqual(output.value, b'h264'+self.GEOMETRY)
+        self.assertEqual(worker.feed_state['cancelled_unpublished_records'], 1)
+        self.assertEqual(worker.feed_state['cancelled_partial_records'], 0)
+
+    def test_live_boundary_eof_and_partial_codec_header_or_payload_all_fail(self):
+        full = b'h264'+self.GEOMETRY+self.au(b'fake-au')
+        for data, expected in [(b'',b''),(b'h2',b''),
+                               (full[:18],b'h264'+self.GEOMETRY),
+                               (full[:-2],b'h264'+self.GEOMETRY),(full,full)]:
+            with self.subTest(size=len(data)):
+                worker, output = self.fixture(data, cancel_on_eof=False)
+                with self.assertRaises(EOFError):
+                    worker._feed()
+                self.assertEqual(output.value, expected)
+                self.assertEqual(worker.feed_state['live_eof_records'], 1)
+                self.assertEqual(worker.feed_state['cancelled_partial_records'], 0)
+
+    def test_invalid_marker_geometry_pts_or_oversize_length_fails_without_payload_read(self):
+        cases = [b'hevc', b'h264'+struct.pack('>III',0x80000000,0,1920),
+                 b'h264'+struct.pack('>III',0x80000000,8193,1920),
+                 b'h264'+self.GEOMETRY+struct.pack('>I',0x80000001),
+                 b'h264'+self.GEOMETRY+struct.pack('>QI',0,0),
+                 b'h264'+self.GEOMETRY+struct.pack('>QI',0,1024*1024+1),
+                 b'h264'+self.GEOMETRY+struct.pack('>QI',1 << 62,65537)]
+        for data in cases:
+            with self.subTest(size=len(data)):
+                worker, output = self.fixture(data, cancel_on_eof=False)
+                with self.assertRaises(ValueError):
+                    worker._feed()
+                self.assertEqual(worker.feed_state['invalid_records'], 1)
+                self.assertEqual(worker.feed_state['media_records'], 0)
+                self.assertEqual(worker.feed_state['config_records'], 0)
+                self.assertLessEqual(worker.feed_state['max_buffered_bytes'], 12)
+
+    def test_native_maximum_au_is_a_single_bounded_record(self):
+        data = b'h264'+self.GEOMETRY+self.au(b'x'*(1024*1024))
+        worker, output = self.fixture(data)
+        worker._feed()
+        self.assertEqual(output.value, data)
+        self.assertEqual(worker.feed_state['max_buffered_bytes'], 1024*1024+12)
+        self.assertEqual(worker.feed_state['media_records'], 1)
+
+    def test_partial_record_has_one_deadline_across_recv_timeouts(self):
+        worker, output = self.fixture(b'h264'+b'\x00', idle_timeout=True)
+        now = [0.0]
+        def clock():
+            now[0] += .51
+            return now[0]
+        with patch('udp_lan_worker.time.monotonic', side_effect=clock):
+            with self.assertRaises(TimeoutError):
+                worker._feed()
+        self.assertEqual(output.value, b'h264')
+        self.assertEqual(worker.feed_state['partial_timeouts'], 1)
+
+    def test_closed_writer_failure_is_not_reclassified_as_invalid_source_record(self):
+        worker, _ = self.fixture(b'h264')
+        worker.native.stdin = Mock()
+        worker.native.stdin.closed = False
+        worker.native.stdin.write.side_effect = ValueError('fake closed writer detail')
+        with self.assertRaises(ValueError):
+            worker._feed()
+        self.assertEqual(worker.feed_state['publish_failures'], 1)
+        self.assertEqual(worker.feed_state['invalid_records'], 0)
+        self.assertEqual(worker.feed_state['exit_reason'], 'publish_failure')
+        self.assertEqual(worker.feed_state['publish_inflight_bytes'], 4)
+        self.assertNotIn('fake closed writer detail', json.dumps(worker.feed_state))
+
+    def test_cancel_during_real_partial_pipe_write_finishes_record_before_eof(self):
+        # A real owned child strictly reads one header+AU and boundary EOF.
+        # Parent writes through an 8192-byte wrapper to make cancellation occur
+        # inside a multi-write publication, not between already atomic mocks.
+        script = (
+            "import sys,struct,json,time\n"
+            "s=sys.stdin.buffer\n"
+            "def exact(n):\n"
+            " b=bytearray()\n"
+            " while len(b)<n:\n"
+            "  p=s.read(min(2048,n-len(b)))\n"
+            "  if not p:raise RuntimeError('truncated_fixture')\n"
+            "  b.extend(p);time.sleep(.0001)\n"
+            " return bytes(b)\n"
+            "assert exact(4)==b'h264'\n"
+            "assert struct.unpack('>III',exact(12))==(0x80000000,1080,1920)\n"
+            "pts,size=struct.unpack('>QI',exact(12))\n"
+            "assert size==131072 and pts==123456\n"
+            "body=exact(size)\n"
+            "assert body==b'x'*size and s.read(1)==b''\n"
+            "print(json.dumps({'complete_record_bytes':size+12,'boundary_eof':True}))\n"
+        )
+        worker = bare_worker()
+        worker.native = subprocess.Popen([sys.executable,'-c',script],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stream = worker.native.stdin
+        class LimitedWriter:
+            def __init__(self): self.written=0;self.cancelled_at=None
+            @property
+            def closed(self): return stream.closed
+            def write(self, data):
+                n=stream.write(data[:8192]);self.written+=n
+                if self.written>16 and not worker.stop_event.is_set():
+                    self.cancelled_at=self.written;worker.stop_event.set()
+                return n
+            def flush(self): stream.flush()
+            def close(self): stream.close()
+        writer = LimitedWriter()
+        worker.native.stdin=writer
+        data=b'h264'+self.GEOMETRY+self.au(b'x'*131072)
+        send, receive = socket.socketpair()
+        worker.channels={'video':receive}
+        sent=[]
+        def source():
+            try: send.sendall(data);sent.append(True)
+            finally: send.close()
+        thread=threading.Thread(target=source);thread.start()
+        try:
+            worker._feed()
+            worker.native.wait(timeout=3)
+            result=json.loads(worker.native.stdout.read(4096))
+            self.assertEqual(worker.native.returncode,0)
+            self.assertTrue(result['boundary_eof'])
+            self.assertEqual(result['complete_record_bytes'],131084)
+            self.assertLess(writer.cancelled_at,len(data))
+            self.assertEqual(worker.feed_state['published_bytes'],len(data))
+            self.assertEqual(worker.feed_state['publish_failures'],0)
+            self.assertTrue(worker.native_shutdown['stdin_eof_closed'])
+        finally:
+            receive.close();thread.join(timeout=2)
+            if worker.native.poll() is None:worker.native.kill();worker.native.wait(timeout=2)
+            if not stream.closed:stream.close()
+            worker.native.stdout.close();worker.native.stderr.close()
+        self.assertEqual(sent,[True])
+        self.assertFalse(thread.is_alive())
+
+
+
 class NativeEofChecks(unittest.TestCase):
     def test_feed_owns_stdin_eof_even_when_source_ends_with_error(self):
         worker = bare_worker()
@@ -450,6 +661,7 @@ class NativeEofChecks(unittest.TestCase):
         with self.assertRaises(EOFError): worker._feed()
         self.assertTrue(worker.native.stdin.closed)
         self.assertTrue(worker.native_shutdown['stdin_eof_closed'])
+
 
     def test_revoked_video_reader_keeps_draining_without_udp_forwarding(self):
         worker = bare_worker()

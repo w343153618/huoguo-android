@@ -97,7 +97,7 @@
   "renderer": "skiavk",
   "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
-  "independent_experimental_app_sha256": "2dc1e0e8a60d7996195a74d486b4c15973cc90b880be9a722f71a94a4d722f0e",
+  "independent_experimental_app_sha256": "ba84ac006eb007cbe1b087fe29efec3a3a0c2dcdb6298b8130a1d5eb49331387",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
     "real_video_sessions": 33,
@@ -140,8 +140,8 @@
     "phone_tailnet_ipv4": [
       "100.65.0.3"
     ],
-    "phone_tailnet_status": "Existing registeredOnePlus12node48 online; M1 discovery directendpoint192.168.9.149:35621 observed64/78/45ms, not mediaFPS or physicaltouch latency",
-    "media_udp_tailnet_test_completed": false,
+    "phone_tailnet_status": "Existing registered OnePlus12node48/.3; same-home real inner authenticated UDP media and UI reconnect tested; LocalAPI active direct endpoint plus byte growth; outer each packet and WAN/V50 unverified",
+    "media_udp_tailnet_test_completed": true,
     "evidence": "docs/evidence/yilufa-migration-20261002",
     "formal_public_m1": "146.56.249.175:15556",
     "formal_public_m5": "146.56.249.175:15558",
@@ -162,7 +162,8 @@
     "latest_retained_node_evidence": "docs/evidence/tailscale-m1-retained-20261003/retained-node-readback.json",
     "m1_trusted_tailnet_ping": "HTTP200, nodeM1/emulator-5556/videotoolbox, exactbundledcert chainrequired, hostnamecheckdisabled; existingTLS/TCP only",
     "tailnet_scope_after_rename_readonly_accepted": true,
-    "tailnet_scope_after_rename_evidence": "docs/evidence/tailscale-m1-retained-20261003/tailnet-scope-readback.json"
+    "tailnet_scope_after_rename_evidence": "docs/evidence/tailscale-m1-retained-20261003/tailnet-scope-readback.json",
+    "latest_tailnet_media_evidence": "docs/evidence/tailnet-owner-media-20261003-attempt7"
   },
   "formal_app_version": "1.30",
   "formal_app_version_code": 31,
@@ -400,7 +401,7 @@
       "update_path": "/experimental/experiment.json",
       "public_download_deployed": false,
       "release_published": false,
-      "current_version_validation": "built/linted, isolated OnePlus12 installation and login UI readback; no current-version media A/B or public/V50 acceptance"
+      "current_version_validation": "Same installed1.31alpha1 authenticated Tailnet real phone video/audio, leave and new auth reconnect; nonisolated owner/same-home WiFi only; no friend/publicUDP/WAN/V50 release acceptance"
     }
   },
   "nps_provenance_audit": {
@@ -524,5 +525,111 @@
       "decision_date": "2026-10-03",
       "no_runtime_security_checks_disabled": true
     }
-  }
+  },
+  "independent_experimental_app_sha_scope": "Current installed1.31-alpha.1/code32 Tailnet+PCM candidate, verified actual base.apk SHA on OnePlus12. Older2dc/9108 results retain separate historical boundaries.",
+  "latest_owner_tailnet_media": {
+    "report": "tailnet-owner-media-20261003.md",
+    "evidence": "evidence/tailnet-owner-media-20261003-attempt7",
+    "host_isolated": false,
+    "source_public_title_cold_launch_verified": true,
+    "source_requested": "BBB aqz-KE-bpKQ",
+    "source_selected_codec_itag_verified": false,
+    "scope": "ownerUID501 M1; CPU-limited OnePlus12; same-homeWiFi registeredTailnet authenticated innerUDP; outer per-packet unverified",
+    "requested_dimensions": [
+      1080,
+      1920
+    ],
+    "requested_fps_cap": 60,
+    "video_target_bps": 8000000,
+    "wire_bps": 32000000,
+    "buffer_ms": 80,
+    "pcm_queue_enabled": false,
+    "source_sf_wall_fps": 58.111,
+    "source_sf_cadence_fps": 59.702,
+    "phone_sf_wall_fps": 55.678,
+    "phone_sf_cadence_fps": 57.273,
+    "phone_max_gap_ms": 754.167551,
+    "phone_gaps_over100ms": 1,
+    "native_frame_budget_drops": 1,
+    "native_dependent_source_drops": 31,
+    "max_wire_frame_bytes": 322584,
+    "normal_UI_auth_video_audio_leave_reconnect": true,
+    "touch_exercised_this_round": false,
+    "host_final_reports": 2,
+    "native_exit_codes": [
+      1,
+      0
+    ],
+    "gateway_quiescence_barrier_confirmed": true,
+    "phone_audio_threads_alive_after_each_leave": [
+      0,
+      0
+    ],
+    "cpu_limits_written": false,
+    "public_WAN_V50_accepted": false,
+    "optical_or_acoustic_latency_measured": false,
+    "formal_app_released_udp": false,
+    "prior_attempt6_source_identity_unverified_exclude_fixed60_comparison": true,
+    "later_complete_record_feed_followup": {
+      "evidence": "evidence/tailnet-owner-media-20261003-attempt8",
+      "controlled_bitrate_ab": false,
+      "requested_dimensions": [
+        1080,
+        1920
+      ],
+      "fps_cap": 60,
+      "video_target_bps": 4000000,
+      "wire_bps": 32000000,
+      "buffer_ms": 80,
+      "pcm_queue_enabled": false,
+      "source_sf_wall_fps": 58.078,
+      "source_sf_cadence_fps": 59.652,
+      "phone_sf_wall_fps": 57.397,
+      "phone_sf_cadence_fps": 59.094,
+      "phone_max_gap_ms": 165.762865,
+      "phone_gaps_over100ms": 1,
+      "native_input_frames": [
+        1551,
+        269
+      ],
+      "native_output_frames": [
+        1551,
+        269
+      ],
+      "native_frame_budget_drops": [
+        0,
+        0
+      ],
+      "native_dependency_drops": [
+        0,
+        0
+      ],
+      "native_exit_codes": [
+        0,
+        0
+      ],
+      "feed_cancelled_unpublished_partial_bytes": [
+        4,
+        4
+      ],
+      "feed_live_protocol_errors": 0,
+      "gateway_quiescence_confirmed": true,
+      "phone_inbox_overflow_events": [
+        3,
+        3
+      ],
+      "phone_decoder_input_timeouts": [
+        1,
+        1
+      ],
+      "normal_ui_leave_reconnect": true,
+      "touch_exercised": false,
+      "phone_cpu_limits_written": false,
+      "public_WAN_V50_accepted": false,
+      "optical_or_acoustic_latency_measured": false,
+      "source_checks_passed": 896,
+      "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
+    }
+  },
+  "updated_evidence_utc": "2026-10-02T19:19:27.970618+00:00"
 }

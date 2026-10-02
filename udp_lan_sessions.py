@@ -135,6 +135,11 @@ class UdpLanSessions:
         self._closed = False
         self._stop_failures = 0
         self._cleanup_failed = False
+        # Payload-free completion signal, distinct from revoked/closed access.
+        # Closing a reservation does not set this until factory/start/stop have
+        # returned and its exactly-once owned cleanup has finished.
+        self._quiescent = threading.Event()
+        self._quiescent.set()
 
     def _scope_ok(self) -> bool:
         """Read an in-memory verifier state; never do IPC on the UDP hot path.
@@ -166,6 +171,7 @@ class UdpLanSessions:
                 and (record.worker is None or record.stop_done)
                 and self._active is record):
             self._active = None
+            self._quiescent.set()
 
     def _stop_locked(self, record: _Session) -> _Session | None:
         if (record.phase == 'closed' and record.worker is not None
@@ -257,6 +263,7 @@ class UdpLanSessions:
             now = self._clock()
             record = _Session(account, config, now, now + self.READY_SECONDS)
             self._active = record
+            self._quiescent.clear()
         worker = None
         try:
             worker = factory(dict(config))
@@ -438,3 +445,45 @@ class UdpLanSessions:
                 pending.append(worker)
         for record in pending:
             self._stop(record)
+
+    def close_and_wait(self, timeout: float = 45.0) -> dict:
+        """Gateway-exit barrier; wait without holding the registry lock.
+
+        Ordinary revoke/DELETE remain promptly idempotent. At process shutdown
+        an already-running stop cannot be abandoned merely because another
+        caller has claimed stop_called. If this caller claims cleanup, run that
+        exactly-once operation on one owned daemon while this caller observes
+        a bounded completion signal. Timeout is failure, never successful exit.
+        A pending factory/start keeps the reservation until its existing caller
+        completes cleanup; no duplicate worker.stop or cleanup thread is made.
+        """
+        if (type(timeout) not in (int, float) or not 0 < timeout <= 60):
+            raise ValueError('Bounded shutdown timeout required')
+        deadline = time.monotonic() + timeout
+        with self._lock:
+            self._closed = True
+            worker = (self._close_locked(self._active, self._clock())
+                      if self._active is not None else None)
+            pending, self._pending_cleanup = self._pending_cleanup, []
+            if worker is not None:
+                pending.append(worker)
+        if pending:
+            def finish_owned():
+                for record in pending:
+                    self._stop(record)
+            cleanup = threading.Thread(target=finish_owned,
+                                       name='owned_udp_registry_shutdown', daemon=True)
+            try:
+                cleanup.start()
+            except Exception:
+                with self._lock:
+                    self._stop_failures += 1
+                    self._cleanup_failed = True
+                raise SessionError(503, 'udp_shutdown_worker_unavailable') from None
+        # Event.wait releases no registry-owned lock because none is held here.
+        if not self._quiescent.wait(max(0.0, deadline-time.monotonic())):
+            raise SessionError(503, 'udp_shutdown_quiescence_timeout')
+        with self._lock:
+            if self._cleanup_failed:
+                raise SessionError(503, 'udp_cleanup_failed')
+            return {'quiescence_confirmed': True, 'stop_failures': self._stop_failures}
