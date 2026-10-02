@@ -155,7 +155,11 @@ def main():
     host=a.host
     try:
         root('rm -f '+REPORT_REMOTE)
-        if credential is not None:root('umask 077; cat > '+remote+'; chown '+uid+':'+uid+' '+remote+'; chmod 600 '+remote+'; restorecon '+remote,input=credential)
+        if credential is not None:
+            # Fresh release installs have not yet created Context.getFilesDir().
+            private_dir=str(Path(remote).parent)
+            root('umask 077; mkdir -p '+private_dir+'; chown '+uid+':'+uid+' '+private_dir+'; chmod 700 '+private_dir+'; restorecon '+private_dir)
+            root('umask 077; cat > '+remote+'; chown '+uid+':'+uid+' '+remote+'; chmod 600 '+remote+'; restorecon '+remote,input=credential)
         credential=None
         args=['am','instrument','-w','-e','host',host,'-e','mode',a.mode,'-e','max_size',str(a.max_size),
               '-e','login_path',a.login_path,
