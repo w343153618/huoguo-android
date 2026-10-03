@@ -777,5 +777,30 @@
     "public_WAN_or_V50_tested": false,
     "optical_or_acoustic_latency_measured": false,
     "scope": "same alpha3, 1080/4M VBR/60cap/80ms lead0 PCMoff; same-home WiFi registered Tailnet inner UDP; owner nonisolated; no controlled claim of FPS improvement"
+  },
+  "host_roles_20261003": {
+    "friend_daily_host": "M5",
+    "friend_account": "huoguo",
+    "friend_public_endpoint": "146.56.249.175:15558",
+    "owner_experiment_host": "M1",
+    "owner_account": "wyw",
+    "owner_public_endpoint_retained": "146.56.249.175:15556",
+    "m5_formal_busy_skip_interrupting_work": true,
+    "m1_experiments_may_continue_without_affecting_m5": true,
+    "do_not_clone_or_migrate_existing_android_data_for_role_split": true,
+    "m5_repair_evidence": "docs/m5-session-startup-fix-20261003.md"
+  },
+  "mapping_diagnostics_candidate_build_20261003": {
+    "version_name": "1.31-alpha.4",
+    "version_code": 35,
+    "apk_sha256": "8c00a1660ccef0e84b11c98c16091fd630c5980d29704e069562b92a04c94351",
+    "jni_sha256": "578347ca24008ce7b987c77f2f1356c56761ac3d9ee4e7be89b8e9130476e402",
+    "build_lint_passed": true,
+    "full_unittest_checks": 954,
+    "phone_installed": false,
+    "phone_retains_version": "1.31-alpha.3",
+    "classification": "offline_diagnostics_candidate_not_performance_acceptance",
+    "next_action": "Build matching UI helper and record helper SHA, verify M1 formal idle, then bounded same-source M1 owner real phone sampling; do not touch busy M5",
+    "contract_doc": "docs/native-mapping-details-contract-20261003.md"
   }
 }

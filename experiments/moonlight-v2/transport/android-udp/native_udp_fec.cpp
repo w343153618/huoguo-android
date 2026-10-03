@@ -69,6 +69,15 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_local_remoteandroid_direct_NativeUd
 extern "C" JNIEXPORT void JNICALL Java_local_remoteandroid_direct_NativeUdpFec_nativeSetDiagnostics(JNIEnv* env,jclass,jlong handle,jboolean enabled) {
     auto state=lookup(env,handle);if(!state)return;std::lock_guard guard(state->lock);state->receiver.setDiagnostics(enabled==JNI_TRUE);
 }
+extern "C" JNIEXPORT void JNICALL Java_local_remoteandroid_direct_NativeUdpFec_nativeSetMappingDiagnostics(JNIEnv* env,jclass,jlong handle,jboolean enabled) {
+    auto state=lookup(env,handle);if(!state)return;std::lock_guard guard(state->lock);state->receiver.setMappingDiagnostics(enabled==JNI_TRUE);
+}
+extern "C" JNIEXPORT jlongArray JNICALL Java_local_remoteandroid_direct_NativeUdpFec_nativeMappingDetails(JNIEnv* env,jclass,jlong handle) {
+    auto state=lookup(env,handle);if(!state)return nullptr;std::lock_guard guard(state->lock);
+    const auto raw=state->receiver.mappingDetails();std::array<jlong,PhoneReceiver::MappingDetailValues> values{};
+    std::transform(raw.begin(),raw.end(),values.begin(),[](uint64_t value){return jlong(std::min(value,uint64_t(INT64_MAX)));});
+    auto out=env->NewLongArray(jsize(values.size()));if(out)env->SetLongArrayRegion(out,0,jsize(values.size()),values.data());return out;
+}
 extern "C" JNIEXPORT jobjectArray JNICALL Java_local_remoteandroid_direct_NativeUdpFec_nativeDrainEvents(JNIEnv* env,jclass,jlong handle) {
     auto state=lookup(env,handle);if(!state)return nullptr;
     try{

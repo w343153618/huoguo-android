@@ -30,7 +30,7 @@ class DecoderStageMetricsCheck(unittest.TestCase):
     def test_app_summary_retains_fixed_stage_arrays_and_submission_readback(self):
         source = (ROOT/'experiments/nps-transport/phone/UdpVideoProbe.java').read_text()
         summary = source.split('static JSONObject numericAppSummary', 1)[1]
-        for field in ('decoder_stage_metrics', 'surface_submit_lead_ms', 'surface_submit_applications',
+        for field in ('decoder_stage_metrics', 'native_mapping_details', 'surface_submit_lead_ms', 'surface_submit_applications',
                       'surface_submit_wait_count', 'surface_submit_max_output_hold_ms', 'surface_submit_status_code'):
             self.assertIn('"'+field+'"', summary)
         self.assertIn('64*1024', summary)
@@ -91,9 +91,18 @@ public final class NumericStageDriver {public static void main(String[] args)thr
  JSONObject report=new JSONObject().put("decoder_stage_metrics",NumericStageSource.stageSummary(d.snapshot(origin+120_000_000_000L)))
   .put("surface_submit_lead_ms",16).put("surface_submit_applications",1000).put("surface_submit_wait_count",30000)
   .put("surface_submit_status","applied_bounded_wait").put("hardware",true);
+ long[] mapping=NativeMappingDetailsProbe.full();mapping[19]=1000;mapping[17]+=1000;mapping[22]+=1000;mapping[23]+=1000;
+ for(int row=0;row<32;row++)mapping[36+row*8]+=1000;
+ report.put("native_mapping_details",NumericStageSource.mappingDetailsSummary(mapping,1,true,1202,0,123456789L,1234567L,origin));
  JSONObject audio=new JSONObject();for(int i=0;i<200;i++)audio.put("fixed_audio_metric_"+i,1234567890123L);report.put("udp_audio",audio);
  JSONObject numeric=NumericStageSource.numericAppSummary(report);System.out.println(numeric);
  System.out.println("numeric_report_bytes="+numeric.toString().getBytes(StandardCharsets.UTF_8).length);
+ JSONObject missing=NumericStageSource.mappingDetailsSummary(null,-2,true,1,1,100,100,origin);
+ if(!Integer.valueOf(-2).equals(missing.get("status_code"))||missing.opt("events_total")!=null||missing.opt("events")!=null)
+  throw new AssertionError("missing JNI fabricated counters");
+ try{NumericStageSource.mappingDetailsSummary(new long[291],1,true,1,0,100,100,origin);
+  throw new AssertionError("invalid JNI summary accepted");}
+ catch(NativeUdpFec.MappingDetailsException wanted){if(wanted.status!=-3)throw wanted;}
  for(int i=200;i<5000;i++)audio.put("fixed_audio_metric_"+i,1234567890123L);
  try{NumericStageSource.numericAppSummary(report);throw new AssertionError("oversize numeric report accepted");}
  catch(IOException wanted){if(!wanted.getMessage().equals("numeric_app_report_limit"))throw wanted;}
@@ -110,7 +119,9 @@ public final class NumericStageDriver {public static void main(String[] args)thr
                 path.write_text(text)
                 paths.append(str(path))
             subprocess.run([javac, '-d', folder,
-                str(ROOT/'app/src/main/java/local/remoteandroid/direct/MediaPresentationMetrics.java'), *paths],
+                str(ROOT/'app/src/main/java/local/remoteandroid/direct/MediaPresentationMetrics.java'),
+                str(ROOT/'experiments/nps-transport/phone/NativeUdpFec.java'),
+                str(ROOT/'tests/java/local/remoteandroid/direct/NativeMappingDetailsProbe.java'), *paths],
                 check=True, capture_output=True, timeout=30)
             result = subprocess.run([java, '-cp', folder, 'local.remoteandroid.direct.NumericStageDriver'],
                 check=True, capture_output=True, text=True, timeout=10)
@@ -131,6 +142,16 @@ public final class NumericStageDriver {public static void main(String[] args)thr
             self.assertGreater(stages['events_evicted'], 0)
             self.assertEqual(report['surface_submit_status_code'], 1)
             self.assertEqual(report['surface_submit_lead_ms'], 16)
+            mapping = report['native_mapping_details']
+            self.assertEqual(mapping['status_code'], 1)
+            self.assertEqual(mapping['schema_version'], 1)
+            self.assertEqual(mapping['coverage_mask'], 15)
+            self.assertEqual(mapping['events_evicted'], 1000)
+            self.assertEqual(len(mapping['events']['sequence']), 32)
+            self.assertEqual(mapping['events']['sequence'], list(range(1001, 1033)))
+            self.assertEqual(mapping['events']['reason_code'], [1, 2, 3, 4]*8)
+            self.assertEqual(mapping['events']['frame_id'][-1], 9223372036854775807)
+            self.assertEqual(mapping['reason_4_extends_assembly_grant'], 0)
             self.assertLess(len(lines[0].encode()), 65536)
             self.assertIn('PASS', lines[-1])
 

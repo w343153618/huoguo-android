@@ -7,8 +7,9 @@ namespace huoguo::android_udp {
 inline void initializeFec() { static std::once_flag once; std::call_once(once,[]{reed_solomon_init();}); }
 
 // The host and phone monotonic clocks are unrelated. This adapter deliberately
-// grants an 80ms ASSEMBLY window from the first authenticated shard, not an
-// alleged capture-to-WAN latency limit. Each frame can receive that grant once.
+// grants an 80ms ASSEMBLY window from the first successfully admitted mapping
+// shard, not an alleged capture-to-WAN latency limit. A capacity-rejected shard
+// has no grant; later shards of an existing mapping never extend its grant.
 class PhoneReceiver {
     struct SeenBlock {
         uint8_t count;uint16_t shardBytes,mask=0;uint32_t bytes;
@@ -25,6 +26,18 @@ public:
     // Columns are documented in NativeUdpFec.EVENT_NAMES. Times use the RX
     // arrival/tick domain supplied by the caller, not a cross-host latency.
     using FrameEvent=std::array<uint64_t,14>;
+    // Independent, non-destructive numeric diagnostics. The legacy 21 stats
+    // and frame-event drain retain their original contracts. All event times
+    // below use caller-supplied valid phone RX arrival/tick microseconds.
+    static constexpr size_t MappingDetailHeaderColumns=36,MappingDetailEventColumns=8;
+    static constexpr size_t MappingDetailEventCapacity=32,MappingCapacityTrackingCapacity=32;
+    static constexpr size_t MappingDetailValues=MappingDetailHeaderColumns+
+        MappingDetailEventCapacity*MappingDetailEventColumns;
+    using MappingDetailEvent=std::array<uint64_t,MappingDetailEventColumns>;
+    using MappingDetails=std::array<uint64_t,MappingDetailValues>;
+    enum MappingDetailReason:uint64_t {
+        MappingOldFrame=1,MappingCapacity=2,MappingHeaderMismatch=3,MappingCapacityAdmitted=4
+    };
 private:
     std::map<uint64_t,Mapping> mappings_;
     std::deque<uint64_t> retired_;
@@ -38,6 +51,71 @@ private:
     std::deque<FrameEvent> events_;
     uint64_t eventsEvicted_=0,eventSequence_=0;
     static constexpr size_t EventCapacity=256,EventBatch=64;
+    bool mappingDiagnostics_=false;
+    // Fixed storage: rejection/admission diagnostics never allocate per packet.
+    std::array<uint64_t,3> mappingReasons_{};
+    uint64_t mappingObserved_=0,mappingUnobserved_=0;
+    uint64_t capacityAdapterLast_=0,capacityCoreLast_=0,capacityOldestLast_=0;
+    uint64_t capacityAdapterMax_=0,capacityCoreMax_=0,capacityOldestMax_=0,adapterMax_=0;
+    std::array<MappingDetailEvent,MappingDetailEventCapacity> mappingEvents_{};
+    size_t mappingEventHead_=0,mappingEventCount_=0;
+    uint64_t mappingEventTotal_=0,mappingEventEvicted_=0,mappingEventCleared_=0;
+    uint64_t mappingEnableTransitions_=0,mappingDisableTransitions_=0;
+    uint64_t newMappingsObserved_=0,admissionsAfterCapacity_=0,capacityTrackingEvicted_=0;
+    struct CapacityObservation { uint64_t id=0,firstRejectedAt=0; };
+    std::array<CapacityObservation,MappingCapacityTrackingCapacity> capacityObservations_{};
+    uint64_t oldestMappingAge(uint64_t at)const {
+        uint64_t oldest=0;
+        for(const auto& [id,m]:mappings_){(void)id;oldest=std::max(oldest,at>=m.arrival?at-m.arrival:uint64_t(0));}
+        return oldest;
+    }
+    size_t capacityTrackingActive()const {
+        return size_t(std::count_if(capacityObservations_.begin(),capacityObservations_.end(),
+            [](const auto& item){return item.id!=0;}));
+    }
+    uint64_t rememberCapacityRejection(uint64_t id,uint64_t at){
+        for(const auto& item:capacityObservations_)if(item.id==id)return item.firstRejectedAt;
+        auto slot=std::find_if(capacityObservations_.begin(),capacityObservations_.end(),
+            [](const auto& item){return item.id==0;});
+        if(slot==capacityObservations_.end()){
+            slot=std::min_element(capacityObservations_.begin(),capacityObservations_.end(),
+                [](const auto& a,const auto& b){return a.firstRejectedAt<b.firstRejectedAt;});
+            capacityTrackingEvicted_++;
+        }
+        *slot={id,at};return at;
+    }
+    void mappingEvent(uint64_t id,uint64_t at,MappingDetailReason reason,uint64_t firstCapacity=0){
+        if(mappingEventCount_==MappingDetailEventCapacity){
+            mappingEventHead_=(mappingEventHead_+1)%MappingDetailEventCapacity;mappingEventEvicted_++;
+        }else mappingEventCount_++;
+        const auto index=(mappingEventHead_+mappingEventCount_-1)%MappingDetailEventCapacity;
+        mappingEvents_[index]={++mappingEventTotal_,id,at,uint64_t(reason),mappings_.size(),
+            core_.pendingFrames(),oldestMappingAge(at),firstCapacity};
+    }
+    void observeMappingRejection(const Header& h,uint64_t at,MappingDetailReason reason){
+        if(!mappingDiagnostics_){mappingUnobserved_++;return;}
+        mappingObserved_++;mappingReasons_[size_t(reason)-1]++;
+        uint64_t firstCapacity=0;
+        if(reason==MappingCapacity){
+            capacityAdapterLast_=mappings_.size();capacityCoreLast_=core_.pendingFrames();
+            capacityOldestLast_=oldestMappingAge(at);
+            capacityAdapterMax_=std::max(capacityAdapterMax_,capacityAdapterLast_);
+            capacityCoreMax_=std::max(capacityCoreMax_,capacityCoreLast_);
+            capacityOldestMax_=std::max(capacityOldestMax_,capacityOldestLast_);
+            firstCapacity=rememberCapacityRejection(h.frame,at);
+        }
+        mappingEvent(h.frame,at,reason,firstCapacity);
+    }
+    void observeNewMapping(uint64_t id,uint64_t at){
+        if(!mappingDiagnostics_)return;
+        newMappingsObserved_++;adapterMax_=std::max(adapterMax_,uint64_t(mappings_.size()));
+        for(auto& item:capacityObservations_)if(item.id==id){
+            const auto first=item.firstRejectedAt;item={};admissionsAfterCapacity_++;
+            // This observes admission after emplace, before core receive. The
+            // older rejection timestamp is an association only, never a grant.
+            mappingEvent(id,at,MappingCapacityAdmitted,first);return;
+        }
+    }
     void event(uint64_t type,uint64_t id,const Mapping& m,uint64_t reason,uint64_t pts=0){
         if(!diagnostics_)return;
         if(events_.size()>=EventCapacity){events_.pop_front();eventsEvicted_++;}
@@ -108,13 +186,20 @@ public:
         Header h;
         try { h=Header::parse(packet); } catch(const std::invalid_argument&) { invalid_++; return take(); }
         if(std::find(retired_.begin(),retired_.end(),h.frame)!=retired_.end()) { settled_++; return take(); }
-        if(highest_>=h.frame && highest_-h.frame>=256) { mappingRejected_++; return take(); }
+        if(highest_>=h.frame && highest_-h.frame>=256) {
+            mappingRejected_++;observeMappingRejection(h,arrival,MappingOldFrame);return take();
+        }
         auto found=mappings_.find(h.frame);
         if(found==mappings_.end()) {
-            if(mappings_.size()>=8) { mappingRejected_++; return take(); }
+            if(mappings_.size()>=8) {
+                mappingRejected_++;observeMappingRejection(h,arrival,MappingCapacity);return take();
+            }
             found=mappings_.emplace(h.frame,Mapping(h,arrival)).first;
             highest_=std::max(highest_,h.frame);
-        } else if(!same(found->second.original,h)) { mappingRejected_++; return take(); }
+            observeNewMapping(h.frame,arrival);
+        } else if(!same(found->second.original,h)) {
+            mappingRejected_++;observeMappingRejection(h,arrival,MappingHeaderMismatch);return take();
+        }
         observeShard(found->second,h,arrival);
         Bytes local(packet.begin(),packet.end()); put(local,24,found->second.arrival,8);
         core_.receive(local,arrival); finish(); return take();
@@ -137,5 +222,38 @@ public:
         return result;
     }
     std::array<uint64_t,4> eventStats()const{return {uint64_t(diagnostics_),events_.size(),eventsEvicted_,eventSequence_};}
+    void setMappingDiagnostics(bool enabled){
+        if(enabled==mappingDiagnostics_)return;
+        mappingDiagnostics_=enabled;
+        if(enabled){mappingEnableTransitions_++;adapterMax_=std::max(adapterMax_,uint64_t(mappings_.size()));}
+        else{
+            mappingDisableTransitions_++;mappingEventCleared_+=mappingEventCount_;
+            mappingEventHead_=0;mappingEventCount_=0;capacityObservations_={};
+        }
+    }
+    MappingDetails mappingDetails()const {
+        // Header names/indexes are mirrored by NativeUdpFec.MAPPING_DETAIL_NAMES.
+        // coverage_mask=15 declares the four installed hook families (reason,
+        // capacity context, event ring, later admission), NOT complete coverage.
+        // disabled rejections, evictions, clears and tracking loss remain visible.
+        MappingDetails result{};
+        const MappingDetailEvent first=mappingEventCount_?mappingEvents_[mappingEventHead_]:MappingDetailEvent{};
+        const MappingDetailEvent last=mappingEventCount_?
+            mappingEvents_[(mappingEventHead_+mappingEventCount_-1)%MappingDetailEventCapacity]:MappingDetailEvent{};
+        const std::array<uint64_t,MappingDetailHeaderColumns> header{
+            1,uint64_t(mappingDiagnostics_),15,mappingObserved_,mappingReasons_[0],mappingReasons_[1],mappingReasons_[2],
+            mappingUnobserved_,capacityAdapterLast_,capacityCoreLast_,capacityOldestLast_,
+            capacityAdapterMax_,capacityCoreMax_,capacityOldestMax_,adapterMax_,mappings_.size(),core_.pendingFrames(),
+            mappingEventTotal_,mappingEventCount_,mappingEventEvicted_,MappingDetailEventCapacity,MappingDetailEventColumns,
+            first[0],last[0],first[2],last[2],mappingEnableTransitions_,mappingDisableTransitions_,newMappingsObserved_,
+            admissionsAfterCapacity_,capacityTrackingActive(),capacityTrackingEvicted_,MappingCapacityTrackingCapacity,
+            now_,mappingRejected_,mappingEventCleared_};
+        std::copy(header.begin(),header.end(),result.begin());
+        for(size_t index=0;index<mappingEventCount_;index++){
+            const auto& row=mappingEvents_[(mappingEventHead_+index)%MappingDetailEventCapacity];
+            std::copy(row.begin(),row.end(),result.begin()+MappingDetailHeaderColumns+index*MappingDetailEventColumns);
+        }
+        return result;
+    }
 };
 } // namespace huoguo::android_udp

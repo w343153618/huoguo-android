@@ -1,3 +1,9 @@
+## 2026-10-03 当前续接点：M5维护完成，M1 Mapping候选已构建
+
+火锅日常线路改用M5正式15558，M1继续机主实验；两个VM/NPC/Headscale身份保留。M5已修复旧worker拒绝标准尺寸和本地scrcpy镜像冲突，实际正式NPC三通道及硬件编码启动已观察，见[m5修复记录](m5-session-startup-fix-20261003.md)。M5在线时禁止抢占或重启；不影响它的独立M1工作可继续。
+
+新Mapping诊断1.31-alpha.4/code35已经构建和lint，APK8c00a166、JNI578347ca，954个全仓unittest通过。独立292-long读回拆分三类mapping拒绝，旧stats和媒体策略未改；[契约](native-mapping-details-contract-20261003.md)记录覆盖/淘汰/关停及本轮SHA。未安装/发布新APK，手机仍alpha3。下一轮先用alpha4 classpath构建匹配UI helper并把helper SHA补入私有build-pins；核对M1正式idle及实际Source/UPTIME packetizer/encoder，修正预置单case campaign旧switch-sequence标签，再进行有界真实媒体采样。不能把新增源码或离线fixture当作之前真机长空档已解释，也不先扩大mapping/Inbox容量。
+
 ## 2026-10-03 最新：发送背压修复与阶段诊断
 
 当前机主一加12候选为1.31-alpha.3，实际APK SHA `d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf`。新增有界configure/offer/take/consumer CPU/input API/FEC poll/实际PlaybackClock observer，实际源码与产物见[四轮基线](decoder-queue-real-video-20261003.md)及[主机发送候选复测](udp-send-backpressure-real-video-20261003.md)。四轮off/on/on/off不是严格ABBA，case1发送超时终止媒体，必须排除开关开销比较；CPU动态限制/位置/热状态也未固定，不据此宣称诊断零开销。

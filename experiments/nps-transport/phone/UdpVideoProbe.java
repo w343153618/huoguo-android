@@ -80,6 +80,30 @@ public final class UdpVideoProbe extends Instrumentation {
     boolean stageDiagnosticsEnabled=true;
     private static final int[] FEC_DIAGNOSTIC_STAT_INDEX={6,9,11,12,13,17};
     private final long[] fecDiagnosticPrevious=new long[FEC_DIAGNOSTIC_STAT_INDEX.length];
+    // RX-owned fixed native snapshot; only converted to JSON after receive/cleanup.
+    private long[] mappingDetails;
+    private int mappingDetailStatus=NativeUdpFec.MAPPING_DETAIL_NOT_READ;
+    private long mappingDetailReads,mappingDetailReadFailures,mappingDetailReadTotalNs,mappingDetailReadMaxNs,mappingDetailLastReadNs;
+    private boolean mappingDetailEnableAttempted;
+
+    private void enableMappingDetails(long handle)throws NativeUdpFec.MappingDetailsException {
+        mappingDetailEnableAttempted=true;
+        try{NativeUdpFec.setMappingDiagnosticsChecked(handle,true);}
+        catch(NativeUdpFec.MappingDetailsException failure){mappingDetailStatus=failure.status;mappingDetails=null;throw failure;}
+        readMappingDetails(handle);
+    }
+    private void readMappingDetails(long handle)throws NativeUdpFec.MappingDetailsException {
+        long start=System.nanoTime();mappingDetailReads++;
+        try{
+            long[] values=NativeUdpFec.mappingDetailsChecked(handle);
+            if(values[1]!=1)throw new NativeUdpFec.MappingDetailsException(NativeUdpFec.MAPPING_DETAIL_INVALID,
+                "native_mapping_details_enabled_readback");
+            mappingDetails=values;mappingDetailStatus=NativeUdpFec.MAPPING_DETAIL_VALID;
+        }catch(NativeUdpFec.MappingDetailsException failure){
+            mappingDetails=null;mappingDetailStatus=failure.status;mappingDetailReadFailures++;throw failure;
+        }finally{mappingDetailLastReadNs=System.nanoTime();long elapsed=mappingDetailLastReadNs-start;
+            mappingDetailReadTotalNs+=elapsed;mappingDetailReadMaxNs=Math.max(mappingDetailReadMaxNs,elapsed);}
+    }
 
     static final class InboxEvent {
         final String event,reason;final long epoch,previousEpoch,timeNs,ptsUs,receivedNs,queueBytes;final int queueFrames;
@@ -255,6 +279,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 .put("assembly_clock_limitation","80ms assembly budget starts at first phone packet arrival; not a WAN one-way latency measurement");
             if(appActivity==null)NativeUdpFec.load(getContext().getApplicationInfo().nativeLibraryDir);else NativeUdpFec.loadApp();
             nativeHandle=NativeUdpFec.nativeCreate();if(nativeHandle==0)throw new IOException("native_create");
+            enableMappingDetails(nativeHandle);
             if(session.diagnosticEvents)NativeUdpFec.nativeSetDiagnostics(nativeHandle,true);
             activity=appActivity!=null?appActivity:(MainActivity)startActivitySync(new Intent().setClassName(
                 getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity")
@@ -370,6 +395,8 @@ public final class UdpVideoProbe extends Instrumentation {
                 }else report.put("audio_cleanup_confirmed",1);
                 if(touchControl!=null)report.put("udp_touch",touchControl.snapshot());
                 if(nativeHandle!=0){
+                    try{readMappingDetails(nativeHandle);}
+                    catch(NativeUdpFec.MappingDetailsException failure){result.putString("failure","UdpVideoProbe mapping diagnostics "+failure.status);}
                     if(diagnosticEvents){drainNativeEvents(nativeHandle);report.put("native_frame_events",new JSONArray(nativeFrameEvents))
                         .put("native_frame_event_capacity",MAX_NATIVE_EVENTS).put("native_frame_events_evicted",nativeFrameEventsEvicted)
                         .put("native_frame_event_stats",nativeEventStats(nativeHandle))
@@ -379,6 +406,9 @@ public final class UdpVideoProbe extends Instrumentation {
                     if(activity!=null)observeFecDiagnostics(activity,System.nanoTime(),finalStats);
                     report.put("native_fec",nativeStats(finalStats));
                 }
+                report.put("native_mapping_details",mappingDetailsSummary(mappingDetails,mappingDetailStatus,
+                    mappingDetailEnableAttempted,mappingDetailReads,mappingDetailReadFailures,
+                    mappingDetailReadTotalNs,mappingDetailReadMaxNs,mappingDetailLastReadNs));
                 report.put("network_feedback_sent",networkFeedbackSent).put("network_feedback_send_max_ms",networkFeedbackSendMaxNs/1e6)
                     .put("diagnostic_drain_max_ms",diagnosticDrainMaxNs/1e6).put("ping_replies",pingReplies).put("ping_replies_throttled",pingThrottled)
                     .put("authenticated_hgud_datagrams",authenticatedVideoPackets).put("estimated_hgud_ipv4_wire_bytes",authenticatedVideoWireBytes)
@@ -542,6 +572,7 @@ public final class UdpVideoProbe extends Instrumentation {
             if(now-lastStatsNs>=100_000_000L){
                 long[] stats=NativeUdpFec.nativeStats(handle);if(stats.length!=NativeUdpFec.STAT_NAMES.length)throw new IOException("native_stats_contract");
                 observeFecDiagnostics(a,System.nanoTime(),stats);
+                readMappingDetails(handle);
                 boolean needs=(videoInbox==null?waitingIdr:videoInbox.needsIdr())||stats[19]!=0;
                 if(needs&&!recoveryActive){recoveryActive=true;recoveryAttempts=0;nextFeedbackNs=now;}
                 if(!needs){recoveryActive=false;recoveryAttempts=0;}
@@ -948,6 +979,35 @@ public final class UdpVideoProbe extends Instrumentation {
     }
     private static JSONArray numericArray(long[] values){JSONArray array=new JSONArray();for(long value:values)array.put(value);return array;}
 
+    static JSONObject mappingDetailsSummary(long[] values,int status,boolean enableAttempted,long reads,long failures,
+            long elapsedTotalNs,long elapsedMaxNs,long lastReadNs)throws Exception {
+        JSONObject out=new JSONObject().put("contract_schema_version",NativeUdpFec.MAPPING_DETAIL_SCHEMA)
+            .put("status_code",status).put("available",status==NativeUdpFec.MAPPING_DETAIL_VALID?1:0)
+            .put("requested_enabled",1).put("enable_attempted",enableAttempted?1:0)
+            .put("jni_values_expected",NativeUdpFec.MAPPING_DETAIL_LENGTH)
+            .put("read_attempts",reads).put("read_failures",failures).put("jni_and_validation_total_ns",elapsedTotalNs)
+            .put("jni_and_validation_max_ns",elapsedMaxNs).put("last_read_phone_system_nano_time_ns",lastReadNs)
+            .put("read_period_ns",100_000_000L).put("read_period_is_guaranteed",0)
+            .put("includes_cold_and_final_read",1).put("final_read_after_worker_cleanup_attempt",1)
+            .put("arrival_clock_phone_rx_system_nano_time_div_1000",1).put("arrival_unit_us",1)
+            .put("arrival_is_java_poll_time",0).put("snapshot_is_java_poll_time",0)
+            .put("event_retention_chronological",1).put("snapshot_non_destructive",1)
+            .put("coverage_mask_declares_hook_support_only",1).put("event_ring_covers_all_rejections",0)
+            .put("reason_1_old_frame",1).put("reason_2_mapping_capacity",2).put("reason_3_header_mismatch",3)
+            .put("reason_4_new_mapping_after_capacity_reject",4).put("reason_4_extends_assembly_grant",0)
+            .put("frame_id_int64_saturation_is_unique",0).put("physical_latency_measured",0);
+        if(status!=NativeUdpFec.MAPPING_DETAIL_VALID)return out;
+        NativeUdpFec.validateMappingDetails(values);
+        for(int i=0;i<NativeUdpFec.MAPPING_DETAIL_HEADER_NAMES.length;i++)out.put(NativeUdpFec.MAPPING_DETAIL_HEADER_NAMES[i],values[i]);
+        JSONObject events=new JSONObject();int retained=(int)values[18];
+        for(int col=0;col<NativeUdpFec.MAPPING_DETAIL_COLUMNS;col++){
+            JSONArray column=new JSONArray();for(int row=0;row<retained;row++)column.put(values[NativeUdpFec.MAPPING_DETAIL_HEADER
+                +row*NativeUdpFec.MAPPING_DETAIL_COLUMNS+col]);
+            events.put(NativeUdpFec.MAPPING_DETAIL_EVENT_NAMES[col],column);
+        }
+        return out.put("events",events);
+    }
+
     static JSONObject numericAppSummary(JSONObject report)throws Exception{
         JSONObject out=new JSONObject();
         String[] scalars={"start_ns","first_server_packet_ns","receive_end_ns","observation_end_ns","fps_limit","buffer_ms",
@@ -961,7 +1021,7 @@ public final class UdpVideoProbe extends Instrumentation {
         out.put("surface_submit_status_code",status.equals("disabled_existing_release_path")?0:status.equals("applied_bounded_wait")?1
             :status.equals("enabled_no_wait_observed")?2:-1);
         out.put("hardware_video",report.optBoolean("hardware",false)?1:0);
-        for(String key:new String[]{"native_fec","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
+        for(String key:new String[]{"native_fec","native_mapping_details","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
             Object value=report.opt(key);if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
         }
         if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");
