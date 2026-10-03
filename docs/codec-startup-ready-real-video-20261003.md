@@ -26,7 +26,7 @@
 
 ON的初连prepare→ready分别237.193/194.574ms，ready→fresh分别107.802/187.995ms，fresh→commit17.609/18.791ms；重连也分别进入STREAMING，无gate failure。原始bootstrapAU未进codec，准备期间分别明确丢20/17个连续帧。两轮ON初始诊断带无overflow/timeout是启动层的迹象，但不是稳态改善结论。
 
-OFF全程6次Inbox溢出，其中初始带2次；ON轮2全程3次溢出与FEC参考恢复，仍有1.931秒空档。CPU/source等因素未锁定，不能把ON和OFF差异简单归因startup开关。轮3全程Inbox溢出0/timeout0，但宿主send异常导致源供给提前终止；没有证据支持扩大Inbox来解决此次终止。
+OFF全程6次Inbox溢出，其中初始带2次；ON轮2全程3次溢出与FEC参考恢复，仍有1.931秒空档。CPU/source等因素未锁定，不能把ON和OFF差异简单归因startup开关。轮3全程Inbox溢出0/timeout0，但宿主send异常导致源供给提前终止；没有证据支持扩大Inbox来解决此次终止。手机侧另外有FEC expiry/reference loss各3、dependency drop37和mapping容量拒绝8，这些不能由一次sender fatal一笔解释。手机首末呈现跨度18.028秒相对30.007秒窗口少11.979秒；这是完整窗口缺帧边界，不是光学冻结时长。
 
 ## 宿主错误与完整收尾
 
