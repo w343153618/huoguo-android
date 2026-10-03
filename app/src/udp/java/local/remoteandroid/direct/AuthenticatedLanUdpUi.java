@@ -70,9 +70,9 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         String restoredAddress=savedScope>=2?publicAddress(savedScope):savedAddress(saved,"address",selectedScope(savedScope),
             savedScope==0?lastLanAddress:LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT);
         LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(32,32,32,32);
-        TextView title=new TextView(activity);title.setText("给火锅的安卓 · 测试版\n公网 M1/M5 认证 UDP · 机主有界体验（单次 120 秒）\n可选局域网或 Tailnet；断线不会改用 TCP 媒体");box.addView(title);
+        box.addView(loginHeader(pageRevision));
+        TextView summary=new TextView(activity);summary.setText("公网 M1/M5 认证 UDP · 机主有界体验（单次 120 秒）\n可选局域网或 Tailnet；断线不会改用 TCP 媒体");box.addView(summary);
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
-        Button update=new Button(activity);update.setText("检查更新");update.setOnClickListener(v->activity.updater.check(true));box.addView(update);
         scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 机主试用", "公网 UDP · M5 · 机主试用（新安装默认）"},savedScope);
         address=field(box,"HTTPS 控制地址；公网节点使用固定地址",restoredAddress);address.setEnabled(savedScope<2);
         user=field(box,"现有安卓账号",savedText(saved,usernamePreference(savedScope),defaultUsername(savedScope),128));
@@ -140,6 +140,23 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;
         });
         activity.setContentView(scroll);scroll.requestApplyInsets();
+    }
+    /** Login-only compact action; title wraps before the update button shrinks. */
+    private LinearLayout loginHeader(final long pageRevision){
+        LinearLayout header=new LinearLayout(activity);header.setOrientation(LinearLayout.HORIZONTAL);header.setGravity(Gravity.CENTER_VERTICAL);
+        TextView title=new TextView(activity);title.setText("给火锅的安卓 · 测试版");title.setTextSize(18);
+        header.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+        Button update=new Button(activity);update.setText("检查更新");update.setTextSize(14);update.setAllCaps(false);
+        float density=activity.getResources().getDisplayMetrics().density;
+        update.setMinWidth(0);update.setMinimumWidth(0);update.setMinHeight(Math.round(48*density));update.setMinimumHeight(Math.round(48*density));
+        update.setPadding(Math.round(12*density),0,Math.round(12*density),0);
+        update.setOnClickListener(v->{
+            // A retained view or queued click cannot begin installation after
+            // this login page was replaced by another page or a media session.
+            if(activity.isFinishing()||activity.isDestroyed()||active()||loginRevision!=pageRevision)return;
+            activity.updater.check(true);
+        });
+        header.addView(update,new LinearLayout.LayoutParams(-2,-2));return header;
     }
     private EditText field(LinearLayout box,String hint,String value){EditText input=new EditText(activity);input.setSingleLine();input.setHint(hint);input.setText(value);box.addView(input);return input;}
     private Spinner choice(LinearLayout box,String label,String[] values,int selected){TextView text=new TextView(activity);text.setText(label);box.addView(text);Spinner input=new Spinner(activity);input.setAdapter(new ArrayAdapter<>(activity,android.R.layout.simple_spinner_dropdown_item,values));input.setSelection(selected);box.addView(input);return input;}
