@@ -950,5 +950,46 @@
     "report": "docs/native-mapping-observation-real-video-20261003.md",
     "summary": "docs/native-mapping-observation-real-video-20261003.json",
     "next_factor": "Experimental codec-ready startup admission; retain current steady-state policy and authentication/cancel/reference integrity"
+  },
+  "formal_nps_quic_deployment_20261003": {
+    "status": "completed_user_explicit_restart_and_both_mac_quic_bridge",
+    "record": "docs/nps-formal-quic-deployment-20261003.md",
+    "formal_bridge_type": "both",
+    "formal_kcp_udp": 8024,
+    "formal_quic_udp": 8025,
+    "formal_tcp": 8024,
+    "formal_tls_tcp": 8025,
+    "nps_pid": 3412973,
+    "nps_binary_unchanged": true,
+    "before_online_clients": 38,
+    "reconnected_original_clients": 38,
+    "missing_original_clients": 0,
+    "m1": {
+      "npc_protocol": "quic",
+      "loopback_udp": 48126,
+      "physical_interface": "en7",
+      "physical_ipv4": "192.168.9.128",
+      "public_port": 15556,
+      "client_id": 1466
+    },
+    "m5": {
+      "npc_protocol": "quic",
+      "loopback_udp": 48126,
+      "physical_interface": "en11",
+      "physical_ipv4": "192.168.9.99",
+      "public_port": 15558,
+      "client_id": 1468
+    },
+    "formal_kcp_authentication_completed": true,
+    "web_kcp_quic_commands_verified": true,
+    "domestic_source_cn4_member": true,
+    "cloud_udp8025_header_capture_packets": 107,
+    "filters_unchanged": true,
+    "identities_and_tasks_unchanged": true,
+    "trusted_public_ping_status": 200,
+    "app_media_transport": "TLS/TCP unchanged; QUIC bridge uses reliable quic.Stream, not App UDP Datagram",
+    "phone_fps_or_latency_acceptance": false,
+    "repeat_restart_authorized": false,
+    "backup_cloud": "/root/nps-backups/formal-quic-20261003-120815"
   }
 }
