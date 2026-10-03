@@ -95,7 +95,7 @@
   "emulator_process_type_evidence": "evidence/latency-refinement-20261001/final-retained-state.json",
   "source_qos_boundary": "Interactive remains experimental. Multiple real phone windows near60 now observed; this does not isolate ProcessType effect or establish WAN/V50/continuous stability.",
   "renderer": "skiavk",
-  "renderer_persistence": "At 2026-10-03T10:51Z restored M1 source HWUI skiavk and restarted only idle source player. Running PID5212 independently reads Skia(Vulkan); boot persistence is not yet implemented. Official RenderEngine skiaglthreaded and physical30Hz unchanged.",
+  "renderer_persistence": "2026-10-04 single M1 emulator boot maintenance completed: append-userspace-opt androidboot.debug.hwui.renderer=skiavk, boot/runtime skiavk and actual source Vulkan independently read back. RE skiaglthreaded remains. See M1_renderer_boot_deployment_20261004 and subsequent source observations; no performance gain inferred.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
   "independent_experimental_app_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
   "latest_campaign": {
@@ -1878,5 +1878,40 @@
     "actual_Stats_format_known": false,
     "stable_30fps_public_V50_accepted": false,
     "new_APK_published": false
+  },
+  "M1_source_paused_Stats_UI_20261004": {
+    "evidence": "docs/source-paused-stats-readback-20261004.json",
+    "description": "docs/source-paused-stats-readback-20261004.md",
+    "video_id": "aqz-KE-bpKQ",
+    "format_UI": {
+      "video_itag": 299,
+      "video_codec": "avc1",
+      "video_width": 1920,
+      "video_height": 1080,
+      "descriptor_fps": 60,
+      "audio_itag": 251,
+      "audio_codec": "opus"
+    },
+    "source_pid": 3470,
+    "source_uid": 10235,
+    "source_start_ticks": 1952,
+    "current_ui_state": "paused",
+    "position_ui_seconds": 377,
+    "diagnostic_overlay": "on",
+    "parser_sha256": "77b23117d860cafda011b9e00b76e5e9439b4d2a2c667b5a272d0e2e02c4cfc1",
+    "standalone_parser_only": true,
+    "live_gate_integrated": false,
+    "older_phone_windows_remain_format_unknown": true,
+    "decoded_or_presented_fps_verified": false,
+    "source_control_preparations_not_phone_media": true,
+    "system_properties_or_guest_boot_changed": false
+  },
+  "CI_documentation_followup_20261004": {
+    "sha": "cb942e0ad63aec467e5350569e0d7d577218ca1e",
+    "run": 37149007874,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "source_parser_commit_covered": false
   }
 }

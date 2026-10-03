@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "scope": "root owner nonisolated M1 source-only diagnostic preparation; not phone media or controlled performance AB",
+  "source": {
+    "package": "app.morphe.android.youtube",
+    "pid": 3470,
+    "uid": 10235,
+    "start_ticks": 1952,
+    "emulator_pid": 48576,
+    "actual_pipeline": "vulkan",
+    "physical_width": 1080,
+    "physical_height": 1920,
+    "density": 480,
+    "refresh_hz": 30,
+    "cores": 6,
+    "memory_mib": 8192
+  },
+  "actual_current_paused_stats_UI": {
+    "schema": 1,
+    "status": "observed",
+    "format_known": true,
+    "video_id": "aqz-KE-bpKQ",
+    "video_format": {
+      "itag": 299,
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "descriptor_fps": 60.0
+    },
+    "audio_format": {
+      "itag": 251,
+      "codec": "opus"
+    },
+    "viewport": {
+      "width": 1080,
+      "height": 608,
+      "flag": true
+    },
+    "dropped_frames_cumulative": {
+      "dropped": 0,
+      "total": 11319
+    },
+    "player_ui_state": "paused",
+    "position_ui_seconds": 377,
+    "process_identity_verified": false,
+    "observed_content_fps": null,
+    "decoded_or_presented_fps_verified": false
+  },
+  "identity_readback_boundary": "All protected source candidates verified exact PID/UID/start before and after. Additional readonly stats dump bracket only reread PID/start; parser never creates identity ownership. No arbitrary JSON input is authentication.",
+  "visual_acceptance": {
+    "root_saw_actual_stats": true,
+    "video_id_matches_public_BBB": true,
+    "paused_position_seconds": 377,
+    "quality_menu_label": "1080p60; not decoder measurement",
+    "debug_overlay_on": true,
+    "playing_motion_not_accepted": true,
+    "dropped_total_not_rate": true,
+    "different_video_after_earlier_phone_sequence_does_not_become_BBB": true
+  },
+  "source_UI_snapshot_bytes": 59957,
+  "source_UI_snapshot_sha256": "3cbdc9b120f4abfc524f1876fd8261035f0e5efdba81fd2f6f76dc7ebbac7cb3",
+  "parser_sha256": "77b23117d860cafda011b9e00b76e5e9439b4d2a2c667b5a272d0e2e02c4cfc1",
+  "source_only_sequence": [
+    {
+      "step": "native_back",
+      "candidate_sha256": "8ca5b71ac8aa5d87c95d8493e3e1deadec48455e2ba0435eeea2b2d356289ada",
+      "seconds": 3.891,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "public_result_return",
+      "candidate_sha256": "afb509c0ffb301665c6e8c06c96473d39dafdd47a474ddcf12751e494788b044",
+      "seconds": 3.823,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "controls_only",
+      "candidate_sha256": "e6cf1302126bb6634afedfe6715a4b1cbe17728078748f102771389d46026902",
+      "seconds": 3.906,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "two_tap_menu_not_visually_accepted",
+      "candidate_sha256": "94ba3e254ccafd862060e470f2deac4d51622d23c1ac7ad81164522be3ee5b0b",
+      "seconds": 4.039,
+      "owned_clients": 83,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "controls_semantic_no_targets",
+      "candidate_sha256": "bd8bb23f2566e7860559dffeffb1602099da1c82121d91ade0d8fcff14c86bdd",
+      "seconds": 8.883,
+      "owned_clients": 85,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "media_pause",
+      "candidate_sha256": "6825b7e9295334b119f4a9c8e7d04862f2f34cf59946d1a010aa432312d9fb59",
+      "seconds": 3.652,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "paused_settings",
+      "candidate_sha256": "3beac78fb4f781ceda5b9a9abae9f2d61e87ed3ac93757833bfa0f84189a25e5",
+      "seconds": 3.585,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "paused_more",
+      "candidate_sha256": "6e46e90dcdcfb83d25d9fede9021aee03d02e31f5b893fa0546cf5a7bb9322c1",
+      "seconds": 3.503,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    },
+    {
+      "step": "Stats_for_nerds",
+      "candidate_sha256": "0ad92374cef55f98ecf75da9b8d5889c86c5701131fbf6a2bb8bf7315619d52d",
+      "seconds": 3.624,
+      "owned_clients": 81,
+      "all_reaped": true,
+      "timeouts": 0,
+      "guard_completed": true
+    }
+  ],
+  "checks": {
+    "source_decoder_quality_stats_targeted": 34,
+    "root_targeted_seconds": 1.681,
+    "passed": true,
+    "private_inert_40_checks_are_guard_checks_not_real_layout_acceptance": true,
+    "CI_of_latest_prior_documentation": {
+      "sha": "cb942e0ad63aec467e5350569e0d7d577218ca1e",
+      "run": 37149007874,
+      "build": "success",
+      "udp_candidate": "success",
+      "overall": "success"
+    }
+  },
+  "preserved": {
+    "M5": true,
+    "NPS": true,
+    "gateway": true,
+    "phone": true,
+    "guest_boot_and_resources": true
+  },
+  "not_accepted": [
+    "new APK release",
+    "live decoded FPS",
+    "stable30",
+    "same-format AB for previous phone round",
+    "public/cellular/V50",
+    "optical or acoustic delay",
+    "autoplay permanently disabled",
+    "fresh playing Stats after resume"
+  ]
+}

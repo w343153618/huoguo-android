@@ -1,4 +1,12 @@
-## 2026-10-04 最新：真实LAN parent观察完成，选源在序列中发生变化
+## 2026-10-04 最新：当前BBB暂停后实际Stats字段已取得，下一绑定真实采样窗口
+
+Root保护下source-only Back/observed result return、MEDIA_PAUSE、paused gear→More→Stats已经实际执行，当前源PID3470/UID10235/start1952与guest48576不变，actualVulkan/1080x1920/30Hz/6核8GiB保持。实际Stats UI VideoID aqz-KE-bpKQ、itag299/avc1/1920x1080@60及251Opus、paused6:17、viewport1080x608、累计drop0/11319；这是本次新暂停读回，不追认早前phone窗unknown。34focused/1.681s通过的standalone有界UTF8 Stats parser解析actual59957byte dump与目视一致，processidentity false与observedFPS null保留，不把格式60当呈现60。无App/ADB自动操作默认、无credentials/raw XML输出，尚未集成live gate。两tap菜单没打开和semantic dump无targets明确保留，不把guard PASS说UI验收。详见[source Stats](source-paused-stats-readback-20261004.md)及对应JSON。
+
+现在source暂停在6:17且Stats overlay ON；不用重复MAIN/菜单或冷启。下一NEW frozen bounded collector先完整PID/UID/start+foreground/session绑定、同VideoID/实际format/position前后资格，保护准入后才resume，窗口后及时pause/readback，清overlay或明确记录采样影响，再一次30s同540/30/4M/80观察。不追认历史格式，不直接把source paused造成的idle当供给掉帧，不扩Inbox/缓冲或宽矩阵；parent−15/graceful close诊断另审，任何新helper/runtime先验pin和收尾。M5/NPS/phone未因此操作，当前无phone/media/agent/高端口活跃。
+
+精确cb942e0ad63aec467e5350569e0d7d577218ca1e/run37149007874现已独立读取整体及build/udp_candidate success，不借73旧run；新parser下一push需另看实际SHA。公开/手机alpha8code39，stable1.31code32，alpha9local未发布保持。
+
+## 2026-10-04 此前：真实LAN parent观察完成，选源在序列中发生变化
 
 第二NEW retry复用root限定安装helper的实际SHA/ownershipreceipt，frozen e31d supervisor/5e driver及b070 runtime未改，真实OnePlus12+RAM8 M1 LAN UDP30/540/4M/80/lead0、stage/startup/PCMqueueOFF/AACon、FIFO2/native3完成normal UI、30s采样、退出continue/leave/reconnect。driver0、ownedgateway自然0和唯一shutdown quiescent/stop0、supervisor0/actualownedquiescence，原服务及supervisor-owned signals0；helper/目标PID/私有输入/高端口实际clear。首轮普通ADB helper install45s超时、driver/READY/media未启及300s自然shutdown保留；root pm scoped install不改global security，第二轮用后卸载。不能追认首轮为媒体，不能重复原持久服务或已完成维护。
 
