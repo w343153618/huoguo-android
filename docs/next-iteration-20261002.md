@@ -1,3 +1,9 @@
+## 2026-10-03 用户插入维护：M5本机静音已完成；mixed-gap分析器已完成
+
+M5断开后声音问题已直接处理：宿主原output100/unmuted，现实际output0/mutedtrue；guest媒体音量5保留。仅新增RunAtLoad一次性host-output-silent LaunchAgent（sourceSHA9a7d2ff6，bootstrap0、实际last exit0），无定时/KeepAlive，不重启guest/gateway/NPS，不改guest音量。作用于Mac本机全部声音；原Android REMOTE_SUBMIX→AAC→ADB→手机链路保持，未在本轮做手机声学验收。登录时重新静音，手动之后取消静音不会被持续覆盖。见[m5维护](m5-host-output-silent-20261003.md)。无需新APK。
+
+180d0ff已完成五个existing numeric mixed-gap分析器，SHAa60d3a7f、31targetedchecks及独立review24hostchecks通过；只是可分析的混合区间，不是锁/CPU耗时根因，实际gap尚未采。所有agent此项结束，下一无需再重派此源码；f08独立准备runtime/core/native未替换。live保护listener验证已完，不无目的重复；下一重新核对真实BBB格式/位置/freshCPU和专用手机可用，再持续reserve/livewitness/角色零保护下单次有界trace，同参数证据后才改机制。alpha8/code39公开及手机不变，030126da/code40仍本地未装未发布。
+
 ## 2026-10-03 续接：live准入与30秒listener收尾通过，尚未媒体trace
 
 guard46324c1已完成，f08ace3分析器已完成；新的3860ca3固定dd43 registry实际源码的4项inert并发fixture，与12项既有inert共16项通过。根任务真实两次以现有huoguo账号/原证书在持续排他reserve45965后取得运行registry精确503/udp_worker_unavailable；gateway PID26875/start/source/runtime及四类owned零读回匹配。第二次在正式TCP和候选端口clear时运行独立f08 LAN listener45560/45963，trace opt-in已回显，30秒自然退出0，同Popen actual shutdown quiescent=true/stop_failures0，原身份/进程零再次通过后release。没有session/READY/媒体/手机/信号/M5/NPS操作。初次1/1误匹配是已核对dispatcher自己的encoder/packetizer参数，未认证即中止；纠正不能排除其他真实进程。见[live回执](owner-lan-live-admission-20261003.md)。不要无目的重跑listener-only或把它当FPS/开销验收。

@@ -1080,7 +1080,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "m5_startup_review now deriving five strictly labeled mixed gaps in the analyzer from existing numeric fields, with targeted schema/clock/window fixtures; do not duplicate active source work. Capture/core/native dependencies remain frozen. Live original-registry witness and same-Popen listener30s shutdown passed without media. Next fresh real-video format/position and CPU plus dedicated-phone availability, one continuously protected bounded trace. No buffer/queue/algorithm change or old service signal; matching code40 actual phone cancellation/reconnect still separately pending.",
+  "next_source_task": "180d0ff five mixed-gap analyzer derivations completed and31 targeted checks plus independent24 host-analyzer checks passed. Capture/core/native and f08 prepared runtime remain frozen. M5 one-shot host-output mute deployed successfully with guest volume5 retained, no gateway/emulator restart. Next protected real-media trace must refresh real source format/position and CPU, phone availability, formal/owner idle witness and continuous reservation; no repeated listener-only validation or default buffer/queue changes. Code40 actual phone cancellation/reconnect and acoustic acceptance remain separate.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -1538,7 +1538,14 @@
     "actual_new_trace_captured": false,
     "whole_pipeline_coverage_accepted": false,
     "native_producer_quiescence": "unknown_without_independent_native_final",
-    "contract": "docs/host-timing-analysis-contract-20261003.md"
+    "contract": "docs/host-timing-analysis-contract-20261003.md",
+    "latest_source_commit": "180d0ffc59f2a403c49d6d3cec0975d87b792374",
+    "latest_analyzer_sha256": "a60d3a7afda6d79668e90b5328ffe0e039e62a031dd30e465e5822190598cba0",
+    "additional_mixed_gap_checks": 7,
+    "targeted_checks_with_mixed_gaps": 31,
+    "mixed_gaps_measured_on_real_trace": false,
+    "latest_agent_and_independent_reviewer_checks_passed": true,
+    "previous_f08_frozen_runtime_replaced": false
   },
   "code40_owner_helper_build_20261003": {
     "source_commit": "1df2ecd3cb28fabad69006c5210485e28309db45",
@@ -1592,5 +1599,33 @@
     "fixed_sleep_after_write_found": false,
     "proof_of_unique_raw_supply_root_cause": false,
     "evidence": "docs/raw-writer-hidden-gap-review-20261003.md"
+  },
+  "M5_host_output_silent_20261003": {
+    "user_request": "Silence the Mac speaker after phone disconnect; preserve Android remote audio",
+    "host_before": {
+      "output_volume": 100,
+      "output_muted": false
+    },
+    "host_after": {
+      "output_volume": 0,
+      "output_muted": true
+    },
+    "guest_volume_music_before": 5,
+    "guest_volume_music_after": 5,
+    "host_output_scope": "all local Mac output",
+    "guest_settings_written": false,
+    "guest_or_gateway_restarted": false,
+    "launch_agent_label": "local.huoguo.m5.host-output-silent",
+    "launch_agent_sha256": "9a7d2ff6a888869fc1577ad8bd6ab036a3bf2f0890a4623819296ab5baea6053",
+    "RunAtLoad": true,
+    "KeepAlive": false,
+    "periodic_polling": false,
+    "bootstrap_exit_code": 0,
+    "actual_last_exit_code": 0,
+    "prior_job_or_file_existed": false,
+    "new_phone_acoustic_acceptance": false,
+    "login_after_reboot_tested": false,
+    "manual_unmute_not_continuously_overridden": true,
+    "evidence": "docs/m5-host-output-silent-20261003.md"
   }
 }
