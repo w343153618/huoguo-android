@@ -317,7 +317,7 @@ public class MainActivity extends Activity {
  // API33+ is registered with the platform dispatcher above; this fallback serves API30-32.
  @android.annotation.SuppressLint("GestureBackNavigation")
  public void onBackPressed(){handleBack();}
- void handleBack(){if(lanUdpEntry!=null&&lanUdpEntry.active()){lanUdpEntry.cancel(true);return;}if(diagnostics!=null){if(diagnostics.finished)diagnostics.leave();else diagnostics.cancel();return;}if(transfer!=null){transfer.back();return;}if(running){int gen=generation;input.execute(()->{if(running&&gen==generation)key(4,gen);});}else finish();}
+ void handleBack(){if(lanUdpEntry!=null&&lanUdpEntry.active()){lanUdpEntry.requestBack();return;}if(diagnostics!=null){if(diagnostics.finished)diagnostics.leave();else diagnostics.cancel();return;}if(transfer!=null){transfer.back();return;}if(running){int gen=generation;input.execute(()->{if(running&&gen==generation)key(4,gen);});}else finish();}
  protected void onResume(){super.onResume();if(!componentProbeRequested()&&updater!=null)updater.resumeInstall();}
  protected void onStop(){if(lanUdpEntry!=null&&lanUdpEntry.active())lanUdpEntry.cancel(true);if(diagnostics!=null&&!diagnostics.finished)diagnostics.cancel();super.onStop();}
  protected void onDestroy(){if(updater!=null)updater.close();if(lanUdpEntry!=null)lanUdpEntry.cancel(false);if(diagnostics!=null)diagnostics.close();if(transfer!=null)transfer.close();stop();input.shutdownNow();statsThread.quitSafely();super.onDestroy();}

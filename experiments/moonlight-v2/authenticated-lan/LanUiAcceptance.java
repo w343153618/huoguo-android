@@ -1,6 +1,8 @@
 package local.remoteandroid.direct;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.app.Instrumentation;
 import android.content.Intent;
 import android.os.Bundle;
@@ -70,9 +72,10 @@ public final class LanUiAcceptance extends Instrumentation {
             .put("steady_progress_max_idle_ns",maxIdle).put("steady_progress_stall_threshold_ns",3_000_000_000L)
             .put("steady_progress_samples",rows).put("steady_progress_is_presented_fps",false);
     }
+    private static boolean authorizedTrialAccount(String username){return username.equals("wyw")||username.equals("huoguo");}
     private void prepareUi(MainActivity target,String username,String password)throws Exception{
         Object ui=target.lanUdpEntry;
-        if(networkScope().equals("nps_owner")&&!username.equals("wyw"))throw new IllegalArgumentException("nps_owner_account_required");
+        if(networkScope().equals("nps_owner")&&!authorizedTrialAccount(username))throw new IllegalArgumentException("nps_owner_account_required");
         ((Spinner)field(ui,"scope")).setSelection(scopeIndex());
         ((EditText)field(ui,"address")).setText(controlAddress());
         ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
@@ -85,6 +88,38 @@ public final class LanUiAcceptance extends Instrumentation {
         Field lead=ui.getClass().getDeclaredField("ownerSurfaceSubmitLeadMs");lead.setAccessible(true);lead.setInt(ui,surfaceLeadMs());
         Field stages=ui.getClass().getDeclaredField("ownerStageDiagnosticsEnabled");stages.setAccessible(true);stages.setBoolean(ui,stageDiagnostics());
     }
+    private boolean credentialSave(){String value=arguments.getString("credential_save","off");
+        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("credential_save_bound");return value.equals("on");}
+    private MainActivity reopenIdleActivity(MainActivity old)throws Exception{
+        Object ui=old.lanUdpEntry;
+        synchronized(field(ui,"lock")){if(field(ui,"current")!=null||field(ui,"retiring")!=null)throw new IllegalStateException("credential_UI_attempt_busy");}
+        runOnMainSync(old::finish);waitForIdleSync();
+        MainActivity fresh=(MainActivity)startActivitySync(new Intent().setClassName(getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        waitForIdleSync();return fresh;
+    }
+    /** Normal encrypted-save/clear UI; never report password, ciphertext or key material. */
+    private MainActivity credentialUiAcceptance(MainActivity initial,String username,String password,JSONObject report)throws Exception{
+        MainActivity target=initial;final Throwable[] problem={null};MainActivity first=target;
+        runOnMainSync(()->{try{prepareUi(first,username,password);if(!clickLabel(first.getWindow().getDecorView(),"保存密码"))throw new IllegalStateException("credential_save_button_missing");}catch(Throwable failure){problem[0]=failure;}});
+        if(problem[0]!=null)throw new IllegalStateException("credential_save_UI",problem[0]);
+        target=reopenIdleActivity(target);MainActivity reopened=target;
+        final boolean[] restored={false};runOnMainSync(()->{try{Object ui=reopened.lanUdpEntry;restored[0]=((EditText)field(ui,"user")).getText().toString().equals(username)
+            &&((EditText)field(ui,"password")).getText().toString().equals(password);if(!restored[0])throw new IllegalStateException("credential_reopen_not_restored");
+            if(!clickLabel(reopened.getWindow().getDecorView(),"清除已保存密码"))throw new IllegalStateException("credential_clear_button_missing");}catch(Throwable failure){problem[0]=failure;}});
+        if(problem[0]!=null)throw new IllegalStateException("credential_restore_clear_UI",problem[0]);
+        target=reopenIdleActivity(target);MainActivity cleared=target;final boolean[] empty={false};
+        runOnMainSync(()->{try{empty[0]=((EditText)field(cleared.lanUdpEntry,"password")).getText().toString().isEmpty();if(!empty[0])throw new IllegalStateException("credential_clear_not_persistent");
+            prepareUi(cleared,username,password);if(!clickLabel(cleared.getWindow().getDecorView(),"保存密码"))throw new IllegalStateException("credential_final_save_button_missing");}catch(Throwable failure){problem[0]=failure;}});
+        if(problem[0]!=null)throw new IllegalStateException("credential_final_save_UI",problem[0]);
+        target=reopenIdleActivity(target);MainActivity finalTarget=target;final boolean[] retained={false};
+        runOnMainSync(()->{try{Object ui=finalTarget.lanUdpEntry;retained[0]=((EditText)field(ui,"password")).getText().toString().equals(password)
+            &&((EditText)field(ui,"user")).getText().toString().equals(username);}catch(Throwable failure){problem[0]=failure;}});
+        if(problem[0]!=null||!retained[0])throw new IllegalStateException("credential_final_reopen_not_restored");
+        report.put("credential_save_used_actual_UI",true).put("credential_save_reopen_restored",restored[0])
+            .put("credential_clear_reopen_empty",empty[0]).put("credential_final_save_reopen_retained",retained[0])
+            .put("credential_secret_exported",false).put("credential_other_package_modified",false);
+        return target;
+    }
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
         Field field=target.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(target);
@@ -95,6 +130,7 @@ public final class LanUiAcceptance extends Instrumentation {
      */
     private void verifyNetworkReadback(MainActivity target,JSONObject report,String stage)throws Exception{
         Object ui=target.lanUdpEntry;String actualScope,actualNode,actualControl,peer;int port;
+        NpsPhysicalNetwork controlNetwork=null,mediaNetwork=null;
         synchronized(field(ui,"lock")){
             Object current=field(ui,"current");if(current==null)throw new IllegalStateException("network_attempt_missing");
             actualScope=(String)field(current,"networkScope");actualControl=(String)field(current,"endpoint");
@@ -102,8 +138,25 @@ public final class LanUiAcceptance extends Instrumentation {
             // require this new field. Preserve old LAN/Tailnet helper behavior.
             actualNode=networkScope().equals("nps_owner")?(String)field(current,"node"):"";
             Object receiver=field(current,"receiver");if(receiver==null)throw new IllegalStateException("network_receiver_missing");
+            if(networkScope().equals("nps_owner")){
+                controlNetwork=(NpsPhysicalNetwork)field(current,"physicalNetwork");
+                mediaNetwork=(NpsPhysicalNetwork)field(receiver,"appPhysicalNetwork");
+            }
             Object parsed=field(receiver,"appSession");if(parsed==null)throw new IllegalStateException("network_session_missing");
             peer=((java.net.InetAddress)field(parsed,"peer")).getHostAddress();port=(Integer)field(parsed,"peerPort");
+        }
+        if(networkScope().equals("nps_owner")){
+            if(controlNetwork==null||controlNetwork!=mediaNetwork||controlNetwork.httpsBindings()<1||controlNetwork.udpBindings()!=1)
+                throw new IllegalStateException("physical_network_lease_binding");
+            // Android API/lease evidence only; not packet capture or country evidence.
+            controlNetwork.requireUsable();
+            report.put(stage+"_physical_network_same_lease",true)
+                .put(stage+"_physical_network_handle",controlNetwork.handle())
+                .put(stage+"_physical_network_transport",controlNetwork.transport())
+                .put(stage+"_physical_https_bind_calls",controlNetwork.httpsBindings())
+                .put(stage+"_physical_udp_bind_calls",controlNetwork.udpBindings())
+                .put(stage+"_physical_packet_route_verified",false)
+                .put(stage+"_physical_domestic_country_verified",false);
         }
         Endpoint.Address expected=Endpoint.parse(Endpoint.destination(controlAddress()));
         if(!actualScope.equals(networkScope())||!actualNode.equals(node())
@@ -123,6 +176,65 @@ public final class LanUiAcceptance extends Instrumentation {
             .put(stage+"_actual_codec_callback_count",target.presentedFrames.get())
             .put(stage+"_network_readback_verified",true).put(stage+"_media_transport_code",1)
             .put(stage+"_media_transport_is_App_UDP_not_NPC_outer_verification",true);
+    }
+    /** Actual Back dialog and button listeners; never bypass positive action with backend cancel. */
+    private void leaveThroughConfirmation(MainActivity target,JSONObject report,String stage)throws Exception{
+        Object ui=target.lanUdpEntry;Object captured;long generation;
+        synchronized(field(ui,"lock")){
+            captured=field(ui,"current");generation=(Long)field(ui,"generation");
+            if(captured==null||(Boolean)field(captured,"cancelled"))throw new IllegalStateException("exit_attempt_missing");
+        }
+        final AlertDialog[] dialogs={null,null};final Throwable[] problem={null};
+        runOnMainSync(()->{try{
+            synchronized(field(ui,"lock")){
+                if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation||(Boolean)field(captured,"cancelled"))
+                    throw new IllegalStateException("exit_initial_captured_attempt_changed");
+            }
+            target.handleBack();dialogs[0]=(AlertDialog)field(ui,"exitDialog");
+            if(dialogs[0]==null||!dialogs[0].isShowing())throw new IllegalStateException("exit_dialog_missing");
+            if(!dialogs[0].getButton(DialogInterface.BUTTON_NEGATIVE).getText().toString().equals("继续使用")
+                    ||!dialogs[0].getButton(DialogInterface.BUTTON_POSITIVE).getText().toString().equals("退出连接"))
+                throw new IllegalStateException("exit_dialog_buttons");
+            target.handleBack();dialogs[1]=(AlertDialog)field(ui,"exitDialog");
+            if(dialogs[0]!=dialogs[1])throw new IllegalStateException("exit_dialog_stacked");
+            synchronized(field(ui,"lock")){
+                if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation||(Boolean)field(captured,"cancelled"))
+                    throw new IllegalStateException("exit_dialog_changed_attempt");
+            }
+            dialogs[0].getButton(DialogInterface.BUTTON_NEGATIVE).performClick();
+        }catch(Throwable failure){problem[0]=failure;}});
+        if(problem[0]!=null)throw new IllegalStateException("exit_continue_UI",problem[0]);
+        long beforeReceived=target.receivedFrames.get(),beforeCallback=target.presentedFrames.get();
+        long deadline=SystemClock.elapsedRealtime()+3000;
+        while(target.running&&target.receivedFrames.get()<=beforeReceived&&target.presentedFrames.get()<=beforeCallback
+                &&SystemClock.elapsedRealtime()<deadline)Thread.sleep(50);
+        boolean progress=target.receivedFrames.get()>beforeReceived||target.presentedFrames.get()>beforeCallback;
+        synchronized(field(ui,"lock")){
+            if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation||(Boolean)field(captured,"cancelled")||!target.running||!progress)
+                throw new IllegalStateException("exit_continue_not_live");
+        }
+        runOnMainSync(()->{try{
+            synchronized(field(ui,"lock")){
+                if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation||(Boolean)field(captured,"cancelled"))
+                    throw new IllegalStateException("exit_positive_captured_attempt_changed");
+            }
+            target.handleBack();AlertDialog next=(AlertDialog)field(ui,"exitDialog");
+            if(next==null||next==dialogs[0]||!next.isShowing())throw new IllegalStateException("exit_second_dialog_missing");
+            synchronized(field(ui,"lock")){
+                if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation||(Boolean)field(captured,"cancelled"))
+                    throw new IllegalStateException("exit_positive_captured_attempt_changed");
+            }
+            next.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
+        }catch(Throwable failure){problem[0]=failure;}});
+        if(problem[0]!=null)throw new IllegalStateException("exit_positive_UI",problem[0]);
+        synchronized(field(ui,"lock")){
+            if(!(Boolean)field(captured,"cancelled")||field(ui,"current")==captured)
+                throw new IllegalStateException("exit_captured_attempt_not_cancelled");
+        }
+        report.put(stage+"_exit_dialog_shown",true).put(stage+"_exit_repeated_back_same_dialog",true)
+            .put(stage+"_exit_continue_preserved_attempt",true).put(stage+"_exit_continue_media_progress",progress)
+            .put(stage+"_exit_positive_button_clicked",true).put(stage+"_exit_captured_attempt_cancelled",true)
+            .put(stage+"_exit_used_actual_UI_buttons",true);
     }
     private boolean ownsAttempt(Object ui,Object owned)throws Exception{
         if(owned==null)return false;
@@ -287,11 +399,14 @@ public final class LanUiAcceptance extends Instrumentation {
             try(FileInputStream in=new FileInputStream(credential)){if(in.read(bytes)!=bytes.length)throw new IllegalStateException("input_read");}
             JSONObject login=new JSONObject(new String(bytes,StandardCharsets.UTF_8));java.util.Arrays.fill(bytes,(byte)0);
             if(!credential.delete())throw new IllegalStateException("input_cleanup");
-            if(networkScope().equals("nps_owner")&&!login.getString("username").equals("wyw"))throw new IllegalStateException("nps_owner_account_required");
+            if(networkScope().equals("nps_owner")&&!authorizedTrialAccount(login.getString("username")))throw new IllegalStateException("nps_owner_account_required");
             a=(MainActivity)startActivitySync(new Intent().setClassName(getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            waitForIdleSync();MainActivity target=a;testActivity=a;
-            if(publicTrial){Object ui=target.lanUdpEntry;
-                synchronized(field(ui,"lock")){if(field(ui,"current")!=null||field(ui,"retiring")!=null)throw new IllegalStateException("existing_UI_attempt_busy");}}
+            waitForIdleSync();
+            Object initialUi=a.lanUdpEntry;
+            synchronized(field(initialUi,"lock")){if(field(initialUi,"current")!=null||field(initialUi,"retiring")!=null)throw new IllegalStateException("existing_UI_attempt_busy");}
+            report.put("requested_credential_save_acceptance",credentialSave());
+            if(credentialSave())a=credentialUiAcceptance(a,login.getString("username"),login.getString("password"),report);
+            MainActivity target=a;testActivity=a;
             final Window.Callback[] previous={null};runOnMainSync(()->previous[0]=target.getWindow().getCallback());
             original=previous[0];final Window.Callback delegate=original;
             runOnMainSync(()->target.getWindow().setCallback((Window.Callback)java.lang.reflect.Proxy.newProxyInstance(
@@ -367,7 +482,7 @@ public final class LanUiAcceptance extends Instrumentation {
                 .put("App_dispatched_two_and_ten_native_MotionEvent_contacts_cancel_and_fresh_down",true)
                 .put("ten_contacts_delivered_through_phone_OS",false);
             }else report.put("media_only_no_touch_exercised",true);
-            runOnMainSync(()->target.handleBack());
+            leaveThroughConfirmation(target,report,"first");
             File first=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");waitReport(first);
             verifySurfaceReadback(first,report,"first");
             waitAudioThreadsGone(report,"first_leave");
@@ -390,7 +505,7 @@ public final class LanUiAcceptance extends Instrumentation {
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("reconnect_no_authenticated_media");
             Thread.sleep(2500);report.put("normal_UI_reconnected_received_media",true);verifyNetworkReadback(target,report,"second");
             if(!mediaOnly()){pointers(target,2,false,false);Thread.sleep(400);}
-            runOnMainSync(()->target.handleBack());waitReport(first);
+            leaveThroughConfirmation(target,report,"second");waitReport(first);
             verifySurfaceReadback(first,report,"second");
             waitAudioThreadsGone(report,"second_leave");
             report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
@@ -399,6 +514,11 @@ public final class LanUiAcceptance extends Instrumentation {
             if(target.lanUdpEntry!=null)try{if(!publicTrial||ownsAttempt(target.lanUdpEntry,ownedAttempt[0]))target.lanUdpEntry.cancel(true);}catch(Exception ignored){}
         });}}
         result.putString("numeric_result",report.toString());finish(report.has("failure_class")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
+    }
+    private static boolean clickLabel(android.view.View view,String text){
+        if(view instanceof Button&&((Button)view).getText().toString().equals(text)){view.performClick();return true;}
+        if(view instanceof android.view.ViewGroup){android.view.ViewGroup group=(android.view.ViewGroup)view;for(int i=0;i<group.getChildCount();i++)if(clickLabel(group.getChildAt(i),text))return true;}
+        return false;
     }
     private static boolean clickStart(android.view.View view){
         if(view instanceof Button&&((Button)view).getText().toString().equals("启动认证 UDP 测试")){view.performClick();return true;}

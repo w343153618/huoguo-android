@@ -76,12 +76,12 @@ public final class UiSelectionsCheck {
         if(!publicAddress(2).equals("146.56.249.175:49556")||!publicAddress(3).equals("146.56.249.175:49558"))throw new AssertionError("public control tuple drift");
         for(int i:new int[]{-1,0,1,4})try{publicAddress(i);throw new AssertionError("public profile guessed");}catch(IllegalArgumentException expected){}
         saved.values.put("username","huoguo");
-        if(!savedText(saved,usernamePreference(3),defaultUsername(3),128).equals("wyw"))throw new AssertionError("friend credential reused for owner profile");
+        if(!savedText(saved,usernamePreference(3),defaultUsername(3),128).equals("huoguo"))throw new AssertionError("fresh public default changed");
         saved.values.put("nps_username","owner-explicit");
         if(!savedText(saved,usernamePreference(2),defaultUsername(2),128).equals("owner-explicit"))throw new AssertionError("explicit owner username lost");
         if(!savedText(saved,usernamePreference(0),defaultUsername(0),128).equals("huoguo"))throw new AssertionError("old LAN username lost");
         saved.values.put("nps_username",true);
-        if(!savedText(saved,usernamePreference(3),defaultUsername(3),128).equals("wyw"))throw new AssertionError("bad saved username accepted");
+        if(!savedText(saved,usernamePreference(3),defaultUsername(3),128).equals("huoguo"))throw new AssertionError("bad saved username accepted");
         System.out.println("PASS actual scope and saved preference methods");
     }
 }
@@ -102,7 +102,7 @@ public final class UiSelectionsCheck {
         self.assertIn('socket.startHandshake()', source)
         self.assertIn('attempt.networkScope,attempt.node,attempt.surfaceSubmitLeadMs', source)
         self.assertIn('address.setEnabled(position<2)', source)
-        self.assertIn('公网 UDP 请用 wyw；朋友 huoguo 暂用稳定版', source)
+        self.assertIn('新账号字段默认 huoguo；保留上次手动使用的账号', source)
         self.assertIn('update.setText("检查更新")', source)
         self.assertNotIn('activity.session(', source)
         self.assertNotIn('activity.connect(', source)
@@ -111,8 +111,8 @@ public final class UiSelectionsCheck {
     def test_alpha6_defaults_only_apply_to_isolated_udp_variant(self):
         source = (ROOT / 'app/build.gradle').read_text()
         self.assertIn('if (authenticatedLanUdp && experimentalVersionName == null && experimentalVersionCode == null)', source)
-        self.assertIn("experimentalVersionName = '1.31-alpha.6'", source)
-        self.assertIn("experimentalVersionCode = '37'", source)
+        self.assertIn("experimentalVersionName = '1.31-alpha.7'", source)
+        self.assertIn("experimentalVersionCode = '38'", source)
         self.assertIn("versionCode 32", source)
         self.assertIn("versionName '1.31'", source)
         self.assertIn('authenticatedLanUdp requires isolated probeApplicationId', source)

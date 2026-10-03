@@ -7,7 +7,7 @@
   <package android:name="local.remoteandroid.direct" />
   <package android:name="local.remoteandroid.direct.experiment" />
  </queries>
- <application android:label="${appLabel}" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:allowBackup="false" android:usesCleartextTraffic="false">
+ <application android:label="${appLabel}" android:theme="${appTheme}" android:icon="${appIcon}" android:roundIcon="${appIcon}" android:allowBackup="false" android:usesCleartextTraffic="false">
   <provider android:name=".UpdateProvider" android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true" />
   <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true" android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" >
    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>

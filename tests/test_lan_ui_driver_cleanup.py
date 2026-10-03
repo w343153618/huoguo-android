@@ -182,6 +182,9 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
                     def communicate(self,timeout):
                         self.returncode=0
                         ui=LanUiDriverCleanupCheck.readback(0)
+                        ui["requested_credential_save_acceptance"]=False
+                        for stage in ('first','second'):
+                            for field in ('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt','exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled','exit_used_actual_UI_buttons'):ui[stage+'_'+field]=True
                         ui.update(requested_stage_diagnostics_enabled=True,
                             first_stage_diagnostics_enabled=1,second_stage_diagnostics_enabled=1,
                             first_stage_diagnostics_verified=True,second_stage_diagnostics_verified=True)

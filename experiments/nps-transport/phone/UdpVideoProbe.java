@@ -263,6 +263,7 @@ public final class UdpVideoProbe extends Instrumentation {
 
     // App mode is memory-only; instrumentation retains its restrictive temporary file contract.
     private MainActivity appActivity; private Session appSession; private AppListener appListener;
+    private NpsPhysicalNetwork appPhysicalNetwork;
     private volatile boolean appCancelled;
     private volatile int appGeneration=-1;
     public interface AppListener { void complete(JSONObject numericReport, boolean failed); }
@@ -276,8 +277,14 @@ public final class UdpVideoProbe extends Instrumentation {
         return startApp(activity,descriptor,boundedPcmQueueEnabled,stageDiagnosticsEnabled,false,listener);
     }
     public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,boolean stageDiagnosticsEnabled,boolean codecStartupReadyEnabled,AppListener listener)throws Exception {
+        return startApp(activity,descriptor,boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled,null,listener);
+    }
+    public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,boolean stageDiagnosticsEnabled,boolean codecStartupReadyEnabled,NpsPhysicalNetwork physicalNetwork,AppListener listener)throws Exception {
+        NpsPhysicalNetwork.validateScope(descriptor.getString("network_scope"),physicalNetwork);
+        if(physicalNetwork!=null&&physicalNetwork.httpsBindings()<1)throw new IOException("public_nps_authenticated_control_network_required");
         UdpVideoProbe runner=new UdpVideoProbe();runner.appActivity=activity;
         runner.appSession=parseSession(descriptor,true);runner.appSession.boundedPcmQueueEnabled=boundedPcmQueueEnabled;runner.appListener=listener;
+        runner.appPhysicalNetwork=physicalNetwork;
         runner.stageDiagnosticsEnabled=stageDiagnosticsEnabled;
         runner.codecStartupReadyEnabled=codecStartupReadyEnabled;
         new Thread(runner::onStart,"authenticated-lan-udp").start();return runner;
@@ -378,6 +385,12 @@ public final class UdpVideoProbe extends Instrumentation {
             recordDisplayStart(activity,session.displayHz,report);
             completed="surface_created";
             socket=new DatagramSocket(null);socket.setReuseAddress(false);
+            if(appPhysicalNetwork!=null){appPhysicalNetwork.bind(socket);
+                report.put("nps_physical_network_binding",new JSONObject().put("api_bind_succeeded",true)
+                    .put("network_handle",appPhysicalNetwork.handle()).put("transport_at_selection",appPhysicalNetwork.transport())
+                    .put("https_bind_count_at_udp_start",appPhysicalNetwork.httpsBindings()).put("udp_bind_count",appPhysicalNetwork.udpBindings())
+                    .put("same_network_for_control_and_media",appPhysicalNetwork.httpsBindings()>0&&appPhysicalNetwork.udpBindings()>0).put("default_network_fallback",false)
+                    .put("packet_route_verified",false).put("domestic_country_verified",false));}
             socket.setReceiveBufferSize(4*1024*1024);socket.bind(new InetSocketAddress(session.bindPort));socket.setSoTimeout(20);
             report.put("socket_receive_buffer_bytes",socket.getReceiveBufferSize());
             security=new UdpVideoSecurity(session.key,session.tag);
@@ -583,7 +596,7 @@ public final class UdpVideoProbe extends Instrumentation {
             checkVideoWorker();
             long now=System.nanoTime();long deadline=firstServerNs==0?overall:Math.min(overall,firstServerNs+session.seconds*1_000_000_000L);
             if(now>=deadline)break;
-            if(appActivity!=null&&now>=nextAlive){sendPayload(socket,session,security,"ALIVE".getBytes(StandardCharsets.US_ASCII));nextAlive=now+750_000_000L;}
+            if(appActivity!=null&&now>=nextAlive){if(appPhysicalNetwork!=null)appPhysicalNetwork.requireUsable();sendPayload(socket,session,security,"ALIVE".getBytes(StandardCharsets.US_ASCII));nextAlive=now+750_000_000L;}
             if(firstServerNs==0&&now>=nextReady){sendPayload(socket,session,security,"READY".getBytes(StandardCharsets.US_ASCII));readySent++;nextReady=now+500_000_000L;}
             packet.setLength(data.length);
             long iterationStarted=System.nanoTime(),processingStarted=iterationStarted,socketStarted=iterationStarted;
@@ -1124,7 +1137,7 @@ public final class UdpVideoProbe extends Instrumentation {
             :status.equals("enabled_no_wait_observed")?2:-1);
         out.put("hardware_video",report.optBoolean("hardware",false)?1:0);
         out.put("codec_startup_ready_enabled",report.optBoolean("codec_startup_ready_enabled",false)?1:0);
-        for(String key:new String[]{"native_fec","native_mapping_details","udp_audio","udp_touch","video_input_queue","codec_startup_gate","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
+        for(String key:new String[]{"nps_physical_network_binding","native_fec","native_mapping_details","udp_audio","udp_touch","video_input_queue","codec_startup_gate","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
             Object value=report.opt(key);if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
         }
         if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");

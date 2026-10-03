@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+ android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+ <!-- Outline and glyph strokes preserve the test mark for themed launchers. -->
+ <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2"
+  android:strokeLineCap="round" android:strokeLineJoin="round"
+  android:pathData="M37,34 L71,34 Q80,34 80,43 L80,65 Q80,74 71,74 L37,74 Q28,74 28,65 L28,43 Q28,34 37,34 Z" />
+ <group android:translateY="-18">
+  <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2"
+   android:strokeLineCap="round" android:strokeLineJoin="round"
+   android:pathData="M39,69 L40.5,70 M38.5,73 L40,74 M38.5,80 L41,76 M43,77 L43,69 L49,69 L49,77 M46,71 L46,76.5 Q46,79 43,81 M46.5,78 L49.5,81 M51,70 L51,77 M53.5,68.5 L53.5,79.5 Q53.5,81 51.5,81 M58,68.5 L60,70.5 M57,72 L59,72 L59,80 L62,78 M62,74 L68,74 M65,74 L65,79.5 M62,80 L69,79 M62,71 L73,71 M69,67.5 Q69,76 73.5,81 Q75,82 75,78.5 M72,67.5 L74,69" />
+ </group>
+</vector>

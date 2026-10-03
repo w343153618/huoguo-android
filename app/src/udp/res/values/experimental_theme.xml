@@ -1,0 +1,18 @@
+<resources>
+ <color name="experimental_accent">#7050A4</color>
+ <color name="experimental_window">#F8F5FC</color>
+ <color name="experimental_chrome">#F1E9FB</color>
+ <color name="experimental_highlight">#337050A4</color>
+ <color name="experimental_launcher_background">#EADDF8</color>
+ <style name="HuoguoExperimentalTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
+  <item name="android:colorAccent">@color/experimental_accent</item>
+  <item name="android:colorControlActivated">@color/experimental_accent</item>
+  <item name="android:colorControlHighlight">@color/experimental_highlight</item>
+  <item name="android:colorEdgeEffect">@color/experimental_accent</item>
+  <item name="android:windowBackground">@color/experimental_window</item>
+  <item name="android:statusBarColor">@color/experimental_chrome</item>
+  <item name="android:navigationBarColor">@color/experimental_chrome</item>
+  <item name="android:windowLightStatusBar">true</item>
+  <item name="android:windowLightNavigationBar">true</item>
+ </style>
+</resources>

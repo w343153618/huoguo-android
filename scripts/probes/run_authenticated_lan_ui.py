@@ -50,6 +50,37 @@ def verify_nps_network_readback(result, node):
     return True
 
 
+def verify_exit_confirmation_readback(result):
+    """Both sessions must execute Continue then Exit using real App dialog listeners."""
+    if not isinstance(result,dict) or 'failure_class' in result:return False
+    fields=('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt',
+            'exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled',
+            'exit_used_actual_UI_buttons')
+    return all(result.get(stage+'_'+field) is True for stage in ('first','second') for field in fields)
+
+
+def verify_credential_save_readback(result, expected_enabled):
+    if type(expected_enabled) is not bool or not isinstance(result,dict) or 'failure_class' in result:return False
+    if result.get('requested_credential_save_acceptance') is not expected_enabled:return False
+    fields=('credential_save_used_actual_UI','credential_save_reopen_restored','credential_clear_reopen_empty','credential_final_save_reopen_retained')
+    if not expected_enabled:return not any(key in result for key in fields)
+    return all(result.get(key) is True for key in fields) and result.get('credential_secret_exported') is False and result.get('credential_other_package_modified') is False
+
+
+def verify_nps_physical_network_binding(result):
+    """API identity/bind evidence only; this cannot prove packet path or country."""
+    if not isinstance(result,dict) or 'failure_class' in result:return False
+    for stage in ('first','second'):
+        if result.get(stage+'_physical_network_same_lease') is not True:return False
+        for field,floor,ceiling in (('physical_network_handle',1,None),('physical_network_transport',1,2),
+                ('physical_https_bind_calls',1,None),('physical_udp_bind_calls',1,1)):
+            value=result.get(stage+'_'+field)
+            if type(value) is not int or value<floor or (ceiling is not None and value>ceiling):return False
+        for field in ('physical_packet_route_verified','physical_domestic_country_verified'):
+            if result.get(stage+'_'+field) is not False:return False
+    return True
+
+
 def verify_surface_submit_readback(result, expected_lead):
     """Require actual per-session execution evidence, never descriptor/request echo alone."""
     if (type(expected_lead) is not int or expected_lead not in (0, 16)
@@ -214,6 +245,7 @@ def parse_arguments(argv=None):
                    help='Explicit one-attempt codec-ready startup admission candidate; steady queue policy retained')
     p.add_argument('--surface-submit-lead-ms', type=int, choices=[0,16], default=0,
                    help='Explicit owner-only Surface submission experiment; does not change playback target/buffer')
+    p.add_argument('--credential-save',choices=['off','on'],default='off',help='Actual save/reopen/clear/reopen/save UI acceptance; existing test account only')
     p.add_argument('--steady-seconds', type=int, choices=range(20,31), default=20,
                    help='Bounded SF steady window; helper waits this duration plus 2 seconds before reconnect')
     p.add_argument('--media-only', action='store_true')
@@ -255,7 +287,7 @@ def main():
     report={'scope':'normal App UI existing account; isolated '+scope_label+' UDP; outer path requires separate evidence',
             'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
-    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on',requested_codec_startup_ready_enabled=args.codec_startup=='on')
+    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on',requested_codec_startup_ready_enabled=args.codec_startup=='on',requested_credential_save_acceptance=args.credential_save=='on')
     if args.network_scope == 'nps_owner':
         profile = planned_profile(args.node)
         report.update(node=args.node, advertised_control_host=profile.public_control.host,
@@ -279,9 +311,9 @@ def main():
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        deadline=time.monotonic()+120+(args.steady_seconds-20)
+        deadline=time.monotonic()+120+(args.steady_seconds-20)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
             if not report['phone_sampler_started']:
                 if root('test -f '+PRIVATE+'udp-ui-phase-steady-media',False).returncode==0:
@@ -371,18 +403,21 @@ def main():
         else:
             report['numeric_result_missing']=True
         ui_result = report.get('ui_result')
-        if (args.network_scope == 'nps_owner' and isinstance(ui_result, dict)
+        if (isinstance(ui_result, dict)
                 and ui_result.get('bounded_failure_label') == 'existing_UI_attempt_busy'
                 and ui_result.get('normal_UI_login_received_media') is not True):
             # The normal UI helper declined before owning an attempt. Its
             # failure must not turn into a force-stop of somebody else's App.
             report['existing_phone_UI_attempt_busy_skip'] = True
+        report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
+        report['exit_confirmation_readback_verified']=verify_exit_confirmation_readback(report.get('ui_result'))
         report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
         report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
         report['codec_startup_readback_verified']=verify_codec_startup_readback(report.get('ui_result'),args.codec_startup=='on')
         report['steady_media_progress_verified']=verify_steady_media_progress(report.get('ui_result'))
         report['steady_window_readback_verified']=verify_steady_window_readback(report.get('ui_result'),args.steady_seconds)
         if args.network_scope == 'nps_owner':
+            report['nps_physical_network_binding_verified']=verify_nps_physical_network_binding(report.get('ui_result'))
             report['nps_network_profile_readback_verified'] = verify_nps_network_readback(
                 report.get('ui_result'), args.node)
         reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
@@ -397,6 +432,12 @@ def main():
                 report[name+'_actual_json_bytes']=len(result.stdout.encode('utf-8'))
                 (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')
                 report[name+'_report_read']=True
+        if not report['credential_save_readback_verified']:
+            raise RuntimeError('credential_save_readback_unverified')
+        if not report['exit_confirmation_readback_verified']:
+            raise RuntimeError('exit_confirmation_readback_unverified')
+        if args.network_scope == 'nps_owner' and not report['nps_physical_network_binding_verified']:
+            raise RuntimeError('nps_physical_network_binding_unverified')
         if not report['surface_submit_execution_verified']:
             raise RuntimeError('surface_submit_readback_unverified')
         if args.network_scope == 'nps_owner' and not report['nps_network_profile_readback_verified']:
@@ -418,7 +459,8 @@ def main():
                   'kernel_touch_capability_mismatch','surface_submit_readback_unverified',
                   'steady_sampler_failed','steady_window_readback_unverified','stage_diagnostics_readback_unverified',
                   'steady_media_progress_stalled_or_unverified','codec_startup_readback_unverified',
-                  'nps_network_profile_readback_unverified'}
+                  'nps_network_profile_readback_unverified','exit_confirmation_readback_unverified',
+                  'nps_physical_network_binding_unverified','credential_save_readback_unverified'}
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report

@@ -15,8 +15,8 @@ def experimentalVersionCode = project.findProperty('experimentalVersionCode')
 // Only the isolated UDP variant has a candidate default. The formal package
 // and explicitly pinned historical UDP versions retain separate identities.
 if (authenticatedLanUdp && experimentalVersionName == null && experimentalVersionCode == null) {
-    experimentalVersionName = '1.31-alpha.6'
-    experimentalVersionCode = '37'
+    experimentalVersionName = '1.31-alpha.7'
+    experimentalVersionCode = '38'
 }
 if ((experimentalVersionName == null) != (experimentalVersionCode == null)) {
     throw new GradleException('Experimental version name and code must be provided together')
@@ -44,7 +44,9 @@ android {
             versionName experimentalVersionName
             versionCode experimentalVersionCode.toInteger()
         }
-        manifestPlaceholders = [appLabel: authenticatedLanUdp ? '给火锅的安卓 · 实验版' : '@string/app_name']
+        manifestPlaceholders = [appLabel: authenticatedLanUdp ? '给火锅的安卓 · 实验版' : '@string/app_name',
+            appIcon: authenticatedLanUdp ? '@mipmap/ic_launcher_experimental' : '@mipmap/ic_launcher',
+            appTheme: authenticatedLanUdp ? '@style/HuoguoExperimentalTheme' : '@android:style/Theme.Material.Light.NoActionBar']
         buildConfigField 'String', 'RELEASE_CHANNEL', authenticatedLanUdp ? '"experimental"' : '"formal"'
         buildConfigField 'boolean', 'AUTHENTICATED_LAN_UDP', authenticatedLanUdp ? 'true' : 'false'
         if (authenticatedLanUdp) { ndk { abiFilters 'arm64-v8a' } }
@@ -69,6 +71,7 @@ if (authenticatedLanUdp) {
     def generatedJava = layout.buildDirectory.dir('generated/udpCandidateJava')
     def generatedJni = layout.buildDirectory.dir('generated/udpCandidateJni')
     android.sourceSets.main.java.srcDirs += ['src/udp/java', generatedJava.get().asFile]
+    android.sourceSets.main.res.srcDirs += ['src/udp/res']
     android.sourceSets.main.jniLibs.srcDir generatedJni.get().asFile
     def generateUdpCandidateJava = tasks.register('generateUdpCandidateJava', Copy) {
         from(rootProject.file('experiments/nps-transport/phone')) {

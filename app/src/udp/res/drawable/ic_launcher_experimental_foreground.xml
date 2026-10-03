@@ -1,0 +1,5 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+ <!-- Reuse the supplied portrait exactly; only this variant overlays a badge. -->
+ <item><inset android:inset="10dp"><bitmap android:src="@drawable/avatar_photo" android:gravity="fill" /></inset></item>
+ <item android:drawable="@drawable/ic_experimental_test_badge" />
+</layer-list>

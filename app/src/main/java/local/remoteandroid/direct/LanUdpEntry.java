@@ -5,4 +5,6 @@ public interface LanUdpEntry {
     boolean active();
     void cancel(boolean showLogin);
     void failed(Exception failure);
+    /** Older/formal implementors keep their existing cancellation behavior. */
+    default void requestBack(){cancel(true);}
 }

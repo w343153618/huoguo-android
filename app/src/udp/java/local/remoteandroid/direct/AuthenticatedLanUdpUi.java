@@ -1,6 +1,7 @@
 package local.remoteandroid.direct;
 
 import android.content.SharedPreferences;
+import android.app.AlertDialog;
 import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -10,6 +11,7 @@ import android.widget.*;
 import org.json.JSONObject;
 import java.io.*;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -20,9 +22,13 @@ import javax.net.ssl.SSLSocket;
  * AES-GCM UDP carries video, AAC and Android native touch. No media fallback. */
 public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private final MainActivity activity;
+    private final PasswordStore passwordStore;
     private final Object lock=new Object();
     private long generation;
     private Attempt current,retiring;
+    private final UdpExitConfirmationGate exitGate=new UdpExitConfirmationGate();
+    private AlertDialog exitDialog;
+    private UdpExitConfirmationGate.Token exitToken;
     private EditText address,user,password;
     private TextView status;
     private Spinner scope,fps,quality,rate,buffer;
@@ -37,19 +43,21 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private boolean ownerStageDiagnosticsEnabled=true;
     private static final class Attempt {
         final long generation;final String endpoint,credential,networkScope,node;
+        final NpsPhysicalNetwork physicalNetwork;
         final boolean boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled;final int surfaceSubmitLeadMs;
-        volatile boolean cancelled;volatile SSLSocket https;volatile UdpVideoProbe receiver;
+        volatile boolean cancelled;volatile Socket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
-        Attempt(long generation,String endpoint,String credential,String scope,String node,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;this.node=node;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
+        Attempt(long generation,String endpoint,String credential,String scope,String node,NpsPhysicalNetwork physicalNetwork,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;this.node=node;this.physicalNetwork=physicalNetwork;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
-        this.activity=activity;
+        this.activity=activity;passwordStore=new PasswordStore(activity);
     }
     @Override public boolean active(){synchronized(lock){return current!=null&&!current.stopped;}}
     @Override public void showLogin(){
         if(Looper.myLooper()!=Looper.getMainLooper()){activity.ui.post(this::showLogin);return;}
         if(active())return;
+        dismissExitConfirmation();
         ownerSurfaceSubmitLeadMs=0;
         ownerStageDiagnosticsEnabled=true;
         SharedPreferences saved=activity.getSharedPreferences(SETTINGS,0);
@@ -60,13 +68,15 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         String restoredAddress=savedScope>=2?publicAddress(savedScope):savedAddress(saved,"address",selectedScope(savedScope),
             savedScope==0?lastLanAddress:LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT);
         LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(32,32,32,32);
-        TextView title=new TextView(activity);title.setText("认证 UDP · 独立实验版\nHTTPS 仅登录；视频、声音、多指触控均走 UDP\n最长 120 秒；断线不会切换成 TCP 媒体\n公网 M1／M5 仅机主试用，不代表已完成朋友发布验收\n公网 UDP 请用 wyw；朋友 huoguo 暂用稳定版\nTailnet 仅已登记测试手机；底层可能使用 DERP 中继");box.addView(title);
+        TextView title=new TextView(activity);title.setText("认证 UDP · 独立实验版\nHTTPS 仅登录；视频、声音、多指触控均走 UDP\n最长 120 秒；断线不会切换成 TCP 媒体\n公网 M1／M5 仅授权试用，不代表已完成朋友发布验收\n新账号字段默认 huoguo；保留上次手动使用的账号\n公网控制与媒体绑定同一非 VPN Wi-Fi／移动网络；网络丢失时停止，不绕回 VPN\nTailnet 仅已登记测试手机；底层可能使用 DERP 中继");box.addView(title);
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
         Button update=new Button(activity);update.setText("检查更新");update.setOnClickListener(v->activity.updater.check(true));box.addView(update);
         scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 机主试用", "公网 UDP · M5 · 机主试用（新安装默认）"},savedScope);
         address=field(box,"HTTPS 控制地址；公网节点使用固定地址",restoredAddress);address.setEnabled(savedScope<2);
         user=field(box,"现有安卓账号",savedText(saved,usernamePreference(savedScope),defaultUsername(savedScope),128));
-        password=field(box,"现有账号密码（此次仅保存在内存）","");password.setInputType(129);
+        password=field(box,"现有账号密码（可在本机加密保存）","");password.setInputType(129);
+        LinearLayout passwordActions=new LinearLayout(activity);Button remember=new Button(activity);remember.setText("保存密码");passwordActions.addView(remember,new LinearLayout.LayoutParams(0,-2,1));Button forget=new Button(activity);forget.setText("清除已保存密码");passwordActions.addView(forget,new LinearLayout.LayoutParams(0,-2,1));box.addView(passwordActions);
+        remember.setOnClickListener(v->savePassword());forget.setOnClickListener(v->{try{passwordStore.clear();password.setText("");status.setText("已清除本机保存的密码。");}catch(Exception failure){status.setText("清除失败，请重试。");}});
         quality=choice(box,"串流清晰度",new String[]{"540P · 960","720P · 1280","1080P · 1920"},savedSelection(saved,"quality",2,2));
         rate=choice(box,"视频 VBR 目标码率",new String[]{"4 Mbps","8 Mbps","12 Mbps","16 Mbps","24 Mbps"},savedSelection(saved,"rate",4,2));
         fps=choice(box,"串流上限（不代表实际内容帧率）",new String[]{"60 FPS","120 FPS"},savedSelection(saved,"fps",1,0));
@@ -74,7 +84,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         sound=new CheckBox(activity);sound.setText("UDP 音频");sound.setChecked(savedSound(saved));box.addView(sound);
         pcmQueue=new CheckBox(activity);pcmQueue.setText("实验：有界 PCM 输出队列（默认关闭）");pcmQueue.setChecked(false);box.addView(pcmQueue);
         codecStartup=new CheckBox(activity);codecStartup.setText("实验：解码器准备后接收新关键帧（默认关闭）");codecStartup.setChecked(false);box.addView(codecStartup);
-        TextView remembered=new TextView(activity);remembered.setText("连接地址、账号及串流参数自动记住；密码与本次实验开关不会保存。");box.addView(remembered);
+        TextView remembered=new TextView(activity);remembered.setText("连接地址、账号及串流参数自动记住；点击保存密码才会加密保存一组服务器和账号。本次实验开关不会保存。");box.addView(remembered);
         Button start=new Button(activity);start.setText("启动认证 UDP 测试");box.addView(start);status=new TextView(activity);box.addView(status);
         scope.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
             private int previous=savedScope;
@@ -88,7 +98,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
                     address.setText(position>=2?publicAddress(position):position==1?LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT:lastLanAddress);
                     user.setText(savedText(activity.getSharedPreferences(SETTINGS,0),usernamePreference(position),defaultUsername(position),128));
                 }finally{restoringFields=false;}
-                saveSettings();
+                saveSettings();restorePassword();
             }
             public void onNothingSelected(AdapterView<?> parent){}
         });
@@ -98,13 +108,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         });
         TextWatcher watcher=new TextWatcher(){
             public void beforeTextChanged(CharSequence value,int start,int count,int after){}
-            public void onTextChanged(CharSequence value,int start,int before,int count){saveSettings();}
+            public void onTextChanged(CharSequence value,int start,int before,int count){if(restoringFields)return;saveSettings();restorePassword();}
             public void afterTextChanged(Editable value){}
         };
         address.addTextChangedListener(watcher);user.addTextChangedListener(watcher);
         sound.setOnCheckedChangeListener((button,checked)->saveSettings());
         start.setOnClickListener(v->start());
-        ScrollView scroll=new ScrollView(activity);scroll.addView(box);activity.setContentView(scroll);
+        restorePassword();ScrollView scroll=new ScrollView(activity);scroll.addView(box);activity.setContentView(scroll);
     }
     private EditText field(LinearLayout box,String hint,String value){EditText input=new EditText(activity);input.setSingleLine();input.setHint(hint);input.setText(value);box.addView(input);return input;}
     private Spinner choice(LinearLayout box,String label,String[] values,int selected){TextView text=new TextView(activity);text.setText(label);box.addView(text);Spinner input=new Spinner(activity);input.setAdapter(new ArrayAdapter<>(activity,android.R.layout.simple_spinner_dropdown_item,values));input.setSelection(selected);box.addView(input);return input;}
@@ -114,7 +124,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private static String selectedScope(int selection){return selection>=2?LanUdpContract.NPS_SCOPE:selection==1?LanUdpContract.TAILNET_SCOPE:LanUdpContract.LAN_SCOPE;}
     private static String selectedNode(int selection){return selection==2?LanUdpContract.M1_NODE:selection==3?LanUdpContract.M5_NODE:"";}
     private static String usernamePreference(int selection){return selection>=2?"nps_username":"username";}
-    private static String defaultUsername(int selection){return selection>=2?"wyw":"huoguo";}
+    private static String defaultUsername(int selection){return "huoguo";}
     private static String publicAddress(int selection){
         if(selection==2)return LanUdpContract.NPS_HOST+":"+LanUdpContract.NPS_M1_HTTPS_PORT;
         if(selection==3)return LanUdpContract.NPS_HOST+":"+LanUdpContract.NPS_M5_HTTPS_PORT;
@@ -135,9 +145,25 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             lastLanAddress=endpoint;edit.putString("lan_address",endpoint);}catch(Exception invalid){}
         edit.apply();
     }
+    private void savePassword(){
+        try{int selected=scope.getSelectedItemPosition();String destination=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(destination);
+            LanUdpContract.validateLogin(parsed.host,parsed.port,selectedScope(selected),selectedNode(selected));
+            String name=user.getText().toString(),secret=password.getText().toString();
+            if(name.isEmpty()||secret.isEmpty()||name.indexOf(':')>=0||name.length()>128||secret.length()>1024)throw new IOException("请先填写有效账号及密码");
+            passwordStore.save(Endpoint.identity(destination),name,secret);saveSettings();status.setText("密码已在本机加密保存，下次匹配此服务器和账号时自动填入。");
+        }catch(Exception failure){status.setText("保存失败，请核对服务器、账号和密码后重试。");}
+    }
+    private void restorePassword(){
+        if(restoringFields||password==null)return;
+        try{String destination=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(destination);int selected=scope.getSelectedItemPosition();
+            LanUdpContract.validateLogin(parsed.host,parsed.port,selectedScope(selected),selectedNode(selected));
+            password.setText(passwordStore.load(Endpoint.identity(destination),user.getText().toString()));
+        }catch(IllegalArgumentException invalid){password.setText("");}
+        catch(Exception failure){password.setText("");if(status!=null)status.setText("已保存的密码无法读取，请重新输入并保存。");}
+    }
     private void start(){
         synchronized(lock){if(retiring!=null){status.setText("上一条 UDP 会话正在收尾，请稍后重新连接。");return;}}
-        final String endpoint,credential,networkScope,node;final int requestedSurfaceLeadMs;final JSONObject request=new JSONObject();
+        final String endpoint,credential,networkScope,node;final NpsPhysicalNetwork physicalNetwork;final int requestedSurfaceLeadMs;final JSONObject request=new JSONObject();
         try{
             endpoint=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(endpoint);
             int selection=scope.getSelectedItemPosition();if(selection<0||selection>3)throw new IOException("请手动选择测试节点");
@@ -155,9 +181,10 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             requestedSurfaceLeadMs=ownerSurfaceSubmitLeadMs;LanUdpContract.validateOwnerSurfaceLead(requestedSurfaceLeadMs);
             request.put("surface_submit_lead_ms",requestedSurfaceLeadMs);
             activity.initTLS();
+            physicalNetwork=LanUdpContract.NPS_SCOPE.equals(networkScope)?NpsPhysicalNetwork.select(activity):null;
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,node,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,node,physicalNetwork,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();
@@ -170,7 +197,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             validateDescriptor(descriptor,login.host,login.port,attempt.networkScope,attempt.node,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
-                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,(report,failed)->finished(attempt,report,failed));
+                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,attempt.physicalNetwork,(report,failed)->finished(attempt,report,failed));
             }
         }catch(Exception failure){
             finishRemote(attempt);
@@ -197,10 +224,22 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private JSONObject http(Attempt attempt,String method,String path,JSONObject data,boolean cancellable)throws Exception{
         if(cancellable&&attempt.cancelled)throw new IOException("cancelled");Endpoint.Address endpoint=Endpoint.parse(attempt.endpoint);
         LanUdpContract.validateLogin(endpoint.host,endpoint.port,attempt.networkScope,attempt.node);
-        SSLSocket socket=(SSLSocket)activity.tls.getSocketFactory().createSocket();
-        if(cancellable){synchronized(lock){if(attempt.cancelled){socket.close();throw new IOException("cancelled");}attempt.https=socket;}}
+        NpsPhysicalNetwork.validateScope(attempt.networkScope,attempt.physicalNetwork);
+        Socket raw=null;SSLSocket socket=null;
         try{
-            socket.connect(new InetSocketAddress(endpoint.host,endpoint.port),5000);socket.setSoTimeout(7000);socket.setTcpNoDelay(true);socket.startHandshake();
+            if(attempt.physicalNetwork!=null){
+                raw=new Socket();attempt.physicalNetwork.bind(raw);
+                if(cancellable){synchronized(lock){if(attempt.cancelled)throw new IOException("cancelled");attempt.https=raw;}}
+                raw.connect(new InetSocketAddress(endpoint.host,endpoint.port),5000);
+                attempt.physicalNetwork.requireUsable();
+                socket=(SSLSocket)activity.tls.getSocketFactory().createSocket(raw,endpoint.host,endpoint.port,true);
+            }else{
+                socket=(SSLSocket)activity.tls.getSocketFactory().createSocket();
+                if(cancellable){synchronized(lock){if(attempt.cancelled)throw new IOException("cancelled");attempt.https=socket;}}
+                socket.connect(new InetSocketAddress(endpoint.host,endpoint.port),5000);
+            }
+            if(cancellable&&attempt.cancelled)throw new IOException("cancelled");
+            socket.setSoTimeout(7000);socket.setTcpNoDelay(true);socket.startHandshake();
             byte[] leaf=MessageDigest.getInstance("SHA-256").digest(socket.getSession().getPeerCertificates()[0].getEncoded());boolean pinned=false;
             if(LanUdpContract.NPS_SCOPE.equals(attempt.networkScope)){
                 String hex=LanUdpContract.npsCertificateSha256(attempt.node);byte[] nodePin=new byte[32];
@@ -214,7 +253,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] chunk=new byte[1024];int n;
             while((n=in.read(chunk))!=-1){if(bytes.size()+n>32768)throw new IOException("descriptor_bound");bytes.write(chunk,0,n);}
             if(bytes.size()==0)return new JSONObject();byte[] encoded=bytes.toByteArray();try{return new JSONObject(new String(encoded,StandardCharsets.UTF_8));}finally{Arrays.fill(encoded,(byte)0);}
-        }finally{socket.close();if(cancellable)attempt.https=null;}
+        }finally{try{if(socket!=null)socket.close();}finally{try{if(raw!=null)raw.close();}finally{if(cancellable)attempt.https=null;}}}
     }
     private void finished(Attempt attempt,JSONObject report,boolean failed){
         boolean written=false;
@@ -240,9 +279,32 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     @Override public void failed(Exception failure){
         cancel(true);activity.ui.post(()->{if(!active()&&status!=null)status.setText("UDP 媒体中断（"+failure.getClass().getSimpleName()+"），未回退 TCP。");});
     }
+    private void dismissExitConfirmation(){
+        AlertDialog dialog=exitDialog;UdpExitConfirmationGate.Token token=exitToken;exitDialog=null;exitToken=null;
+        exitGate.dismiss(token);if(dialog!=null)dialog.dismiss();
+    }
+    @Override public void requestBack(){
+        if(Looper.myLooper()!=Looper.getMainLooper()){activity.ui.post(this::requestBack);return;}
+        final Attempt captured;final UdpExitConfirmationGate.Token token;
+        synchronized(lock){if(current==null||current.stopped)return;captured=current;token=exitGate.open(generation,captured);}
+        if(token==null)return;
+        if(activity.isFinishing()||activity.isDestroyed()){exitGate.dismiss(token);return;}
+        AlertDialog dialog=new AlertDialog.Builder(activity).setTitle("要退出远程连接吗？")
+            .setNegativeButton("继续使用",(ignored,which)->{synchronized(lock){exitGate.resolve(token,false,generation,current);}})
+            .setPositiveButton("退出连接",(ignored,which)->{
+                boolean exit; synchronized(lock){exit=exitGate.resolve(token,true,generation,current)==UdpExitConfirmationGate.EXIT_CURRENT;}
+                if(exit)cancelOwned(captured,true);
+            }).create();
+        dialog.setOnDismissListener(ignored->{exitGate.dismiss(token);if(exitToken==token){exitToken=null;exitDialog=null;}});
+        synchronized(lock){if(current!=captured||generation!=captured.generation||captured.stopped){exitGate.dismiss(token);return;}}
+        exitToken=token;exitDialog=dialog;dialog.show();
+    }
     @Override public void cancel(boolean show){
-        Attempt attempt; synchronized(lock){attempt=current;if(attempt==null)return;attempt.cancelled=true;attempt.stopped=true;current=null;retiring=attempt;generation++;}
-        SSLSocket socket=attempt.https;if(socket!=null)try{socket.close();}catch(Exception ignored){}
+        cancelOwned(null,show);
+    }
+    private void cancelOwned(Attempt expected,boolean show){
+        Attempt attempt; synchronized(lock){attempt=current;if(attempt==null||(expected!=null&&(attempt!=expected||generation!=expected.generation)))return;attempt.cancelled=true;attempt.stopped=true;current=null;retiring=attempt;generation++;}
+        Socket socket=attempt.https;if(socket!=null)try{socket.close();}catch(Exception ignored){}
         UdpVideoProbe receiver=attempt.receiver;if(receiver!=null)receiver.cancelApp();
         // Never stop a later generation here; receiver cleanup owns codec/audio/CANCEL/STOP.
         new Thread(()->finishRemote(attempt),"udp-session-delete").start();
