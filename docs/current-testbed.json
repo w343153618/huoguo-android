@@ -1503,5 +1503,29 @@
     ],
     "sampling_overhead_tested_on_real_concurrent_media": false,
     "per_attempt_caps_not_global_disk_quota": true
+  },
+  "guest_refresh_fallback_policy_20261003": {
+    "user_instruction": "If fixed30Hz is unsupported, change both guest displays to60Hz; keep App30/60FPS choices",
+    "fresh_readback": {
+      "M1": {
+        "resolution": [
+          1080,
+          1920
+        ],
+        "actual_hz": 30.0
+      },
+      "M5": {
+        "resolution": [
+          720,
+          1280
+        ],
+        "actual_hz": 30.0
+      }
+    },
+    "method": "adb cmd display get-active-mode0; M5 via existing authenticated LAN SSH",
+    "fixed_30Hz_is_currently_supported": true,
+    "configuration_changed_this_readback": false,
+    "source_30Hz_does_not_imply_60_unique_frames": true,
+    "any_friend_guest_change_requires_existing_session_protection": true
   }
 }

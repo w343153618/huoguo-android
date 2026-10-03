@@ -1,3 +1,7 @@
+## 用户最新条件授权：30Hz不支持时两台统一60Hz
+
+刚再次实时读取M1 `cmd display get-active-mode0`为1080×1920/30.00Hz，M5通过已有LAN SSH同命令为720×1280/30.00Hz，两台当前确实支持固定30。此次仅readback，没有改guest/服务或打断会话；目前不触发“不支持30”的fallback。以后固定30不支持才统一guest60，App保留30/60串流选择；不要把virtual Hz、串流cap和独立内容帧混淆。机主60Hz比较仍须同参数受控，M5朋友在线保护不因这个条件授权消失。最新raw供给诊断及source trace任务继续。
+
 ## 2026-10-03 最新 checkpoint：host诊断已冻结，1402源码checks全过；继续自动分析器
 
 默认OFF的host raw/feed trace candidate75a7b199与独立review dfe2841已经合入，root全仓1402项源码/owned loopback/JVM检查通过，root gateway唯一CLI `--capture-trace-dir`及5入口fixture通过；NPS trace opt-in禁止max-runtime0，正式持久trace-off不变。见[候选](host-raw-feed-timing-candidate-20261003.md)、[review](host-timing-trace-review-20261003.md)、[入口](owner-host-capture-trace-entry-20261003.md)。必须一起冻结新增host_timing_trace.py，否则两旧入口会缺import。core SHA见current-testbed。没有部署/新媒体/并发开销验收；所有dd43 runtime未改。clean_close、producer_quiescent、sink_writer_alive及clock/drops/caps分别判断，不认文件footer为完整媒体证据。renderer_boot_contract已接下一可行动项：有界白名单raw/native/feed数字分析器，running时不要重派或改冻结core。
