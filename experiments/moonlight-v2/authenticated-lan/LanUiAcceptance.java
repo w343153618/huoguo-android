@@ -67,7 +67,7 @@ public final class LanUiAcceptance extends Instrumentation {
         if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("codec_startup_bound");if(v50Profile()&&value.equals("on"))throw new IllegalArgumentException("v50_startup_conflict");return value.equals("on");}
     private boolean stageDiagnostics(){String value=arguments.getString("stage_diagnostics","on");
         if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("stage_diagnostics_bound");return !v50Profile()&&value.equals("on");}
-    private int steadySeconds(){int value=Integer.parseInt(arguments.getString("steady_seconds","20"));if(value<20||value>30)throw new IllegalArgumentException("steady_seconds_bound");return value;}
+    private int steadySeconds(){int value=Integer.parseInt(arguments.getString("steady_seconds","20"));if(value<20||value>150)throw new IllegalArgumentException("steady_seconds_bound");return value;}
     private int surfaceLeadMs()throws Exception{
         String raw=arguments.getString("surface_submit_lead_ms","0");
         if(!raw.equals("0")&&!raw.equals("16"))throw new IllegalArgumentException("surface_submit_lead_bound");
@@ -76,6 +76,9 @@ public final class LanUiAcceptance extends Instrumentation {
     /** Probe-only liveness; worker/callback counts are not presented or unique-content FPS. */
     private void waitSteady(MainActivity target,JSONObject report,long steadyStart)throws Exception{
         long requiredEnd=steadyStart+(steadySeconds()+2)*1_000_000_000L;
+        // Keep <=48 numeric rows spanning the complete bounded window; the
+        //250ms running/progress monitor remains independent of sample density.
+        long sampleIntervalNs=Math.max(1_000_000_000L,(steadySeconds()+2)*1_000_000_000L/46);
         long lastProgress=steadyStart,lastReceived=target.receivedFrames.get(),lastCallback=target.presentedFrames.get();
         long nextSample=steadyStart,maxIdle=0;boolean stalled=false;JSONArray rows=new JSONArray();
         File sampled=new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-sampled");
@@ -83,7 +86,7 @@ public final class LanUiAcceptance extends Instrumentation {
             if(received>lastReceived||callback>lastCallback)lastProgress=now;
             maxIdle=Math.max(maxIdle,now-lastProgress);if(!target.running||now-lastProgress>=3_000_000_000L)stalled=true;
             if(now>=nextSample&&rows.length()<48){rows.put(new JSONObject().put("phone_ns",now)
-                .put("worker_received_frames",received).put("codec_callback_count",callback));nextSample=now+1_000_000_000L;}
+                .put("worker_received_frames",received).put("codec_callback_count",callback));nextSample=now+sampleIntervalNs;}
             lastReceived=received;lastCallback=callback;
             if(now>=requiredEnd&&sampled.exists())break;
             if(now>=requiredEnd+10_000_000_000L)throw new IllegalStateException("steady_sampler_completion_missing");

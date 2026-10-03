@@ -129,7 +129,7 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
             self.assertEqual(report['requested_surface_submit_lead_ms'],lead)
 
     def test_steady_readback_requires_observed_completion_and_untampered_bounded_duration(self):
-        for seconds in (20,30):
+        for seconds in (20,30,135,150):
             started=1000000000;duration=(seconds+2)*1000
             valid={'requested_steady_seconds':seconds,'steady_sampler_completion_observed':True,
                 'steady_media_started_ns':started,'steady_media_finished_ns':started+duration*1000000,
@@ -145,10 +145,10 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
                     ('steady_media_wait_ms',float('inf'))):
                 bad=dict(valid);bad[key]=value
                 self.assertFalse(DRIVER.verify_steady_window_readback(bad,seconds))
-        for seconds in (True,20.0,19,31,None):
+        for seconds in (True,20.0,19,151,None):
             self.assertFalse(DRIVER.verify_steady_window_readback(valid,seconds))
 
-    def test_steady_30_argument_is_forwarded_and_its_timeout_budget_is_extended(self):
+    def test_steady_30_argument_is_forwarded_with_a_preserved_finite_budget(self):
         commands=[];child=FakeChild(timeouts=2)
         def run(args,**kwargs):
             return subprocess.CompletedProcess(args,1 if args[0]=='lsof' else 0,
@@ -165,6 +165,62 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
         self.assertIn('-e steady_seconds 30',commands[0][-1])
         self.assertEqual(report['requested_steady_seconds'],30)
         self.assertEqual(report['driver_failure_label'],'instrumentation_timeout')
+
+    def test_135s_continuity_uses_finite_global_budget_and_supported_phone_SF_duration(self):
+        for seconds,budget in ((20,120),(30,120),(135,225),(150,240)):
+            self.assertEqual(DRIVER.instrumentation_budget_seconds(seconds),budget)
+            args=DRIVER.parse_arguments(['--output','/fake/evidence','--steady-seconds',str(seconds)])
+            self.assertEqual(args.steady_seconds,seconds)
+        for invalid in (True,20.0,19,151,None):
+            with self.assertRaises(ValueError):DRIVER.instrumentation_budget_seconds(invalid)
+        for invalid in ('19','151'):
+            with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+                DRIVER.parse_arguments(['--output','/fake/evidence','--steady-seconds',invalid])
+        sampler=(ROOT/'scripts/probes/measure_surface_cadence.py').read_text()
+        self.assertIn('if not 2 <= args.seconds <= 300:',sampler)
+        driver=(ROOT/'scripts/probes/run_authenticated_lan_ui.py').read_text()
+        self.assertIn("'--seconds',str(args.steady_seconds),'--wait-layer','3'",driver)
+        self.assertIn("deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)",driver)
+        helper=(ROOT/'experiments/moonlight-v2/authenticated-lan/LanUiAcceptance.java').read_text()
+        self.assertIn('if(value<20||value>150)',helper)
+        self.assertIn('rows.length()<48',helper)
+        self.assertIn('nextSample=now+sampleIntervalNs',helper)
+        self.assertIn('while(true){long now=System.nanoTime()',helper)
+        self.assertIn('Thread.sleep(250)',helper)
+
+    def test_135s_monitor_rejects_a_healthy_prefix_without_post120s_progress_coverage(self):
+        def rows(step,count):
+            return [dict(phone_ns=1000000000+i*step*1000000000,
+                worker_received_frames=100+i*step*30,codec_callback_count=90+i*step*30) for i in range(count)]
+        report=dict(requested_steady_seconds=135,steady_progress_monitor_enabled=True,
+            steady_media_progress_healthy=True,steady_progress_max_idle_ns=500000000,
+            steady_progress_stall_threshold_ns=3000000000,steady_progress_samples=rows(3,46))
+        self.assertTrue(DRIVER.verify_steady_media_progress(report))
+        for samples in (rows(1,48),rows(3,40)):
+            with self.subTest(last_ns=samples[-1]['phone_ns']):
+                self.assertFalse(DRIVER.verify_steady_media_progress(dict(report,steady_progress_samples=samples)))
+        self.assertFalse(DRIVER.verify_steady_media_progress(dict(report,steady_media_progress_healthy=False)))
+        self.assertFalse(DRIVER.verify_steady_media_progress(dict(report,requested_steady_seconds=151)))
+
+    def test_135s_instrumentation_forwards_duration_and_times_out_after225s_with_owned_cleanup(self):
+        commands=[];child=FakeChild(timeouts=2)
+        def run(args,**kwargs):
+            return subprocess.CompletedProcess(args,1 if args[0]=='lsof' else 0,
+                stdout=b'' if args[0]=='lsof' else '',stderr='')
+        def spawn(args,**kwargs):commands.append(args);return child
+        with tempfile.TemporaryDirectory() as folder,contextlib.ExitStack() as stack:
+            stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,'--steady-seconds','135']))
+            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+            stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
+            stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,226]))
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            self.assertEqual(DRIVER.main(),1)
+            report=json.loads((Path(folder)/'ui-acceptance.json').read_text())
+        self.assertIn('-e steady_seconds 135',commands[0][-1])
+        self.assertEqual(report['requested_steady_seconds'],135)
+        self.assertEqual(report['driver_failure_label'],'instrumentation_timeout')
+        self.assertIn('kill',child.signals)
+        self.assertTrue(all(timeout<=2 for timeout in child.waits))
 
     def test_steady_completion_marker_requires_both_successful_children_and_is_removed_on_failure(self):
         for failed in (False,True):

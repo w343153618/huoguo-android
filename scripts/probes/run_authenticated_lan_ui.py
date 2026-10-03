@@ -139,7 +139,7 @@ def verify_surface_submit_readback(result, expected_lead):
 
 def verify_steady_window_readback(result, expected_seconds):
     """The sampler completion marker is required before the UI may leave steady media."""
-    if (type(expected_seconds) is not int or not 20 <= expected_seconds <= 30
+    if (type(expected_seconds) is not int or not 20 <= expected_seconds <= 150
             or not isinstance(result,dict) or 'failure_class' in result
             or type(result.get('requested_steady_seconds')) is not int
             or result['requested_steady_seconds']!=expected_seconds
@@ -204,7 +204,11 @@ def verify_steady_media_progress(result):
             if type(row.get(key)) is not int or row[key]<0:return False
         if i and (row['phone_ns']<=rows[i-1]['phone_ns'] or
                   any(row[k]<rows[i-1][k] for k in ('worker_received_frames','codec_callback_count'))):return False
-    return (rows[-1]['phone_ns']-rows[0]['phone_ns']>=19000000000 and
+    seconds=result.get('requested_steady_seconds',20)
+    if type(seconds) is not int or not 20<=seconds<=150:return False
+    # A long case cannot pass with only the historical first48s of samples.
+    minimum_span_ns=max(19,seconds-5)*1000000000
+    return (rows[-1]['phone_ns']-rows[0]['phone_ns']>=minimum_span_ns and
             any(rows[-1][k]>rows[0][k] for k in ('worker_received_frames','codec_callback_count')))
 
 
@@ -258,6 +262,13 @@ def reap_owned_process(proc, report, operation, wait_timeout, terminate=False):
     return None
 
 
+def instrumentation_budget_seconds(steady_seconds):
+    """Finite global budget; retain short cases and allow leave/reconnect after135s."""
+    if type(steady_seconds) is not int or not 20<=steady_seconds<=150:
+        raise ValueError('steady_seconds_bound')
+    return max(120,steady_seconds+90)
+
+
 def parse_arguments(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phone', default='f7fc9469')
@@ -281,8 +292,8 @@ def parse_arguments(argv=None):
     p.add_argument('--surface-submit-lead-ms', type=int, choices=[0,16], default=0,
                    help='Explicit owner-only Surface submission experiment; does not change playback target/buffer')
     p.add_argument('--credential-save',choices=['off','on'],default='off',help='Actual save/reopen/clear/reopen/save UI acceptance; existing test account only')
-    p.add_argument('--steady-seconds', type=int, choices=range(20,31), default=20,
-                   help='Bounded SF steady window; helper waits this duration plus 2 seconds before reconnect')
+    p.add_argument('--steady-seconds', type=int, choices=range(20,151), default=20,
+                   help='Bounded20..150s SF steady window; helper waits this duration plus2s before reconnect')
     p.add_argument('--media-only', action='store_true')
     p.add_argument('--source-description', default='Morphe YouTube real video; selected content format requires separate readback')
     args = p.parse_args(argv)
@@ -355,7 +366,7 @@ def main():
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
             'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        deadline=time.monotonic()+120+(args.steady_seconds-20)+(20 if args.credential_save=='on' else 0)
+        deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
             if not report['phone_sampler_started']:
                 if root('test -f '+PRIVATE+'udp-ui-phase-steady-media',False).returncode==0:

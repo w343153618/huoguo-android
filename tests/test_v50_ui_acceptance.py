@@ -78,9 +78,13 @@ class V50DriverChecks(unittest.TestCase):
                           ('second_v50_profile_button_click_count',1)):
             self.assertFalse(DRIVER.verify_v50_profile_readback(dict(valid,**{key:value}),False))
 
-    def test_actual_driver_on_consumes_two_real_readbacks_and_forwards_button_mode(self):
+    def test_actual_driver_135s_on_consumes_two_readbacks_and_forwards_phone_SF_duration(self):
         from tests.test_nps_ui_driver import complete_report
         ui=complete_report('m5');ui.update(readback(True));ui['requested_stage_diagnostics_enabled']=False
+        ui.update(requested_steady_seconds=135,steady_media_started_ns=1000000000,
+            steady_media_finished_ns=138000000000,steady_media_wait_ms=137000,
+            steady_progress_samples=[dict(phone_ns=1000000000+i*3000000000,
+                worker_received_frames=100+i*90,codec_callback_count=90+i*90) for i in range(46)])
         for stage in ('first','second'):ui[stage+'_stage_diagnostics_enabled']=0
         class Instrumentation:
             returncode=None;polls=0
@@ -109,7 +113,7 @@ class V50DriverChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder,contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,
                 '--network-scope','nps_owner','--node','m5','--media-only','--phone-only-sampler',
-                '--v50-profile','on']))
+                '--v50-profile','on','--steady-seconds','135']))
             stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
             stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
             stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,1]))
@@ -122,13 +126,17 @@ class V50DriverChecks(unittest.TestCase):
         self.assertFalse(report['requested_stage_diagnostics_enabled'])
         self.assertIn('-e v50_profile on',spawned[0][-1])
         self.assertIn('-e stage_diagnostics off',spawned[0][-1])
+        self.assertIn('-e steady_seconds 135',spawned[0][-1])
+        self.assertEqual(spawned[1][spawned[1].index('--seconds')+1],'135')
+        self.assertTrue(report['steady_media_progress_verified'])
+        self.assertTrue(report['steady_window_readback_verified'])
         self.assertFalse(any('emulator-5554' in call or 'emulator-5556' in call for call in calls+spawned))
         self.assertFalse(report['physical_FPS_acceptance'])
 
     def test_driver_forwards_exact_switch_and_does_not_wait_for_new_3600s_session_ttl(self):
         source=(ROOT/'scripts/probes/run_authenticated_lan_ui.py').read_text()
         self.assertIn("' -e v50_profile '+args.v50_profile",source)
-        self.assertIn("deadline=time.monotonic()+120+(args.steady_seconds-20)",source)
+        self.assertIn("deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)",source)
         self.assertNotIn('time.monotonic()+3600',source)
         helper=HELPER.read_text()
         self.assertIn('actualFps=(Integer)field(parsed,"fps")',helper)
