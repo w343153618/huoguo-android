@@ -22,7 +22,7 @@
 
 初始2秒带只是固定诊断分段，不能当全部configure窗口或严格稳态分界。第1/2/3源SF cadence分别59.931/59.835/59.633，精确数值与覆盖见JSON；源没有手机同幅度停顿。第三轮SF活动前缀56.802不能掩盖整个30秒窗口34.159，更不能把末端无新帧当作有稳定60FPS。
 
-手机连续poll尚有约0.5–0.7秒未知尾部，具体未知范围记录在JSON；最大已观察gap不包括无法量出的末端停顿。codec callback全部回显请求target，不能当真实呈现。SF与phone System.nanoTime的等价关系未验证，事件同窗只能作为候选关联，不能证明物理延时或音画同步。
+手机连续poll尚有约0.307–0.818秒未知尾部，具体未知范围记录在JSON；最大已观察gap不包括无法量出的末端停顿。codec callback全部回显请求target，不能当真实呈现。SF与phone System.nanoTime的等价关系未验证，事件同窗只能作为候选关联，不能证明物理延时或音画同步。
 
 ON的初连prepare→ready分别237.193/194.574ms，ready→fresh分别107.802/187.995ms，fresh→commit17.609/18.791ms；重连也分别进入STREAMING，无gate failure。原始bootstrapAU未进codec，准备期间分别明确丢20/17个连续帧。两轮ON初始诊断带无overflow/timeout是启动层的迹象，但不是稳态改善结论。
 
