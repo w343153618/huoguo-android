@@ -15,11 +15,11 @@
     1920
   ],
   "cpu_cores": 6,
-  "memory_mib": 16384,
+  "memory_mib": 8192,
   "buffer_ms": 80,
   "experimental_client_package": "local.remoteandroid.direct.experiment",
   "instrumentation_package": "local.remoteandroid.phoneprobe.experiment",
-  "note": "Canonical M1 owner testbed; stable1.31 and published alpha8/code39 UDP owner trial. M1 physical1080x1920/30Hz,6cores16GiB; M5 daily720x1280/30Hz. Older top-level experiment fields are historical; use latest nested checkpoints. CPU-limited OnePlus12 is a surrogate, not V50 acceptance.",
+  "note": "Canonical M1 owner testbed; stable1.31 and published alpha8/code39 UDP owner trial. M1 physical1080x1920/30Hz,6cores8GiB; M5 daily720x1280/30Hz. Older top-level experiment fields are historical; use latest nested checkpoints. CPU-limited OnePlus12 is a surrogate, not V50 acceptance.",
   "phone_performance_profile": {
     "user_declared_cpu_throttled": true,
     "surrogate_target": "realme V50",
@@ -174,7 +174,8 @@
       "density": 480,
       "actual_mode_hz": 30.0,
       "cpu_cores": 6,
-      "memory_mib": 16384
+      "memory_mib": 8192,
+      "latest_ram_evidence": "docs/m1-ram8-deployment-20261003.json"
     },
     "m5": {
       "physical_size": "720x1280",
@@ -1662,5 +1663,38 @@
     "new_phone_acoustic_acceptance": false,
     "manual_protected_output_changes_corrected": true,
     "maintenance_completed_do_not_repeat": true
+  },
+  "M1_RAM8_user_deployment_20261003": {
+    "status": "actual_coldboot_8GiB_readback_passed",
+    "evidence": "docs/m1-ram8-deployment-20261003.json",
+    "configured_memory_mib": 8192,
+    "actual_memtotal_kib": 8123368,
+    "cpu_cores": 6,
+    "physical_resolution": [
+      1080,
+      1920
+    ],
+    "density": 480,
+    "actual_refresh_hz": 30.0,
+    "owner_gateway_PID_preserved": 26875,
+    "M5_NPS_not_operated": true,
+    "backup_created": true,
+    "guest_data_wiped": false,
+    "new_performance_test": false,
+    "old_source_PID_start_invalidated": true
+  },
+  "source_numeric_collector_20261003": {
+    "source_sha256": "8a76822a9678c71166b71ea5e87b9898826c3cf861937ebd25234f9a81a88606",
+    "evidence": "docs/source-decoder-observation-live-20261003.json",
+    "offline_checks": 30,
+    "actual_read_elapsed_ms": 299.535,
+    "actual_Morphe_pid": 3553,
+    "actual_Morphe_uid": 10235,
+    "actual_Morphe_start_ticks": 2521,
+    "identity_stable": true,
+    "playing_state_bracket": false,
+    "live_format_known": false,
+    "media_codec_stdout_bytes": 0,
+    "new_media_started": false
   }
 }

@@ -1,3 +1,9 @@
+## 2026-10-03 最新用户要求：M1 已实际冷启为 6 核 / 8GiB
+
+M1 `hw.ramSize` 唯一从16384改为8192，原启动plist无RAM覆盖且字节不变；受限备份已经建立。existing huoguo受信HTTPS/live原registry取得精确空闲证明、持续UDP45965准入保留及formalTCP两次clear后，只bootout/bootstrap指定M1模拟器job。冷启实际PID65956、boot1、MemTotal8123368KiB、nproc6、1080x1920/density480/30.00Hz；原ownerPID26875/runtimeSHA/媒体零保留，M5/NPS/gateway没有信号或重启。第一验收仅因“30.00 Hz”空格被string断言拒绝，随后独立数字regex读取通过，未再次重启。见[m1-ram8](m1-ram8-deployment-20261003.md)。旧16GiB实验仅历史，不改写其结果；新source PID/clock身份需要重建，没有新性能改善数据。
+
+Root已暂停未执行的formatunknown私有supervisor，新目录仅准备未写gate/未启动媒体。numeric collector最终8a76822a及30项源码fixture已独立通过，实际299.535ms/8126bytes/allchildrenreaped；新Morphe PID3553/UID10235/start2521稳定，无active MediaSession，media.codec exit0/stdout0，format仍unknown。安装版首轮405ms proc identity因99byte零填充cmdline保守拒绝，真实白名单结构及最小fixture确认后仅放行固定包名+纯NULpadding；首轮不追认。不能借重启前5212/start或历史BBB/299。M5持续静音维护已完成，不再重复。下一可行动项：冻结最终numeric collector；新M1 RAM8基线下protected source-supply trace，formatunknown可明确记录，不能称同格式AB、V50或公网验收。
+
 ## 2026-10-03 最新：M5持续静音已实测部署，M1源准备超时未创建媒体
 
 用户再次听到M5视频声音，fresh读取output50/unmuted，说明旧登录一次性静音不是持续保护。root先恢复0/true，后部署独立CoreAudio事件guard（source7e9efb8d/binary92e43b15，joblocal.huoguo.m5.host-output-guard，bootstrap0/actualPID5917）。当前default/system均builtin163；保持volume0只切muteoff，实际事件纠正1次后0/true，listener/errors/uncertain/stderr0，guestvolume_music5/input85不变。旧one-shot和备份保留，没有guest/gateway/NPS重启。新保护会纠正人工本机音量变动，虚拟/Oray不改，aggregateunknown不称静音，fallback未用，未做hotplug/重启/手机声学。见[m5guard](m5-host-output-guard-20261003.md)。此维护结束，不重复建watcher/改音量或重启测试。
