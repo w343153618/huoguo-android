@@ -39,6 +39,11 @@ class LanMediaWorker:
     FEED_MAX_CONFIG_BYTES = 65536
     FEED_READ_CHECK_SECONDS = .1
     FEED_PARTIAL_SECONDS = 2.0
+    FAILURE_ROLES = frozenset(('authenticated_udp_ingress', 'owned_LAN_UDP_media',
+        'udp_feed', 'udp_video', 'udp_audio', 'udp_control', 'udp_events', 'udp_ping',
+        'formal_session_monitor', 'native_shutdown_stdout_drain', 'native_shutdown_stderr_drain'))
+    FAILURE_OPERATIONS = frozenset(('udp_socket_send', 'udp_send_wait', 'udp_send_cancel',
+        'udp_sender_state', 'udp_auth_seal', 'formal_busy_guard', 'not_instrumented'))
 
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy):
@@ -59,6 +64,14 @@ class LanMediaWorker:
         self.started = self.closed = False
         self.last_idr = 0.
         self.failure = ''
+        self.failure_role = self.failure_operation = ''
+        self.failure_observed_host_ns = 0
+        self.failure_events = deque(maxlen=8)
+        self.failure_events_evicted = 0
+        self.send_udp = None
+        self.send_state = dict(dup_created=False, reader_timeout_preserved=False,
+                               same_local_endpoint=False, same_peer=False,
+                               reader_timeout_ms=100, writer_timeout_ms=0)
         self.native_shutdown = self._native_shutdown_state()
         self.feed_state = self._feed_state()
         self.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
@@ -94,7 +107,7 @@ class LanMediaWorker:
                 if name == 'owned_LAN_UDP_media':
                     self.startup_done.set()
                 if not self.stop_event.is_set():
-                    self.failure = type(error).__name__
+                    self._record_failure(name, error)
                     self.registry.revoke(self.sid)
             finally:
                 if name == 'owned_LAN_UDP_media':
@@ -102,6 +115,47 @@ class LanMediaWorker:
         thread = threading.Thread(target=run, name=name, daemon=True)
         self.threads.append(thread)
         thread.start()
+
+    def _record_failure(self, role, error, operation=None, failure_class=None):
+        role = role if role in self.FAILURE_ROLES else 'unknown_owned_worker'
+        operation = operation or getattr(error, 'huoguo_udp_failure_operation', 'not_instrumented')
+        operation = operation if operation in self.FAILURE_OPERATIONS else 'not_instrumented'
+        lane = getattr(error, 'huoguo_udp_failure_lane', '')
+        lane = lane if lane in AuthenticatedSender.LANES else ''
+        item = dict(role=role, operation=operation, lane=lane,
+                    failure_class=failure_class or type(error).__name__, observed_host_monotonic_ns=time.monotonic_ns())
+        error_number = getattr(error, 'errno', None)
+        if type(error_number) is int:
+            item['errno'] = error_number
+        with self.lifecycle_lock:
+            if not self.failure:
+                self.failure, self.failure_role, self.failure_operation = item['failure_class'], role, operation
+                self.failure_observed_host_ns = item['observed_host_monotonic_ns']
+            if len(self.failure_events) == self.failure_events.maxlen:
+                self.failure_events_evicted += 1
+            self.failure_events.append(item)
+
+    def _create_send_wrapper(self):
+        # The timeout-mode reader already has shared-kernel O_NONBLOCK enabled.
+        # Only this duplicate Python object's timeout becomes zero; do not change
+        # the reader object, bind, interface, buffers or connected UDP endpoint.
+        reader_timeout = self.udp.gettimeout()
+        if reader_timeout != .1:
+            raise RuntimeError('owned_udp_reader_timeout_contract')
+        writer = self.udp.dup()
+        try:
+            writer.settimeout(0)
+            self.send_state.update(dup_created=True, reader_timeout_preserved=self.udp.gettimeout()==reader_timeout,
+                same_local_endpoint=writer.getsockname()==self.udp.getsockname(),
+                same_peer=writer.getpeername()==self.udp.getpeername())
+            if writer.gettimeout()!=0 or not all(self.send_state[key] for key in (
+                    'reader_timeout_preserved','same_local_endpoint','same_peer')):
+                raise RuntimeError('owned_udp_send_wrapper_contract')
+        except Exception:
+            writer.close()
+            raise
+        self.send_udp = writer
+        return writer
 
     def _receive(self):
         replay = ReplayWindow()
@@ -121,10 +175,21 @@ class LanMediaWorker:
             if self.peer is None:
                 if payload != b'READY':
                     continue
-                self.peer = peer
-                self.udp.connect(peer)
-                pacer = SocketPacer(32_000_000, burst_bytes=2048, wait=self.stop_event.wait)
-                self.sender = AuthenticatedSender(self.udp, self.key, self.tag, pacer=pacer)
+                with self.lifecycle_lock:
+                    if self.closed or self.stop_event.is_set():
+                        return
+                    self.peer = peer
+                    self.udp.connect(peer)
+                    writer = self._create_send_wrapper()
+                    pacer = SocketPacer(32_000_000, burst_bytes=2048, wait=self.stop_event.wait)
+                    try:
+                        self.sender = AuthenticatedSender(writer, self.key, self.tag, pacer=pacer,
+                            send_policy='owned_nonblocking_deadline', owns_socket=True,
+                            cancelled=self.stop_event.is_set)
+                    except Exception:
+                        writer.close()
+                        self.send_udp = None
+                        raise
             if payload == b'READY':
                 self.counts['authenticated_ready'] += 1
                 self.registry.authenticated_ready(self.sid)
@@ -236,9 +301,10 @@ class LanMediaWorker:
                     elapsed, self.formal_monitor['max_check_duration_ms'])
             if busy:
                 self.formal_monitor['busy_seen'] += 1
-                self.failure = ('formal_busy_check_unavailable_cancel_candidate'
+                failure_class = ('formal_busy_check_unavailable_cancel_candidate'
                     if self.formal_monitor['check_failures'] else
                     'formal_session_started_cancel_candidate')
+                self._record_failure('formal_session_monitor', RuntimeError(), 'formal_busy_guard', failure_class)
                 self.registry.revoke(self.sid)
                 return
 
@@ -591,6 +657,12 @@ class LanMediaWorker:
             except Exception as error:
                 errors.append({'stage': stage, 'error_class': type(error).__name__})
                 return False
+        if self.sender:
+            # Stop fresh seals/sends and close only the owned writer duplicate.
+            # The reader remains owned by this worker's existing UDP cleanup.
+            attempt('sender_close', self.sender.close)
+        elif self.send_udp is not None:
+            attempt('orphan_send_wrapper_close', self.send_udp.close)
         if self.touch:
             attempt('touch_close', self.touch.close)
         if self.hardware:
@@ -634,6 +706,11 @@ class LanMediaWorker:
                   'network_scope': network_scope,
                   'source': 'M1_emulator_5556', 'path': ('physical_LAN_AESGCM_UDP' if network_scope=='lan' else 'registered_Tailnet_inner_AESGCM_UDP_outer_path_unverified'),
                   'counts': dict(self.counts), 'failure_class': self.failure,
+                  'failure_role': self.failure_role, 'failure_operation': self.failure_operation,
+                  'failure_observed_host_monotonic_ns': self.failure_observed_host_ns,
+                  'failure_events': list(self.failure_events), 'failure_events_evicted': self.failure_events_evicted,
+                  'failure_primary_first_observed_not_proven_root_cause': True,
+                  'owned_send_wrapper': dict(self.send_state),
                   'native_summaries': list(self.native_summaries),
                   'native_shutdown': dict(self.native_shutdown), 'native_final_status': final_status,
                   'host_video_feed': dict(self.feed_state),
@@ -644,7 +721,7 @@ class LanMediaWorker:
                   'socket_pacer_wait_enabled': True, 'assembly_lifetime_ms': 80}
         if self.sender:
             report['udp_lanes'] = self.sender.snapshot()
-            self.sender.close()
+            report['udp_send_policy'] = self.sender.policy_snapshot()
         if self.gate:
             report['socket_guard'] = dict(self.gate.counts)
         if self.touch:

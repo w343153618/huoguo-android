@@ -56,6 +56,35 @@ def verify_steady_window_readback(result, expected_seconds):
         and abs(wait_ms-(finished-started)/1e6) <= .001)
 
 
+def verify_stage_diagnostics_readback(result, expected_enabled):
+    if (type(expected_enabled) is not bool or not isinstance(result,dict)
+            or 'failure_class' in result or result.get('requested_stage_diagnostics_enabled') is not expected_enabled):
+        return False
+    for stage in ('first','second'):
+        value=result.get(stage+'_stage_diagnostics_enabled')
+        if (type(value) is not int or value != int(expected_enabled)
+                or result.get(stage+'_stage_diagnostics_verified') is not True):
+            return False
+    return True
+
+
+def verify_steady_media_progress(result):
+    if (not isinstance(result,dict) or result.get('steady_progress_monitor_enabled') is not True
+            or result.get('steady_media_progress_healthy') is not True):return False
+    limit=result.get('steady_progress_stall_threshold_ns');idle=result.get('steady_progress_max_idle_ns')
+    rows=result.get('steady_progress_samples')
+    if (type(limit) is not int or limit!=3000000000 or type(idle) is not int or not 0<=idle<limit
+            or not isinstance(rows,list) or not 20<=len(rows)<=48):return False
+    for i,row in enumerate(rows):
+        if not isinstance(row,dict):return False
+        for key in ('phone_ns','worker_received_frames','codec_callback_count'):
+            if type(row.get(key)) is not int or row[key]<0:return False
+        if i and (row['phone_ns']<=rows[i-1]['phone_ns'] or
+                  any(row[k]<rows[i-1][k] for k in ('worker_received_frames','codec_callback_count'))):return False
+    return (rows[-1]['phone_ns']-rows[0]['phone_ns']>=19000000000 and
+            any(rows[-1][k]>rows[0][k] for k in ('worker_received_frames','codec_callback_count')))
+
+
 def record_cleanup_failure(report, operation, failure=None, returncode=None):
     """Never include subprocess output or exception text in numeric evidence."""
     item = {'operation': operation}
@@ -115,6 +144,8 @@ def main():
     p.add_argument('--rate-index', type=int, choices=range(5), default=2)
     p.add_argument('--network-scope', choices=['lan','tailnet'], default='lan')
     p.add_argument('--pcm-queue', choices=['off','on'], default='off')
+    p.add_argument('--stage-diagnostics', choices=['off','on'], default='on',
+                   help='Owner instrumentation only: stage sampling on/off, frozen before media startup')
     p.add_argument('--surface-submit-lead-ms', type=int, choices=[0,16], default=0,
                    help='Explicit owner-only Surface submission experiment; does not change playback target/buffer')
     p.add_argument('--steady-seconds', type=int, choices=range(20,31), default=20,
@@ -138,7 +169,7 @@ def main():
     report={'scope':'normal App UI existing account; isolated '+('physical LAN' if args.network_scope=='lan' else 'registered Tailnet')+' UDP; outer path requires separate evidence',
             'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
-    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds)
+    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on')
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -151,7 +182,7 @@ def main():
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+' -e pcm_queue '+args.pcm_queue+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+120+(args.steady_seconds-20)
         while proc.poll() is None and time.monotonic()<deadline:
@@ -240,6 +271,8 @@ def main():
         else:
             report['numeric_result_missing']=True
         report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
+        report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
+        report['steady_media_progress_verified']=verify_steady_media_progress(report.get('ui_result'))
         report['steady_window_readback_verified']=verify_steady_window_readback(report.get('ui_result'),args.steady_seconds)
         reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
                  ('App-first',args.phone,PRIVATE+'udp-app-first-report.json')]
@@ -250,12 +283,17 @@ def main():
         for name,serial,path in reports:
             result=root('cat '+path,False) if serial==args.phone else adb(serial,'run-as local.huoguo.touchreceipt cat files/touch-receipt.json',False)
             if result.returncode==0 and 0<len(result.stdout)<=65536:
+                report[name+'_actual_json_bytes']=len(result.stdout.encode('utf-8'))
                 (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')
                 report[name+'_report_read']=True
         if not report['surface_submit_execution_verified']:
             raise RuntimeError('surface_submit_readback_unverified')
         if not report['steady_window_readback_verified']:
             raise RuntimeError('steady_window_readback_unverified')
+        if not report['stage_diagnostics_readback_verified']:
+            raise RuntimeError('stage_diagnostics_readback_unverified')
+        if not report['steady_media_progress_verified']:
+            raise RuntimeError('steady_media_progress_stalled_or_unverified')
     except (Exception, KeyboardInterrupt) as failure:
         report['driver_failure_class']=type(failure).__name__
         labels = {'formal_gate_failed','formal_session_active','private_login_missing',
@@ -263,7 +301,8 @@ def main():
                   'isolated_App_uid_readback','test_coordinate_file_bound',
                   'test_coordinate_bound','kernel_test_dedicated_phone_only',
                   'kernel_touch_capability_mismatch','surface_submit_readback_unverified',
-                  'steady_sampler_failed','steady_window_readback_unverified'}
+                  'steady_sampler_failed','steady_window_readback_unverified','stage_diagnostics_readback_unverified',
+                  'steady_media_progress_stalled_or_unverified'}
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report

@@ -29,11 +29,34 @@ public final class LanUiAcceptance extends Instrumentation {
     public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
     private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    private boolean stageDiagnostics(){String value=arguments.getString("stage_diagnostics","on");
+        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("stage_diagnostics_bound");return value.equals("on");}
     private int steadySeconds(){int value=Integer.parseInt(arguments.getString("steady_seconds","20"));if(value<20||value>30)throw new IllegalArgumentException("steady_seconds_bound");return value;}
     private int surfaceLeadMs()throws Exception{
         String raw=arguments.getString("surface_submit_lead_ms","0");
         if(!raw.equals("0")&&!raw.equals("16"))throw new IllegalArgumentException("surface_submit_lead_bound");
         int value=Integer.parseInt(raw);LanUdpContract.validateOwnerSurfaceLead(value);return value;
+    }
+    /** Probe-only liveness; worker/callback counts are not presented or unique-content FPS. */
+    private void waitSteady(MainActivity target,JSONObject report,long steadyStart)throws Exception{
+        long requiredEnd=steadyStart+(steadySeconds()+2)*1_000_000_000L;
+        long lastProgress=steadyStart,lastReceived=target.receivedFrames.get(),lastCallback=target.presentedFrames.get();
+        long nextSample=steadyStart,maxIdle=0;boolean stalled=false;JSONArray rows=new JSONArray();
+        File sampled=new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-sampled");
+        while(true){long now=System.nanoTime(),received=target.receivedFrames.get(),callback=target.presentedFrames.get();
+            if(received>lastReceived||callback>lastCallback)lastProgress=now;
+            maxIdle=Math.max(maxIdle,now-lastProgress);if(!target.running||now-lastProgress>=3_000_000_000L)stalled=true;
+            if(now>=nextSample&&rows.length()<48){rows.put(new JSONObject().put("phone_ns",now)
+                .put("worker_received_frames",received).put("codec_callback_count",callback));nextSample=now+1_000_000_000L;}
+            lastReceived=received;lastCallback=callback;
+            if(now>=requiredEnd&&sampled.exists())break;
+            if(now>=requiredEnd+10_000_000_000L)throw new IllegalStateException("steady_sampler_completion_missing");
+            Thread.sleep(250);
+        }
+        if(!sampled.delete())throw new IllegalStateException("steady_sampler_completion_cleanup");
+        report.put("steady_progress_monitor_enabled",true).put("steady_media_progress_healthy",!stalled)
+            .put("steady_progress_max_idle_ns",maxIdle).put("steady_progress_stall_threshold_ns",3_000_000_000L)
+            .put("steady_progress_samples",rows).put("steady_progress_is_presented_fps",false);
     }
     private void prepareUi(MainActivity target,String username,String password)throws Exception{
         Object ui=target.lanUdpEntry;String scope=arguments.getString("network_scope","lan");
@@ -47,6 +70,7 @@ public final class LanUiAcceptance extends Instrumentation {
         String pcm=arguments.getString("pcm_queue","off");if(!pcm.equals("on")&&!pcm.equals("off"))throw new IllegalArgumentException("pcm_choice_bound");
         ((CheckBox)field(ui,"pcmQueue")).setChecked(pcm.equals("on"));
         Field lead=ui.getClass().getDeclaredField("ownerSurfaceSubmitLeadMs");lead.setAccessible(true);lead.setInt(ui,surfaceLeadMs());
+        Field stages=ui.getClass().getDeclaredField("ownerStageDiagnosticsEnabled");stages.setAccessible(true);stages.setBoolean(ui,stageDiagnostics());
     }
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
@@ -72,6 +96,10 @@ public final class LanUiAcceptance extends Instrumentation {
         }
         LanUdpContract.validateSurfaceSubmissionReadback(fields,surfaceLeadMs());
         result.put(stage+"_surface_submit_execution_verified",true);
+        Object enabled=report.get("stage_diagnostics_enabled");
+        if(!(enabled instanceof Integer)||((Integer)enabled)!=(stageDiagnostics()?1:0)
+                ||stageDiagnostics()!=report.has("decoder_stage_metrics"))throw new IllegalStateException("stage_diagnostics_readback");
+        result.put(stage+"_stage_diagnostics_enabled",enabled).put(stage+"_stage_diagnostics_verified",true);
     }
     /** Independent test-process liveness check, outside the media window.
      * Never obtain stacks or export names; a full fixed snapshot is inconclusive.
@@ -187,6 +215,7 @@ public final class LanUiAcceptance extends Instrumentation {
         File credential=new File(getTargetContext().getFilesDir(),"udp-test-login.json");Window.Callback original=null;
         try{
             report.put("requested_surface_submit_lead_ms",surfaceLeadMs());
+            report.put("requested_stage_diagnostics_enabled",stageDiagnostics());
             report.put("requested_steady_seconds",steadySeconds());
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
             for(boolean enabled:new boolean[]{false,true,true,false})rows.put(new JSONObject()
@@ -226,12 +255,7 @@ public final class LanUiAcceptance extends Instrumentation {
             report.put("normal_UI_login_received_media",true);Thread.sleep(3000);
             long steadyStart=System.nanoTime();report.put("steady_media_started_ns",steadyStart);
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
-            Thread.sleep((steadySeconds()+2)*1000L);
-            File sampled=new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-sampled");
-            deadline=SystemClock.elapsedRealtime()+10000;
-            while(!sampled.exists()&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
-            if(!sampled.exists())throw new IllegalStateException("steady_sampler_completion_missing");
-            if(!sampled.delete())throw new IllegalStateException("steady_sampler_completion_cleanup");
+            waitSteady(target,report,steadyStart);
             long steadyEnd=System.nanoTime();report.put("steady_media_finished_ns",steadyEnd)
                 .put("steady_media_wait_ms",(steadyEnd-steadyStart)/1e6)
                 .put("steady_sampler_completion_observed",true);

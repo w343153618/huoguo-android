@@ -18,9 +18,11 @@ class DecoderStageMetricsCheck(unittest.TestCase):
             subprocess.run([javac, '-d', folder,
                 str(ROOT/'app/src/main/java/local/remoteandroid/direct/MediaPresentationMetrics.java'),
                 str(ROOT/'tests/java/local/remoteandroid/direct/DecoderStageMetricsProbe.java'),
-                str(ROOT/'tests/java/local/remoteandroid/direct/MediaPresentationMetricsProbe.java')],
+                str(ROOT/'tests/java/local/remoteandroid/direct/MediaPresentationMetricsProbe.java'),
+                str(ROOT/'app/src/main/java/local/remoteandroid/direct/PlaybackClock.java'),
+                str(ROOT/'tests/java/local/remoteandroid/direct/PlaybackClockObserverCheck.java')],
                 check=True, capture_output=True, timeout=30)
-            for target in ('DecoderStageMetricsProbe', 'MediaPresentationMetricsProbe'):
+            for target in ('DecoderStageMetricsProbe', 'MediaPresentationMetricsProbe', 'PlaybackClockObserverCheck'):
                 result = subprocess.run([java, '-cp', folder, 'local.remoteandroid.direct.'+target],
                     check=True, capture_output=True, text=True, timeout=10)
                 self.assertIn('PASS', result.stdout)
@@ -33,7 +35,8 @@ class DecoderStageMetricsCheck(unittest.TestCase):
             self.assertIn('"'+field+'"', summary)
         self.assertIn('64*1024', summary)
         self.assertIn('"sf_time_domain_verified",0', source)
-        self.assertIn('"clock_reanchor_coverage",0', source)
+        self.assertIn('"clock_reanchor_coverage",(s.coverageMask&MediaPresentationMetrics.StageDiagnostics.CLOCK)!=0?1:0', source)
+        self.assertIn('"coverage_mask",s.coverageMask', source)
         # The formal App does not opt into this independent UDP diagnostics constructor.
         main = (ROOT/'app/src/main/java/local/remoteandroid/direct/MainActivity.java').read_text()
         self.assertNotIn('new MediaPresentationMetrics(48000,true)', main)
@@ -72,7 +75,16 @@ public final class JSONArray {
 import org.json.*;import java.io.IOException;import java.nio.charset.StandardCharsets;
 public final class NumericStageDriver {public static void main(String[] args)throws Exception{
  MediaPresentationMetrics.StageDiagnostics d=new MediaPresentationMetrics.StageDiagnostics();long origin=300_000_000_000_000L;
- for(int i=0;i<14400;i++){long rx=origin+i*8_333_333L;d.inboxOffer(rx);d.inboxDepth(rx,4,2097152);
+ for(int i=0;i<14400;i++){long rx=origin+i*8_333_333L;d.inboxOffer(rx,rx+100_000L);d.inboxDepth(rx,4,2097152);
+  d.inboxTaken(rx+120_000_000L,i,rx,4,2097152);
+  if(i%120==0){d.configureStarted(rx,1_000_000_000_000L+i,rx-100_000_000L);
+   d.configureFinished(rx+200_000_000L,1_000_000_000_000L+i,true);}
+  d.consumerStarted(rx+120_000_000L,i,i*10_000_000L);d.consumerFinished(rx+220_000_000L,i,i*10_000_000L+33_000_000L);
+  d.inputCopyStarted(rx+120_000_000L,i,false);d.inputCopyFinished(rx+150_000_000L,i,false,true);
+  d.inputCallStarted(rx+160_000_000L,i,false);d.inputCallFinished(rx+180_000_000L,i,false,true);
+  d.reserveGuard(rx+220_000_000L, i,3,100000+i,100002+i);
+  if(i%12==0){d.fecPollObserved(rx);d.fecException(rx,-1,1,120);d.fecException(rx,-1,3,100);}
+  d.clockReanchor(rx,6,30_000_000L);
   d.reserve(rx+80_000_000L,i,rx,rx+80_000_000L,80,false,0,-1,-1,0);
   d.inputQueued(rx,rx+80_000_000L);d.scheduled(i,rx+80_000_000L,rx+100_000_000L,rx+160_000_000L,rx+100_000_001L);
   if(i%10==0)d.inboxLoss(rx,i,MediaPresentationMetrics.StageDiagnostics.FRAME_OVERFLOW,4,2097152,i);}
@@ -109,6 +121,13 @@ public final class NumericStageDriver {public static void main(String[] args)thr
             self.assertEqual(stages['segments_retained'], 120)
             self.assertEqual(len(stages['segments']['offered_frames']), 120)
             self.assertEqual(len(stages['events']['time_ns']), 64)
+            self.assertEqual(stages['clock_reanchor_coverage'], 1)
+            self.assertEqual(stages['coverage_mask'], 255)
+            self.assertEqual(stages['totals']['fec_poll_observations'], 1200)
+            self.assertEqual(len(stages['segments']['consumer_wall_max_ns']), 120)
+            self.assertEqual(len(stages['events']['current_epoch']), 64)
+            self.assertEqual(stages['histograms']['consumer_non_cpu_elapsed_ns']['valid'], 14400)
+            print(lines[1])
             self.assertGreater(stages['events_evicted'], 0)
             self.assertEqual(report['surface_submit_status_code'], 1)
             self.assertEqual(report['surface_submit_lead_ms'], 16)

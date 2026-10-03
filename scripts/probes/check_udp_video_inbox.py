@@ -32,6 +32,7 @@ def main():
         parser.error('Existing matching app classes required; build the app separately or pass --app-classes')
     sources = sorted((ROOT / 'experiments/nps-transport/phone').glob('*.java'))
     sources.extend((ROOT / 'app/src/main/java/local/remoteandroid/direct/PlaybackClock.java',
+                    ROOT / 'app/src/main/java/local/remoteandroid/direct/MediaPresentationMetrics.java',
                     ROOT / 'tests/java/local/remoteandroid/direct/AsyncVideoInboxProbe.java'))
     with tempfile.TemporaryDirectory(prefix='huoguo-video-inbox-check-', dir='/private/tmp') as folder:
         build = Path(folder)
@@ -43,11 +44,11 @@ def main():
         result = subprocess.run([str(java), '-cp', str(build) + os.pathsep + str(android),
             'local.remoteandroid.direct.AsyncVideoInboxProbe'], capture_output=True,
             text=True, timeout=10)
-        expected = 'PASS 22 bounded FIFO/reference recovery checks (offline, no codecs or phone)'
+        expected = 'PASS 27 bounded FIFO/reference recovery checks (offline, no codecs or phone)'
         if result.returncode or result.stdout.strip() != expected:
             raise SystemExit('Offline inbox checks failed:\n' + result.stdout + result.stderr)
     print(json.dumps({'scope': 'offline_actual_probe_FIFO_epoch_reference_state_only',
-                      'checks': 22, 'passed': True,
+                      'checks': 27, 'passed': True,
                       'not_measured': ['MediaCodec behavior', 'concurrent device execution',
                                        'UDP sockets', 'real video', 'phone FPS', 'WAN', 'AV sync']}))
 

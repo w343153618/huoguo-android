@@ -50,6 +50,14 @@ class FakeSocket:
     def bind(self, value): self.binds.append(value)
     def settimeout(self, value): self.timeouts.append(value)
     def connect(self, peer): self.connects.append(peer)
+    def gettimeout(self): return self.timeouts[-1] if self.timeouts else .1
+    def getsockname(self): return self.binds[-1] if self.binds else ('192.168.9.128', 15963)
+    def getpeername(self): return self.connects[-1]
+    def dup(self):
+        writer = FakeSocket(stop_event=self.stop_event)
+        writer.options, writer.binds, writer.connects = self.options, self.binds, self.connects
+        self.writer = writer
+        return writer
     def close(self): self.closed += 1
     def recvfrom(self, size):
         if self.messages:
@@ -74,6 +82,13 @@ def bare_worker():
     worker.peer = None
     worker.started = worker.closed = False
     worker.failure = ''
+    worker.failure_role = worker.failure_operation = ''
+    worker.failure_observed_host_ns = 0
+    worker.failure_events, worker.failure_events_evicted = deque(maxlen=8), 0
+    worker.send_udp = None
+    worker.send_state = dict(dup_created=False, reader_timeout_preserved=False,
+                            same_local_endpoint=False, same_peer=False,
+                            reader_timeout_ms=100, writer_timeout_ms=0)
     worker.native_shutdown = worker._native_shutdown_state()
     worker.feed_state = worker._feed_state()
     worker.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
@@ -360,6 +375,7 @@ class OwnershipChecks(unittest.TestCase):
         worker = bare_worker()
         worker.hardware, worker.sender = Mock(), Mock()
         worker.sender.snapshot.return_value = {'video': {'datagrams': 3}}
+        worker.sender.policy_snapshot.return_value = {}
         worker.native = fake_native()
         worker.native.poll.return_value = None
         worker.native.wait.return_value = 0

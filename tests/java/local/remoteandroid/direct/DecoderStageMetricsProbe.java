@@ -63,8 +63,81 @@ public final class DecoderStageMetricsProbe {
         s=concurrent.snapshot(origin+4_000_000_000L);eq(3000,s.eventObserved,"concurrent event count");
         eq(2936,s.eventsEvicted,"concurrent fixed ring coverage");eq(12000,s.totals[3],"concurrent cleared frame accounting");
         eq(3000,s.totals[2],"concurrent overflow accounting");
-        if(args.length>0&&args[0].equals("--bench"))benchmark();
+        extendedPhases();
+        if(args.length>0&&args[0].equals("--bench")){benchmark();concurrentBenchmark();}
         System.out.println("DecoderStageMetricsProbe PASS (owned JVM only)");
+    }
+    private static void extendedPhases(){
+        MediaPresentationMetrics.StageDiagnostics d=new MediaPresentationMetrics.StageDiagnostics();
+        long t=300_000_000_000_000L;d.establishOrigin(t);
+        d.configureStarted(t-50_000_000L,1,t-60_000_000L);
+        d.configureFinished(t+150_000_000L,1,true);
+        d.inboxOffer(t,t+1);d.inboxOffer(t+20_000_000L,t+21_000_000L);
+        d.inboxTaken(t+200_000_000L,1,t,3,900);d.inboxTaken(t+250_000_000L,2,t+20_000_000L,2,600);
+        d.consumerStarted(t+200_000_000L,1,1_000_000L);
+        d.consumerFinished(t+230_000_000L,1,6_000_000L);
+        d.consumerStarted(t+240_000_000L,2);d.consumerFinished(t+250_000_000L,2);
+        d.consumerStarted(t+260_000_000L,3,0);d.consumerFinished(t+270_000_000L,3,20_000_000L);
+        d.inputCopyStarted(t+300_000_000L,4,false);d.inputCopyFinished(t+305_000_000L,4,false,true);
+        d.inputCallStarted(t+306_000_000L,4,false);d.inputCallFinished(t+336_000_000L,4,false,true);
+        d.reserveGuard(t+400_000_000L,5,3,0,2);
+        d.reserve(t+400_001_000L,5,t+400_000_000L,t+400_001_000L,0,false,1,-1,-1,0);
+        d.fecPollObserved(t+500_000_000L);d.fecPollObserved(t+600_000_000L);
+        d.fecException(t+600_000_000L,-1,1,2);d.fecException(t+600_000_000L,-1,3,7);
+        d.fecException(t+600_000_000L,-1,1,-1);
+        d.clockReanchor(t+700_000_000L,1,MediaPresentationMetrics.MISSING);
+        d.clockReanchor(t+710_000_000L,3,-50_000L);
+        d.clockReanchor(t+720_000_000L,6,40_000_000L);
+        d.configureFinished(t+800_000_000L,99,false); // Explicit missing begin.
+        d.inputCopyFinished(t+801_000_000L,99,false,false);
+        d.consumerStarted(t+900_000_000L,6,9_000_000L); // Active at snapshot, not silently finished.
+        MediaPresentationMetrics.StageSnapshot s=d.snapshot(t+1_000_000_000L);
+        eq(255,s.coverageMask,"all primitive hook paths observed");
+        eq(200_000_000L,s.extraHistograms[0].sum,"configure wall includes startup");
+        eq(1,s.beforeOrigin,"configure pre-origin retained");eq(1,s.extraTotals[3],"unmatched configure finish");
+        eq(21_000_000L-1,s.extraHistograms[1].sum,"offer uses operation time not receive");
+        eq(50_000_000L,s.extraHistograms[2].sum,"take cadence");eq(430_000_000L,s.extraHistograms[3].sum,"take age");
+        eq(1,s.extraTotals[14],"valid thread CPU sample count");eq(1,s.extraTotals[15],"CPU missing explicit");
+        eq(1,s.extraTotals[16],"CPU greater than wall invalid");eq(25_000_000L,s.extraHistograms[5].sum,"nonCPU elapsed, not scheduler attribution");
+        eq(5_000_000L,s.extraHistograms[6].sum,"copy call span");eq(30_000_000L,s.extraHistograms[7].sum,"nonempty queue call span");
+        eq(1,s.extraTotals[30],"age flag");eq(1,s.extraTotals[31],"stale epoch simultaneous flag");
+        eq(2,s.extraTotals[60],"zero-delta FEC polls retained");eq(100_000_000L,s.extraTotals[46],"actual FEC poll interval");
+        eq(9,s.extraTotals[36],"FEC counter delta sum");eq(1,s.extraTotals[43],"invalid FEC delta explicit");
+        eq(3,s.extraTotals[47],"all actual clock changes counted");eq(1,s.extraTotals[48],"initial mapping delta unknown");
+        eq(39_950_000L,s.extraTotals[49],"signed mapping changes");eq(40_050_000L,s.extraTotals[50],"absolute mapping changes");
+        eq(t+900_000_000L,s.phaseState[3],"active consumer span retained");
+        boolean timeout=false;for(int i=0;i<s.events[0].length;i++)if(s.events[2][i]==3){
+            eq(3,s.events[8][i],"timeout entry age and stale flags");eq(0,s.events[6][i],"frame epoch");
+            eq(2,s.events[12][i],"current epoch");eq(0,s.events[7][i],"no vendor dequeue poll");timeout=true;}
+        if(!timeout)throw new AssertionError("timeout event missing");
+        long snapshotOld=s.extraTotals[47];d.clockReanchor(t+950_000_000L,7,-2_000_000L);
+        eq(snapshotOld,s.extraTotals[47],"extra snapshot arrays not aliased");
+    }
+    /** Contended 3-owner numeric calls with matched arithmetic baseline; no Android thread CPU API here. */
+    private static void concurrentBenchmark()throws Exception{
+        for(int pass=0;pass<4;pass++)for(boolean enabled:new boolean[]{false,true}){
+            final MediaPresentationMetrics.StageDiagnostics d=enabled?new MediaPresentationMetrics.StageDiagnostics():null;
+            if(d!=null)d.establishOrigin(300_000_000_000_000L);
+            java.util.concurrent.CountDownLatch ready=new java.util.concurrent.CountDownLatch(3),start=new java.util.concurrent.CountDownLatch(1);
+            Thread[] workers=new Thread[3];long[] checksums=new long[3];int count=pass==0?5000:50000;
+            for(int role=0;role<3;role++){final int r=role;workers[role]=new Thread(()->{
+                ready.countDown();try{start.await();}catch(InterruptedException e){throw new AssertionError(e);}
+                long checksum=0;for(int i=0;i<count;i++){
+                    long now=300_000_000_000_000L+i*100_000L;checksum^=now+i*31+r;
+                    if(d!=null){if(r==0){d.inboxOffer(now,now+100);d.inboxDepth(now+100,2,10000);}
+                        else if(r==1){d.inboxTaken(now+1000,i,now,1,5000);d.consumerStarted(now+1000,i,i*100L);
+                            d.inputCopyStarted(now+2000,i,false);d.inputCopyFinished(now+3000,i,false,true);
+                            d.inputCallStarted(now+4000,i,false);d.inputCallFinished(now+5000,i,false,true);
+                            d.consumerFinished(now+6000,i,i*100L+3000);}
+                        else {d.scheduled(i,now+5000,now+10000,now+80000000,now+11000);
+                            d.clockReanchor(now+11000,3,-100);}}
+                }checksums[r]=checksum;
+            });workers[role].start();}ready.await();long begin=System.nanoTime();start.countDown();
+            for(Thread thread:workers)thread.join();long elapsed=System.nanoTime()-begin;
+            sink=checksums[0]^checksums[1]^checksums[2];if(d!=null)sink^=d.snapshot(System.nanoTime()).observations;
+            System.out.println("three_owner_host_jvm_pass="+pass+" diagnostics="+(enabled?1:0)+" rounds_per_owner="+count+
+                    " elapsed_ns="+elapsed+" ns_per_3_owner_round="+(elapsed/count));
+        }
     }
     private static volatile long sink;
     private static void benchmark(){

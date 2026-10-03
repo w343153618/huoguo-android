@@ -6,12 +6,13 @@ From the canonical project root:
 python3 scripts/probes/check_udp_video_inbox.py
 ```
 
-The script compiles the actual `UdpVideoProbe.VideoInbox` and runs the 22 checks
+The script compiles the actual `UdpVideoProbe.VideoInbox` and runs the 27 checks
 in `tests/java/local/remoteandroid/direct/AsyncVideoInboxProbe.java`. Checks cover
 initial IDR/config requirements, FIFO ordering, staging P frames behind an IDR,
 frame/byte limits, overflow clearing the dependent chain, stale epoch invalidation,
 stale timeout not discarding a newer recovery IDR, successful IDR recovery,
-oversized admission, timeout recovery state, and bounded close/drain.
+oversized admission, timeout recovery state, bounded close/drain, and the actual
+optional metrics hooks for same-RX burst offer cadence, take counts and frame age.
 
 Required external paths are the existing Android 37 SDK jar under
 `~/Library/Android/sdk`, JDK under `/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home`,

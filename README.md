@@ -1,6 +1,8 @@
 > 当前有两台可手选的主机：M1 默认公网 `146.56.249.175:15556`，M5 备选公网 `146.56.249.175:15558`，各用独立 NPS 身份。v1.30 的 Tailscale M1 备选使用 yilufa 尾网 `100.65.0.2:15556` 与手动地址；手机需先加入相同网络。正式 App 媒体仍为 TLS/TCP，独立 UDP 实验尚未合入产品。部署边界见 [双主机方案](docs/dual-host-nps-plan-20261002.md) 和 [M1 部署说明](docs/m1-deployment.md)。
 
-正式与实验现在使用独立包名、版本、清单及源码发布分支，见 [双通道说明](docs/dual-release-channels-20261002.md)。新实验候选1.31-alpha.1完成编译/lint及一加12安装、登录页版本读回；增加严格注册Tailnet范围和独立更新入口。当前未发布该APK、未部署新下载入口，当前版媒体A/B、公网、V50尚未验收，正式发布保持v1.30。实验公网交付的源码边界见 [交付说明](docs/experimental-public-delivery-20261002.md)。
+正式与实验使用独立包名、版本、清单及源码发布分支，见 [双通道说明](docs/dual-release-channels-20261002.md)。机主一加12目前安装独立候选1.31-alpha.3；受信HTTPS认证、Tailnet内层UDP真实视频、音频、退出和重新认证已有限实测。它仍是机主非隔离实验，没有发布新的朋友下载包，公网、V50和朋友宿主/LAN隔离尚未验收；正式发布保持v1.30。实验公网交付的源码边界见 [交付说明](docs/experimental-public-delivery-20261002.md)。
+
+2026-10-03最新进展：四轮[解码与队列分层基线](docs/decoder-queue-real-video-20261003.md)找到一次约100ms发送超时导致整个实验会话停止。独立主机候选改为原帧deadline内的非阻塞发送，保留认证、nonce、参考链和取消保护；[两轮真实视频复测](docs/udp-send-backpressure-real-video-20261003.md)未再出现发送失败，手机SF节拍约59.43FPS，仍有174–232ms空档邻近四帧Inbox溢出。这不是稳定60FPS或公网UDP验收，下一步继续区分队列突发与参考帧恢复，不能只看平均FPS。
 
 腾讯云NPS来源已 [只读核对](docs/nps-provenance-audit-20261002.md)：当前正式与隔离测试进程的程序字节、55项Web资源均与djylb官方v0.34.7一致。本项目自研UDP候选未改动NPS核心。
 

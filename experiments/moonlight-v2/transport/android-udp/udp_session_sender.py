@@ -4,6 +4,8 @@ The caller owns a physically bound, connected socket and a fresh per-test key.
 No pairing, keys on disk, network routes, or production services are created.
 """
 import threading
+import errno
+import select
 from collections import deque
 import struct
 import time
@@ -117,10 +119,23 @@ class SocketPacer:
 
 class AuthenticatedSender:
     LANES = frozenset(('video', 'audio', 'touch_ack', 'network_feedback'))
+    SEND_POLICIES = frozenset(('legacy_socket_timeout', 'owned_nonblocking_deadline'))
+    WRITABLE_WAIT_NS = 5_000_000
+    PRIORITY_BUDGET_NS = 10_000_000
+    MAX_WOULD_BLOCK_ATTEMPTS = 64
 
-    def __init__(self, sock, key, session, video_drop_every=0, *, pacer=None, clock_ns=time.monotonic_ns):
+    def __init__(self, sock, key, session, video_drop_every=0, *, pacer=None, clock_ns=time.monotonic_ns,
+                 send_policy='legacy_socket_timeout', owns_socket=False, cancelled=None, wait_writable=None):
         if type(video_drop_every) is not int or video_drop_every != 0 and video_drop_every < 20:
             raise ValueError('Fault injection must be disabled or at most 5 percent')
+        if send_policy not in self.SEND_POLICIES or type(owns_socket) is not bool:
+            raise ValueError('UDP send policy/ownership contract')
+        if send_policy == 'owned_nonblocking_deadline' and sock.gettimeout() != 0:
+            raise ValueError('Owned candidate writer must have Python nonblocking timeout')
+        self.send_policy, self.owns_socket = send_policy, owns_socket
+        self.cancelled = cancelled or (lambda: False)
+        self.wait_writable = wait_writable or self._wait_writable
+        self.socket_close_attempted = self.socket_close_confirmed = False
         self.socket, self.key, self.session = sock, key, session
         self.video_drop_every = video_drop_every
         self.video_attempts = 0
@@ -132,7 +147,12 @@ class AuthenticatedSender:
         self.counts = {lane: {'datagrams': 0, 'encrypted_bytes': 0, 'send_errors': 0, 'test_dropped_datagrams': 0,
                              'deadline_rejections': 0, 'max_auth_lock_wait_ns': 0, 'max_seal_ns': 0,
                              'max_send_syscall_ns': 0, 'send_completed_after_deadline_count': 0,
-                             'max_send_deadline_overshoot_ns': 0}
+                             'max_send_deadline_overshoot_ns': 0,
+                             'would_block_calls': 0, 'would_block_retries': 0, 'retry_wait_ns': 0,
+                             'max_retry_wait_ns': 0, 'max_total_send_call_ns': 0,
+                             'would_block_deadline_drops': 0, 'priority_budget_dropped_datagrams': 0,
+                             'retry_bound_dropped_datagrams': 0}
+
                        for lane in self.LANES}
 
     def _check_deadline_locked(self, wire_bytes, deadline_us, now_ns):
@@ -159,8 +179,12 @@ class AuthenticatedSender:
             raise ValueError('Unknown UDP lane or payload bound')
         if deadline_us is not None and (type(deadline_us) is not int or deadline_us <= 0 or lane != 'video'):
             raise ValueError('Deadline only applies to host-clock video')
+        if self.send_policy == 'owned_nonblocking_deadline' and lane == 'video' and deadline_us is None:
+            raise ValueError('Owned nonblocking video requires the original frame deadline')
         if self.pacer and lane == 'video':
             self.pacer.video(len(payload)+68, deadline_us)
+        if self.send_policy == 'owned_nonblocking_deadline':
+            return self._send_nonblocking(payload, lane, deadline_us)
         waiting = self.clock_ns()
         with self.lock:
             acquired = self.clock_ns()
@@ -219,6 +243,139 @@ class AuthenticatedSender:
                     self.pacer.priority(size+28)
             return size
 
+    @staticmethod
+    def _wait_writable(sock, seconds):
+        return bool(select.select([], [sock], [], seconds)[1])
+
+    @staticmethod
+    def _failure_context(error, lane, operation):
+        # Only fixed operation/lane enums, never exception text, endpoint or key.
+        error.huoguo_udp_failure_lane = lane
+        error.huoguo_udp_failure_operation = operation
+        return error
+
+    def _drop_nonblocking_locked(self, lane, would_block, retry_bound=False):
+        counts = self.counts[lane]
+        if would_block:
+            counts['would_block_deadline_drops'] += 1
+        if retry_bound:
+            counts['retry_bound_dropped_datagrams'] += 1
+        if lane == 'video':
+            counts['deadline_rejections'] += 1
+            if self.pacer:
+                self.pacer.rejected_deadline()
+            raise PacingDeadline('owned nonblocking video deadline/retry bound')
+        counts['priority_budget_dropped_datagrams'] += 1
+        return 0  # Explicit late priority drop, never a successful datagram.
+
+    def _send_nonblocking(self, payload, lane, deadline_us):
+        began = self.clock_ns()
+        bound_ns = deadline_us*1000 if lane == 'video' else began+self.PRIORITY_BUDGET_NS
+        attempts = 0
+        try:
+            while True:
+                waiting = self.clock_ns()
+                with self.lock:
+                    acquired = self.clock_ns()
+                    counts = self.counts[lane]
+                    counts['max_auth_lock_wait_ns'] = max(counts['max_auth_lock_wait_ns'], max(0, acquired-waiting))
+                    if self.cancelled():
+                        raise self._failure_context(OSError(errno.ECANCELED, 'owned UDP canceled'), lane, 'udp_send_cancel')
+                    if self.key is None or self.sequence > 0xffffffffffffffff:
+                        raise self._failure_context(ValueError('UDP session closed or sequence exhausted'), lane, 'udp_sender_state')
+                    if lane == 'video':
+                        try:
+                            self._check_deadline_locked(len(payload)+68, deadline_us, acquired)
+                        except PacingDeadline:
+                            if attempts:
+                                counts['would_block_deadline_drops'] += 1
+                            raise
+                    elif acquired >= bound_ns:
+                        return self._drop_nonblocking_locked(lane, bool(attempts))
+                    if attempts >= self.MAX_WOULD_BLOCK_ATTEMPTS:
+                        return self._drop_nonblocking_locked(lane, True, True)
+                    if attempts:
+                        counts['would_block_retries'] += 1
+                    sequence = self.sequence
+                    self.sequence += 1  # A failed attempt never reuses this nonce.
+                    sealing = self.clock_ns()
+                    try:
+                        packet = seal(self.key, self.session, sequence, payload)
+                    except Exception as error:
+                        raise self._failure_context(error, lane, 'udp_auth_seal')
+                    finally:
+                        counts['max_seal_ns'] = max(counts['max_seal_ns'], max(0, self.clock_ns()-sealing))
+                    start = self.clock_ns()
+                    if lane == 'video':
+                        try:
+                            self._check_deadline_locked(len(payload)+68, deadline_us, start)
+                        except PacingDeadline:
+                            if attempts:
+                                counts['would_block_deadline_drops'] += 1
+                            raise
+                        self.video_attempts += 1
+                        if self.video_drop_every and self.video_attempts % self.video_drop_every == 0:
+                            counts['test_dropped_datagrams'] += 1
+                            if self.pacer:
+                                self.pacer.sent(len(payload)+68)
+                            return 0
+                    elif start >= bound_ns:
+                        return self._drop_nonblocking_locked(lane, bool(attempts))
+                    try:
+                        size = self.socket.send(packet)
+                        end = self.clock_ns()
+                        if size != len(packet):
+                            raise OSError('Partial UDP send')
+                    except OSError as error:
+                        counts['send_errors'] += 1
+                        if isinstance(error, BlockingIOError) and error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                            counts['would_block_calls'] += 1
+                            attempts += 1
+                        else:
+                            raise self._failure_context(error, lane, 'udp_socket_send')
+                    else:
+                        if deadline_us is not None and end > deadline_us*1000:
+                            counts['send_completed_after_deadline_count'] += 1
+                            counts['max_send_deadline_overshoot_ns'] = max(counts['max_send_deadline_overshoot_ns'], end-deadline_us*1000)
+                        counts['datagrams'] += 1
+                        counts['encrypted_bytes'] += size
+                        self.last_timing[lane] = (start, end)
+                        if self.pacer:
+                            self.pacer.sent(size+28) if lane == 'video' else self.pacer.priority(size+28)
+                        return size
+                    finally:
+                        counts['max_send_syscall_ns'] = max(counts['max_send_syscall_ns'], max(0, self.clock_ns()-start))
+                # No authentication or pacer mutex is held during socket wait.
+                before_wait = self.clock_ns()
+                remaining = bound_ns-before_wait
+                if remaining > 0 and not self.cancelled():
+                    try:
+                        self.wait_writable(self.socket, min(self.WRITABLE_WAIT_NS, remaining)/1e9)
+                    except (OSError, ValueError) as error:
+                        # Closing this owned socket while select examines it can
+                        # raise ValueError for fd=-1. Keep its class and hard
+                        # failure semantics; only attach the fixed operation.
+                        raise self._failure_context(error, lane, 'udp_send_wait')
+                    finally:
+                        elapsed = max(0, self.clock_ns()-before_wait)
+                        with self.lock:
+                            self.counts[lane]['retry_wait_ns'] += elapsed
+                            self.counts[lane]['max_retry_wait_ns'] = max(self.counts[lane]['max_retry_wait_ns'], elapsed)
+        finally:
+            with self.lock:
+                self.counts[lane]['max_total_send_call_ns'] = max(self.counts[lane]['max_total_send_call_ns'], max(0, self.clock_ns()-began))
+
+    def policy_snapshot(self):
+        with self.lock:
+            return dict(send_policy=self.send_policy, nonblocking_writer=self.send_policy=='owned_nonblocking_deadline',
+                        owns_send_socket=self.owns_socket, writable_wait_slice_ns=self.WRITABLE_WAIT_NS,
+                        priority_budget_ns=self.PRIORITY_BUDGET_NS, max_would_block_attempts=self.MAX_WOULD_BLOCK_ATTEMPTS,
+                        priority_would_block_expiry_policy='drop_count_not_sent',
+                        video_would_block_expiry_policy='PacingDeadline_existing_reference_guard',
+                        retry_seals_fresh_nonce=True, send_mutex_held_across_wait=False,
+                        owned_socket_close_attempted=self.socket_close_attempted,
+                        owned_socket_close_confirmed=self.socket_close_confirmed)
+
     def timing(self, lane):
         with self.lock:
             return self.last_timing.get(lane)
@@ -230,6 +387,10 @@ class AuthenticatedSender:
     def close(self):
         with self.lock:
             self.key = None
+            if self.owns_socket and not self.socket_close_attempted:
+                self.socket_close_attempted = True
+                self.socket.close()
+                self.socket_close_confirmed = True
 
 
 class SocketVideoGate:

@@ -41,7 +41,7 @@
       "policy5": 614400,
       "policy7": 672000
     },
-    "last_observed_policy_evidence": "docs/evidence/surface-submit-20261003/case-4-A/case-context.json"
+    "last_observed_policy_evidence": "docs/evidence/udp-send-backpressure-followup-20261003/final-health.json"
   },
   "resource_fields_scope": "cpu_cores and memory_mib above describe Android VM on M1, not physical phone",
   "last_completed_test": {
@@ -97,7 +97,7 @@
   "renderer": "skiavk",
   "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
-  "independent_experimental_app_sha256": "792c6da7ac92e3c0538351940b15e632367a762552c2b7cd3dd17f60b1a8bf09",
+  "independent_experimental_app_sha256": "d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
     "real_video_sessions": 33,
@@ -631,8 +631,8 @@
       "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
     }
   },
-  "updated_evidence_utc": "2026-10-02T19:19:27.970618+00:00",
-  "independent_experimental_app_version": "1.31-alpha.2",
+  "updated_evidence_utc": "2026-10-03T01:04:52.399064+00:00",
+  "independent_experimental_app_version": "1.31-alpha.3",
   "latest_surface_submit_experiment": {
     "evidence": "docs/evidence/surface-submit-20261003",
     "summary": "docs/surface-submit-real-video-20261003.json",
@@ -692,5 +692,90 @@
     "16_ms_not_promoted": true,
     "public_WAN_or_V50_tested": false,
     "optical_or_acoustic_latency_measured": false
+  },
+  "latest_decoder_queue_experiment": {
+    "report": "docs/decoder-queue-real-video-20261003.md",
+    "summary": "docs/decoder-queue-real-video-20261003.json",
+    "source_itag": 299,
+    "source_codec": "avc1",
+    "source_dimensions": [
+      1920,
+      1080
+    ],
+    "source_fps": 60,
+    "stream_dimensions": [
+      1080,
+      1920
+    ],
+    "bitrate_bps": 4000000,
+    "buffer_ms": 80,
+    "pcm_queue_enabled": false,
+    "lead_ms": 0,
+    "partial_diagnostics_sequence": [
+      "off",
+      "on",
+      "on",
+      "off"
+    ],
+    "strict_diagnostics_overhead_ABBA": false,
+    "case1_socket_send_timeout_terminated_media": true,
+    "case1_phone_full_requested_window_fps": 6.433,
+    "case1_active_endpoint_cadence_fps": 43.217,
+    "case1_excluded_from_diagnostics_comparison": true,
+    "configure_ms_on_cases": [
+      184.084,
+      232.283
+    ],
+    "steady_max_gap_ms_on_cases": [
+      737.685,
+      190.641
+    ],
+    "no_decoder_hold_gain_reanchor_or_hold_decay_in_on_cases": true,
+    "scope": "owner nonisolated same-home WiFi registered Tailnet inner authenticated UDP; dynamic CPU limits; independent SF prefixes and unknown tails; not WAN/V50/optical/acoustic acceptance"
+  },
+  "latest_send_backpressure_experiment": {
+    "report": "docs/udp-send-backpressure-real-video-20261003.md",
+    "summary": "docs/udp-send-backpressure-real-video-20261003.json",
+    "evidence": "docs/evidence/udp-send-backpressure-followup-20261003",
+    "actual_phone_apk_sha256": "d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf",
+    "actual_helper_sha256": "ee598169d1b30074c4c38cd7e8a969ae5491f51b3965c40b480caac62f19b97f",
+    "actual_worker_sha256": "ac3abd08e3e9a5dba53bd6b9f3d0658e11a315f4d4f4ac5587453076cc6278f9",
+    "actual_sender_sha256": "7f90a12ef8df09975d1ffdd2a3f2dbcf7d99b36e16f27427ce21b06696929535",
+    "final_sender_sha256": "36fbebc4cf2cef4a58ea28e5d9302dad51ae5eea218e7e557161dcdb03854b0b",
+    "post_phone_change": "closed FD select ValueError operation annotation only; fixture validated, not retroactive phone SHA acceptance",
+    "host_send_policy": "owned_nonblocking_deadline",
+    "phone_sf_cadence_fps": [
+      59.43,
+      59.437
+    ],
+    "phone_sf_full_requested_window_fps": [
+      57.447,
+      57.655
+    ],
+    "phone_sf_max_gap_ms": [
+      232.056405,
+      174.034949
+    ],
+    "phone_sf_over100ms_count": [
+      1,
+      1
+    ],
+    "would_block_observed_in_four_sessions": false,
+    "retry_branch_validation": "owned fixtures only; no real phone wouldblock during these runs",
+    "continuous_media_progress_checks_passed": true,
+    "source_cadence_fps": [
+      59.901,
+      59.932
+    ],
+    "native_final_exit_zero_count": 4,
+    "candidate_ports_closed": true,
+    "helper_removed": true,
+    "formal_ping_verified": true,
+    "full_source_checks_passed": 939,
+    "formal_v130_or_NPS_changed": false,
+    "stable60fps_accepted": false,
+    "public_WAN_or_V50_tested": false,
+    "optical_or_acoustic_latency_measured": false,
+    "scope": "same alpha3, 1080/4M VBR/60cap/80ms lead0 PCMoff; same-home WiFi registered Tailnet inner UDP; owner nonisolated; no controlled claim of FPS improvement"
   }
 }

@@ -182,6 +182,13 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
                     def communicate(self,timeout):
                         self.returncode=0
                         ui=LanUiDriverCleanupCheck.readback(0)
+                        ui.update(requested_stage_diagnostics_enabled=True,
+                            first_stage_diagnostics_enabled=1,second_stage_diagnostics_enabled=1,
+                            first_stage_diagnostics_verified=True,second_stage_diagnostics_verified=True)
+                        ui.update(steady_progress_monitor_enabled=True,steady_media_progress_healthy=True,
+                            steady_progress_max_idle_ns=250000000,steady_progress_stall_threshold_ns=3000000000,
+                            steady_progress_samples=[dict(phone_ns=1000000000+i*1000000000,
+                                worker_received_frames=100+i*60,codec_callback_count=90+i*60) for i in range(33)])
                         ui.update(requested_steady_seconds=30,steady_sampler_completion_observed=True,
                             steady_media_started_ns=1000000000,steady_media_finished_ns=33000000000,
                             steady_media_wait_ms=32000)

@@ -1,4 +1,14 @@
-2026-10-03最新媒体进展见[机主Tailnet真机记录](tailnet-owner-media-20261003.md)：当前实际安装ba84客户端已正常UI认证、Tailnet内层音视频UDP、退出与重新认证；同家Wi-Fi，机主非隔离环境。gateway退出barrier及完整记录feed已完成源码/fixture和真实收尾验证：最新两会话1551/269个media记录均完整发布，撤销各丢未发布4字节，native均退出0，无TERM/KILL，两host final齐全。全仓896项unittest通过。
+## 2026-10-03 最新：发送背压修复与阶段诊断
+
+当前机主一加12候选为1.31-alpha.3，实际APK SHA `d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf`。新增有界configure/offer/take/consumer CPU/input API/FEC poll/实际PlaybackClock observer，实际源码与产物见[四轮基线](decoder-queue-real-video-20261003.md)及[主机发送候选复测](udp-send-backpressure-real-video-20261003.md)。四轮off/on/on/off不是严格ABBA，case1发送超时终止媒体，必须排除开关开销比较；CPU动态限制/位置/热状态也未固定，不据此宣称诊断零开销。
+
+机主UDP worker原来用同一Python100ms timeout socket收发，baseline一次send调用约101ms后TimeoutError造成整个worker撤销。新候选仅独立owned writer wrapper非阻塞；video仍守原frame期限和reference guard，priority10ms晚包明确丢弃，不扩大buffer，不改正式/NPS。同一alpha3两轮复测均持续收到媒体、退出与新认证，手机SF cadence59.430/59.437、max gap232.056/174.035ms。四session没有实际wouldblock，retry仅由离线owned fixture验收，不称公网恢复成功；实际依赖的sender SHA7f90a12与之后只补closed-FD诊断分类的36fbebc须区分。
+
+两段最大空档邻近四帧Inbox overflow，所在1秒段FEC增量0、reserve max2.747/1.698ms；不能继续笼统归输入槽几百ms阻塞。下一步先增加native frame-mapping拒绝的三支primitive计数、capacity时adapter/core深度和有界frame事件，再评估RX burst与已被core拒绝但仍占mapping槽的交互。旧clock_mapping_rejected按datagram合计，不是PlaybackClock、不是帧数，也不能认定106全是cap8。mapping从首次准入shard起80ms，不是首个认证包起；不先扩大容量/期限或改恢复策略。随后才按证据做同APK显式Inbox4→8单因素（保留2MiB、80ms年龄、CPU限制及其他参数），初始化与稳态分别判断，不无目的宽扫矩阵。测试helper现在有持续进度检查，仍不是App用户会话的媒体idle提示修复；后者需独立产品验收。
+
+新SF sampler已实际用于本轮，保留连续有效poll前缀与未知尾部，不能称整个30秒完全覆盖；App callback仍回显target，SF同端关联时域未独立验证。真实光学触控、声学音画、指定公网/蜂窝/V50与朋友安全验收继续缺测。保持80ms推荐、100ms可选、lead0、wait/guard，不改两个Headscale身份或国内云端物理出口。以下各段保留历史SHA及各自日期边界。
+
+2026-10-03较早媒体进展见[机主Tailnet真机记录](tailnet-owner-media-20261003.md)：当时安装ba84客户端已正常UI认证、Tailnet内层音视频UDP、退出与重新认证；同家Wi-Fi，机主非隔离环境。gateway退出barrier及完整记录feed已完成源码/fixture和真实收尾验证：当时两会话1551/269个media记录均完整发布，撤销各丢未发布4字节，native均退出0，无TERM/KILL，两host final齐全。全仓896项unittest通过。
 
 ## 2026-10-03 最新：解码阶段诊断与Surface候选
 

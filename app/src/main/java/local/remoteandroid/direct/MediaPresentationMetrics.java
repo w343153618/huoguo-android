@@ -255,15 +255,45 @@ final class MediaPresentationMetrics {
         static final int SEGMENTS = 120, EVENTS = 64;
         static final long WINDOW_NS = 1_000_000_000L, WARMUP_NS = 2_000_000_000L;
         static final int FRAME_OVERFLOW=1, BYTE_OVERFLOW=2, INPUT_TIMEOUT=3,
-                WORKER_EXPIRED=4, STALE_FAILURE=5, SLOW_INPUT_WAIT=6, OTHER_CHAIN_LOSS=7, TIMEOUT_CHAIN_LOSS=8;
+                WORKER_EXPIRED=4, STALE_FAILURE=5, SLOW_INPUT_WAIT=6, OTHER_CHAIN_LOSS=7, TIMEOUT_CHAIN_LOSS=8,
+                CONFIGURE_PHASE=9, CONSUMER_STALL=10, FEC_POLL_DELTA=11, CLOCK_SHIFT=12,
+                COPY_STALL=13, INPUT_CALL_STALL=14, OFFER_GAP=15, TAKE_GAP=16, RESERVE_GUARD=17;
+        static final int CONFIGURE=1, TAKE=2, CONSUMER=4, FEC=8, CLOCK=16, GUARD=32, INPUT_CALL=64, COPY=128;
+        static final long STALL_NS=20_000_000L,GAP_EVENT_NS=80_000_000L;
+        static final String[] EXTRA_TOTAL_NAMES={"configure_starts","configure_finishes","configure_failures",
+                "configure_unmatched","configure_wall_sum_ns","configure_wall_max_ns","inbox_takes",
+                "offer_interval_missing","take_interval_missing","consumer_starts","consumer_finishes",
+                "consumer_unmatched","consumer_wall_sum_ns","consumer_wall_max_ns","consumer_cpu_samples",
+                "consumer_cpu_missing","consumer_cpu_invalid","consumer_cpu_sum_ns","consumer_non_cpu_sum_ns",
+                "consumer_non_cpu_max_ns","copy_starts","copy_finishes","copy_failures","copy_unmatched",
+                "input_call_starts","input_call_finishes","input_call_failures","input_call_unmatched",
+                "reserve_guard_calls","reserve_guard_nonzero","reserve_guard_age_exceeded","reserve_guard_stale_epoch",
+                "reserve_guard_stopping","reserve_guard_config","reserve_guard_context_missing",
+                "fec_poll_delta_observations","fec_counter_delta_sum","fec_expiry_delta","fec_reference_lost_delta",
+                "fec_dependency_drop_delta","fec_memory_reject_delta","fec_clock_map_reject_delta","fec_logical_reject_delta",
+                "fec_invalid_delta","fec_first_observation_ns","fec_last_observation_ns","fec_max_poll_interval_ns",
+                "clock_change_observations","clock_delta_missing","clock_delta_sum_ns","clock_abs_delta_sum_ns",
+                "clock_delta_max_abs_ns","clock_video_anchor","clock_transport_reanchor","clock_offset_decay",
+                "clock_audio_anchor","clock_hold_gain","clock_decoder_reanchor","clock_hold_decay","clock_invalid_kind","fec_poll_observations"};
+        static final String[] EXTRA_HISTOGRAM_NAMES={"configure_wall_ns","offer_interval_ns","take_interval_ns",
+                "take_minus_received_ns","consumer_wall_ns","consumer_non_cpu_elapsed_ns",
+                "copy_wall_ns","queue_input_call_wall_ns","clock_mapping_delta_ns"};
+        static final String[] PHASE_STATE_NAMES={"configure_started_ns","configure_pts_us","configure_received_ns",
+                "consumer_started_ns","consumer_pts_us","consumer_cpu_started_ns","copy_started_ns","copy_pts_us",
+                "input_call_started_ns","input_call_pts_us","last_offer_ns","last_take_ns","reserve_guard_time_ns",
+                "reserve_guard_pts_us","reserve_guard_flags","reserve_guard_frame_epoch","reserve_guard_current_epoch"};
         static final String[] SEGMENT_NAMES = {"offered_frames", "depth_observations", "depth_sum", "depth_max",
                 "overflow_events", "cleared_frames", "worker_expired", "codec_reserve_calls", "codec_reserve_polls",
                 "codec_reserve_wait_sum_ns", "codec_reserve_wait_max_ns", "codec_timeouts", "scheduled_outputs",
                 "ready_minus_input_sum_ns", "ready_minus_input_max_ns", "ready_minus_input_missing",
                 "target_minus_release_sum_ns", "target_minus_release_min_ns", "target_minus_release_max_ns", "waiting_idr_drops",
-                "media_input_queue_call_starts", "ready_minus_input_invalid", "config_reserve_calls", "media_reserve_calls"};
+                "media_input_queue_call_starts", "ready_minus_input_invalid", "config_reserve_calls", "media_reserve_calls",
+                "configure_starts","configure_finishes","configure_wall_max_ns","inbox_takes","take_interval_max_ns",
+                "offer_interval_max_ns","consumer_finishes","consumer_wall_max_ns","consumer_cpu_sum_ns",
+                "consumer_non_cpu_max_ns","fec_counter_delta_sum","clock_change_observations","clock_abs_delta_sum_ns",
+                "reserve_guard_nonzero","input_call_finishes","copy_wall_max_ns"};
         static final String[] EVENT_NAMES = {"time_ns", "pts_us", "kind", "duration_ns", "queue_frames",
-                "queue_bytes", "epoch", "polls"};
+                "queue_bytes", "epoch", "polls", "flags", "frame_id", "delta_ns", "non_cpu_ns", "current_epoch"};
         final long[][] segments = new long[SEGMENT_NAMES.length][SEGMENTS];
         final long[][] events = new long[EVENT_NAMES.length][EVENTS];
         final long[] depthCounts = new long[5];
@@ -274,6 +304,19 @@ final class MediaPresentationMetrics {
         long offered, depthObserved, overflow, cleared, workerExpired, reserveCalls, reservePolls,
                 configReserveCalls, mediaReserveCalls, inputTimeouts, scheduled, missingQueued, invalidReady, waitingDrops;
         int lastSegment=-1, eventWrite, eventCount;
+        long coverageMask;
+        final long[] extraTotals=new long[EXTRA_TOTAL_NAMES.length];
+        final Histogram[] extraHistograms=new Histogram[EXTRA_HISTOGRAM_NAMES.length];
+        long configureStart=MISSING,configurePts=MISSING,configureReceived=MISSING;
+        long consumerStart=MISSING,consumerPts=MISSING,consumerCpu=MISSING;
+        long copyStart=MISSING,copyPts=MISSING,callStart=MISSING,callPts=MISSING;
+        long lastOffer=MISSING,lastTake=MISSING,guardTime=MISSING,guardPts=MISSING;
+        int guardFlags;long guardFrameEpoch=MISSING,guardCurrentEpoch=MISSING;
+        StageDiagnostics(){for(int i=0;i<extraHistograms.length;i++)extraHistograms[i]=new Histogram();}
+        synchronized void markCoverage(int mask){coverageMask|=mask;}
+        private void count(int slot,int column){if(slot>=0)segments[column][slot]++;}
+        private void max(int slot,int column,long value){if(slot>=0&&value>=0)segments[column][slot]=Math.max(segments[column][slot],value);}
+        private void sum(int slot,int column,long value){if(slot>=0)segments[column][slot]+=value;}
 
         private int observe(long nowNs) {
             observations++;
@@ -290,12 +333,117 @@ final class MediaPresentationMetrics {
             int slot=eventWrite;
             events[0][slot]=nowNs; events[1][slot]=ptsUs; events[2][slot]=kind; events[3][slot]=durationNs;
             events[4][slot]=frames; events[5][slot]=bytes; events[6][slot]=epoch; events[7][slot]=polls;
+            events[8][slot]=0;events[9][slot]=-1;events[10][slot]=MISSING;events[11][slot]=MISSING;events[12][slot]=MISSING;
             eventWrite=(slot+1)%EVENTS; eventObserved++;
             if(eventCount<EVENTS)eventCount++;else eventsEvicted++;
         }
-        synchronized void inboxOffer(long receivedNs) {
+        private void extraEvent(long nowNs,long ptsUs,int kind,long duration,int flags,long frameId,
+                                long delta,long nonCpu,long frameEpoch,long currentEpoch){
+            event(nowNs,ptsUs,kind,duration,-1,-1,frameEpoch,0);int index=(eventWrite-1+EVENTS)%EVENTS;
+            events[8][index]=flags;events[9][index]=frameId;events[10][index]=delta;
+            events[11][index]=nonCpu;events[12][index]=currentEpoch;
+        }
+        synchronized void inboxOffer(long receivedNs){inboxOffer(receivedNs,receivedNs);}
+        synchronized void inboxOffer(long receivedNs,long offerNs) {
             if(originNs==MISSING)originNs=receivedNs;
-            offered++;int slot=observe(receivedNs);if(slot>=0)segments[0][slot]++;
+            offered++;int slot=observe(offerNs);count(slot,0);
+            if(lastOffer==MISSING)extraTotals[7]++;
+            else {long gap=offerNs-lastOffer;extraHistograms[1].add(gap);max(slot,29,gap);
+                if(gap>=GAP_EVENT_NS)extraEvent(offerNs,-1,OFFER_GAP,gap,0,-1,MISSING,MISSING,MISSING,MISSING);}
+            lastOffer=offerNs;
+        }
+        synchronized void inboxTaken(long nowNs,long ptsUs,long receivedNs,int frames,long bytes){
+            coverageMask|=TAKE;extraTotals[6]++;int slot=observe(nowNs);count(slot,27);
+            extraHistograms[3].add(nowNs-receivedNs);
+            if(lastTake==MISSING)extraTotals[8]++;
+            else {long gap=nowNs-lastTake;extraHistograms[2].add(gap);max(slot,28,gap);
+                if(gap>=GAP_EVENT_NS)extraEvent(nowNs,ptsUs,TAKE_GAP,gap,0,-1,MISSING,MISSING,MISSING,MISSING);}
+            lastTake=nowNs;
+        }
+        synchronized void configureStarted(long nowNs,long ptsUs,long receivedNs){
+            coverageMask|=CONFIGURE;extraTotals[0]++;if(configureStart!=MISSING)extraTotals[3]++;
+            configureStart=nowNs;configurePts=ptsUs;configureReceived=receivedNs;count(observe(nowNs),24);
+        }
+        synchronized void configureFinished(long nowNs,long ptsUs,boolean success){
+            extraTotals[1]++;if(!success)extraTotals[2]++;int slot=observe(nowNs);count(slot,25);
+            if(configureStart==MISSING||configurePts!=ptsUs){extraTotals[3]++;return;}
+            long elapsed=nowNs-configureStart;extraHistograms[0].add(elapsed);
+            if(elapsed>=0){extraTotals[4]+=elapsed;extraTotals[5]=Math.max(extraTotals[5],elapsed);max(slot,26,elapsed);}
+            extraEvent(nowNs,ptsUs,CONFIGURE_PHASE,elapsed,success?0:1,-1,MISSING,MISSING,MISSING,MISSING);
+            configureStart=MISSING;configurePts=MISSING;configureReceived=MISSING;
+        }
+        synchronized void consumerStarted(long nowNs,long ptsUs){consumerStarted(nowNs,ptsUs,MISSING);}
+        synchronized void consumerStarted(long nowNs,long ptsUs,long cpuNs){
+            coverageMask|=CONSUMER;extraTotals[9]++;if(consumerStart!=MISSING)extraTotals[11]++;
+            consumerStart=nowNs;consumerPts=ptsUs;consumerCpu=cpuNs;observe(nowNs);
+        }
+        synchronized void consumerFinished(long nowNs,long ptsUs){consumerFinished(nowNs,ptsUs,MISSING);}
+        synchronized void consumerFinished(long nowNs,long ptsUs,long cpuNs){
+            extraTotals[10]++;int slot=observe(nowNs);count(slot,30);
+            if(consumerStart==MISSING||consumerPts!=ptsUs){extraTotals[11]++;return;}
+            long wall=nowNs-consumerStart,nonCpu=MISSING;extraHistograms[4].add(wall);
+            if(wall>=0){extraTotals[12]+=wall;extraTotals[13]=Math.max(extraTotals[13],wall);max(slot,31,wall);}
+            if(cpuNs==MISSING||consumerCpu==MISSING)extraTotals[15]++;
+            else {long cpu=cpuNs-consumerCpu;
+                if(cpu<0||wall<0||cpu>wall)extraTotals[16]++;
+                else {extraTotals[14]++;extraTotals[17]+=cpu;nonCpu=wall-cpu;extraTotals[18]+=nonCpu;
+                    extraTotals[19]=Math.max(extraTotals[19],nonCpu);extraHistograms[5].add(nonCpu);
+                    sum(slot,32,cpu);max(slot,33,nonCpu);}}
+            if(wall>=STALL_NS)extraEvent(nowNs,ptsUs,CONSUMER_STALL,wall,0,-1,MISSING,nonCpu,MISSING,MISSING);
+            consumerStart=MISSING;consumerPts=MISSING;consumerCpu=MISSING;
+        }
+        synchronized void inputCopyStarted(long nowNs,long ptsUs,boolean config){
+            coverageMask|=COPY;extraTotals[20]++;if(copyStart!=MISSING)extraTotals[23]++;
+            copyStart=nowNs;copyPts=ptsUs;observe(nowNs);
+        }
+        synchronized void inputCopyFinished(long nowNs,long ptsUs,boolean config,boolean success){
+            extraTotals[21]++;if(!success)extraTotals[22]++;int slot=observe(nowNs);
+            if(copyStart==MISSING||copyPts!=ptsUs){extraTotals[23]++;return;}
+            long wall=nowNs-copyStart;extraHistograms[6].add(wall);max(slot,39,wall);
+            if(wall>=STALL_NS||!success)extraEvent(nowNs,ptsUs,COPY_STALL,wall,(config?8:0)|(success?0:16),-1,MISSING,MISSING,MISSING,MISSING);
+            copyStart=MISSING;copyPts=MISSING;
+        }
+        synchronized void inputCallStarted(long nowNs,long ptsUs,boolean config){
+            coverageMask|=INPUT_CALL;extraTotals[24]++;if(callStart!=MISSING)extraTotals[27]++;
+            callStart=nowNs;callPts=ptsUs;observe(nowNs);
+        }
+        synchronized void inputCallFinished(long nowNs,long ptsUs,boolean config,boolean success){
+            extraTotals[25]++;if(!success)extraTotals[26]++;int slot=observe(nowNs);count(slot,38);
+            if(callStart==MISSING||callPts!=ptsUs){extraTotals[27]++;return;}
+            long wall=nowNs-callStart;extraHistograms[7].add(wall);
+            if(wall>=STALL_NS||!success)extraEvent(nowNs,ptsUs,INPUT_CALL_STALL,wall,(config?8:0)|(success?0:16),-1,MISSING,MISSING,MISSING,MISSING);
+            callStart=MISSING;callPts=MISSING;
+        }
+        synchronized void reserveGuard(long nowNs,long ptsUs,int flags,long frameEpoch,long currentEpoch){
+            coverageMask|=GUARD;extraTotals[28]++;guardTime=nowNs;guardPts=ptsUs;guardFlags=flags;
+            guardFrameEpoch=frameEpoch;guardCurrentEpoch=currentEpoch;int slot=observe(nowNs);
+            if(flags!=0){extraTotals[29]++;count(slot,37);
+                extraEvent(nowNs,ptsUs,RESERVE_GUARD,0,flags,-1,MISSING,MISSING,frameEpoch,currentEpoch);}
+            if((flags&1)!=0)extraTotals[30]++;if((flags&2)!=0)extraTotals[31]++;
+            if((flags&4)!=0)extraTotals[32]++;if((flags&8)!=0)extraTotals[33]++;
+        }
+        synchronized void fecPollObserved(long observedNs){
+            coverageMask|=FEC;extraTotals[60]++;observe(observedNs);
+            if(extraTotals[44]==0)extraTotals[44]=observedNs;
+            if(extraTotals[45]!=0)extraTotals[46]=Math.max(extraTotals[46],observedNs-extraTotals[45]);
+            extraTotals[45]=observedNs;
+        }
+        /** Timestamp is counter-poll observation, not native exception occurrence. */
+        synchronized void fecException(long observedNs,long frameId,int kind,long delta){
+            coverageMask|=FEC;int slot=observe(observedNs);
+            if(delta<=0||kind<1||kind>6){extraTotals[43]++;return;}
+            extraTotals[35]++;extraTotals[36]+=delta;extraTotals[36+kind]+=delta;sum(slot,34,delta);
+            extraEvent(observedNs,-1,FEC_POLL_DELTA,0,kind,frameId,delta,MISSING,MISSING,MISSING);
+        }
+        /** Actual shared mapping changes; tiny decays counted without consuming the ring. */
+        synchronized void clockReanchor(long observedNs,int kind,long deltaNs){
+            coverageMask|=CLOCK;extraTotals[47]++;int slot=observe(observedNs);count(slot,35);
+            if(kind>=1&&kind<=7)extraTotals[51+kind]++;else extraTotals[59]++;
+            if(deltaNs==MISSING)extraTotals[48]++;
+            else {long absolute=Math.abs(deltaNs);extraTotals[49]+=deltaNs;extraTotals[50]+=absolute;
+                extraTotals[51]=Math.max(extraTotals[51],absolute);extraHistograms[8].addSigned(deltaNs);sum(slot,36,absolute);}
+            if(deltaNs==MISSING||kind==1||kind==2||kind==4||kind==6||Math.abs(deltaNs)>=STALL_NS)
+                extraEvent(observedNs,-1,CLOCK_SHIFT,0,kind,-1,deltaNs,MISSING,MISSING,MISSING);
         }
         synchronized void establishOrigin(long receivedNs) { if(originNs==MISSING)originNs=receivedNs; }
         /** Operation-sampled depth, not a time-weighted occupancy estimate. */
@@ -324,6 +472,9 @@ final class MediaPresentationMetrics {
             if(failure==1){inputTimeouts++;if(slot>=0)segments[11][slot]++;
                 event(nowNs,ptsUs,INPUT_TIMEOUT,waited,frames,bytes,epoch,polls);}
             else if(waited>=20_000_000L)event(nowNs,ptsUs,SLOW_INPUT_WAIT,waited,frames,bytes,epoch,polls);
+            if(failure==1||waited>=20_000_000L){int index=(eventWrite-1+EVENTS)%EVENTS;
+                if(guardPts==ptsUs&&guardTime!=MISSING){events[8][index]=guardFlags;events[12][index]=guardCurrentEpoch;}
+                else extraTotals[34]++;}
             // Receive-to-input is recorded separately only at the actual successful media queue.
         }
         synchronized void inputQueued(long receivedNs,long inputNs) {
@@ -345,12 +496,17 @@ final class MediaPresentationMetrics {
             for(int i=0;i<rows.length;i++)rows[i]=java.util.Arrays.copyOf(segments[i],count);
             long[][] retained=new long[events.length][eventCount];int first=(eventWrite-eventCount+EVENTS)%EVENTS;
             for(int i=0;i<retained.length;i++)for(int j=0;j<eventCount;j++)retained[i][j]=events[i][(first+j)%EVENTS];
+            HistogramSnapshot[] extras=new HistogramSnapshot[extraHistograms.length];
+            for(int i=0;i<extras.length;i++)extras[i]=extraHistograms[i].snapshot();
             return new StageSnapshot(nowNs,originNs,firstObservationNs,lastObservationNs,observations,
                 beforeOriginObservations,afterCapacityObservations,eventObserved,eventsEvicted,
                 new long[]{offered,depthObserved,overflow,cleared,workerExpired,reserveCalls,reservePolls,
                     configReserveCalls,mediaReserveCalls,inputTimeouts,scheduled,missingQueued,invalidReady,waitingDrops},
                 depthCounts.clone(),rows,retained,new HistogramSnapshot[]{targetMinusRelease.snapshot(),
-                    readyMinusInput.snapshot(),outputHold.snapshot(),codecReserveWait.snapshot(),receiveMinusInput.snapshot()});
+                    readyMinusInput.snapshot(),outputHold.snapshot(),codecReserveWait.snapshot(),receiveMinusInput.snapshot()},
+                coverageMask,extraTotals.clone(),extras,new long[]{configureStart,configurePts,configureReceived,
+                    consumerStart,consumerPts,consumerCpu,copyStart,copyPts,callStart,callPts,lastOffer,lastTake,
+                    guardTime,guardPts,guardFlags,guardFrameEpoch,guardCurrentEpoch});
         }
         static final class Histogram {
             // Signed target lead uses every bucket. Nonnegative stage intervals reject negative observations.
@@ -372,12 +528,15 @@ final class MediaPresentationMetrics {
     static final class StageSnapshot {
         final long snapshotNs,originNs,firstNs,lastNs,observations,beforeOrigin,afterCapacity,eventObserved,eventsEvicted;
         final long[] totals,depthCounts;final long[][] segments,events;final HistogramSnapshot[] histograms;
+        final long coverageMask;final long[] extraTotals,phaseState;final HistogramSnapshot[] extraHistograms;
         StageSnapshot(long snapshotNs,long originNs,long firstNs,long lastNs,long observations,long beforeOrigin,
                       long afterCapacity,long eventObserved,long eventsEvicted,long[] totals,long[] depths,
-                      long[][] segments,long[][] events,HistogramSnapshot[] histograms){
+                      long[][] segments,long[][] events,HistogramSnapshot[] histograms,long coverageMask,
+                      long[] extraTotals,HistogramSnapshot[] extraHistograms,long[] phaseState){
             this.snapshotNs=snapshotNs;this.originNs=originNs;this.firstNs=firstNs;this.lastNs=lastNs;
             this.observations=observations;this.beforeOrigin=beforeOrigin;this.afterCapacity=afterCapacity;
             this.eventObserved=eventObserved;this.eventsEvicted=eventsEvicted;this.totals=totals;
-            depthCounts=depths;this.segments=segments;this.events=events;this.histograms=histograms;}
+            depthCounts=depths;this.segments=segments;this.events=events;this.histograms=histograms;
+            this.coverageMask=coverageMask;this.extraTotals=extraTotals;this.extraHistograms=extraHistograms;this.phaseState=phaseState;}
     }
 }

@@ -33,12 +33,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     // Owner instrumentation only: no public widget, Intent extra or saved setting.
     // showLogin resets this one-attempt value; helper must explicitly opt in again.
     private int ownerSurfaceSubmitLeadMs;
+    private boolean ownerStageDiagnosticsEnabled=true;
     private static final class Attempt {
         final long generation;final String endpoint,credential,networkScope;
-        final boolean boundedPcmQueueEnabled;final int surfaceSubmitLeadMs;
+        final boolean boundedPcmQueueEnabled,stageDiagnosticsEnabled;final int surfaceSubmitLeadMs;
         volatile boolean cancelled;volatile SSLSocket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
-        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue,int surfaceLeadMs){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;}
+        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue,int surfaceLeadMs,boolean stages){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
@@ -49,6 +50,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         if(Looper.myLooper()!=Looper.getMainLooper()){activity.ui.post(this::showLogin);return;}
         if(active())return;
         ownerSurfaceSubmitLeadMs=0;
+        ownerStageDiagnosticsEnabled=true;
         SharedPreferences saved=activity.getSharedPreferences(SETTINGS,0);
         final int savedScope=savedSelection(saved,"scope",1,0);
         lastLanAddress=savedAddress(saved,"lan_address",LanUdpContract.LAN_SCOPE,DEFAULT_LAN_ADDRESS);
@@ -131,7 +133,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             activity.initTLS();
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked(),requestedSurfaceLeadMs);current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled);current=attempt;}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();
@@ -143,7 +145,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             validateDescriptor(descriptor,Endpoint.parse(attempt.endpoint).host,attempt.networkScope,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
-                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,(report,failed)->finished(attempt,report,failed));
+                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,(report,failed)->finished(attempt,report,failed));
             }
         }catch(Exception failure){
             finishRemote(attempt);

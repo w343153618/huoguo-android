@@ -16,6 +16,12 @@ public final class AsyncVideoInboxProbe {
                 config ? 8 : 0, size - 20, pts, 1, idr, 0);
     }
 
+    private static long extra(MediaPresentationMetrics.StageSnapshot snapshot, String name) {
+        for (int index=0; index<MediaPresentationMetrics.StageDiagnostics.EXTRA_TOTAL_NAMES.length; index++)
+            if (MediaPresentationMetrics.StageDiagnostics.EXTRA_TOTAL_NAMES[index].equals(name))return snapshot.extraTotals[index];
+        throw new AssertionError("missing total "+name);
+    }
+
     public static void main(String[] args) throws Exception {
         UdpVideoProbe.VideoInbox queue = new UdpVideoProbe.VideoInbox();
         check(!queue.offer(frame(0, false, false, 32)), "startup P blocked");
@@ -69,6 +75,22 @@ public final class AsyncVideoInboxProbe {
         check(!next.offer(frame(8, false, false, 32)) && next.closingDrops == 1,
                 "close stops new admissions");
         check(next.take().ptsUs == 7 && next.take() == null, "close drains owned FIFO and ends");
+        MediaPresentationMetrics.StageDiagnostics stages = new MediaPresentationMetrics.StageDiagnostics();
+        UdpVideoProbe.VideoInbox measured = new UdpVideoProbe.VideoInbox(false,stages);
+        long oldReceivedNs=System.nanoTime()-10_000_000L;
+        UdpVideoProbe.VideoFrame sameBurstIdr=new UdpVideoProbe.VideoFrame(new byte[32],540,960,8,12,20,oldReceivedNs,true,0);
+        UdpVideoProbe.VideoFrame sameBurstP=new UdpVideoProbe.VideoFrame(new byte[32],540,960,0,12,21,oldReceivedNs,false,0);
+        check(measured.offer(sameBurstIdr)&&measured.offer(sameBurstP), "measured same-RX burst preserves admissions");
+        check(measured.take().ptsUs==20&&measured.take().ptsUs==21, "measured take preserves FIFO");
+        measured.close();check(measured.take()==null, "closed empty inbox does not invent take");
+        MediaPresentationMetrics.StageSnapshot stageSnapshot=stages.snapshot(System.nanoTime());
+        check(stageSnapshot.totals[0]==2&&extra(stageSnapshot,"inbox_takes")==2,
+                "actual Inbox hooks count offer/take exactly");
+        check(stageSnapshot.extraHistograms[1].valid==1&&stageSnapshot.extraHistograms[2].valid==1
+                &&stageSnapshot.extraHistograms[3].valid==2&&stageSnapshot.extraHistograms[1].max>0
+                &&stageSnapshot.extraHistograms[3].min>=10_000_000L
+                &&(stageSnapshot.coverageMask&MediaPresentationMetrics.StageDiagnostics.TAKE)!=0,
+                "actual offer cadence is distinct from shared burst RX timestamp and take age measured");
         System.out.println("PASS " + checks + " bounded FIFO/reference recovery checks (offline, no codecs or phone)");
     }
 }
