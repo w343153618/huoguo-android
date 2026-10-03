@@ -50,6 +50,39 @@ def verify_nps_network_readback(result, node):
     return True
 
 
+def verify_v50_profile_readback(result, expected_enabled):
+    """ON needs actual preset click plus parsed session and decoded frame geometry.
+
+    Legacy OFF reports remain readable; no callback count is a physical FPS claim.
+    """
+    if type(expected_enabled) is not bool or not isinstance(result,dict) or 'failure_class' in result:
+        return False
+    if not expected_enabled and 'requested_v50_profile' not in result:
+        return True  # Historical helper had no V50 entry and always selected 60 FPS.
+    if result.get('requested_v50_profile') is not expected_enabled:
+        return False
+    previous_clicks=0
+    for stage in ('first','second'):
+        if (result.get(stage+'_video_profile_readback_verified') is not True
+                or result.get(stage+'_video_profile_is_presented_FPS') is not False
+                or result.get(stage+'_v50_profile_button_clicked') is not expected_enabled):
+            return False
+        fps,buffer,width,height,clicks=(result.get(stage+'_'+key) for key in (
+            'actual_fps_limit','actual_buffer_ms','actual_video_width','actual_video_height',
+            'v50_profile_button_click_count'))
+        if (any(type(value) is not int for value in (fps,buffer,width,height,clicks))
+                or fps!=(30 if expected_enabled else 60) or buffer!=80
+                or not 1<=width<=4096 or not 1<=height<=4096):
+            return False
+        if expected_enabled:
+            if clicks<=previous_clicks or max(width,height)>960:
+                return False
+        elif clicks!=0:
+            return False
+        previous_clicks=clicks
+    return True
+
+
 def verify_exit_confirmation_readback(result):
     """Both sessions must execute Continue then Exit using real App dialog listeners."""
     if not isinstance(result,dict) or 'failure_class' in result:return False
@@ -238,6 +271,8 @@ def parse_arguments(argv=None):
                    help='Required exact public owner-trial node; not allowed for LAN/Tailnet')
     p.add_argument('--phone-only-sampler', action='store_true',
                    help='Media-only: collect phone SF, omit unavailable remote source ADB; never claim source cadence')
+    p.add_argument('--v50-profile', choices=['off','on'], default='off',
+                   help='Click actual V50 optimize button: 540P/4M/30FPS/80ms; low-load diagnostics retained')
     p.add_argument('--pcm-queue', choices=['off','on'], default='off')
     p.add_argument('--stage-diagnostics', choices=['off','on'], default='on',
                    help='Owner instrumentation only: stage sampling on/off, frozen before media startup')
@@ -251,6 +286,13 @@ def parse_arguments(argv=None):
     p.add_argument('--media-only', action='store_true')
     p.add_argument('--source-description', default='Morphe YouTube real video; selected content format requires separate readback')
     args = p.parse_args(argv)
+    if args.v50_profile == 'on':
+        if args.pcm_queue != 'off' or args.codec_startup != 'off' or args.surface_submit_lead_ms != 0:
+            p.error('V50 preset acceptance cannot also enable PCM/startup/Surface experiments')
+        # The actual button sets these values; report the effective preset rather
+        # than claim the separate owner instrumentation default survived its click.
+        args.rate_index = 0
+        args.stage_diagnostics = 'off'
     if (args.network_scope == 'nps_owner') != (args.node is not None):
         p.error('Public owner scope requires explicit node; existing scopes do not accept node')
     if args.phone_only_sampler and not args.media_only:
@@ -287,7 +329,7 @@ def main():
     report={'scope':'normal App UI existing account; isolated '+scope_label+' UDP; outer path requires separate evidence',
             'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
-    report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on',requested_codec_startup_ready_enabled=args.codec_startup=='on',requested_credential_save_acceptance=args.credential_save=='on')
+    report.update(requested_v50_profile=args.v50_profile=='on',touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on',requested_codec_startup_ready_enabled=args.codec_startup=='on',requested_credential_save_acceptance=args.credential_save=='on')
     if args.network_scope == 'nps_owner':
         profile = planned_profile(args.node)
         report.update(node=args.node, advertised_control_host=profile.public_control.host,
@@ -311,7 +353,7 @@ def main():
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+120+(args.steady_seconds-20)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
@@ -409,6 +451,7 @@ def main():
             # The normal UI helper declined before owning an attempt. Its
             # failure must not turn into a force-stop of somebody else's App.
             report['existing_phone_UI_attempt_busy_skip'] = True
+        report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on')
         report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
         report['exit_confirmation_readback_verified']=verify_exit_confirmation_readback(report.get('ui_result'))
         report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
@@ -432,6 +475,8 @@ def main():
                 report[name+'_actual_json_bytes']=len(result.stdout.encode('utf-8'))
                 (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')
                 report[name+'_report_read']=True
+        if not report['v50_profile_readback_verified']:
+            raise RuntimeError('v50_profile_readback_unverified')
         if not report['credential_save_readback_verified']:
             raise RuntimeError('credential_save_readback_unverified')
         if not report['exit_confirmation_readback_verified']:
@@ -460,7 +505,8 @@ def main():
                   'steady_sampler_failed','steady_window_readback_unverified','stage_diagnostics_readback_unverified',
                   'steady_media_progress_stalled_or_unverified','codec_startup_readback_unverified',
                   'nps_network_profile_readback_unverified','exit_confirmation_readback_unverified',
-                  'nps_physical_network_binding_unverified','credential_save_readback_unverified'}
+                  'nps_physical_network_binding_unverified','credential_save_readback_unverified',
+                  'v50_profile_readback_unverified'}
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report

@@ -28,8 +28,30 @@ public final class LanUiAcceptance extends Instrumentation {
     private Bundle arguments;
     private final JSONArray injected=new JSONArray(),delivered=new JSONArray();
     private int osCleanupFailures;private boolean osCleanup;
+    private boolean lastV50ButtonClicked;private int v50ButtonClicks;
     public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
     private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
+    private boolean v50Profile(){String value=arguments.getString("v50_profile","off");
+        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("v50_profile_bound");return value.equals("on");}
+    /** Select the actual label, so a 30/60 list or historical 60/120/30 list is safe. */
+    private static void selectSpinnerLabel(Spinner spinner,String label){
+        for(int index=0;index<spinner.getCount();index++)if(label.equals(String.valueOf(spinner.getItemAtPosition(index)))){
+            spinner.setSelection(index);return;
+        }throw new IllegalStateException("fps_label_missing");
+    }
+    private void applyVideoProfile(MainActivity target,Object ui)throws Exception{
+        lastV50ButtonClicked=false;
+        if(v50Profile()){
+            if(!clickLabel(target.getWindow().getDecorView(),"真我 V50 · 一键均衡优化"))
+                throw new IllegalStateException("v50_profile_button_missing");
+            lastV50ButtonClicked=true;v50ButtonClicks++;
+        }else{
+            ((Spinner)field(ui,"rate")).setSelection(rateIndex());
+            ((Spinner)field(ui,"quality")).setSelection(2);
+            selectSpinnerLabel((Spinner)field(ui,"fps"),"60 FPS");
+            ((Spinner)field(ui,"buffer")).setSelection(2);
+        }
+    }
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
     private String networkScope(){String value=arguments.getString("network_scope","lan");
         if(!value.equals("lan")&&!value.equals("tailnet")&&!value.equals("nps_owner"))throw new IllegalArgumentException("scope_bound");return value;}
@@ -42,14 +64,14 @@ public final class LanUiAcceptance extends Instrumentation {
         LanUdpContract.NPS_HOST+":"+LanUdpContract.npsHttpsPort(node()):
         (networkScope().equals("tailnet")?LanUdpContract.TAILNET_HOST:"192.168.9.128")+":"+LanUdpContract.HTTPS_PORT;}
     private boolean codecStartup(){String value=arguments.getString("codec_startup","off");
-        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("codec_startup_bound");return value.equals("on");}
+        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("codec_startup_bound");if(v50Profile()&&value.equals("on"))throw new IllegalArgumentException("v50_startup_conflict");return value.equals("on");}
     private boolean stageDiagnostics(){String value=arguments.getString("stage_diagnostics","on");
-        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("stage_diagnostics_bound");return value.equals("on");}
+        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("stage_diagnostics_bound");return !v50Profile()&&value.equals("on");}
     private int steadySeconds(){int value=Integer.parseInt(arguments.getString("steady_seconds","20"));if(value<20||value>30)throw new IllegalArgumentException("steady_seconds_bound");return value;}
     private int surfaceLeadMs()throws Exception{
         String raw=arguments.getString("surface_submit_lead_ms","0");
         if(!raw.equals("0")&&!raw.equals("16"))throw new IllegalArgumentException("surface_submit_lead_bound");
-        int value=Integer.parseInt(raw);LanUdpContract.validateOwnerSurfaceLead(value);return value;
+        int value=Integer.parseInt(raw);if(v50Profile()&&value!=0)throw new IllegalArgumentException("v50_surface_lead_conflict");LanUdpContract.validateOwnerSurfaceLead(value);return value;
     }
     /** Probe-only liveness; worker/callback counts are not presented or unique-content FPS. */
     private void waitSteady(MainActivity target,JSONObject report,long steadyStart)throws Exception{
@@ -79,10 +101,10 @@ public final class LanUiAcceptance extends Instrumentation {
         ((Spinner)field(ui,"scope")).setSelection(scopeIndex());
         ((EditText)field(ui,"address")).setText(controlAddress());
         ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
-        ((Spinner)field(ui,"rate")).setSelection(rateIndex());
-        ((Spinner)field(ui,"quality")).setSelection(2);((Spinner)field(ui,"fps")).setSelection(0);
-        ((Spinner)field(ui,"buffer")).setSelection(2);((CheckBox)field(ui,"sound")).setChecked(true);
+        applyVideoProfile(target,ui);
+        ((CheckBox)field(ui,"sound")).setChecked(true);
         String pcm=arguments.getString("pcm_queue","off");if(!pcm.equals("on")&&!pcm.equals("off"))throw new IllegalArgumentException("pcm_choice_bound");
+        if(v50Profile()&&pcm.equals("on"))throw new IllegalArgumentException("v50_pcm_conflict");
         ((CheckBox)field(ui,"pcmQueue")).setChecked(pcm.equals("on"));
         ((CheckBox)field(ui,"codecStartup")).setChecked(codecStartup());
         Field lead=ui.getClass().getDeclaredField("ownerSurfaceSubmitLeadMs");lead.setAccessible(true);lead.setInt(ui,surfaceLeadMs());
@@ -129,7 +151,7 @@ public final class LanUiAcceptance extends Instrumentation {
      * Release the UI monitor before any wait, Back, codec call or network work.
      */
     private void verifyNetworkReadback(MainActivity target,JSONObject report,String stage)throws Exception{
-        Object ui=target.lanUdpEntry;String actualScope,actualNode,actualControl,peer;int port;
+        Object ui=target.lanUdpEntry;String actualScope,actualNode,actualControl,peer;int port,actualFps,actualBuffer,actualWidth,actualHeight;
         NpsPhysicalNetwork controlNetwork=null,mediaNetwork=null;
         synchronized(field(ui,"lock")){
             Object current=field(ui,"current");if(current==null)throw new IllegalStateException("network_attempt_missing");
@@ -144,6 +166,9 @@ public final class LanUiAcceptance extends Instrumentation {
             }
             Object parsed=field(receiver,"appSession");if(parsed==null)throw new IllegalStateException("network_session_missing");
             peer=((java.net.InetAddress)field(parsed,"peer")).getHostAddress();port=(Integer)field(parsed,"peerPort");
+            actualFps=(Integer)field(parsed,"fps");actualBuffer=(Integer)field(parsed,"buffer");
+            // Receiver geometry comes from configured real video frames, not the quality spinner.
+            actualWidth=(Integer)field(receiver,"width");actualHeight=(Integer)field(receiver,"height");
         }
         if(networkScope().equals("nps_owner")){
             if(controlNetwork==null||controlNetwork!=mediaNetwork||controlNetwork.httpsBindings()<1||controlNetwork.udpBindings()!=1)
@@ -158,6 +183,14 @@ public final class LanUiAcceptance extends Instrumentation {
                 .put(stage+"_physical_packet_route_verified",false)
                 .put(stage+"_physical_domestic_country_verified",false);
         }
+        if(actualFps!=(v50Profile()?30:60)||actualBuffer!=80||actualWidth<1||actualHeight<1)
+            throw new IllegalStateException("video_profile_readback_mismatch");
+        if(v50Profile()&&(!lastV50ButtonClicked||v50ButtonClicks<1||Math.max(actualWidth,actualHeight)>960))
+            throw new IllegalStateException("v50_profile_readback_mismatch");
+        report.put(stage+"_actual_fps_limit",actualFps).put(stage+"_actual_buffer_ms",actualBuffer)
+            .put(stage+"_actual_video_width",actualWidth).put(stage+"_actual_video_height",actualHeight)
+            .put(stage+"_v50_profile_button_clicked",lastV50ButtonClicked).put(stage+"_v50_profile_button_click_count",v50ButtonClicks)
+            .put(stage+"_video_profile_readback_verified",true).put(stage+"_video_profile_is_presented_FPS",false);
         Endpoint.Address expected=Endpoint.parse(Endpoint.destination(controlAddress()));
         if(!actualScope.equals(networkScope())||!actualNode.equals(node())
                 ||!actualControl.equals(Endpoint.destination(controlAddress())))throw new IllegalStateException("network_attempt_binding");
@@ -420,6 +453,7 @@ public final class LanUiAcceptance extends Instrumentation {
         final Object[] ownedAttempt={null};
         File credential=new File(getTargetContext().getFilesDir(),"udp-test-login.json");Window.Callback original=null;
         try{
+            report.put("requested_v50_profile",v50Profile());
             report.put("requested_surface_submit_lead_ms",surfaceLeadMs());
             report.put("requested_stage_diagnostics_enabled",stageDiagnostics());
             report.put("requested_codec_startup_ready_enabled",codecStartup());
