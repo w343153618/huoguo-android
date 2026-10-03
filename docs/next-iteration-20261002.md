@@ -1,3 +1,19 @@
+## 2026-10-03 续接：live准入与30秒listener收尾通过，尚未媒体trace
+
+guard46324c1已完成，f08ace3分析器已完成；新的3860ca3固定dd43 registry实际源码的4项inert并发fixture，与12项既有inert共16项通过。根任务真实两次以现有huoguo账号/原证书在持续排他reserve45965后取得运行registry精确503/udp_worker_unavailable；gateway PID26875/start/source/runtime及四类owned零读回匹配。第二次在正式TCP和候选端口clear时运行独立f08 LAN listener45560/45963，trace opt-in已回显，30秒自然退出0，同Popen actual shutdown quiescent=true/stop_failures0，原身份/进程零再次通过后release。没有session/READY/媒体/手机/信号/M5/NPS操作。初次1/1误匹配是已核对dispatcher自己的encoder/packetizer参数，未认证即中止；纠正不能排除其他真实进程。见[live回执](owner-lan-live-admission-20261003.md)。不要无目的重跑listener-only或把它当FPS/开销验收。
+
+matching code40 helper64af24e已完成；8078a4a实际JVM边界证实冻结code40的helper晚装listener不保证typed receipt覆盖，所以没有加不安全wrapper，没有改App/产物。该helper仍只可验正常accepted-report取消/重连，拒绝报告receipt需未来Start之前captured-attempt observer契约另验。公开/手机alpha8/code39仍a663，alpha9/code40本地030126da未安装/发布。原服务保持dd43。
+
+下一真实trace不以本次listener通过代替全部媒体gate。重新核对真实BBB格式/运动位置和fresh CPU，核对专用手机可用及formal/owner保护，持续reserve贯穿单次30–45秒媒体和actual owned quiescence，同alpha8/540x960/30/4M VBR/80/FIFO2/slots3；不会lsof→kill原服务。最近source是launcher且Morphe PID保留、手机WeChat前台且实验PID不存在，当前轮未抢占。f0244b0只读审查已完成：sampler持phase_lock排序、trace锁获取边界只是候选机制，尚无实际耗时，不宣称30→19根因。m5_startup_review已接下一窄项，只把现有numeric字段的五个mixed gap加到有界分析器和fixture，不改冻结capture/native或设备；其active时不重派。先从这些混合间隔读证据，再决定是否加lock诊断；不改算法/队列/缓冲，不混CLOCK_MONOTONIC/UPTIME/wall。
+
+## 此前2026-10-03T13Z checkpoint：分析器和code40 helper完成，保护入口另行验证
+
+f08ace3已完成有界numeric raw/native/feed分析器，root独立重跑17新增+7既有fixture通过；native producer仍unknown、whole pipeline coverage固定false，不当真实trace或性能结果。见[分析契约](host-timing-analysis-contract-20261003.md)。64af24e离线matching code40 helper SHA474434fb/106Java classes及原签名通过；冻结APK030126da/JNI981f13不变，临时debug JNI仅调试metadata/buildID/symtab不同但full SHA不同，不追认完整可复现。见[helper回执](code40-owner-helper-build-20261003.md)。当前helper不能验拒绝报告receipt，新的只helper typed receipt观察正在独立审查；没有改App候选或安装手机。
+
+独立LAN45560监听会触发旧dd43 public worker的busy-monitor撤销，所以不同端口不自动等于安全独立。只保留45965或lsof无child也不能证明旧startup/cleanup结束。m5_startup_review正在实现窄guard：持续排他保留旧固定loopbackUDP45965→用现有账号受信HTTPS作一次闭集POST→仅精确503/udp_worker_unavailable可证明live registry通过无active/cleanup_failed的原子检查→再完整核对原gateway身份及owned descendant/PGID/guest控制无残留→启动有界LAN；reserve贯穿LAN及收尾，实际quiescence不足时不能自动放开。不是新HTTP API，不信号旧persistent/NPS/M5。先fixture，不执行未经验证的守护方案。
+
+最新只读source已为launcher/Awake、Morphe PID5212保留，有限AndroidRuntime/ActivityManager没有选中崩溃/force-stop事件；这不能证明退出原因。手机experiment PID absent、stablePID27626保持、WeChat前台；本轮未安装或抢占手机。下一媒体必须重新核对真实BBB格式/位置和fresh CPU，不以历史299或桌面当视频。公开仍alpha8/code39，当前新工作不是新流畅度结果；raw30→submit约19的诊断继续，不扩缓冲/Inbox或重复宽矩阵。
+
 ## 用户最新条件授权：30Hz不支持时两台统一60Hz
 
 刚再次实时读取M1 `cmd display get-active-mode0`为1080×1920/30.00Hz，M5通过已有LAN SSH同命令为720×1280/30.00Hz，两台当前确实支持固定30。此次仅readback，没有改guest/服务或打断会话；目前不触发“不支持30”的fallback。以后固定30不支持才统一guest60，App保留30/60串流选择；不要把virtual Hz、串流cap和独立内容帧混淆。机主60Hz比较仍须同参数受控，M5朋友在线保护不因这个条件授权消失。最新raw供给诊断及source trace任务继续。

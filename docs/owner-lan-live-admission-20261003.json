@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "observed_utc": "2026-10-03T13:42:36.739862+00:00",
+  "scope": "M1 owner nonisolated admission and listener-only shutdown; no media or phone acceptance",
+  "guard_source_commit": "46324c18b4f39074ab6ebc6318b56506844427fd",
+  "guard_sha256": "c1120ec4266feda1b247e468269491ad683996705f75a957a0f87a820ae65324",
+  "candidate_listener_source_commit": "f08ace3aca872b24e268a9bd535966ae6b095fda",
+  "candidate_listener_sha256": "721b1ed72aafc3be5359a3d34c96511cfd5603194a018e90494f39893429adb3",
+  "original_gateway": {
+    "pid": 26875,
+    "start_id": "Sat_Oct_3_17:37:47_2026",
+    "source_commit": "dd43a39f49f6dceb55854fbc6e43367d34f381c3",
+    "source_sha256": "215a0a254d3f91e87c600c1455c8239f6d1e2d0208011612a43bd6e1370b3a9a",
+    "runtime_manifest_sha256": "b708399680cc9b4ff19a5cd2048e04dd70dbb75502c1a22cb3eae8419967844f",
+    "same_before_after": true
+  },
+  "authentication": {
+    "existing_account": "huoguo",
+    "existing_certificate_DER_pin_verified": true,
+    "endpoint": "HTTPS127.0.0.1:45561",
+    "proxy_used": false,
+    "temporary_account_created": false,
+    "credential_file_created": false,
+    "password_echoed_or_saved": false
+  },
+  "admission_only_attempt": {
+    "exclusive_fixed_UDP45965_reserved": true,
+    "live_witness_status": 503,
+    "live_witness_error": "udp_worker_unavailable",
+    "all_four_owned_process_counts_zero": true,
+    "LAN_started": false,
+    "media_started": false,
+    "guard_released": true
+  },
+  "listener_only_attempt": {
+    "exclusive_reservation_held_through_shutdown": true,
+    "live_witness_status": 503,
+    "live_witness_error": "udp_worker_unavailable",
+    "formal_TCP_activity_precheck_clear": true,
+    "candidate_ports_precheck_clear": true,
+    "physical_interface": "en7",
+    "physical_host": "192.168.9.128",
+    "https_port": 45560,
+    "udp_port": 45963,
+    "configured_runtime_seconds": 30,
+    "capture_trace_opt_in_readback": true,
+    "shutdown": {
+      "event": "candidate_shutdown",
+      "quiescence_confirmed": true,
+      "stop_failures": 0,
+      "gateway_exit_confirmed": true,
+      "owned_media_exit_confirmed": true
+    },
+    "receipt_from_same_Popen_stdout": true,
+    "gateway_return_code": 0,
+    "natural_exit": true,
+    "actual_session_creations": 0,
+    "actual_READY_sends": 0,
+    "media_started": false,
+    "phone_operations": 0,
+    "signals_sent": 0,
+    "all_four_owned_process_counts_zero_after": true,
+    "guard_released": true
+  },
+  "initial_preflight_failure_preserved": {
+    "hardware_group_string_count": 1,
+    "packetizer_string_count": 1,
+    "matching_pid": 26875,
+    "actual_role": "pinned original gateway dispatcher; argv includes encoder and packetizer flags",
+    "ended_before_authentication_or_reservation": true,
+    "correction": "Exclude only the identity-pinned dispatcher and the preflight itself; count its descendants and all other matching roles/orphan process groups"
+  },
+  "persistent_gateway_changed": false,
+  "M5_or_NPS_operated": false,
+  "trace_media_captured": false,
+  "phone_or_public_performance_claim": false,
+  "limitations": [
+    "Live witness proves atomic old-registry admission time, not a persistent idle-drain state",
+    "Reservation cannot survive supervisor crash",
+    "Formal TCP admission remains non-atomic; listener-only round started no media",
+    "No concurrent diagnostic overhead, fresh real-video format, optical latency, audio sync, phone, V50, cellular or public-path performance acceptance"
+  ]
+}
