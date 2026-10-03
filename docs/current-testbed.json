@@ -1080,7 +1080,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Default-off bounded host raw-writer/feed trace candidate now being implemented by renderer_boot_contract: condition/budget/control/loop gaps plus counter anchors, no algorithm or runtime changes. Preserve alpha8 phone. Before real media comparison independently re-read BBB format/position and fresh CPU limits; then controlled same-APK pipeline timing, not queue/pool/wide matrix changes.",
+  "next_source_task": "renderer_boot_contract now implementing bounded numeric host trace analysis for raw/feed/native regions; do not duplicate active agent. Core 75a7 + review dfe284 frozen, runtime dd43 unchanged. Then prepare single owner M1 trace with source format/position and fresh CPU bracket. No simultaneous media, no queue/pool/FPS change, no unsafe replacement of active owner/formal gateway. Matching code40 helper/device cleanup acceptance separately pending.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -1366,23 +1366,28 @@
     "new_content_does_not_validate_previous_135s_content": true
   },
   "alpha9_local_candidate_build_20261003": {
-    "schema": 1,
-    "scope": "completion receipt candidate build/lint only; not installed/released",
-    "source_commit": "b914d86",
-    "apk_sha256": "acea9194dd550e5464ae0001b86a33802880dfd6c8e3f127b85b57a197981e46",
-    "apk_bytes": 7240254,
+    "source_commit": "1df2ecd",
     "version": "1.31-alpha.9",
     "code": 40,
+    "scope": "local completion/hour/atomic-exit candidate only; not installed/published",
+    "apk_sha256": "030126da900e16a11fb46dccbd1ed54edd5e0a7757a42503ca0ae40047c3d570",
+    "apk_bytes": 7240254,
     "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
-    "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
-    "full_source_checks": 1357,
     "assemble_release_passed": true,
     "lint_release_passed": true,
     "installed": false,
     "published": false,
+    "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+    "signer_verified": true,
+    "actual_package": "local.remoteandroid.direct.experiment",
+    "full_source_checks": 1402,
+    "full_source_checks_passed": true,
+    "real_phone_candidate_tested": false,
+    "real_one_hour_soak": false,
+    "local_hour_source_reason_independent_of_statistics": true,
+    "atomic_finished_cancel_fixture_passed": true,
     "evidence": "docs/alpha9-completion-local-build-20261003.json",
-    "candidate_contract": "docs/udp-completion-receipt-candidate-20261003.md",
-    "next_acceptance": "matching code40 helper and real audio cleanup/report rejection/reconnect; gold39 helper is not compatible acceptance"
+    "next_acceptance": "matching code40 helper and actual normal cancel/reconnect, report rejection/reconnect and audio cleanup; keep published alpha8 until phone acceptance"
   },
   "latest_source_policy_followup_20261003": {
     "evidence": "docs/alpha8-vulkan-public30-observation-20261003.json",
@@ -1418,5 +1423,85 @@
     "package_badging": "package: name='local.remoteandroid.direct.experiment' versionCode='40' versionName='1.31-alpha.9' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'",
     "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
     "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da"
+  },
+  "alpha9_local_candidate_build_history_20261003": [
+    {
+      "schema": 1,
+      "scope": "candidate build only, not installed or published",
+      "source_commit": "3ac6774",
+      "apk_sha256": "8ccd480c7bb1b6cd9f3d57ceac8efca37b6b16b2ff1aaa547426ad117754a78f",
+      "apk_bytes": 7240254,
+      "version": "1.31-alpha.9",
+      "code": 40,
+      "package_badging": "package: name='local.remoteandroid.direct.experiment' versionCode='40' versionName='1.31-alpha.9' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'",
+      "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da"
+    },
+    {
+      "schema": 1,
+      "scope": "completion receipt candidate build/lint only; not installed/released",
+      "source_commit": "b914d86",
+      "apk_sha256": "acea9194dd550e5464ae0001b86a33802880dfd6c8e3f127b85b57a197981e46",
+      "apk_bytes": 7240254,
+      "version": "1.31-alpha.9",
+      "code": 40,
+      "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+      "full_source_checks": 1357,
+      "assemble_release_passed": true,
+      "lint_release_passed": true,
+      "installed": false,
+      "published": false,
+      "evidence": "docs/alpha9-completion-local-build-20261003.json",
+      "candidate_contract": "docs/udp-completion-receipt-candidate-20261003.md",
+      "next_acceptance": "matching code40 helper and real audio cleanup/report rejection/reconnect; gold39 helper is not compatible acceptance"
+    },
+    {
+      "schema": 1,
+      "scope": "offline candidate including unpublished-audio-release uncertainty fix; not installed/released",
+      "source_commit": "5dbe341",
+      "apk_sha256": "fb14a40843edb0c236760f4c48028f192fdb59c79c8c21aea3ce3b38afd055d0",
+      "apk_bytes": 7240254,
+      "version": "1.31-alpha.9",
+      "code": 40,
+      "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+      "assemble_release_passed": true,
+      "lint_release_passed": true,
+      "installed": false,
+      "published": false,
+      "evidence": "docs/alpha9-completion-local-build-20261003.json",
+      "candidate_contract": "docs/udp-completion-receipt-candidate-20261003.md",
+      "next_acceptance": "matching code40 helper and real audio cleanup/report rejection/reconnect; gold39 helper is not compatible acceptance",
+      "full_source_checks_before_release_uncertainty_fix": 1357,
+      "targeted_completion_checks_after_fix": 7,
+      "signer_verified": true,
+      "actual_package": "local.remoteandroid.direct.experiment",
+      "current_full_regression_after_fix_completed": false
+    }
+  ],
+  "host_raw_trace_candidate_20261003": {
+    "source_commit": "75a7b199dbc6102ab68d4ed4e0b0c4b1449c3cfb",
+    "review_commit": "dfe2841744f24be7a35c57dff0dc1e9c9bcb2f7d",
+    "runtime_deployed": false,
+    "real_phone_trace_collected": false,
+    "default_enabled": false,
+    "full_source_checks": 1402,
+    "passed": true,
+    "source_sha256": {
+      "hardware_stream.py": "b61beee9db06d6b3667cb17c8355b99f3f04b641095e759a49940d3c34aea07d",
+      "udp_lan_worker.py": "e74a6f855cab8111d866a5b454e0d74a2e109811cfc4791f16e105450c5d4f0d",
+      "host_timing_trace.py": "ca7ccc0ccb8832368bbb792a91a1c1a6639c01e61e110f21f311ecd4ee5992e7"
+    },
+    "required_new_runtime_module": "host_timing_trace.py",
+    "server_optin": "--capture-trace-dir existing-private-parent",
+    "NPS_optin_requires_finite_process_lifetime": true,
+    "docs": [
+      "docs/host-raw-feed-timing-candidate-20261003.md",
+      "docs/host-timing-trace-review-20261003.md",
+      "docs/owner-host-capture-trace-entry-20261003.md"
+    ],
+    "sampling_overhead_tested_on_real_concurrent_media": false,
+    "per_attempt_caps_not_global_disk_quota": true
   }
 }

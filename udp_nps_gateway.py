@@ -270,12 +270,16 @@ def parse_arguments(argv=None):
     parser.add_argument('--packetizer', type=Path, required=True)
     parser.add_argument('--native-encoder', type=Path, required=True)
     parser.add_argument('--evidence-dir', type=Path, required=True)
+    parser.add_argument('--capture-trace-dir', type=Path,
+                        help='Owner diagnostic opt-in: existing private trace parent; default off; never accepted from HTTP')
     parser.add_argument('--max-runtime', type=int, default=600)
     parser.add_argument('--max-session-seconds', type=int, choices=(120, 3600), default=120,
                         help='Trusted owner NPS session cap; 3600 is one hour, not unlimited')
     args = parser.parse_args(argv)
     if args.max_runtime != 0 and not 30 <= args.max_runtime <= 3600:
         parser.error('bounded_gateway_lifetime_required')
+    if args.capture_trace_dir is not None and args.max_runtime == 0:
+        parser.error('owner_trace_requires_bounded_gateway_lifetime')
     if args.owner_m5_trial and args.node != 'm5':
         parser.error('M5_owner_trial_flag_requires_M5_node')
     try:
@@ -306,7 +310,8 @@ def main():
         return LanMediaWorker(config, peer, args.profile.local_udp.host,
             args.profile.interface, args.runtime, args.packetizer, args.native_encoder,
             registry, args.evidence_dir, busy=trial_busy,
-            guest_serial=serial, guest_avd=avd)
+            guest_serial=serial, guest_avd=avd,
+            capture_trace_dir=args.capture_trace_dir)
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
@@ -351,6 +356,7 @@ def main():
         'advertised_control_port': args.profile.public_control.port,
         'advertised_media_port': args.profile.public_media.port,
         'max_session_seconds': args.max_session_seconds, 'max_runtime_seconds': args.max_runtime,
+        'capture_trace_enabled': args.capture_trace_dir is not None,
         'owner_m5_trial': args.owner_m5_trial, 'host_isolation_accepted': False}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)

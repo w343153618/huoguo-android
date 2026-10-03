@@ -214,6 +214,8 @@ def main():
     parser.add_argument('--packetizer', type=Path, required=True)
     parser.add_argument('--native-encoder', type=Path, required=True)
     parser.add_argument('--evidence-dir', type=Path, required=True)
+    parser.add_argument('--capture-trace-dir', type=Path,
+                        help='Owner diagnostic opt-in: existing private trace parent; default off; never accepted from HTTP')
     parser.add_argument('--max-runtime', type=int, default=600)
     args = parser.parse_args()
     if args.https_port != 45560 or args.udp_port != 45963 or not 30 <= args.max_runtime <= 3600:
@@ -236,7 +238,8 @@ def main():
         return LanMediaWorker(config, peer, host, args.interface, args.runtime,
                               args.packetizer, args.native_encoder, registry,
                               args.evidence_dir, busy=formal_busy,
-                              enobufs_retry_enabled=args.allow_owner_enobufs_retry)
+                              enobufs_retry_enabled=args.allow_owner_enobufs_retry,
+                              capture_trace_dir=args.capture_trace_dir)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(CERT, KEY)
@@ -272,6 +275,7 @@ def main():
     print(json.dumps({'event': 'listening', 'host': host, 'https_port': args.https_port,
                       'udp_port': args.udp_port, 'scope': scope.ping_scope,
                       'network_scope': scope.name, 'inner_interface': args.interface,
+                      'capture_trace_enabled': args.capture_trace_dir is not None,
                       'owner_enobufs_retry_enabled': args.allow_owner_enobufs_retry}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)

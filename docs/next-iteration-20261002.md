@@ -1,3 +1,15 @@
+## 2026-10-03 最新 checkpoint：host诊断已冻结，1402源码checks全过；继续自动分析器
+
+默认OFF的host raw/feed trace candidate75a7b199与独立review dfe2841已经合入，root全仓1402项源码/owned loopback/JVM检查通过，root gateway唯一CLI `--capture-trace-dir`及5入口fixture通过；NPS trace opt-in禁止max-runtime0，正式持久trace-off不变。见[候选](host-raw-feed-timing-candidate-20261003.md)、[review](host-timing-trace-review-20261003.md)、[入口](owner-host-capture-trace-entry-20261003.md)。必须一起冻结新增host_timing_trace.py，否则两旧入口会缺import。core SHA见current-testbed。没有部署/新媒体/并发开销验收；所有dd43 runtime未改。clean_close、producer_quiescent、sink_writer_alive及clock/drops/caps分别判断，不认文件footer为完整媒体证据。renderer_boot_contract已接下一可行动项：有界白名单raw/native/feed数字分析器，running时不要重派或改冻结core。
+
+一小时提示与退出竞态候选1df2ecd已合入：实际local end reason在finally入口冻结，不从stats猜；只有实际reason1+3600才提醒，stats拒绝仍可正确收尾。confirmed finished同锁原子完成current/retiring，解决clear→queued UI之间cancel会永久重新retiring的已复现竞态。release uncertainty仍failclosed。新本地alpha9/code40 APK030126da900e16a11fb46dccbd1ed54edd5e0a7757a42503ca0ae40047c3d570、JNI981f13/original signer，release build/lint/1402checks通过，未安装/发布，见[build历史及最新](alpha9-completion-local-build-20261003.json)和[local控制契约](udp-local-hour-completion-contract-20261003.md)。3ac/8ccd、b914/acea、5dbe/fb14均保留历史，不能追认新代码。
+
+下一真实轮先固定当前BBB格式/位置和fresh CPU bracket，保持同alpha8/540x960/30/4M VBR/80、FIFO2/native slots3/phone constraints，单次30–45秒有界trace定位raw30→submit约19的主要等待。不能为了采样从socket空闲检查直接kill长驻owner，先满足同主机正式/owner保护及安全独立入口/交接；不操作M5朋友日常/NPS/国内过滤。新的trace与alpha9 UI验收分别推进，gold39helper不追认code40。实际phone恢复重连、统计拒绝、音频cleanup及真实1小时提示仍待测，不把mockclock当soak。公开/手机仍alpha8/code39。
+
+## 2026-10-03 后续离线候选：未发布音频释放异常也保持不确定
+
+独立审查实际Receiver复现configure失败后临时codec/track.release异常被吞，却返回cleanup confirmed。仅6行sticky/保留Error传播修复已合入5dbe341；实际API替代fixture7项通过，旧有8项组合覆盖由agent确认，root新release build/lint及原签名验证通过。新本地alpha9/code40 APKfb14a408/JNI981f13，未安装/发布，详见[build记录](alpha9-completion-local-build-20261003.json)。1357是前一源码全仓结果，当前修复仅targeted已验证，别追認为新全仓已过；acea/b914、8ccd/3ac仍历史。high_port_sources独立clone现在补typed local end reason，让本地1小时期限提醒不依赖stats accepted，不改期限/媒体；root不要抢其冻结源码。
+
 ## 2026-10-03 最新 checkpoint：缺帧已缩小到完整捕获后的原始帧提交
 
 [公网同alpha8真机轮](alpha8-vulkan-public30-observation-20261003.md)独立source SF30.002、phone17.262；新[raw日志白名单](alpha8-raw-submit-readback-20261003.md)八个约5秒内段为raw30.0163/submitted18.8362/replaced11.1560，whole1546/979/567，无idle repeats。它定位供给损失在完整gRPC RGBA到达之后、native原始帧提交完成之前，不是精准同帧SFcohort，也未证明唯一原因。当前缺的condition/budget/control/loop-gap/feed阶段有界trace正在由renderer_boot_contract实现，默认OFF，仅离线源码与fixture，不部署或改变算法。已有任务仍running时不重派、不并开手机会话。实际源码审查已排除“write后再固定睡33ms”，[实际encoder选择](alpha8-raw-clock-review-20261003.md)为持久59264ab7，3ad91备用不是本轮执行；manual模式、低延时属性read失败−12900不能误写为开启或读回false。
