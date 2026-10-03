@@ -351,5 +351,90 @@ class HostAnalysisChecks(unittest.TestCase):
         for window in ((0,1),(3,2),(None,2),(1,1.0)):
             with self.subTest(window=window),self.assertRaises(ValueError): fixture.analyze(window)
 
+    def test_five_mixed_gaps_use_named_endpoints_and_retain_observed_zero(self):
+        result=self.fixture().analyze()
+        gaps=result['mixed_gaps_ms']
+        self.assertEqual(set(gaps),set(analysis.MIXED_GAPS))
+        for name,count,p50 in zip(analysis.MIXED_GAPS,(2,2,2,2,1),(1,.5,0,2,40)):
+            self.assertEqual(gaps[name]['count'],count)
+            self.assertEqual(gaps[name]['p50'],p50)
+            self.assertEqual(gaps[name]['status'],'observed_subset')
+        self.assertEqual(gaps[analysis.MIXED_GAPS[4]]['p50'],result['stages_ms']['raw_inter_loop_gap_ms']['p50'])
+        self.assertEqual(result['mixed_gap_exclusions'][analysis.MIXED_GAPS[4]]['no_prior_endpoint'],1)
+        self.assertTrue(result['regions_are_not_additive'])
+        self.assertFalse(result['whole_pipeline_coverage_accepted'])
+
+    def test_mixed_wait_gap_has_no_check_end_fallback_and_zero_wait_stamp_is_unknown(self):
+        fixture=self.fixture()
+        def change(rows):
+            budgets=[row for row in rows if row['event']=='raw_budget']
+            budgets[0]['requested_wait_ns']=0  # Valid check_end must not substitute.
+            budgets[1]['wait_end_ns']=0
+        fixture.mutate('capture',change)
+        result=fixture.analyze();name=analysis.MIXED_GAPS[1]
+        self.assertEqual(result['mixed_gaps_ms'][name],{'count':0,'status':'unknown'})
+        self.assertEqual(result['mixed_gap_exclusions'][name]['no_budget_wait'],1)
+        self.assertEqual(result['mixed_gap_exclusions'][name]['zero_endpoint'],1)
+        self.assertEqual(result['mixed_gaps_ms'][analysis.MIXED_GAPS[0]]['count'],2)
+
+    def test_mixed_gaps_keep_clock_and_half_open_boundary_rules(self):
+        fixture=self.fixture();name=analysis.MIXED_GAPS[1]
+        result=fixture.analyze((B+17_000_000,B+17_500_000))
+        self.assertEqual(result['mixed_gaps_ms'][name]['status'],'unknown')
+        self.assertEqual(result['mixed_gap_exclusions'][name]['window_boundary_excluded'],2)
+        result=fixture.analyze((B+17_000_000,B+18_000_000))
+        self.assertEqual(result['mixed_gaps_ms'][name]['count'],1)
+        self.assertEqual(result['mixed_gaps_ms'][name]['max'],.5)
+        self.assertEqual(result['mixed_gaps_ms'][analysis.MIXED_GAPS[2]]['status'],'unknown')
+        fixture.mutate('capture',lambda rows:next(row for row in rows if row['event']=='host_timing_summary').update(clock_errors=1))
+        result=fixture.analyze()
+        self.assertTrue(all(gap=={'count':0,'status':'unknown'} for gap in result['mixed_gaps_ms'].values()))
+        self.assertGreater(result['mixed_gap_exclusions'][name]['clock_not_accepted'],0)
+
+    def test_mixed_gaps_exclude_reversal_identity_conflict_and_unmatched_prior(self):
+        fixture=self.fixture()
+        def change(rows):
+            loops=[row for row in rows if row['event']=='raw_loop']
+            writes=[row for row in rows if row['event']=='raw_write']
+            loops[0]['condition_begin_ns']=loops[0]['begin_ns']-1
+            writes[0]['capture_seq']+=90
+            loops[1]['prior_end_ns']+=1
+        fixture.mutate('capture',change);result=fixture.analyze()
+        self.assertEqual(result['mixed_gap_exclusions'][analysis.MIXED_GAPS[0]]['reversed_interval'],1)
+        for name in analysis.MIXED_GAPS[2:4]:
+            self.assertEqual(result['mixed_gap_exclusions'][name]['raw_identity_conflict'],1)
+            self.assertEqual(result['mixed_gaps_ms'][name]['count'],1)
+        name=analysis.MIXED_GAPS[4]
+        self.assertEqual(result['mixed_gaps_ms'][name]['status'],'unknown')
+        self.assertEqual(result['mixed_gap_exclusions'][name]['unmatched_prior_loop'],1)
+
+    def test_mixed_gaps_require_unique_triplets_and_actual_previous_loop(self):
+        fixture=self.fixture()
+        fixture.mutate('capture',lambda rows:rows.insert(-1,copy.deepcopy(next(row for row in rows if row['event']=='raw_loop'))))
+        result=fixture.analyze()
+        for name in analysis.MIXED_GAPS[:4]:
+            self.assertEqual(result['mixed_gaps_ms'][name]['count'],1)
+        self.assertEqual(result['mixed_gaps_ms'][analysis.MIXED_GAPS[4]]['status'],'unknown')
+        for row in result['mixed_gap_exclusions'].values():
+            self.assertEqual(row['raw_triplet_not_unique_or_complete'],1)
+
+    def test_legacy_missing_diagnostic_rows_are_fixed_unknown_and_output_is_closed(self):
+        fixture=self.fixture()
+        fixture.mutate('capture',lambda rows:rows.__setitem__(slice(None),[
+            row for row in rows if row['event'] not in ('raw_loop','raw_budget','raw_write')]))
+        result=fixture.analyze()
+        for name in analysis.MIXED_GAPS:
+            self.assertEqual(result['mixed_gaps_ms'][name],{'count':0,'status':'unknown'})
+            self.assertEqual(set(result['mixed_gap_exclusions'][name]),set(analysis.MIXED_GAP_EXCLUSIONS))
+        self.assertNotIn(str(fixture.paths['capture']),json.dumps(result))
+
+    def test_mixed_buckets_do_not_change_legacy_stage_exclusion_join_or_anchor_results(self):
+        fixture=self.fixture();baseline=fixture.analyze()
+        # Disable only the extra observation hooks, leaving the original pass.
+        with patch.object(analysis.MixedRawGaps,'add'),patch.object(analysis.MixedRawGaps,'exclude'):
+            unchanged=fixture.analyze()
+        for key in ('stages_ms','excluded_intervals','joins','counter_anchors','streams'):
+            self.assertEqual(baseline[key],unchanged[key])
+
 
 if __name__=='__main__': unittest.main()

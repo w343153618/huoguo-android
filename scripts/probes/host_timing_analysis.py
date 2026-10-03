@@ -264,6 +264,47 @@ STAGES = (
     'feed_fill_segment_ms','feed_media_write_region_attempt_ms','feed_media_flush_attempt_ms','feed_media_publish_attempt_ms',
     'feed_nonmedia_publish_ms','raw_pipe_native_payload_overlap_ms','native_stdout_feed_publish_overlap_ms')
 
+MIXED_GAPS = (
+    'raw_mixed_loop_begin_to_condition_begin_ms',
+    'raw_mixed_budget_wait_end_to_dequeue_ms',
+    'raw_mixed_consume_end_to_write_begin_ms',
+    'raw_mixed_write_end_to_loop_end_ms',
+    'raw_mixed_prior_end_to_next_begin_ms')
+MIXED_GAP_EXCLUSIONS = (
+    'clock_not_accepted','missing_endpoint','zero_endpoint','reversed_interval',
+    'window_boundary_excluded','outside_trace_clock_bracket','unmatched_prior_loop',
+    'no_budget_wait','budget_not_consumed','raw_identity_conflict','no_prior_endpoint',
+    'raw_triplet_not_unique_or_complete')
+
+
+class MixedRawGaps:
+    """Fixed, independent observation buckets; never alter legacy exclusions.
+
+    Names identify endpoints, not a specific lock/CPU cost. No observations
+    means unknown, including legacy schemas without raw diagnostic triplets.
+    """
+    def __init__(self, clock_ok, bounds, window, incomplete):
+        self.regions = {name:Regions(clock_ok,bounds,window) for name in MIXED_GAPS}
+        for region in self.regions.values():
+            region.skips['raw_triplet_not_unique_or_complete'] = incomplete
+
+    def add(self, name, row, begin, end):
+        self.regions[name].add(name,row,begin,end,'capture')
+
+    def exclude(self, name, reason):
+        self.regions[name].skips[reason] += 1
+
+    def distributions(self):
+        result = {}
+        for name, region in self.regions.items():
+            observed = distribution(region.values[name])
+            result[name] = dict(observed, status='observed_subset' if observed['count'] else 'unknown')
+        return result
+
+    def exclusions(self):
+        return {name:{reason:region.skips[reason] for reason in MIXED_GAP_EXCLUSIONS}
+                for name,region in self.regions.items()}
+
 
 def unique_index(rows, event, key):
     groups = defaultdict(list)
@@ -311,9 +352,30 @@ def analyze_streams(streams, window=None):
     fresh = defaultdict(list)
     raw_endpoints = {}
     complete = set(loops)&set(budgets)&set(writes)
+    raw_iterations = {row['iteration'] for row in raw if row['event'] in ('raw_loop','raw_budget','raw_write')}
+    mixed = MixedRawGaps(clock_ok,bounds,window,len(raw_iterations)-len(complete))
     identity_conflicts = idle = failed_raw = 0
     for iteration in sorted(complete):
         loop, budget, write = loops[iteration], budgets[iteration], writes[iteration]
+        mixed.add(MIXED_GAPS[0],loop,'begin_ns','condition_begin_ns')
+        if budget['requested_wait_ns']>0:
+            mixed.add(MIXED_GAPS[1],dict(wait_end_ns=budget.get('wait_end_ns'),
+                dequeue_ns=loop.get('dequeue_ns')),'wait_end_ns','dequeue_ns')
+        else:
+            mixed.exclude(MIXED_GAPS[1],'no_budget_wait')
+        same_raw_identity = (loop['capture_seq'],loop['source_pts_us']) == (
+            write['capture_seq'],write['source_pts_us'])
+        if not same_raw_identity:
+            mixed.exclude(MIXED_GAPS[2],'raw_identity_conflict')
+            mixed.exclude(MIXED_GAPS[3],'raw_identity_conflict')
+        else:
+            if budget['consumed']:
+                mixed.add(MIXED_GAPS[2],dict(consume_end_ns=budget.get('consume_end_ns'),
+                    write_begin_ns=write.get('write_begin_ns')),'consume_end_ns','write_begin_ns')
+            else:
+                mixed.exclude(MIXED_GAPS[2],'budget_not_consumed')
+            mixed.add(MIXED_GAPS[3],dict(write_end_ns=write.get('write_end_ns'),
+                end_ns=loop.get('end_ns')),'write_end_ns','end_ns')
         regions.add('raw_loop_ms',loop,'begin_ns','end_ns','capture')
         regions.add('raw_condition_region_ms',loop,'condition_begin_ns','condition_end_ns','capture')
         if loop['condition_waited']:
@@ -332,7 +394,11 @@ def analyze_streams(streams, window=None):
         prior = loops.get(iteration-1)
         if prior and loop['prior_end_ns']==prior['end_ns']:
             regions.add('raw_inter_loop_gap_ms',loop,'prior_end_ns','begin_ns','capture')
+            mixed.add(MIXED_GAPS[4],loop,'prior_end_ns','begin_ns')
         elif loop['prior_end_ns']: regions.skips['unmatched_prior_loop'] += 1
+        if not prior or loop['prior_end_ns']!=prior['end_ns']:
+            mixed.exclude(MIXED_GAPS[4],
+                'unmatched_prior_loop' if loop['prior_end_ns'] else 'no_prior_endpoint')
         prior_write = writes.get(iteration-1)
         if prior_write and prior_write['write_end_ns'] and loop['prior_write_end_ns']==prior_write['write_end_ns']:
             regions.add('raw_after_write_to_loop_ms',loop,'prior_write_end_ns','begin_ns','capture')
@@ -414,10 +480,10 @@ def analyze_streams(streams, window=None):
         clock_domain=CLOCK, window=dict(explicit=window is not None, start_ns=window[0] if window else 0,
             end_ns=window[1] if window else 0, half_open=True), streams=states,
         stages_ms={name:distribution(regions.values[name]) for name in STAGES},
+        mixed_gaps_ms=mixed.distributions(), mixed_gap_exclusions=mixed.exclusions(),
         excluded_intervals={name:regions.skips[name] for name in skip_names},
         joins=dict(complete_observed_frame_chains=len(joined), raw_iterations_complete=len(complete),
-            raw_iterations_partial=len({row['iteration'] for row in raw if row['event'] in
-                ('raw_loop','raw_budget','raw_write')})-len(complete),
+            raw_iterations_partial=len(raw_iterations)-len(complete),
             raw_identity_conflicts=identity_conflicts, idle_repeats_excluded=idle,
             non_success_raw_excluded=failed_raw, config_publications_separate=config_records,
             duplicate_records=loop_dup+budget_dup+write_dup+capture_dup+encoded_dup+nr_dup+vt_dup+return_dup+pub_dup+read_dup,
@@ -433,6 +499,8 @@ def analyze_streams(streams, window=None):
             'Condition region contains condition wait; raw write and native payload read overlap',
             'Native stdout and feed publication overlap; do not sum them as serialized CPU costs',
             'Inter-loop gap can include previous diagnostic emit and thread scheduling',
+            'Mixed raw gaps include bookkeeping, observer work, lock acquisition and scheduling; no single cause is attributed',
+            'Mixed gaps are observed subsets, not additive serialized CPU cost; no-wait dequeue uses no substituted endpoint',
             'Counter anchors are non-atomic snapshots, not the same-frame cohort or full-session FPS',
             'Source screenshot PTS is identity only; no wall/UPTIME/phone/budget epoch subtraction',
             'File roles/clock declarations cannot independently prove the same host or frozen attempt identity',

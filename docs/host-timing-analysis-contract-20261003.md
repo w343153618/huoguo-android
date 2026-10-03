@@ -112,6 +112,32 @@ The condition region contains condition wait. Inter-loop gaps can include the
 previous observer's emit cost and thread scheduling, not exclusively native
 work. The unchanged budget-updated value is never subtracted from trace stamps.
 
+The fixed `mixed_gaps_ms` map adds five explicitly mixed endpoint distributions:
+
+| Fixed key | Measured bracket and conditions |
+| --- | --- |
+| `raw_mixed_loop_begin_to_condition_begin_ms` | `condition_begin_ns - begin_ns`: observation setup, first condition acquisition and scheduling. |
+| `raw_mixed_budget_wait_end_to_dequeue_ms` | `dequeue_ns - wait_end_ns`, only with positive `requested_wait_ns`: stop check, second condition acquisition, dequeue/bookkeeping and scheduling. No `check_end_ns` fallback is used when no wait occurred. |
+| `raw_mixed_consume_end_to_write_begin_ms` | `write_begin_ns - consume_end_ns`, only when budget consumption was observed: timing calls, shared phase-lock acquisition/append, observation work and scheduling. |
+| `raw_mixed_write_end_to_loop_end_ms` | `end_ns - write_end_ns`: raw-submit observation, shared phase-lock acquisition/append, counter/last-submit bookkeeping and scheduling. It is an attempted-write region, not proof of successful publication. |
+| `raw_mixed_prior_end_to_next_begin_ms` | `begin_ns - prior_end_ns`: previous diagnostic emissions, next-loop work and scheduling. Requires the unique actual `iteration-1` loop and an exact match to its `end_ns`. |
+
+All five use unique complete raw triplets and the same capture CLOCK_MONOTONIC,
+positive/order/bracket/half-open-window rules. The two loop/write brackets also
+require matching raw capture/PTS identities. Missing diagnostic rows, zero
+stamps, clock faults, inapplicable waits, duplicates, conflicts and excluded
+windows produce no invented zero-cost sample. Each distribution's fixed status
+is `observed_subset` when at least one interval was observed and `unknown`
+otherwise. Equal positive endpoints still constitute a measured zero interval.
+
+`mixed_gap_exclusions` has a separate, fixed per-gap counter map; it does not
+change the original `excluded_intervals`, stages, joins or counter anchors. The
+new prior/next bracket intentionally aliases the existing inter-loop endpoint
+pair rather than suggesting an additional serial stage. None of these gaps is
+a measurement solely of a particular lock, none is a serialized CPU cost, and
+their means or percentiles must not be added together. A long bracket supports
+more direct instrumentation; it does not identify its mixed components.
+
 Raw/feed anchors use actual observed endpoint snapshots within the selected
 window, expose their own first/last times and elapsed span, and detect counter
 regressions. They are non-atomic concurrent snapshots. Their differences and
@@ -129,6 +155,12 @@ callback ordering, window/counter boundaries, malicious fields, input growth
 and bounded reads. The seven existing capture-analysis checks also pass.
 Real concurrent overhead, real M1 stage attribution and phone/public-path
 acceptance remain pending the next bounded owner sample.
+
+Seven additional offline checks verify named mixed intervals, observed zero,
+no-wait/no-endpoint handling, fixed unknowns, half-open windows and clocks,
+reversal/identity/prior conflicts, duplicate triplets, closed output, and
+unchanged original stage/exclusion/join/anchor results. The capture formatter,
+native encoder, raw budget/write order and devices are unchanged.
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_host_timing_analysis.py'
