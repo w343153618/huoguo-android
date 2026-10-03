@@ -1,3 +1,11 @@
+## 2026-10-03 alpha7 已交付，立即继续
+
+稳定1.31/code32与实验1.31-alpha.7/code38已发布；原签名、GitHub三个资产与NPS完整APK实读通过。alpha7实际一加12现有huoguo认证公网M1，保存/重开/清除/重开/再保存，以及两轮返回确认继续/退出/重认证全部通过。见[发布记录](experimental-alpha7-ux-release-20261003.md)。当前root精确artifactsource3387b56，APK1f4c6c1b；不要用较新文档HEAD冒充artifact源码。完整1242源码检查通过，不当蜂窝/V50/朋友安全或60FPS验收。旧首次助手提前检查posted回调的失败保留，密码partial全部为true。
+
+M1/M5独立LaunchAgents已等旧候选自然到期后运行，持久sourcea776828，闭集显式wyw/huoguo、现有认证/账号归属与120秒session限制；没有signal正式/NPC/NPS，也没改账号密码。记录见[生命周期](owner-udp-launchagents-20261003.md)。推荐80ms、100ms可选不变。公网媒体UDP，NPS内部quic.Stream仍不同于Datagram；真实VPN-on及逐包国内出口尚未验收。手机Tailscale App仍为此次VPN-off基线停用而身份保留，不注销重注册。
+
+下一项已由codec_startup_design在其独立worktree开始仅源码设计：多主机各自保存加密凭据、有界组数、旧单条安全迁移与明确clear-current/all，原正式存储不变；先fixture与review，不抢root/phone/live。再独立验证Tailscale-on物理socket是否被allowBypass/lockdown拒绝，必要时采用明确每App例外，不把API绑定当公网P2P/国内路由证据。读取实际node/packet/interface后才推广。保留现有M1/M5数据、phone限频及有效yilufa节点；任一正式/机主候选在线均避免打断。
+
 ## 2026-10-03 NPS KCP／QUIC 缺项已定位，修改前备份完成
 
 最新维护（2026-10-03中午）已按用户单次明确授权完成：正式NPS已重启为both，KCP/QUIC已恢复，M1/M5正式NPC已用QUIC通过物理回环UDP48126到云UDP8025，38个原在线客户端全部重连。见[正式QUIC部署记录](nps-formal-quic-deployment-20261003.md)。这一步不再重复重启，不改其他NPC或过滤；App v1.30仍TLS/TCP。后续恢复M1 codec-ready实验，设计checkpoint见[启动设计](codec-startup-design-20261003.md)，正式M5日常使用保持。

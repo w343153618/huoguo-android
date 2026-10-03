@@ -1,6 +1,6 @@
-> 当前正式版为 [v1.31](https://github.com/w343153618/huoguo-android/releases/tag/v1.31)，独立机主 UDP 测试版为 [1.31-alpha.6](https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.6)。两版“检查更新”均可手动选择稳定版或测试版，查看内容后确认、取消或打开另一版；包名、设置和更新清单独立。正式媒体仍为 TLS/TCP。
+> 当前正式版为 [v1.31](https://github.com/w343153618/huoguo-android/releases/tag/v1.31)，独立机主 UDP 测试版为 [1.31-alpha.7](https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.7)。两版“检查更新”均可手动选择稳定版或测试版，查看内容后确认、取消或打开另一版；包名、设置和更新清单独立。正式媒体仍为 TLS/TCP。
 
-测试版已加入固定公网 M1、M5 UDP 入口：选择公网 M1 使用视频/音频/触控 UDP15556，公网 M5 使用 UDP15558；受信 HTTPS49556/49558 只作认证与会话控制，不退回 TCP 媒体。原正式 TCP15556/15558 与独立 NPC 身份保留。实测、下载和边界见 [alpha6 公网记录](docs/experimental-alpha6-public-results-20261003.md)。当前仅为机主有界、非隔离试用；朋友日常使用保留 M5 正式服务，宿主/LAN 隔离、蜂窝/V50、多指与声学音画验收尚未完成。
+测试版已加入固定公网 M1、M5 UDP 入口：选择公网 M1 使用视频/音频/触控 UDP15556，公网 M5 使用 UDP15558；受信 HTTPS49556/49558 只作认证与会话控制，不退回 TCP 媒体。原正式 TCP15556/15558 与独立 NPC 身份保留。本次新增本机加密保存密码、huoguo新账号默认、退出确认和测试图标/主题；已在一加12实际验证保存/清除重开与两次继续/退出。下载和边界见 [alpha7 使用记录](docs/experimental-alpha7-ux-release-20261003.md)；先前 [alpha6 公网记录](docs/experimental-alpha6-public-results-20261003.md)单独保留。当前仅为机主有界、非隔离试用；朋友日常使用保留 M5 正式服务，宿主/LAN 隔离、蜂窝/V50、多指与声学音画验收尚未完成。
 
 M1/M5 NPC 使用物理出口绑定的 QUIC；NPS 桥接内部仍为可靠 quic.Stream，与端到端 QUIC Datagram 不同。NPS 官方核心和国内来源过滤未改，不能由外层 UDP 推断整条链路没有重传等待。见 [正式 QUIC 部署](docs/nps-formal-quic-deployment-20261003.md) 与 [公网控制部署](docs/nps-public-owner-control-deployment-20261003.md)。
 

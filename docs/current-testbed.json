@@ -19,7 +19,7 @@
   "buffer_ms": 80,
   "experimental_client_package": "local.remoteandroid.direct.experiment",
   "instrumentation_package": "local.remoteandroid.phoneprobe.experiment",
-  "note": "Canonical M1 testbed; formal v1.30 route fix and separate UDP experiments. Physical guest 1080x1920, 6 cores/16GiB. CPU-limited OnePlus12 is a proxy device, not an actual V50 acceptance result. Historic experiment fields retain their own evidence scope.",
+  "note": "Canonical M1 owner testbed; stable1.31 and independent alpha7 UDP owner trial. M1 physical1080x1920, 6 cores/16GiB; M5 formal720x1280. CPU-limited OnePlus12 is a surrogate, not V50 acceptance.",
   "phone_performance_profile": {
     "user_declared_cpu_throttled": true,
     "surrogate_target": "realme V50",
@@ -396,14 +396,14 @@
     },
     "experimental": {
       "branch": "codex/experimental-udp",
-      "candidate_version": "1.31-alpha.6",
-      "version_code": 37,
+      "candidate_version": "1.31-alpha.7",
+      "version_code": 38,
       "package": "local.remoteandroid.direct.experiment",
       "media": "authenticated UDP public NPS owner trial; LAN or exact registered Tailnet",
       "update_path": "/experimental/experiment.json",
       "public_download_deployed": true,
       "release_published": true,
-      "current_version_validation": "Real OnePlus12 same-home WiFi over public NPS address, both nodes media/leave/re-auth; owner nonisolated, no cellular/V50/physical touch or acoustic acceptance"
+      "current_version_validation": "Exact original-signed alpha7 on OnePlus12, actual save/reopen/clear/re-save, repeated-Back/Continue/Exit twice and normal public M1 UDP auth/reconnect PASS; same-home WiFi VPN-off nonisolated owner, no cellular/V50 or friend isolation acceptance"
     }
   },
   "nps_provenance_audit": {
@@ -1195,5 +1195,49 @@
     "evidence": "docs/experimental-alpha6-public-results-20261003.md",
     "single_session_max_seconds": 120,
     "durable_launchagents_stage": "prepared_not_loaded"
+  },
+  "latest_experimental_delivery": {
+    "version_name": "1.31-alpha.7",
+    "version_code": 38,
+    "source_commit": "3387b56f1e6ef2a5530c9f9dcda1663aebfbc349",
+    "apk_sha256": "1f4c6c1b7dc61b2de9dd24dfdc647ee6424d347ad1cde143db20237c6b57f2a7",
+    "apk_size": 8347265,
+    "native_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+    "github_assets_full_readback_verified": true,
+    "pinned_nps_full_readback_verified": true,
+    "public_download_url": "https://146.56.249.175:15556/experimental/HuoguoAndroidExperiment-v1.31-alpha.7.apk",
+    "evidence": "docs/experimental-alpha7-ux-release-20261003.md",
+    "phone_ui_password_and_exit_acceptance": true,
+    "VPN_on_packet_route_acceptance": false
+  },
+  "owner_udp_supervision_current": {
+    "source_commit": "a7768280c31a46cecab794e91e9e19afb4f33eaf",
+    "jobs": {
+      "m1": "local.huoguo.m1.udp-owner-trial",
+      "m5": "local.huoguo.m5.udp-owner-trial"
+    },
+    "observed_pids": {
+      "m1": 95621,
+      "m5": 14169
+    },
+    "owner_accounts": [
+      "huoguo",
+      "wyw"
+    ],
+    "local_pinned_ping": {
+      "m1": 200,
+      "m5": 200
+    },
+    "old_candidates_exit": "natural original3600sec expiry, no signals",
+    "formal_gateway_pids_unchanged": {
+      "m1": 41650,
+      "m5": 75248
+    },
+    "session_max_seconds": 120,
+    "process_max_seconds": 3600,
+    "keep_alive": true,
+    "login_launchagents_reboot_acceptance": false,
+    "friend_isolation_accepted": false,
+    "evidence": "docs/owner-udp-launchagents-20261003.md"
   }
 }
