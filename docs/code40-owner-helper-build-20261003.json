@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "scope": "offline_frozen_code40_classpath_with_existing_saved_ui_helper_no_device",
+  "frozen_app_source_commit": "1df2ecd3cb28fabad69006c5210485e28309db45",
+  "private_build_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg",
+  "target_version_name": "1.31-alpha.9",
+  "target_version_code": 40,
+  "target_application_id": "local.remoteandroid.direct.experiment",
+  "expected_candidate_apk_sha256": "030126da900e16a11fb46dccbd1ed54edd5e0a7757a42503ca0ae40047c3d570",
+  "expected_candidate_jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+  "installed": false,
+  "published": false,
+  "credentials_copied_to_clone": false,
+  "device_services_modified": false,
+  "new_network_tools_installed": false,
+  "clone": {
+    "argv": [
+      "git",
+      "-c",
+      "core.hooksPath=/dev/null",
+      "clone",
+      "--no-hardlinks",
+      "--no-checkout",
+      "/Users/wyw/Documents/Codex/others/huoguo-android",
+      "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source"
+    ],
+    "working_directory": "/Users/wyw/Documents/Codex/others/huoguo-android",
+    "returncode": 0,
+    "elapsed_seconds": 0.385,
+    "install_or_publish": false
+  },
+  "checkout": {
+    "argv": [
+      "git",
+      "-c",
+      "core.hooksPath=/dev/null",
+      "checkout",
+      "--detach",
+      "1df2ecd3cb28fabad69006c5210485e28309db45"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 0.135,
+    "install_or_publish": false
+  },
+  "head": {
+    "argv": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 0.018,
+    "install_or_publish": false
+  },
+  "checked_out_commit": "1df2ecd3cb28fabad69006c5210485e28309db45",
+  "initial_status": {
+    "argv": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 0.061,
+    "install_or_publish": false
+  },
+  "initial_tracked_diff_empty": true,
+  "class_build": {
+    "argv": [
+      "./gradlew",
+      "--offline",
+      "--no-daemon",
+      "--max-workers=2",
+      ":app:compileDebugJavaWithJavac",
+      "-PauthenticatedLanUdp=true",
+      "-PprobeApplicationId=local.remoteandroid.direct.experiment",
+      "-PexperimentalVersionName=1.31-alpha.9",
+      "-PexperimentalVersionCode=40"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 12.77,
+    "install_or_publish": false
+  },
+  "helper_build": {
+    "argv": [
+      "python3",
+      "scripts/probes/build_authenticated_lan_helpers.py",
+      "--output",
+      "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/helpers"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 5.799,
+    "install_or_publish": false
+  },
+  "target_classpath_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+  "target_classpath_role": "code40_debug_compile_ABI_not_deployed_release_APK_byte_identity",
+  "target_class_count": 106,
+  "target_classpath_sha256": "b604f02c6c19071fd433c9aeb57047960c9b736a55a5f6e06e3a2fa5f7a00e3f",
+  "target_classpath_hash_contract": "SHA256 sorted relative UTF8 path plus NUL plus binary file SHA256 digest",
+  "target_class_hashes": {
+    "local/remoteandroid/direct/AuthenticatedLanUdpUi.class": "0b2d42ce520ab3e56a62093018686d4d912cd988afbf94d981d43dfba7699f0f",
+    "local/remoteandroid/direct/BuildConfig.class": "55b3a7b1157cc17ee43bb8c1a154d1e190c25e44766b0515a8ee000afba79cee",
+    "local/remoteandroid/direct/MainActivity.class": "c2c6ac12bf3e908dead547fc6808804de793fd7199a0f76c3b9c6011c395ebb0",
+    "local/remoteandroid/direct/UdpAudioReceiver.class": "a58cf878030d061cd63236757fe63c45322d8d5fe2123197c94a56688b988fb2",
+    "local/remoteandroid/direct/UdpVideoProbe.class": "e43ff6d20454d6a1e1f3f2cbfec68758916dc9314f854c6d0511e2023bad7290",
+    "local/remoteandroid/direct/UdpVideoProbe$CompletionReceipt.class": "f6a14d945945e61c8cb70f908bb57451a10494b54e9ce717f15803d3fb354654",
+    "local/remoteandroid/direct/UdpVideoProbe$AppListener.class": "4ad79dc0d8cfb8be29c2b1794243fe07b3e64a1f09ed744d3462af9adeab0875"
+  },
+  "helper_source_sha256": "2e652e78c9f65c5b2f70cb170e070c5534f89b4e46abc434a7908c0f7d8a6ee2",
+  "helper_builder_sha256": "683d03f34e3ea96abb5f39fc2e026e6cbebfc5e2d240bd40f6ae0661ff280fc4",
+  "target_build_config_source_sha256": "439a34a2ac7a6381be3d2efd7bb1665913e9bbaf921154e864d0ce0b67be26cb",
+  "build_config_pins_verified": true,
+  "fresh_debug_jni_sha256": "b0a8cd239af2c682a968c33660b433f3157f15eca552848f83cdd076dc07696f",
+  "fresh_debug_jni_matches_candidate": false,
+  "local_candidate_apk_sha256": "030126da900e16a11fb46dccbd1ed54edd5e0a7757a42503ca0ae40047c3d570",
+  "local_candidate_bytes": 7240254,
+  "local_candidate_hash_matches_expected": true,
+  "local_candidate_jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+  "helper_apk": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/helpers/ui/helper.apk",
+  "helper_apk_sha256": "474434fbcf1534c895d02ec2529b04ab171846c0d0fdf939187c90b82cbe54af",
+  "helper_apk_bytes": 61843,
+  "signature_validation": {
+    "argv": [
+      "/Users/wyw/Library/Android/sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/helpers/ui/helper.apk"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 0.198,
+    "install_or_publish": false
+  },
+  "helper_signer_certificate_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "helper_original_signer_verified": true,
+  "helper_signature_verified": true,
+  "candidate_signature_validation": {
+    "argv": [
+      "/Users/wyw/Library/Android/sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/private/tmp/huoguo-alpha9-hour-fixed-20261003/candidate.apk"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 0.181,
+    "install_or_publish": false
+  },
+  "final_status": {
+    "argv": [
+      "git",
+      "status",
+      "--porcelain",
+      "--untracked-files=no"
+    ],
+    "working_directory": "/private/tmp/huoguo-code40-owner-helper-fj0bbkqg/source",
+    "returncode": 0,
+    "elapsed_seconds": 0.067,
+    "install_or_publish": false
+  },
+  "final_tracked_diff_empty": true,
+  "helper_saved_contract_in_Dex": true,
+  "evidence_boundary": "offline compilation, frozen local candidate bytes/JNI and signature verification only; no installed candidate identity, Android UI/media, real report rejection, acoustic or one-hour acceptance",
+  "helper_source_commit": "a83b6685dedb98a3248e0503091ea0ba94c7b1ff",
+  "JAVA_HOME": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
+  "ANDROID_HOME": "/Users/wyw/Library/Android/sdk",
+  "target_build_type": "debug",
+  "target_authenticated_udp": true,
+  "compiled_for_alpha9": true,
+  "helper_contains_target_jni": false,
+  "local_candidate_signer_certificate_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "local_candidate_original_signer_verified": true,
+  "native_dependency_lock_sha256": "1b3e89b8547691148863404582d304b9ea4a10562b8c82178ea223e8d4bd28b1",
+  "native_dependency_pins": {
+    "schema": 1,
+    "scope": "public_native_candidate_build_dependencies_only",
+    "dependencies": [
+      {
+        "name": "moonlight-common-c",
+        "path": ".",
+        "repository": "https://github.com/moonlight-stream/moonlight-common-c.git",
+        "commit": "f900dd4767759c7b9d0e93bcea666b55c69ea62f"
+      },
+      {
+        "name": "nanors",
+        "path": "nanors",
+        "repository": "https://github.com/sleepybishop/nanors.git",
+        "commit": "b1e3c22ca0cdc0bb83e3cd6ed1a2fc77869ed99a"
+      }
+    ],
+    "android": {
+      "ndk_version": "29.0.14206865",
+      "abi": "arm64-v8a",
+      "platform": "android-23",
+      "stl": "c++_static"
+    }
+  },
+  "native_elf_section_comparison": {
+    "fresh_jni_bytes": 3981576,
+    "candidate_jni_bytes": 3992864,
+    "different_sections": [
+      ".debug_info",
+      ".debug_line",
+      ".debug_str",
+      ".note.gnu.build-id",
+      ".symtab"
+    ],
+    "allocated_sections_except_build_id": [
+      ".bss",
+      ".data",
+      ".data.rel.ro",
+      ".dynamic",
+      ".dynstr",
+      ".dynsym",
+      ".eh_frame",
+      ".eh_frame_hdr",
+      ".fini_array",
+      ".gcc_except_table",
+      ".gnu.hash",
+      ".gnu.version",
+      ".gnu.version_r",
+      ".got",
+      ".got.plt",
+      ".init_array",
+      ".note.android.ident",
+      ".plt",
+      ".rela.dyn",
+      ".rela.plt",
+      ".relro_padding",
+      ".rodata",
+      ".text",
+      "__lcxx_override"
+    ],
+    "allocated_sections_except_build_id_identical": true,
+    "comparison_is_full_binary_reproducibility": false,
+    "interpretation": "Differences are limited to debug, symbol table and GNU build-id metadata; executable/data sections match. This is not full-file identity and does not replace original candidate JNI."
+  },
+  "normal_cancel_reconnect_helper_coverage": "existing normal UI login, exit confirmation, accepted report surface readback, bounded audio-thread liveness and fresh normal UI reconnect; compilation only this round",
+  "report_rejection_helper_coverage": false,
+  "typed_completion_receipt_helper_observed": false,
+  "coverage_gaps": [
+    "verifySurfaceReadback requires complete accepted performance report and cannot accept completion_receipt-only rejected report",
+    "helper does not capture actual typed CompletionReceipt in runner callback",
+    "audio thread liveness is separate from actual audio resource release evidence",
+    "real candidate installation, normal cancel/reconnect, report-rejection/reconnect and one-hour expiry are pending"
+  ]
+}
