@@ -1,3 +1,9 @@
+## 2026-10-03 最新 checkpoint：源 Vulkan 已恢复，真实格式已重新确认
+
+M1 仅在空闲机主源窗口恢复 HWUI `skiavk` 并重开已知源播放器；实际 PID5212 已读回 `Skia(Vulkan)`，RenderEngine `skiaglthreaded`、物理1080×1920/30Hz及手机限频/120Hz不变。两路新捕获页面正常，但不同于旧LIVE页面，未进行同内容 A/B，也未重跑媒体 FPS。当前 BBB 实际 itag299/avc1/1920×1080@60、251/Opus已从播放器诊断独立确认，浮层已关闭；下一轮先定位固定运动片段。详见[本轮恢复与边界](source-policy-restore-20261003.md)。下面“只读尚未恢复”的段落保留历史 checkpoint，不能再次触发恢复/重启。
+
+新 bounded Inbox 数字事件导出已合入；alpha9/code40仅本地build/lint候选，未装机/发布，alpha8仍公开最新版。真实无界面自目标 fixture 确认 default instrumentation 重启目标进程，no-restart仅保留自包进程；它不解除真实 App 的 Activity/onStop 取消风险。新保存凭据测试入口正在补 absent-target-PID保护，不能用 post-launch busy 检查抢占现有会话。下一可行动实验用同alpha8固定BBB/30/4M/80ms，分开源SF/host AU/手机接收/独立SF长尾，不做宽矩阵。
+
 ## 2026-10-03 当前 checkpoint：alpha8 已发布，先校正源环境读回
 
 公开测试版已经是 alpha8/code39，精确 artifact/source `73d196a`、APK `a663c4d0`，不能再把它当未发布候选。两台 owner gateway 已为冻结 `dd43a39`，公网单会话3600秒、进程上限0；App 媒体为认证 UDP。交付、更新 UI 以及物理30Hz记录见 [alpha8发布记录](experimental-alpha8-30fps-onehour-release-20261003.md)。下面早期 alpha7/alpha8候选段落是历史 checkpoint，不替代本段或末尾的新读回。

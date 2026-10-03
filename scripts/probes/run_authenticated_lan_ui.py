@@ -379,7 +379,7 @@ def main():
     samplers=[]
     scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
                    if args.network_scope == 'tailnet' else 'owner nonisolated public NPS')
-    report={'scope':'normal App UI existing account; isolated '+scope_label+' UDP; outer path requires separate evidence',
+    report={'scope':'normal App UI existing account; bounded '+scope_label+' UDP; host isolation and outer path require separate evidence',
             'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
     report.update(requested_v50_profile=args.v50_profile=='on',touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on',requested_codec_startup_ready_enabled=args.codec_startup=='on',requested_credential_save_acceptance=args.credential_save=='on')

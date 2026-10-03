@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "observed_utc": "2026-10-03T11:16:37.047730+00:00",
+  "scope": "self-targeting permissionless headless fixture only; not media App lifecycle acceptance",
+  "before": {
+    "stable_pid": "27626",
+    "experimental_pid": "",
+    "stable_focus": false
+  },
+  "initial": {
+    "schema_version": 1,
+    "pid": 24101,
+    "nonce_ns": 216022703196862,
+    "snapshot_ns": 216022703271132
+  },
+  "no_restart_during": {
+    "schema_version": 1,
+    "pid": 24101,
+    "nonce_ns": 216022703196862,
+    "snapshot_ns": 216023187155195
+  },
+  "no_restart_after": {
+    "schema_version": 1,
+    "pid": 24101,
+    "nonce_ns": 216022703196862,
+    "snapshot_ns": 216023287460559
+  },
+  "default_during": {
+    "schema_version": 1,
+    "pid": 24737,
+    "nonce_ns": 216023915250767,
+    "snapshot_ns": 216023915303788
+  },
+  "default_after": {
+    "schema_version": 1,
+    "pid": 24784,
+    "nonce_ns": 216025080447173,
+    "snapshot_ns": 216025080610611
+  },
+  "completed": true,
+  "uninstall_ok": true,
+  "after": {
+    "stable_pid": "27626",
+    "experimental_pid": "",
+    "stable_focus": false
+  },
+  "fixture_package_absent": true,
+  "initial_normal_adb_install": {
+    "result": "40_second_timeout",
+    "fixture_package_present_after_timeout": false,
+    "not_counted_as_success": true
+  },
+  "fixture_sha256": "d6b1a4373cfbbb54de9b104844da023ca48a2e33e37e4a73715b5390929bc48b",
+  "no_restart_retained_pid_and_nonce": true,
+  "default_restarted_process_before_instrumentation": true,
+  "default_finish_then_broadcast_started_another_process": true,
+  "actual_media_App_lifecycle_accepted": false,
+  "focus_measurement_scope": "boolean matcher returned false before/after; this is not full focused-window verification",
+  "installer_side_effect": "ordinary adb install timeout exposed OEM installer self-update guide; root fixture install succeeded; self-update was cancelled without updating installer",
+  "post_cleanup_focus": {
+    "focus_component_matches": [
+      "com.oplus.appdetail/com.oplus.appdetail.model.cancel.CancelInstallActivity"
+    ]
+  },
+  "installer_ui_final_cleanup": {
+    "scope": "close only OEM installer UI left by own fixture installation; no data clear/update",
+    "expected_current_activity": true,
+    "installer_ui_force_stopped": true,
+    "after_focus_components": [
+      "com.android.packageinstaller/com.android.packageinstaller.InstallStaging"
+    ],
+    "stable_pid": "27626",
+    "experimental_pid": ""
+  },
+  "original_pending_staging_cleanup": {
+    "scope": "abort only pending staging UI exposed by original timed-out own fixture adb install",
+    "expected_staging_focus": true,
+    "staging_ui_closed": true,
+    "after_focus_components": [
+      "local.remoteandroid.direct/local.remoteandroid.direct.MainActivity"
+    ],
+    "fixture_absent": true,
+    "stable_pid": "27626",
+    "experimental_pid": ""
+  }
+}

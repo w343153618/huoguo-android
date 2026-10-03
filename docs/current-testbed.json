@@ -94,8 +94,8 @@
   "emulator_experimental_process_type": "Interactive",
   "emulator_process_type_evidence": "evidence/latency-refinement-20261001/final-retained-state.json",
   "source_qos_boundary": "Interactive remains experimental. Multiple real phone windows near60 now observed; this does not isolate ProcessType effect or establish WAN/V50/continuous stability.",
-  "renderer": "skiagl",
-  "renderer_persistence": "Historical skiavk target was explicitly reapplied after cold boots, not automatically persistent. Fresh alpha8 post-cold-boot readback is skiagl with running source Skia (OpenGL); not restored in this read-only checkpoint.",
+  "renderer": "skiavk",
+  "renderer_persistence": "At 2026-10-03T10:51Z restored M1 source HWUI skiavk and restarted only idle source player. Running PID5212 independently reads Skia(Vulkan); boot persistence is not yet implemented. Official RenderEngine skiaglthreaded and physical30Hz unchanged.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
   "independent_experimental_app_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
   "latest_campaign": {
@@ -1080,12 +1080,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": {
-    "priority": "UDP media only",
-    "immediate": "M1 authenticated UDP30 queue-tail cause investigation; retain released alpha8 and real format readback before controlled buffer comparison",
-    "secondary": "Measure and reduce UDP receive/codec/Surface queue tails, then controlled50/80ms buffer comparison; no TCP media matrix",
-    "preserve_formal": true
-  },
+  "next_source_task": "Fixed BBB motion-position alpha8 same-APK M1 public UDP30 source/host/phone cadence diagnosis after source-only Vulkan restoration; preserve settings, phone CPU and 120Hz. Saved-UI helper remains candidate with absent-target-PID guard; no-restart fixture does not waive active-session protection.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -1303,6 +1298,26 @@
   },
   "renderer_expected_profile": "skiavk",
   "source_renderer_readback_20261003": {
+    "observed_utc": "2026-10-03T10:55:03.958594+00:00",
+    "hwui_property": "skiavk",
+    "source_pipeline": "Skia (Vulkan)",
+    "source_pid": 5212,
+    "renderengine_property": "skiaglthreaded",
+    "physical_size": [
+      1080,
+      1920
+    ],
+    "physical_hz": 30,
+    "display_rotation": 0,
+    "source_only_player_restart": true,
+    "source_layout_upright_on_adb_and_grpc_after_restore": true,
+    "same_content_AB": false,
+    "FPS_improvement_tested": false,
+    "cause_of_all_dropped_frames_proved": false,
+    "metadata_evidence": "docs/source-renderer-after-restore-readback-20261003.json",
+    "evidence": "docs/source-policy-restore-20261003.md"
+  },
+  "source_renderer_readback_before_restore_20261003": {
     "observed_utc": "2026-10-03T10:43:11.922004+00:00",
     "observation_time_scope": "Read-only metadata sample time; not screenshot or media frame timestamp",
     "hwui_property": "skiagl",
@@ -1324,5 +1339,42 @@
     "device_or_service_mutation": false,
     "evidence": "docs/source-ui-capture-orientation-readonly-20261003.md",
     "metadata_evidence": "docs/source-renderer-preflight-readback-20261003.json"
+  },
+  "source_content_readback_20261003": {
+    "schema": 1,
+    "observed_utc": "2026-10-03T11:07:13.782480+00:00",
+    "observation_time_scope": "private screenshot file mtime, not video media PTS",
+    "source": "public YouTube Big Buck Bunny 60fps 4K official Blender video",
+    "public_video_id": "aqz-KE-bpKQ",
+    "source_package": "app.morphe.android.youtube",
+    "video_itag": 299,
+    "video_codec": "avc1",
+    "encoded_video_width": 1920,
+    "encoded_video_height": 1080,
+    "video_content_fps": 60,
+    "audio_itag": 251,
+    "audio_codec": "opus",
+    "viewport_width": 1080,
+    "viewport_height": 608,
+    "quality_menu": "1080p60",
+    "playback_speed": 1.0,
+    "physical_guest_refresh_hz": 30,
+    "format_evidence": "on-screen Stats for nerds; image private because it also contains ephemeral identifiers",
+    "format_screenshot_sha256": "db5dfce64945bc07f33915dfcc0d8e7fa4c9c32de007129c7923f40f4590283d",
+    "performance_or_optical_acceptance": false,
+    "overlay_closed_before_next_test": true,
+    "new_content_does_not_validate_previous_135s_content": true
+  },
+  "alpha9_local_candidate_build_20261003": {
+    "schema": 1,
+    "scope": "candidate build only, not installed or published",
+    "source_commit": "3ac6774",
+    "apk_sha256": "8ccd480c7bb1b6cd9f3d57ceac8efca37b6b16b2ff1aaa547426ad117754a78f",
+    "apk_bytes": 7240254,
+    "version": "1.31-alpha.9",
+    "code": 40,
+    "package_badging": "package: name='local.remoteandroid.direct.experiment' versionCode='40' versionName='1.31-alpha.9' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'",
+    "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+    "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da"
   }
 }
