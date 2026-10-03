@@ -1,5 +1,7 @@
 # NPS 客户端列表为什么不显示 QUIC
 
+后续状态：独立实验已迁到TCP48024、KCP/UDP48025、QUIC/UDP48026，原UDP8024/8025占用已释放；三协议高端口均完成真实实验身份认证。下面原PID/端口和连接数保留为迁移前检查。用户进一步要求保护所有正式NPC的日常运维连接，因此不能因Android会话空闲就重启正式NPS。正式配置仍tcp、菜单仍未恢复，见[高端口迁移记录](nps-high-port-migration-20261003.md)。
+
 2026-10-03 只读检查正式服务、实验服务、当前配置、上游 v0.34.7 源码和已认证的正式客户端网页。没有修改配置、停止服务、重启 NPS、创建客户端或调整国内来源过滤。
 
 ## 当前原因
@@ -55,18 +57,18 @@ KCP 与 QUIC 各自有启用条件，并非由同一个端口数字决定：
 | 程序启用 | `kcp_enable` 默认真；端口非零；`bridge_type` 是 `kcp`、`udp` 或 `both` | `quic_enable` 默认真；端口非零；`bridge_type` 是 `quic`、`udp` 或 `both` |
 | 默认网页显示 | `bridge_kcp_show` 缺省取 `ServerKcpEnable` | `bridge_quic_show` 缺省取 `ServerQuicEnable` |
 | 当前正式配置 | `bridge_type=tcp`，因此运行和缺省网页显示都关闭 | 同样因 `bridge_type=tcp` 关闭 |
-| 当前实际 UDP 监听者 | 独立实验进程，UDP 8024 | 独立实验进程，UDP 8025 |
+| 原检查时 UDP 监听者（迁移前） | 独立实验进程，UDP 8024 | 独立实验进程，UDP 8025 |
 
 精确来源：[KCP/QUIC 运行开关，315–316 行](https://github.com/djylb/nps/blob/v0.34.7/cmd/nps/nps.go#L315-L316)、[KCP 显示，112–115 行](https://github.com/djylb/nps/blob/v0.34.7/web/controllers/base.go#L112-L115)、[KCP 展开命令，144–146 行](https://github.com/djylb/nps/blob/v0.34.7/web/views/client/list.html#L144-L146)、[两个 UDP 监听的创建](https://github.com/djylb/nps/blob/v0.34.7/bridge/listener.go#L93-L129)。
 
 ## 保留兼容性的恢复方案（尚未执行）
 
 1. 先完成正式和实验程序、配置、客户端/任务数据、网页资源、systemd 单元及相关监听/过滤配置的完整受限备份。备份包含秘密，只留在受限部署位置，不提交仓库。记录校验和与回滚所需的原服务状态。
-2. 避开正式在线会话，确认独立实验客户端也没有正在运行的验证。保留实验配置和数据；将其 UDP 8024/8025 迁至独立端口，或停止该现有实验服务等待后续有界实验。当前 UDP 18025/18026 没有监听，但这只是候选端口检查，未证明安全组、过滤规则及客户端可用，也没有新启第二套服务。
+2. 保护所有正式NPC在线连接，不仅是Android媒体会话。独立实验端口迁移现已完成，采用48024/48025/48026而非此前临时检查的18025/18026；旧UDP占用已解除，没有新启第二套服务。正式仍有在线NPC时保持运行，不推进需要重启的正式恢复。
 3. 正式配置最小修改为 `bridge_type=both`，保留 `bridge_tcp_port=8024`、`bridge_tls_port=8025`、`bridge_kcp_port=8024`、`bridge_quic_port=8025` 和其他现有字段。上游先计算 KCP/QUIC 的启用条件，再在 `both` 时以 TCP 条件继续计算 TCP/TLS/WS/WSS，因此能保留旧 TCP/TLS NPC 兼容。不要改成 `quic` 或 `udp`，它们不会同时保留这里的 TCP/TLS 入口。参见[318–326 行](https://github.com/djylb/nps/blob/v0.34.7/cmd/nps/nps.go#L318-L326)。
 4. 当前没有显式禁用 `tcp_enable`、`tls_enable`、`kcp_enable`、`quic_enable`；对应缺省值均为真。只改变 `bridge_type` 已足够，不需要增加未经验证的参数。保留既有账号、独立 NPC 身份、证书配置、鉴权规则和国内来源过滤；不把恢复协议入口当成放宽访问控制。
 5. QUIC v0.34.7 识别的参数是 `quic_alpn`（缺省 `nps`）、`quic_keep_alive_period`（10 秒）、`quic_max_idle_timeout`（30 秒）、`quic_max_incoming_streams`（100000）。本次恢复不修改这些吞吐/超时参数，也不套用 master 新增字段。参见[连接初始化，76–80 行](https://github.com/djylb/nps/blob/v0.34.7/server/connection/connection.go#L76-L80)。KCP 原版会话参数在[SetUdpSession](https://github.com/djylb/nps/blob/v0.34.7/lib/conn/kcp.go#L12-L22)中固定，不能凭新增配置项改变它们。
-6. 在备份及端口检查完成后，通过现有 systemd 管理一次正式维护重启。读回正式进程拥有 TCP 8024/8025 和 UDP 8024/8025；确认没有 KCP/QUIC bind 错误，再读认证后的客户端网页，两种命令均出现。继续检查原 TCP NPC、M1 15556 和 M5 15558 是否恢复，不能把“网页有命令”当成真实 QUIC/KCP 客户端连接验收。
+6. 只有不存在会被中断的正式NPC且符合用户维护约束时，才可通过现有systemd管理正式恢复；不能为菜单自行重启在线服务。届时读回正式进程拥有TCP8024/8025和UDP8024/8025，检查bind错误、认证网页命令、所有原NPC与M1/M5入口及实际协议客户端。当前不具备这个条件，正式恢复尚未执行。
 
 ### 为什么不采用无重启恢复
 

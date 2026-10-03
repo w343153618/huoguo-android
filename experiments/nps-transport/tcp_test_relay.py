@@ -13,8 +13,10 @@ import sys
 import threading
 import time
 
-DESTINATION = ('146.56.249.175', 18024)
-LISTEN = ('127.0.0.1', 18027)
+# Experimental bridge only. Keep the production physical relay on its existing
+# ports; this independent process must not claim production bridge listeners.
+DESTINATION = ('146.56.249.175', 48024)
+LISTEN = ('127.0.0.1', 48027)
 INTERFACES = tuple(os.environ.get('NPC_PHYSICAL_INTERFACES', 'en7,en0').split(','))
 IP_BOUND_IF = 25  # Apple XNU bsd/netinet/in.h
 LINK_CHECK_SECONDS = 5
@@ -133,6 +135,8 @@ def handle(client):
         slots.release()
 
 def main():
+    if not all(32768 <= endpoint[1] <= 65535 for endpoint in (DESTINATION, LISTEN)):
+        raise ValueError('Independent NPS test relays require high ports')
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
