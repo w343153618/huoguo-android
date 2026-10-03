@@ -270,23 +270,41 @@ public final class UdpVideoProbe extends Instrumentation {
     public static final class CompletionReceipt {
         public static final int AUDIO_UNKNOWN=0,AUDIO_CONFIRMED=1,AUDIO_INCOMPLETE=2;
         public static final int REPORT_UNAVAILABLE=0,REPORT_ACCEPTED=1,REPORT_REJECTED_LIMIT=2,REPORT_REJECTED_INVALID=3;
-        public final int audioCleanupState,statisticsStatus;
-        private CompletionReceipt(int audioState,int reportState){
-            if(audioState<AUDIO_UNKNOWN||audioState>AUDIO_INCOMPLETE||reportState<REPORT_UNAVAILABLE||reportState>REPORT_REJECTED_INVALID)
+        public static final int END_UNKNOWN=0,END_LOCAL_LIMIT=1,END_FIRST_VIDEO_TIMEOUT=2,END_PEER_TIMEOUT=3,END_LOCAL_CANCEL=4,END_RUNNER_FAILURE=5;
+        public final int audioCleanupState,statisticsStatus,localEndReason,requestedSeconds;
+        private CompletionReceipt(int audioState,int reportState,int endReason,int seconds){
+            if(audioState<AUDIO_UNKNOWN||audioState>AUDIO_INCOMPLETE||reportState<REPORT_UNAVAILABLE||reportState>REPORT_REJECTED_INVALID
+                    ||endReason<END_UNKNOWN||endReason>END_RUNNER_FAILURE||seconds<0||seconds>3600)
                 throw new IllegalArgumentException("completion_receipt_state_invalid");
-            audioCleanupState=audioState;statisticsStatus=reportState;
+            audioCleanupState=audioState;statisticsStatus=reportState;localEndReason=endReason;requestedSeconds=seconds;
+        }
+        /** Source state only, frozen on entering finally before report/cleanup.
+         * Recorded receive reasons win over a later cancel/error; an arbitrary
+         * 3600-second request is never itself evidence of expiry. No server
+         * expiry reason is authenticated by the current media protocol. */
+        static int fromLocalExit(int sourceReason,boolean localLimitReached,boolean cancelled,boolean runnerFailed){
+            if(localLimitReached)return sourceReason==1?END_LOCAL_LIMIT:END_UNKNOWN;
+            if(sourceReason==2)return END_FIRST_VIDEO_TIMEOUT;
+            if(sourceReason==3)return END_PEER_TIMEOUT;
+            if(sourceReason!=0)return END_UNKNOWN;
+            return cancelled?END_LOCAL_CANCEL:runnerFailed?END_RUNNER_FAILURE:END_UNKNOWN;
         }
         static CompletionReceipt afterReport(int audioState,JSONObject acceptedReport,Throwable reportFailure){
+            return afterReport(audioState,acceptedReport,reportFailure,END_UNKNOWN,0);
+        }
+        static CompletionReceipt afterReport(int audioState,JSONObject acceptedReport,Throwable reportFailure,int localEndReason,int requestedSeconds){
             int status=acceptedReport!=null?REPORT_ACCEPTED:reportFailure==null?REPORT_UNAVAILABLE
                 :reportFailure instanceof java.io.IOException&&"numeric_app_report_limit".equals(reportFailure.getMessage())
                     ?REPORT_REJECTED_LIMIT:REPORT_REJECTED_INVALID;
-            return new CompletionReceipt(audioState,status);
+            return new CompletionReceipt(audioState,status,localEndReason,requestedSeconds);
         }
         public boolean audioCleanupConfirmed(){return audioCleanupState==AUDIO_CONFIRMED;}
         public boolean statisticsAccepted(){return statisticsStatus==REPORT_ACCEPTED;}
+        public boolean shouldRemindAfterHour(){return localEndReason==END_LOCAL_LIMIT&&requestedSeconds==3600;}
         public JSONObject numeric()throws Exception{
             return new JSONObject().put("schema_version",1).put("audio_cleanup_state",audioCleanupState)
-                .put("statistics_report_status",statisticsStatus).put("statistics_report_accepted",statisticsAccepted()?1:0);
+                .put("statistics_report_status",statisticsStatus).put("statistics_report_accepted",statisticsAccepted()?1:0)
+                .put("local_end_reason",localEndReason).put("requested_seconds",requestedSeconds);
         }
     }
     static int closeOwnedAudio(AudioCleanup receiver){
@@ -349,7 +367,8 @@ public final class UdpVideoProbe extends Instrumentation {
         Bundle result=new Bundle();JSONObject report=new JSONObject();MainActivity activity=null;
         File keyFile=appActivity==null?new File(getTargetContext().getFilesDir(),SESSION):null;
         DatagramSocket socket=null;Session session=null;UdpVideoSecurity security=null;long nativeHandle=0;JSONObject appReport=null;
-        Throwable appReportFailure=null;int audioCleanupState=CompletionReceipt.AUDIO_UNKNOWN;
+        Throwable appReportFailure=null;int audioCleanupState=CompletionReceipt.AUDIO_UNKNOWN,completionEndReason=CompletionReceipt.END_UNKNOWN;
+        boolean runnerFailed=false;
         int oldFps=0,oldBuffer=0,oldDisplayModeId=0,oldSubmissionLeadMs=0;boolean oldImmediate=false;float oldRefresh=0;
         try{
             session=appActivity==null?readSession(keyFile):appSession;if(appCancelled)throw new IOException("cancelled");diagnosticEvents=session.diagnosticEvents;
@@ -450,9 +469,11 @@ public final class UdpVideoProbe extends Instrumentation {
             completed="bounded_drain_complete";
             report.put("running_at_end",activity.running&&activity.generation==generation[0]);
         }catch(Throwable failure){
+            runnerFailed=true;
             result.putString("failure","UdpVideoProbe "+failure.getClass().getSimpleName());
             try{report.put("failure_class",failure.getClass().getSimpleName());}catch(Exception ignored){}
         }finally{
+            completionEndReason=CompletionReceipt.fromLocalExit(sessionEndReasonCode,sessionLimitReached,appCancelled,runnerFailed);
             try{finishVideoWorker(false);checkVideoWorker();}
             catch(Throwable failure){result.putString("failure","UdpVideoProbe video worker "+failure.getClass().getSimpleName());
                 try{report.put("video_worker_failure_class",failure.getClass().getSimpleName());}catch(Exception ignored){}}
@@ -563,7 +584,7 @@ public final class UdpVideoProbe extends Instrumentation {
         }
         if(appActivity==null)finish(result.containsKey("failure")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
         else if(appListener!=null)appListener.complete(appReport==null?new JSONObject():appReport,result.containsKey("failure"),
-            CompletionReceipt.afterReport(audioCleanupState,appReport,appReportFailure));
+            CompletionReceipt.afterReport(audioCleanupState,appReport,appReportFailure,completionEndReason,session==null?0:session.seconds));
     }
 
     /** Window-only experiment request; never changes global display settings. */

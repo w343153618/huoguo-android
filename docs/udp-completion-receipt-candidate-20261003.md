@@ -10,7 +10,7 @@ The listener now receives two independent outputs: the accepted numeric statisti
 
 ## Closed receipt contract
 
-`audioCleanupState` is 0 unknown, 1 confirmed, or 2 incomplete. `statisticsStatus` is 0 unavailable, 1 accepted, 2 rejected by the 64 KiB check, or 3 rejected/failed for another reason. The receipt's numeric serialization contains only schema version, these two integer states, and the derived statistics-accepted bit. It contains no error text, arbitrary report fields, credentials, or UI content.
+`audioCleanupState` is 0 unknown, 1 confirmed, or 2 incomplete. `statisticsStatus` is 0 unavailable, 1 accepted, 2 rejected by the 64 KiB check, or 3 rejected/failed for another reason. The receipt's numeric serialization contains schema version, these two integer states, the derived statistics-accepted bit, and the later closed local-end/duration fields described in `docs/udp-local-hour-completion-contract-20261003.md`. It contains no error text, arbitrary report fields, credentials, or UI content.
 
 When a numeric statistics report was accepted, the UI stores that same object without adding fields or changing its byte size. When statistics were rejected or unavailable, the UI overwrites the previous report file with an explicitly named `completion_receipt` envelope. That small envelope is a control receipt, not a partial performance report. The existing 65,536-byte file bound remains in place. A write failure does not change the audio cleanup result.
 

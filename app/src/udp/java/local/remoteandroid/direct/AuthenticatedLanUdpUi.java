@@ -343,20 +343,30 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             activity.ui.post(()->{showLogin();status.setText("UDP 已停止，但本机音频资源收尾未确认。此次候选需结束进程后再测，暂时禁止重连；未回退 TCP。");});
             return;
         }
-        synchronized(lock){if(retiring==attempt)retiring=null;}
-        activity.ui.post(()->{synchronized(lock){if(current!=attempt||generation!=attempt.generation)return;attempt.stopped=true;current=null;}
+        final long completedGeneration;
+        synchronized(lock){
+            if(retiring==attempt)retiring=null;
+            if(current!=attempt||generation!=attempt.generation)return;
+            // Publish completion atomically. A cancel arriving before the UI
+            // runnable must not put this already-finished attempt back into
+            // retiring, since the Probe will not issue another callback.
+            attempt.stopped=true;current=null;completedGeneration=generation;
+        }
+        activity.ui.post(()->{synchronized(lock){if(current!=null||generation!=completedGeneration)return;}
+            if(activity.isFinishing()||activity.isDestroyed())return;
             showLogin();
+            if(completion.shouldRemindAfterHour()){
+                status.setText("已连接一小时，休息一下。需要时可以重新连接。");
+                if(!activity.isFinishing()&&!activity.isDestroyed())new AlertDialog.Builder(activity).setTitle("休息一下吧").setMessage("本次已连接一小时，远程会话已结束。休息后可重新连接。").setPositiveButton("知道了",null).show();
+                return;
+            }
             if(completion.statisticsStatus==UdpVideoProbe.CompletionReceipt.REPORT_REJECTED_LIMIT){
                 status.setText("UDP 已结束，统计报告超过 64 KiB，已明确拒绝；音频收尾已确认，可以重新连接。未回退 TCP。");return;
             }
             if(!completion.statisticsAccepted()){
                 status.setText("UDP 已结束，统计报告未能生成；音频收尾已确认，可以重新连接。未回退 TCP。");return;
             }
-            if(report.optInt("session_limit_reached",0)==1&&report.optInt("requested_seconds",0)==3600){
-                status.setText("已连接一小时，休息一下。需要时可以重新连接。");
-                if(!activity.isFinishing()&&!activity.isDestroyed())new AlertDialog.Builder(activity).setTitle("休息一下吧").setMessage("本次已连接一小时，远程会话已结束。休息后可重新连接。").setPositiveButton("知道了",null).show();
-                return;
-            }if(report.optInt("session_end_reason_code",0)==2){status.setText("UDP 首帧等待超时，请检查节点是否在线后重新连接；未回退 TCP。");return;}
+            if(report.optInt("session_end_reason_code",0)==2){status.setText("UDP 首帧等待超时，请检查节点是否在线后重新连接；未回退 TCP。");return;}
             if(report.optInt("session_end_reason_code",0)==3){status.setText("与远端的 UDP 连接已中断，请检查网络后重新连接；未回退 TCP。");return;}
             status.setText(!reportWritten?"UDP 已结束，但数值报告保存失败；未回退 TCP。":failed?"UDP 测试中断，数值报告已保存；未回退 TCP。":"UDP 测试结束，数值报告已保存在 App 私有目录。");});
     }
