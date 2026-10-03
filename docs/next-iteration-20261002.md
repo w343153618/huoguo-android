@@ -1,3 +1,17 @@
+## 2026-10-03 最新 checkpoint：缺帧已缩小到完整捕获后的原始帧提交
+
+[公网同alpha8真机轮](alpha8-vulkan-public30-observation-20261003.md)独立source SF30.002、phone17.262；新[raw日志白名单](alpha8-raw-submit-readback-20261003.md)八个约5秒内段为raw30.0163/submitted18.8362/replaced11.1560，whole1546/979/567，无idle repeats。它定位供给损失在完整gRPC RGBA到达之后、native原始帧提交完成之前，不是精准同帧SFcohort，也未证明唯一原因。当前缺的condition/budget/control/loop-gap/feed阶段有界trace正在由renderer_boot_contract实现，默认OFF，仅离线源码与fixture，不部署或改变算法。已有任务仍running时不重派、不并开手机会话。实际源码审查已排除“write后再固定睡33ms”，[实际encoder选择](alpha8-raw-clock-review-20261003.md)为持久59264ab7，3ad91备用不是本轮执行；manual模式、低延时属性read失败−12900不能误写为开启或读回false。
+
+本地alpha9/code40候选已经更新到source b914d86/APKacea9194，1357源码/owned检查及release build/lint通过，见[build白名单](alpha9-completion-local-build-20261003.json)。它新增独立CompletionReceipt，防止64KiB报告被拒后错误地永久阻止重连；音频释放不确定仍failclosed。旧3ac6774/8ccd是历史本地build，不是新产物。alpha9未装机/发布；手机及GitHub仍alpha8/code39/a663，原签名/JNI保留。下一真实候选验收需要matching code40 helper，不能借gold39helper结果。
+
+先重新读取当前BBB实际格式、运动位置与fresh CPU bracket，再固定同alpha8/30/540/4M/80ms，仅诊断host等待与native槽/VT/stdout关联。上轮reload格式未读回，CPU漂移、SF未知尾及非光学边界保留。M5朋友服务、NPS所有NPC和国内路线不动；不扩队列/缓冲、不做高码率宽矩阵、不宣称稳定30或真实V50。源Vulkan恢复已经完成，不根据历史checkpoint再次重启。
+
+## 2026-10-03 最新真实轮：源30、手机17，继续鉴别 raw提交供给
+
+同alpha8实际公网UDP30/540×960/4M/80ms的新saved-UI已有账号认证、退出确认和重连已PASS，helper用后卸载；源SF cadence30.002、手机17.262/max1094.041ms，不能称稳定30。host整个51.598s仅976AU；这个whole窗口与45s SF不同。独立raw日志正在核对capture约30与submitted14–23的5s段，先追raw writer/native输入/VT callback/stdout背压，不扩decoder队列、不以更大缓冲掩盖。实际token bucket并非write完成后固定再等33ms，初步排除了这个猜想；native参数和final仍需精确区分。见[新轮记录](alpha8-vulkan-public30-observation-20261003.md)。
+
+本轮标准URL重载后BBB真实运动可见，但带时间URI跳浏览器、后续设置出现Morphe queue，未重新读取实际itag；不能借先前299确认本轮格式。较早CPU预检与post有policy0 max787200→672000等漂移，不是立即配对、不由测试设置，不宣称固定CPU对照。源post仍5212/Vulkan/1080×1920/30Hz，手机全局120保留。先恢复实际内容格式/运动位置核验，再同APK小范围有界trace。alpha8仍已发布；alpha9只有本地候选，source实验分支新代码/证据已继续推送。
+
 ## 2026-10-03 最新 checkpoint：源 Vulkan 已恢复，真实格式已重新确认
 
 M1 仅在空闲机主源窗口恢复 HWUI `skiavk` 并重开已知源播放器；实际 PID5212 已读回 `Skia(Vulkan)`，RenderEngine `skiaglthreaded`、物理1080×1920/30Hz及手机限频/120Hz不变。两路新捕获页面正常，但不同于旧LIVE页面，未进行同内容 A/B，也未重跑媒体 FPS。当前 BBB 实际 itag299/avc1/1920×1080@60、251/Opus已从播放器诊断独立确认，浮层已关闭；下一轮先定位固定运动片段。详见[本轮恢复与边界](source-policy-restore-20261003.md)。下面“只读尚未恢复”的段落保留历史 checkpoint，不能再次触发恢复/重启。

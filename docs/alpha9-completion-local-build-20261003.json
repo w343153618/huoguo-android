@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "scope": "completion receipt candidate build/lint only; not installed/released",
+  "source_commit": "b914d86",
+  "apk_sha256": "acea9194dd550e5464ae0001b86a33802880dfd6c8e3f127b85b57a197981e46",
+  "apk_bytes": 7240254,
+  "version": "1.31-alpha.9",
+  "code": 40,
+  "jni_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+  "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "full_source_checks": 1357,
+  "assemble_release_passed": true,
+  "lint_release_passed": true,
+  "installed": false,
+  "published": false,
+  "evidence": "docs/alpha9-completion-local-build-20261003.json",
+  "candidate_contract": "docs/udp-completion-receipt-candidate-20261003.md",
+  "next_acceptance": "matching code40 helper and real audio cleanup/report rejection/reconnect; gold39 helper is not compatible acceptance",
+  "coverage_boundary": "Offline source/owned fixtures and local Android build only; no actual MTK/AudioTrack/device release or performance acceptance",
+  "published_app_unchanged": "1.31-alpha.8/code39, APK a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51"
+}
