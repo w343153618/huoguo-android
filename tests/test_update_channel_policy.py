@@ -1,5 +1,6 @@
 """Actual Java source/policy checks; no APK build, Android device or HTTP traffic."""
 from pathlib import Path
+import os
 import shutil
 import subprocess
 import tempfile
@@ -8,15 +9,18 @@ import xml.etree.ElementTree as ET
 
 ROOT=Path(__file__).resolve().parents[1]
 PACKAGE=ROOT/'app/src/main/java/local/remoteandroid/direct'
-JDK=Path('/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin')
-ANDROID=Path('/Users/wyw/Library/Android/sdk/platforms/android-37.0/android.jar')
+JDK=Path(os.environ.get('JAVA_HOME') or '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home')/'bin'
+SDK=Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
+    or str(Path.home()/'Library/Android/sdk'))
+ANDROID=SDK/'platforms/android-37.0/android.jar'
 
 
 class UpdateChannelPolicyChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.javac=str(JDK/'javac') if (JDK/'javac').is_file() else shutil.which('javac')
-        cls.java=str(JDK/'java') if (JDK/'java').is_file() else shutil.which('java')
+        if (JDK/'javac').is_file() and (JDK/'java').is_file():
+            cls.javac,cls.java=str(JDK/'javac'),str(JDK/'java')
+        else:cls.javac,cls.java=shutil.which('javac'),shutil.which('java')
         if not cls.javac or not cls.java:raise RuntimeError('Existing JDK required')
         cls.folder=tempfile.TemporaryDirectory(prefix='huoguo-update-policy-')
         built=subprocess.run([cls.javac,'-d',cls.folder.name,str(PACKAGE/'UpdateChannelPolicy.java'),
