@@ -2020,5 +2020,23 @@
     "default_changed": false,
     "new_APK": false,
     "next_action": "protected FIFO reversal, then consider promotion using measured stability and queue timing; public path separately protected"
+  },
+  "owner_raw_fifo_reversal_real_LAN_20261004": {
+    "evidence": "docs/owner-raw-fifo-reversal-real-LAN-20261004.json",
+    "source_final_paused_position_ms": 512097,
+    "source_endpoint_drop_delta": 70,
+    "host_queue_age_median_ms": 0.101,
+    "host_queue_age_p99_ms": 28.2366,
+    "host_queue_age_max_ms": 52.905,
+    "steady_pending1": 916,
+    "steady_pending2": 0,
+    "phone_SF_cadence": 29.814,
+    "phone_max_gap_ms": 124.330833,
+    "phone_trailing_unknown_ms": 481.095,
+    "whole_pipeline_coverage": false,
+    "FIFO_did_not_restore_28ms_median": true,
+    "default_changed": false,
+    "APK_changed": false,
+    "next_action": "single latest replication under same frozen dependencies; compare tails and startup phase, no causal claim"
   }
 }
