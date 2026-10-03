@@ -209,6 +209,7 @@ class UdpLanSessions:
         self._tombstones: OrderedDict[str, tuple[str, float]] = OrderedDict()
         self._pending_cleanup: list[_Session] = []
         self._closed = False
+        self._draining = False
         self._stop_failures = 0
         self._cleanup_failed = False
         # Payload-free completion signal, distinct from revoked/closed access.
@@ -224,6 +225,27 @@ class UdpLanSessions:
 
     def _owner_account_allowed(self, account: str) -> bool:
         return self._owner_accounts is None or account in self._owner_accounts
+
+    def begin_idle_drain(self) -> bool:
+        """Trusted in-process maintenance gate; never an HTTP operation.
+
+        Reserve idle against ``create`` under the same lock. Do not reap,
+        expire, revoke or stop a reservation to make this check succeed. Busy
+        or unconfirmed cleanup leaves admission unchanged. Successful drain is
+        sticky and idempotent, including a later ordinary idle ``close``.
+        This boolean is only this live registry's result, not a process/port
+        handover receipt or permission to stop any other service.
+        """
+        with self._lock:
+            if (self._active is not None or self._pending_cleanup
+                    or self._cleanup_failed or not self._quiescent.is_set()):
+                return False
+            if self._draining:
+                return True
+            if self._closed:
+                return False
+            self._draining = True
+            return True
 
     def _scope_ok(self) -> bool:
         """Read an in-memory verifier state; never do IPC on the UDP hot path.
@@ -332,6 +354,8 @@ class UdpLanSessions:
         with self._lock:
             if self._closed:
                 raise SessionError(503, 'registry_closed')
+            if self._draining:
+                raise SessionError(503, 'udp_registry_draining')
             if self._cleanup_failed:
                 raise SessionError(503, 'udp_cleanup_failed')
             if self._active is not None:
