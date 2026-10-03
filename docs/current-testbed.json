@@ -19,7 +19,7 @@
   "buffer_ms": 80,
   "experimental_client_package": "local.remoteandroid.direct.experiment",
   "instrumentation_package": "local.remoteandroid.phoneprobe.experiment",
-  "note": "Canonical M1 owner testbed; stable1.31 and independent alpha7 UDP owner trial. M1 physical1080x1920, 6 cores/16GiB; M5 formal720x1280. CPU-limited OnePlus12 is a surrogate, not V50 acceptance.",
+  "note": "Canonical M1 owner testbed; stable1.31 and published alpha8/code39 UDP owner trial. M1 physical1080x1920/30Hz,6cores16GiB; M5 daily720x1280/30Hz. Older top-level experiment fields are historical; use latest nested checkpoints. CPU-limited OnePlus12 is a surrogate, not V50 acceptance.",
   "phone_performance_profile": {
     "user_declared_cpu_throttled": true,
     "surrogate_target": "realme V50",
@@ -1627,5 +1627,40 @@
     "login_after_reboot_tested": false,
     "manual_unmute_not_continuously_overridden": true,
     "evidence": "docs/m5-host-output-silent-20261003.md"
+  },
+  "owner_trace_source_prep_20261003": {
+    "status": "failed_source_gate_before_any_media",
+    "evidence": "docs/host-trace-source-prep-deadline-20261003.json",
+    "supervisor_sha256": "aa83da0d13c193cf2c1c8bd313bc7e43039fc1ab7914d5411ff31ab2591cb4f1",
+    "source_candidate_commit": "f08ace3",
+    "actual_owned_quiescence_confirmed": true,
+    "original_services_signalled": false,
+    "phone_operated": false,
+    "actual_itag_codec_verified": false,
+    "next": "bounded_numeric_live_decoder_readback_or_explicit_unknown; avoid blind180sUI repetition"
+  },
+  "M5_host_output_guard_20261003": {
+    "status": "deployed_actual_builtin_output_event_restore_passed",
+    "evidence": "docs/m5-host-output-guard-live-20261003.json",
+    "source_sha256": "7e9efb8dd99c621d599aa0d6f39e3dcd07bb35f8868c85d5f164002d04a03abf",
+    "binary_sha256": "92e43b15265e1516ed29c01b8388b9c5a6caeafac1ced57bff2c0c426bbe631b",
+    "installed_plist_sha256": "b0bcc61e710e969db939087b7713c93f5128cfbec2a8a56d3557eb9183b7e5ee",
+    "job_label": "local.huoguo.m5.host-output-guard",
+    "actual_pid_at_acceptance": 5917,
+    "actual_output_volume": 0,
+    "actual_output_muted": true,
+    "actual_guest_volume_music": 5,
+    "actual_safe_unmute_event_restore": true,
+    "input_volume_unchanged": true,
+    "guest_gateway_NPS_restart": false,
+    "original_one_shot_retained": true,
+    "event_driven": true,
+    "periodic_polling": false,
+    "KeepAlive_unsuccessful": true,
+    "ThrottleInterval": 15,
+    "physical_device_hotplug_tested": false,
+    "new_phone_acoustic_acceptance": false,
+    "manual_protected_output_changes_corrected": true,
+    "maintenance_completed_do_not_repeat": true
   }
 }

@@ -1,3 +1,11 @@
+## 2026-10-03 最新：M5持续静音已实测部署，M1源准备超时未创建媒体
+
+用户再次听到M5视频声音，fresh读取output50/unmuted，说明旧登录一次性静音不是持续保护。root先恢复0/true，后部署独立CoreAudio事件guard（source7e9efb8d/binary92e43b15，joblocal.huoguo.m5.host-output-guard，bootstrap0/actualPID5917）。当前default/system均builtin163；保持volume0只切muteoff，实际事件纠正1次后0/true，listener/errors/uncertain/stderr0，guestvolume_music5/input85不变。旧one-shot和备份保留，没有guest/gateway/NPS重启。新保护会纠正人工本机音量变动，虚拟/Oray不改，aggregateunknown不称静音，fallback未用，未做hotplug/重启/手机声学。见[m5guard](m5-host-output-guard-20261003.md)。此维护结束，不重复建watcher/改音量或重启测试。
+
+M1同f08冻结/alpha8匹配helper的guardedsupervisor实际准备轮aa83da0d以root_enter_deadline自然结束2，actualownedquiescencetrue，owned/originalsignals0，专属45560/45963/45965释放。源先因URL未引号被zshglob拒绝，修正后BBB实画面、当前720p60菜单→手选1080p60读回，但未得到新itag/codec尺寸，不用旧299填gate。M5用户插入维护期间180s源gate到期，没有driver/helper/phonecredential/session/媒体/trace。见[失败层级](host-trace-source-prep-deadline-20261003.md)。不要把它当FPS或重复listeneronlyPASS，也不要再盲重复180s菜单。新的numericreadback设计8f0d8fa仅文档与既有16parserchecks，尚未实现或读设备；下一≤15s bounded源state/codec观察，live格式不可靠就unknown，供给观察不得称同格式AB。
+
+公开/手机仍alpha8/code39/a663；alpha9/code40/030126da仍本地未装未发布。M1机主/M5朋友分工、节点、账号、国内出口、NPS所有NPC不变。host raw30→submit约19唯一机制仍未知，没有新增trace或性能改善数据。继续保护原persistent身份，任何真实trace仍须持续reserve/精确witness/角色零/mark先于Popen/实际ownedquiescence。下一代码或小范围实测立即续接；不等用户，但不并开另一媒体任务。
+
 ## 2026-10-03 用户插入维护：M5本机静音已完成；mixed-gap分析器已完成
 
 M5断开后声音问题已直接处理：宿主原output100/unmuted，现实际output0/mutedtrue；guest媒体音量5保留。仅新增RunAtLoad一次性host-output-silent LaunchAgent（sourceSHA9a7d2ff6，bootstrap0、实际last exit0），无定时/KeepAlive，不重启guest/gateway/NPS，不改guest音量。作用于Mac本机全部声音；原Android REMOTE_SUBMIX→AAC→ADB→手机链路保持，未在本轮做手机声学验收。登录时重新静音，手动之后取消静音不会被持续覆盖。见[m5维护](m5-host-output-silent-20261003.md)。无需新APK。

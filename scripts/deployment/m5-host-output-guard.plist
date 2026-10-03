@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>local.huoguo.m5.host-output-guard</string>
+  <key>ProgramArguments</key><array>
+    <string>__RESTRICTED_HOST_RUNTIME__/m5-host-output-guard</string>
+    <string>--watch</string>
+    <string>--speaker-uid</string><string>__AUDITED_BUILTIN_SPEAKER_UID__</string>
+    <string>--sink-uid</string><string>__AUDITED_BLACKHOLE_OUTPUT_UID__</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>15</integer>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>__RESTRICTED_HOST_RUNTIME__/host-output-guard.numeric.log</string>
+  <key>StandardErrorPath</key><string>__RESTRICTED_HOST_RUNTIME__/host-output-guard.stderr.log</string>
+</dict></plist>

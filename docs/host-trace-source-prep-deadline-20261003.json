@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "scope": "owner_nonisolated_M1_guarded_LAN_listener_and_source_preparation_only",
+  "supervisor_sha256": "aa83da0d13c193cf2c1c8bd313bc7e43039fc1ab7914d5411ff31ab2591cb4f1",
+  "source_candidate_commit": "f08ace3aca872b24e268a9bd535966ae6b095fda",
+  "source_gate_written": false,
+  "actual_end_reason": "root_enter_deadline",
+  "supervisor_exit_code": 2,
+  "actual_owned_quiescence_confirmed": true,
+  "signals_sent_to_owned_Popens": 0,
+  "original_services_signalled": false,
+  "driver_started": false,
+  "phone_helper_installed": false,
+  "phone_credential_file_written": false,
+  "media_session_started": false,
+  "new_real_trace_collected": false,
+  "private_artifact_counts": {
+    "trace": 0,
+    "evidence": 0,
+    "phone-evidence": 0
+  },
+  "post_ports": {
+    "TCP45560": {
+      "readback_known": true,
+      "occupied": false
+    },
+    "UDP45963": {
+      "readback_known": true,
+      "occupied": false
+    },
+    "UDP45965": {
+      "readback_known": true,
+      "occupied": false
+    }
+  },
+  "source_url_shell_glob_first_attempt_failed": true,
+  "source_UI_1080p60_menu_observed": true,
+  "actual_source_itag_codec_verified": false,
+  "notes": "Original services untouched; no phone/LAN FPS/overhead/causal acceptance. Listener-only acceptance was not the purpose; source prep timed out before ENTER."
+}
