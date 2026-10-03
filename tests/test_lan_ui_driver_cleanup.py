@@ -16,6 +16,15 @@ DRIVER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DRIVER)
 
 
+def with_absent_target(run):
+    """These historical cleanup fixtures start with no target App process."""
+    def wrapped(command, **kwargs):
+        if command[0] == 'adb' and command[-1] == 'pidof '+DRIVER.TARGET_PACKAGE:
+            return subprocess.CompletedProcess(command, 1, stdout='', stderr='')
+        return run(command, **kwargs)
+    return wrapped
+
+
 class FakeChild:
     def __init__(self, timeouts=0):
         self.timeouts = timeouts
@@ -47,7 +56,7 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
     def invoke(self, folder, run, children=(), clock=None):
         with contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(DRIVER.sys, 'argv', ['probe', '--output', str(folder)]))
-            stack.enter_context(patch.object(DRIVER.subprocess, 'run', side_effect=run))
+            stack.enter_context(patch.object(DRIVER.subprocess, 'run', side_effect=with_absent_target(run)))
             spawned = stack.enter_context(patch.object(DRIVER.subprocess, 'Popen', side_effect=children))
             if clock is not None:
                 stack.enter_context(patch.object(DRIVER.time, 'monotonic', side_effect=clock))
@@ -119,7 +128,7 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
             with tempfile.TemporaryDirectory() as folder, contextlib.ExitStack() as stack:
                 argv=['probe','--output',folder]+(['--surface-submit-lead-ms',str(lead)] if lead else [])
                 stack.enter_context(patch.object(DRIVER.sys,'argv',argv))
-                stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+                stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=with_absent_target(run)))
                 stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
                 stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,121]))
                 stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
@@ -156,7 +165,7 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
         def spawn(args,**kwargs):commands.append(args);return child
         with tempfile.TemporaryDirectory() as folder, contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,'--steady-seconds','30']))
-            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=with_absent_target(run)))
             stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
             stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,131]))
             stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
@@ -210,7 +219,7 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
         def spawn(args,**kwargs):commands.append(args);return child
         with tempfile.TemporaryDirectory() as folder,contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,'--steady-seconds','135']))
-            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=with_absent_target(run)))
             stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
             stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,226]))
             stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
@@ -276,7 +285,7 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
                     return subprocess.CompletedProcess(args,0,stdout='{}' if 'cat ' in command else '',stderr='')
                 with tempfile.TemporaryDirectory() as folder,contextlib.ExitStack() as stack:
                     stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,'--steady-seconds','30','--media-only']))
-                    stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+                    stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=with_absent_target(run)))
                     stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
                     stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,1]))
                     stack.enter_context(patch.object(DRIVER.time,'sleep'))

@@ -20,6 +20,15 @@ DRIVER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DRIVER)
 
 
+def with_absent_target(run):
+    """Owned old-driver fixtures explicitly have no pre-instrument App process."""
+    def wrapped(command, **kwargs):
+        if command[0] == 'adb' and command[-1] == 'pidof '+DRIVER.TARGET_PACKAGE:
+            return subprocess.CompletedProcess(command, 1, stdout='', stderr='')
+        return run(command, **kwargs)
+    return wrapped
+
+
 def network_report(node):
     profile = DRIVER.planned_profile(node)
     result = {'requested_network_scope': 'nps_owner', 'requested_node': node}
@@ -134,7 +143,7 @@ class NpsUiDriverChecks(unittest.TestCase):
             stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,
                 '--network-scope','nps_owner','--node','m5','--phone','owner-test-phone',
                 '--media-only','--phone-only-sampler']))
-            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=with_absent_target(run)))
             stack.enter_context(patch.object(DRIVER.subprocess,'Popen',side_effect=spawn))
             stack.enter_context(patch.object(DRIVER.time,'monotonic',side_effect=[0,1]))
             stack.enter_context(patch.object(DRIVER.time,'sleep'))
@@ -168,7 +177,7 @@ class NpsUiDriverChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder,contextlib.ExitStack() as stack:
             stack.enter_context(patch.object(DRIVER.sys,'argv',['probe','--output',folder,
                 '--network-scope','nps_owner','--node','m5','--media-only','--phone-only-sampler']))
-            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=run))
+            stack.enter_context(patch.object(DRIVER.subprocess,'run',side_effect=with_absent_target(run)))
             stack.enter_context(patch.object(DRIVER.subprocess,'Popen',return_value=Declined()))
             stack.enter_context(patch.object(DRIVER.time,'monotonic',return_value=0))
             stack.enter_context(contextlib.redirect_stdout(io.StringIO()))

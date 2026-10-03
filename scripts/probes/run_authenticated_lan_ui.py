@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded normal-UI UDP acceptance; preplaced owner-only account input required.
+"""Bounded normal-UI UDP acceptance; private input or explicit saved-UI mode.
 
 Does not create accounts, read a host credential or provision a UDP key. Outputs
 only bounded numeric test reports, never instrumentation/system raw logs.
@@ -8,6 +8,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+import re
 import shlex
 import subprocess
 import sys
@@ -15,8 +16,45 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 PRIVATE = '/data/user/0/local.remoteandroid.direct.experiment/files/'
+TARGET_PACKAGE = 'local.remoteandroid.direct.experiment'
 sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
+
+
+def target_process_state(result):
+    """Conservative pre-instrument check; no PID/raw error text is exported.
+
+    Normal am instrumentation may restart its target before helper busy checks.
+    Only pidof's empty exit1 with empty stderr verifies absence. A running idle
+    login App is deliberately skipped too; no-restart lifecycle is unverified.
+    """
+    if type(result.returncode) is not int or not isinstance(result.stdout, str) or not isinstance(result.stderr, str):
+        return 'unavailable'
+    output, error = result.stdout.strip(), result.stderr.strip()
+    if error or len(output) > 128:
+        return 'unavailable'
+    if result.returncode == 1 and not output:
+        return 'absent'
+    if result.returncode == 0 and re.fullmatch(r'[0-9]+(?:\s+[0-9]+){0,7}', output):
+        values = [int(value) for value in output.split()]
+        if all(0 < value <= 4194304 for value in values):
+            return 'active'
+    return 'unavailable'
+
+
+def verify_credential_source_readback(result, expected_source):
+    if not isinstance(result, dict) or 'failure_class' in result:
+        return False
+    if expected_source == 'private-file':
+        # Historical private-file helper reports remain readable.
+        return result.get('requested_credential_source', 'private-file') == 'private-file'
+    if expected_source != 'saved-ui' or result.get('requested_credential_source') != 'saved-ui':
+        return False
+    if result.get('saved_UI_private_input_touched') is not False or result.get('saved_UI_secret_exported') is not False:
+        return False
+    return all(result.get(stage + '_' + field) is True for stage in ('first', 'second')
+        for field in ('saved_UI_route_verified', 'saved_UI_allowed_account_verified',
+                      'saved_UI_nonempty_credential_verified', 'saved_UI_normal_restore_used'))
 
 
 def verify_nps_network_readback(result, node):
@@ -292,6 +330,8 @@ def parse_arguments(argv=None):
     p.add_argument('--surface-submit-lead-ms', type=int, choices=[0,16], default=0,
                    help='Explicit owner-only Surface submission experiment; does not change playback target/buffer')
     p.add_argument('--credential-save',choices=['off','on'],default='off',help='Actual save/reopen/clear/reopen/save UI acceptance; existing test account only')
+    p.add_argument('--credential-source', choices=['private-file', 'saved-ui'], default='private-file',
+                   help='Explicit owner saved-UI read: exact public node, existing encrypted UI restore only; no fallback')
     p.add_argument('--steady-seconds', type=int, choices=range(20,151), default=20,
                    help='Bounded20..150s SF steady window; helper waits this duration plus2s before reconnect')
     p.add_argument('--media-only', action='store_true')
@@ -306,6 +346,8 @@ def parse_arguments(argv=None):
         args.stage_diagnostics = 'off'
     if (args.network_scope == 'nps_owner') != (args.node is not None):
         p.error('Public owner scope requires explicit node; existing scopes do not accept node')
+    if args.credential_source == 'saved-ui' and (args.network_scope != 'nps_owner' or args.credential_save != 'off'):
+        p.error('Saved-UI credentials require an exact public owner node and credential-save off')
     if args.phone_only_sampler and not args.media_only:
         p.error('Phone-only sampler requires media-only; no remote source touch setup')
     if args.network_scope == 'nps_owner' and args.node == 'm5' and not args.phone_only_sampler:
@@ -351,7 +393,9 @@ def main():
             local_driver_formal_gate_is_remote_host_gate=False)
     report.update(phone_only_sampler=args.phone_only_sampler,
         source_SF_sampled_by_this_driver=not args.phone_only_sampler,
-        physical_FPS_acceptance=False)
+        physical_FPS_acceptance=False, requested_credential_source=args.credential_source,
+        preinstrument_target_process_absent_verified=False,
+        instrumentation_no_restart_lifecycle_verified=False)
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -360,11 +404,17 @@ def main():
             raise RuntimeError('formal_gate_failed')
         if gate.stdout.strip():
             raise RuntimeError('formal_session_active')
-        if root('test -s '+PRIVATE+'udp-test-login.json',False).returncode:
+        state = target_process_state(adb(args.phone, 'pidof '+TARGET_PACKAGE, False))
+        report['preinstrument_target_process_state'] = state
+        if state != 'absent':
+            raise RuntimeError('target_App_process_active_skip' if state == 'active'
+                               else 'target_App_process_check_unavailable_skip')
+        report['preinstrument_target_process_absent_verified'] = True
+        if args.credential_source == 'private-file' and root('test -s '+PRIVATE+'udp-test-login.json',False).returncode:
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e credential_source '+args.credential_source+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
@@ -456,14 +506,19 @@ def main():
         else:
             report['numeric_result_missing']=True
         ui_result = report.get('ui_result')
-        if (isinstance(ui_result, dict)
-                and ui_result.get('bounded_failure_label') == 'existing_UI_attempt_busy'
-                and ui_result.get('normal_UI_login_received_media') is not True):
+        if isinstance(ui_result, dict) and ui_result.get('bounded_failure_label') == 'existing_UI_attempt_busy':
             # The normal UI helper declined before owning an attempt. Its
             # failure must not turn into a force-stop of somebody else's App.
             report['existing_phone_UI_attempt_busy_skip'] = True
+            raise RuntimeError('existing_UI_attempt_busy')
+        if (isinstance(ui_result, dict) and ui_result.get('bounded_failure_label') in ('saved_UI_credential_unavailable',
+                    'saved_UI_account_unavailable', 'saved_UI_route_unverified', 'saved_UI_restore_unavailable')):
+            report['saved_UI_unavailable_skip'] = True
+            report['saved_UI_declined_before_owned_attempt'] = ui_result.get('helper_owned_attempt_started') is False
+            raise RuntimeError(ui_result['bounded_failure_label'])
         report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on')
         report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
+        report['credential_source_readback_verified']=verify_credential_source_readback(report.get('ui_result'),args.credential_source)
         report['exit_confirmation_readback_verified']=verify_exit_confirmation_readback(report.get('ui_result'))
         report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
         report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
@@ -490,6 +545,8 @@ def main():
             raise RuntimeError('v50_profile_readback_unverified')
         if not report['credential_save_readback_verified']:
             raise RuntimeError('credential_save_readback_unverified')
+        if not report['credential_source_readback_verified']:
+            raise RuntimeError('credential_source_readback_unverified')
         if not report['exit_confirmation_readback_verified']:
             raise RuntimeError('exit_confirmation_readback_unverified')
         if args.network_scope == 'nps_owner' and not report['nps_physical_network_binding_verified']:
@@ -509,6 +566,9 @@ def main():
     except (Exception, KeyboardInterrupt) as failure:
         report['driver_failure_class']=type(failure).__name__
         labels = {'formal_gate_failed','formal_session_active','private_login_missing',
+                  'target_App_process_active_skip','target_App_process_check_unavailable_skip',
+                  'existing_UI_attempt_busy','saved_UI_credential_unavailable','saved_UI_account_unavailable',
+                  'saved_UI_route_unverified','saved_UI_restore_unavailable',
                   'instrumentation_timeout','guest_receipt_not_focused',
                   'isolated_App_uid_readback','test_coordinate_file_bound',
                   'test_coordinate_bound','kernel_test_dedicated_phone_only',
@@ -517,11 +577,13 @@ def main():
                   'steady_media_progress_stalled_or_unverified','codec_startup_readback_unverified',
                   'nps_network_profile_readback_unverified','exit_confirmation_readback_unverified',
                   'nps_physical_network_binding_unverified','credential_save_readback_unverified',
+                  'credential_source_readback_unverified',
                   'v50_profile_readback_unverified'}
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
-        if proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip'):
+        if (proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
+                and not report.get('saved_UI_unavailable_skip')):
             # Terminating the local adb client alone does not end Android
             # instrumentation. Stop only these two known isolated packages.
             for package in ('local.huoguo.lanuitest','local.remoteandroid.direct.experiment'):
@@ -533,8 +595,12 @@ def main():
         for sampler in samplers:
             reap_owned_process(sampler, report, 'sampler', 1 if failed else args.steady_seconds+5, terminate=failed)
             report.setdefault('sampler_exit_codes',[]).append(sampler.returncode)
-        attempt_cleanup(report, 'remove_private_test_input',
-                        lambda: root('rm -f '+PRIVATE+'udp-test-login.json '+' '.join(PRIVATE+f for f in flags),False))
+        cleanup_paths = ([PRIVATE+'udp-test-login.json'] if args.credential_source == 'private-file' else [])
+        # A pre-instrument saved-mode refusal owns no App markers or input.
+        if args.credential_source == 'private-file' or proc is not None:
+            cleanup_paths.extend(PRIVATE+f for f in flags)
+            attempt_cleanup(report, 'remove_private_test_input' if args.credential_source == 'private-file' else 'remove_owned_phase_markers',
+                            lambda: root('rm -f '+' '.join(cleanup_paths),False))
     (args.output/'ui-acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))
     return 1 if 'driver_failure_class' in report or report.get('cleanup_failures') else 0

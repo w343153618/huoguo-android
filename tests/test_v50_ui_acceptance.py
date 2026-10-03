@@ -105,6 +105,8 @@ class V50DriverChecks(unittest.TestCase):
             calls.append(args)
             if args[0]=='lsof':return subprocess.CompletedProcess(args,1,stdout=b'',stderr=b'')
             command=args[-1]
+            if command=='pidof '+DRIVER.TARGET_PACKAGE:
+                return subprocess.CompletedProcess(args,1,stdout='',stderr='')
             if 'cmd package list packages' in command:
                 return subprocess.CompletedProcess(args,0,stdout='package:local.remoteandroid.direct.experiment uid:12345\n',stderr='')
             if 'test -f ' in command:
