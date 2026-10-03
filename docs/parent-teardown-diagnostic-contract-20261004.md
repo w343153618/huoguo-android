@@ -106,3 +106,19 @@ this new candidate.
 
 - hardware_stream.py:a62d85390132804951f8fa160ea84172bcfa36bb117c6bff2b1a800cc8e7eb99
 - tests/test_parent_teardown_receipt.py:4ad57e49935c07400722c1d0d6b3fb5c3c64705935416822f0ad6fc6bc7de447
+
+## Subsequent owned-process and cloud observations
+
+The actual HostHardwareSession close path ran against one separately owned
+Python sleep process with a new process group. Its asynchronous worker-parent
+receipt was read within the fixture's2-second observation bound, matched the
+actual Popen PID/PGID, and reported operations3/4/5/9/10 with the actual wait
+result-15. This is an owned OS-process fixture, not a Swift encoder/media
+exit, a parent-exit publication test, or complete native producer coverage.
+
+Exact source commitb07009b31245050ec28ef2ed1b4c69453c48d0ea completed
+[Actions run37145236790](https://github.com/w343153618/huoguo-android/actions/runs/37145236790)
+with both build and udp_candidate success. Linux discovery executed1565
+tests in66.971s, OK with11 existing platform skips. Stable Android compile/
+lint took1m45s; isolated UDP compile/lint took2m12s. This cloud result
+validates this source snapshot; phone/APK/native-media acceptance remains open.

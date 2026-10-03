@@ -1779,7 +1779,18 @@
     "real_crossprocess_publication_accepted": false,
     "candidate_deployed": false,
     "default_cleanup_policy_changed": false,
-    "cloud_acceptance_for_this_candidate": false
+    "cloud_acceptance_for_this_candidate": true,
+    "cloud_commit": "b07009b31245050ec28ef2ed1b4c69453c48d0ea",
+    "cloud_run": 37145236790,
+    "cloud_jobs": {
+      "build": "success",
+      "udp_candidate": "success"
+    },
+    "cloud_linux_tests": 1565,
+    "cloud_linux_seconds": 66.971,
+    "cloud_existing_platform_skips": 11,
+    "owned_python_subprocess_fixture_observed": true,
+    "owned_fixture_native_media_acceptance": false
   },
   "source_renderer_boot_persistence_review_20261004": {
     "evidence": "docs/source-renderer-boot-persistence-review-20261004.md",
@@ -1787,8 +1798,33 @@
     "actual_before_hwui": "skiagl",
     "actual_before_source_pipeline": "Skia_OpenGL",
     "candidate_userspace_boot_option": "androidboot.debug.hwui.renderer=skiavk",
-    "candidate_deployed": false,
-    "real_coldboot_acceptance": false,
-    "source_format_or_BBB_accepted": false
+    "candidate_deployed": true,
+    "real_coldboot_acceptance": true,
+    "source_format_or_BBB_accepted": false,
+    "actual_source_pipeline_accepted": false,
+    "layout_accepted": false
+  },
+  "M1_renderer_boot_deployment_20261004": {
+    "evidence": "docs/m1-renderer-boot-deployment-20261004.json",
+    "description": "docs/m1-renderer-boot-deployment-20261004.md",
+    "passed": true,
+    "actual_emulator_pid": 48576,
+    "boot_and_runtime_HWUI": "skiavk",
+    "actual_RenderEngine": "skiaglthreaded",
+    "actual_memtotal_KiB": 8123368,
+    "actual_CPU_cores": 6,
+    "actual_physical_width": 1080,
+    "actual_physical_height": 1920,
+    "actual_density": 480,
+    "actual_refresh_hz": 30.0,
+    "AVD_config_unchanged": true,
+    "all_other_plist_semantics_preserved": true,
+    "only_argument_pair_added": true,
+    "protected_quiescence_confirmed": true,
+    "reservation_explicitly_released": true,
+    "original_owner_identity_preserved": true,
+    "M5_NPS_gateway_phone_operated": false,
+    "source_pipeline_layout_FPS_accepted": false,
+    "repeat_maintenance_required": false
   }
 }

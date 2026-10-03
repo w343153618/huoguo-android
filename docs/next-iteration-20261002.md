@@ -1,3 +1,11 @@
+## 2026-10-04 M1 renderer boot持久化已实际完成，下一保护source launch/布局验收
+
+单次维护实际exit0/18.182s、88ownedlocalclients全reaped/timeoutterminations0，emulator65956→48576/newboot，boot及runtimeHWUI skiavk、REskiaglthreaded保持，MemTotal8123368KiB/6核/1080x1920/density480/30.00Hz及AVD d2ff原字节保持。只M1 emulator job增加一对appenduserspace参数、plist88272，新限制备份保留；持续reserve/live503/原owner精确身份/4roleszero/两formalclear，actualprotectedquiescence后release。M5/NPS/gateway/phone/源App无操作。见[实际维护](m1-renderer-boot-deployment-20261004.md)。这项已完成，勿再追加参数/冷启。
+
+后续独立read-onlycollector退出2/partial但全部query成功，propertyskiavk/RE/尺寸30再次通过；新sourcePID3470稳定，actualgfxpipeline unavailable，未验收布局/FPS/BBB。旧3553/start2521不可复用。source_gate_final_review正在NEW私有候选准备受保护exactMorpheMAIN launch、freshidentity/actualpipeline和有界ADB+authenticatedgRPC截图；source_driver_final_review独立审查，尚未execute，不重复派。另一parentmedia新冻结seed/driver5e及supervisore31d已dryrun0并独立审查，未started；源码a62d、原encoder592/packetizer567/helper837/alpha8保持，只能在新source/readback/保护符合后单次实验，不能把未知cartoon当BBB或受控AB。
+
+精确b07009b31245050ec28ef2ed1b4c69453c48d0ea/run37145236790两个job实际success，Linux1565/66.971s/11既有skip，Android1m45/UDP2m12；root1582/60.204s及44targeted仍分列。本机额外ownedPython子进程fixture实际worker-parent receipt已观测、Popen identity匹配/exit-15，但不是Swift/native媒体/crossprocess退出完整验收；trace-off/default及APK/runtime没部署。公开alpha8/code39、stable1.31/code32保持，下一发布要真实手机/指定路径及隔离分层验收，不借CI绿灯。
+
 ## 2026-10-04 parent teardown只做诊断，源码验收完成；准备M1 renderer持久化
 
 新默认OFF的parent teardown候选硬件源码a62d8539、test4ad57e49，root44targeted/0.118s和1582全仓/60.204s PASS，独立20新fixture PASS；trace-off动作/timeout保持，trace-on只观察实际worker/encoder父级已有poll/wait/信号调用并异步发布两份闭集receipt。非退出操作不报告known退出码，errno getter异常不替换primary。没有EOF/drain/重试/新等待或native producer结束验收；实际媒体/异步crossprocess publication仍待测，不能追认auto5或9dac cloud。见[parent契约](parent-teardown-diagnostic-contract-20261004.md)。

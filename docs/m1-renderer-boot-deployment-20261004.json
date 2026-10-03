@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "scope": "owner_nonisolated_M1_renderer_boot_only",
+  "executed": true,
+  "passed": true,
+  "steps": [
+    {
+      "phase": "continuous_reservation_live_idle_accepted",
+      "exact_idle_witness": true,
+      "original_four_roles_zero": true
+    },
+    {
+      "phase": "formal_TCP_first_clear"
+    },
+    {
+      "phase": "restricted_backup_complete",
+      "backup_files": 3,
+      "original_plist_sha256": "1bf65202b9922c7008370b790b1e350062ea8d56a9ad10bc2636a06d958f1287",
+      "candidate_plist_sha256": "88272ea90c90f2a67bfe3fae460550cc978ec604f5e94e0681f2da1cd03c9674"
+    },
+    {
+      "phase": "formal_TCP_second_clear_and_exact_job_preserved"
+    },
+    {
+      "phase": "exact_emulator_job_bootout"
+    },
+    {
+      "phase": "exact_original_emulator_exit_confirmed"
+    },
+    {
+      "phase": "single_argument_pair_atomically_installed"
+    },
+    {
+      "phase": "exact_emulator_job_bootstrap"
+    },
+    {
+      "phase": "candidate_numeric_boot_acceptance_only"
+    }
+  ],
+  "gateway_M5_NPS_phone_signalled": false,
+  "source_app_launched_or_force_stopped": false,
+  "guest_data_wiped": false,
+  "AVD_config_unchanged": true,
+  "pipeline_or_layout_or_FPS_accepted": false,
+  "formal_TCP_admission_atomic": false,
+  "before": {
+    "memtotal_kib": 8123368,
+    "cpu_count": 6,
+    "physical": {
+      "width": 1080,
+      "height": 1920
+    },
+    "override": null,
+    "physical_density": 480,
+    "override_density": null,
+    "mode": {
+      "id": 1,
+      "width": 1080,
+      "height": 1920,
+      "refresh_hz": 30.0
+    },
+    "boot_renderer": "skiagl",
+    "renderer": "skiagl",
+    "renderengine": "skiaglthreaded"
+  },
+  "after": {
+    "memtotal_kib": 8123368,
+    "cpu_count": 6,
+    "physical": {
+      "width": 1080,
+      "height": 1920
+    },
+    "override": null,
+    "physical_density": 480,
+    "override_density": null,
+    "mode": {
+      "id": 1,
+      "width": 1080,
+      "height": 1920,
+      "refresh_hz": 30.0
+    },
+    "boot_renderer": "skiavk",
+    "renderer": "skiavk",
+    "renderengine": "skiaglthreaded"
+  },
+  "old_guest_pid": 65956,
+  "new_guest_pid": 48576,
+  "old_guest_exit_confirmed": true,
+  "new_boot_identity_confirmed": true,
+  "original_gateway_identity_and_four_role_zero_preserved": true,
+  "emulator_plist_sha_before": "1bf65202b9922c7008370b790b1e350062ea8d56a9ad10bc2636a06d958f1287",
+  "emulator_plist_sha_after": "88272ea90c90f2a67bfe3fae460550cc978ec604f5e94e0681f2da1cd03c9674",
+  "append_pairs": 1,
+  "all_other_plist_semantics_preserved": true,
+  "source_identity_layout_pipeline_require_separate_readback": true,
+  "rollback_completed": false,
+  "protected_quiescence_confirmed": true,
+  "reservation_explicitly_released": true,
+  "owned_local_clients_started": 88,
+  "owned_local_clients_reaped": 88,
+  "owned_local_client_timeout_terminations": 0,
+  "all_owned_local_clients_reaped": true,
+  "stateful_operation_budget_seconds": 270,
+  "global_stateful_seconds": 18.182,
+  "stateful_budget_exceeded": false,
+  "candidate_bootstrap_attempted": true,
+  "candidate_job_identity_registered": true,
+  "backup_created": true,
+  "script_sha256": "e6ad144b5beb7be162b848eb68d5692563ca9a8ed29f4b9c44d147fadb571df6",
+  "fixture_sha256": "88aaaba023a6990817142d3cd237462a11a95e0e9b1b6f3136b0378ebd2d9ff9",
+  "root_inert_tests": 38,
+  "root_inert_seconds": 0.006,
+  "independent_inert_tests": 38,
+  "independent_after_readback": {
+    "sample_status": "partial",
+    "device_ready": true,
+    "same_boot_verified": true,
+    "hwui_property": "skiavk",
+    "renderengine_property": "skiaglthreaded",
+    "process_status": "single_pid_stable",
+    "source_pid": 3470,
+    "source_pipeline": "unavailable",
+    "size": {
+      "physical": {
+        "width": 1080,
+        "height": 1920
+      }
+    },
+    "density": {
+      "physical": 480
+    },
+    "active_mode_display0": {
+      "id": 1,
+      "width": 1080,
+      "height": 1920,
+      "refresh_hz": 30.0
+    },
+    "display_rotation": 0,
+    "query_status": {
+      "device_state": "ok",
+      "boot_completed": "ok",
+      "boot_id_before": "ok",
+      "hwui": "ok",
+      "renderengine": "ok",
+      "pid_before": "ok",
+      "gfxinfo": "ok",
+      "pid_after": "ok",
+      "size": "ok",
+      "density": "ok",
+      "active_mode": "ok",
+      "rotation": "ok",
+      "boot_id_after": "ok"
+    },
+    "exit_code": 2
+  },
+  "independent_source_pipeline_accepted": false,
+  "layout_accepted": false,
+  "media_performance_accepted": false
+}
