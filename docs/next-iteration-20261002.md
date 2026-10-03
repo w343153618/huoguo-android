@@ -1,3 +1,19 @@
+## 2026-10-04 最新：真实LAN parent观察完成，选源在序列中发生变化
+
+第二NEW retry复用root限定安装helper的实际SHA/ownershipreceipt，frozen e31d supervisor/5e driver及b070 runtime未改，真实OnePlus12+RAM8 M1 LAN UDP30/540/4M/80/lead0、stage/startup/PCMqueueOFF/AACon、FIFO2/native3完成normal UI、30s采样、退出continue/leave/reconnect。driver0、ownedgateway自然0和唯一shutdown quiescent/stop0、supervisor0/actualownedquiescence，原服务及supervisor-owned signals0；helper/目标PID/私有输入/高端口实际clear。首轮普通ADB helper install45s超时、driver/READY/media未启及300s自然shutdown保留；root pm scoped install不改global security，第二轮用后卸载。不能追认首轮为媒体，不能重复原持久服务或已完成维护。
+
+source SF active29.956/full22.260、max67.260ms但最后6.435s观测ring未新增；phone active23.937/full22.997/max1027.696ms/>100ms7，未知hosttails181.627/818.741保留，不能称稳定30。firstraw whole counter36.784045s capture872/submit869/replaced5/idle0与SF窗不同；conditionmax260.042ms/rawpipe1311.217ms含startup未拆，encodedwrite1.361/feedpublish0.618。原BBB标题/帧在准备前真实可见，但phone结束后已是另一俄语动画；内容在序列中切换，具体是否落入steady窗unknown。actualStats仍未读，不称同源/同格式AB。下一优先锁VideoID/格式/播放位置并防autoplay污染，再比较供给，不扩Inbox/缓冲/宽矩阵。
+
+两actual owned chains有worker/encoder parent receipt，PID/PGID链接与各自path关联、cleanup returned/observer errors0/drops0，workerwait0/encoder opcode11 poll−15。原group TERM包含native支持正常cleanup结束native，但不当播放崩溃/掉帧根因；native仍startonly/nofooter，strict analyzer completechains0，不放宽clock/producer证据。下一独立审查 graceful native stop诊断，不先改default。见[真实观察](parent-teardown-real-phone-20261004.md)及[数字证据](parent-teardown-real-phone-20261004.json)。公开/手机alpha8/code39、stable不改，M5/NPS/节点/国内规则保护；当前无media/agent/监听活跃。
+
+## 2026-10-04 最新：CI竞态实际云端已绿，M1原生选源/布局已读回
+
+修复73bc80f97ff2a9d22efcc7e37b980a277d9cda0d/run37147182008实际两个job success：Linux1565/85.910s/11既有skip、Android2m15/UDP1m35，root1582/58.420s及25/1.061s分列。仅test-accounting fixture改动，无新APK、manifest或服务替换。后续新commit不能借该绿灯，见[CI修复](github-ci-portability-repair-20261003.md)。
+
+受保护source launcher3fe97d实际4.225s/80localclients全reaped/exit0，fresh3470/UID10235/start1952、actualVulkan/REskiaglthreaded/1080x1920/density480/30Hz/guest48576不变。两初图为启动与loading，不比较同瞬间；lateADB home upright。Root随后NEW boundednative搜索9f533d（4.631s/102全reaped）和observedresultopen afb509c（3.993s/81全reaped），官方BBB标题和watch单帧正常向上已目视；actualStats VideoID/codec/itag/尺寸/FPS仍unknown，不能借标题60fps/历史299。numericcollector fresh同identity/MediaSession playing前后通过，但0.2s位置无变化不当运动/帧率。三准备均live503/reserve/角色零/formalclear/实际回收后explicitrelease；未动M5/NPS/phone，见[源读回](source-native-layout-readback-20261004.md)。
+
+下一parentmedia frozen e31d/driver5e单次LAN真实手机轮已开始：第一尝试在matching helper普通ADB install45秒超时，没有driver/READY/媒体，ownedgateway仍按300秒自然退出并保留准入。Root既有原签名helper837通过限定root pm install user0成功、实际安装SHA读回及stage清理，未改全局安全设置，receipt私有；待原supervisor实际quiescence结束才能NEW候选重试，不并开媒体。公开仍alpha8/code39，source formatunknown只能source-supply/teardown，不称受控改善。
+
 ## 2026-10-04 最新CI复发是DNS fixture回包与计数竞态，已本地修正
 
 精确c19c3fe/run37146375219实际failure：Linux1565/80.848s/11既有skip，只有restricted DNS owned upstream test回包后立即读replied为0；UDP dependent job skipped。c19相对之前绿b070仅改文档，不是renderer/RAM维护或App崩溃证据。真实worker sendto在计数之前，fixture新增有界事件明确重现“回包已收到但计数未完成”，释放后在原owned guard全部worker joined时核对replied1。仅test改动，生产DNS安全guard/顺序、workflow和服务均不改；root25/1.061s focused及1582/58.420s全仓PASS。修复须推送并独立核实际GitHub新SHA，不能借旧绿灯。见[CI修复](github-ci-portability-repair-20261003.md)。当前source gate/driver两agent继续既有新私有候选审查，尚未执行，不重复派/媒体。

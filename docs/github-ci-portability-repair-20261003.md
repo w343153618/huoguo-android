@@ -57,9 +57,13 @@ skip, or weakened count assertion.
 Only the test fixture changes. Production DNS validation, resolver binding,
 worker ordering, isolation guards and the workflow remain unchanged. The
 focused module passed 25 tests in 1.061 seconds; root independently ran the
-full repository suite: 1582 tests in 58.420 seconds, `OK`. The exact new GitHub
-SHA result is recorded separately when completed; these local results do not
-assert cloud success or a new APK/performance improvement.
+full repository suite: 1582 tests in 58.420 seconds, `OK`. The repair was pushed
+as `73bc80f97ff2a9d22efcc7e37b980a277d9cda0d`. Its exact
+[run37147182008](https://github.com/w343153618/huoguo-android/actions/runs/37147182008)
+completed `success`, with both `build` and `udp_candidate` successful. Linux
+ran 1565 tests in 85.910 seconds, `OK (skipped=11)`; stable Android compile/lint
+took 2m15s and the UDP candidate 1m35s. These are actual cloud results for this
+SHA. They do not publish a new APK or assert a real-phone performance gain.
 
 ## Confirmed causes and scoped changes
 

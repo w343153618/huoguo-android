@@ -1826,5 +1826,57 @@
     "M5_NPS_gateway_phone_operated": false,
     "source_pipeline_layout_FPS_accepted": false,
     "repeat_maintenance_required": false
+  },
+  "M1_source_native_layout_20261004": {
+    "evidence": "docs/source-native-layout-readback-20261004.json",
+    "description": "docs/source-native-layout-readback-20261004.md",
+    "actual_pipeline": "vulkan",
+    "source_pid": 3470,
+    "source_uid": 10235,
+    "source_start_ticks": 1952,
+    "loaded_home_and_watch_single_frame_upright": true,
+    "official_BBB_title_observed": true,
+    "actual_Stats_ID_format_FPS_known": false,
+    "real_phone_performance_accepted": false,
+    "guest_or_service_restart_in_these_preparations": false
+  },
+  "CI_DNS_accounting_repair_20261004": {
+    "source_commit": "73bc80f97ff2a9d22efcc7e37b980a277d9cda0d",
+    "run": 37147182008,
+    "conclusion": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1565,
+    "Linux_seconds": 85.91,
+    "existing_skips": 11,
+    "local_tests": 1582,
+    "local_seconds": 58.42,
+    "production_DNS_guard_changed": false,
+    "APK_published": false
+  },
+  "M1_parent_teardown_real_phone_20261004": {
+    "evidence": "docs/parent-teardown-real-phone-20261004.json",
+    "description": "docs/parent-teardown-real-phone-20261004.md",
+    "path": "same_home_WiFi_physical_LAN_authenticated_App_UDP",
+    "phone": "CPU_limited_OnePlus12",
+    "driver_exit": 0,
+    "supervisor_exit": 0,
+    "actual_owned_quiescence": true,
+    "candidate_ports_helper_private_input_clear": true,
+    "source_active_SF_cadence": 29.956,
+    "source_fullwindow_fps": 22.26,
+    "source_last_observed_idle_seconds": 6.435,
+    "phone_active_SF_cadence": 23.937,
+    "phone_fullwindow_fps": 22.997,
+    "phone_max_observed_gap_ms": 1027.696042,
+    "native_parent_exit_poll": [
+      -15,
+      -15
+    ],
+    "native_complete_trace_accepted": false,
+    "source_content_changed_somewhere_in_sequence": true,
+    "actual_Stats_format_known": false,
+    "stable_30fps_public_V50_accepted": false,
+    "new_APK_published": false
   }
 }

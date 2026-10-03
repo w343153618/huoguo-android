@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "scope": "real_owner_nonisolated_M1_RAM8_cpu_limited_OnePlus12_same_home_WiFi_LAN_UDP",
+  "supervisor_sha256": "e31d0605b5495745eef130bd8324d7741f1d63e5eca93aa3dd42698620520872",
+  "source_commit": "b07009b31245050ec28ef2ed1b4c69453c48d0ea",
+  "driver_sha256": "5e5247bd6e4a0578a771c97928aa140c0984335df785648c8827f707ae68354c",
+  "hardware_source_sha256": "a62d85390132804951f8fa160ea84172bcfa36bb117c6bff2b1a800cc8e7eb99",
+  "first_attempt": {
+    "helper_ADB_install_timeout_seconds": 45,
+    "driver_started": false,
+    "READY_media_started": false,
+    "actual_owned_quiescence": true,
+    "supervisor_signals": 0
+  },
+  "matching_helper_root_install": {
+    "actual_SHA_verified": true,
+    "phone_user": 0,
+    "global_security_setting_changed": false,
+    "staged_APK_removed": true,
+    "helper_uninstalled_after_retry": true
+  },
+  "retry": {
+    "driver_exit": 0,
+    "supervisor_exit": 0,
+    "actual_owned_quiescence": true,
+    "original_services_signalled": false,
+    "supervisor_owned_signals": 0,
+    "private_input_absent": true,
+    "candidate_ports_clear": true
+  },
+  "parameters": {
+    "size": [
+      540,
+      960
+    ],
+    "fps_cap": 30,
+    "buffer_ms": 80,
+    "bitrate_target_bps": 4000000,
+    "rate_control": "VBR",
+    "lead_ms": 0,
+    "stage_diagnostics": false,
+    "codec_startup": false,
+    "PCM_queue": false,
+    "AAC_enabled": true,
+    "guest_physical_size": [
+      1080,
+      1920
+    ],
+    "guest_hz": 30,
+    "guest_cores": 6,
+    "guest_memory_MiB": 8192,
+    "phone_CPU_limits_or_global_refresh_written": false
+  },
+  "UI": {
+    "v50_profile_readback_verified": true,
+    "credential_source_readback_verified": true,
+    "exit_confirmation_readback_verified": true,
+    "steady_media_progress_verified": true,
+    "steady_window_readback_verified": true,
+    "source_first_capture_freshness_verified": true,
+    "source_final_target_process_absent_verified": true
+  },
+  "SF": {
+    "source": {
+      "requested_seconds": 30.009,
+      "full_window_fps": 22.26,
+      "active_cadence_fps": 29.956,
+      "max_gap_ms": 67.260417,
+      "gaps_over_100ms": 0,
+      "unknown_trailing_host_ms": 181.627,
+      "observed_poll_chain_continuity": 1,
+      "last_new_presentations_poll_s": 23.392,
+      "last_poll_s": 29.827
+    },
+    "phone": {
+      "requested_seconds": 30.004,
+      "full_window_fps": 22.997,
+      "active_cadence_fps": 23.937,
+      "max_gap_ms": 1027.696042,
+      "gaps_over_100ms": 7,
+      "unknown_trailing_host_ms": 818.741,
+      "observed_poll_chain_continuity": 1,
+      "last_new_presentations_poll_s": 29.185,
+      "last_poll_s": 29.185
+    }
+  },
+  "source_content": {
+    "official_BBB_title_selected_before_sequence": true,
+    "actual_Stats_ID_format_known": false,
+    "video_ID": null,
+    "codec": null,
+    "itag": null,
+    "content_fps": null,
+    "post_phone_capture_is_different_cartoon": true,
+    "transition_exact_window_known": false,
+    "same_content_renderer_AB": false
+  },
+  "parent_chains": [
+    {
+      "attempt_suffix": "cbd18e8b8947cb30",
+      "worker_child_matches_encoder_parent": true,
+      "native_pgid_matches_worker_child": true,
+      "worker_cleanup_returned": true,
+      "encoder_cleanup_returned": true,
+      "observer_errors": 0,
+      "dropped_operations": 0,
+      "actual_encoder_exit_poll": -15,
+      "native_end_bracket_present": false,
+      "native_producer_coverage_accepted": false,
+      "whole_pipeline_coverage_accepted": false,
+      "raw_counter_anchors": {
+        "available": true,
+        "counter_regressions": 0,
+        "delta": {
+          "frames_submitted": 869,
+          "idle_repeats": 0,
+          "pending_frames_replaced": 5,
+          "raw_frames": 872
+        },
+        "elapsed_ns": 36784045000,
+        "first": {
+          "frames_submitted": 1,
+          "idle_repeats": 0,
+          "pending_frames_replaced": 37,
+          "raw_frames": 40
+        },
+        "first_ns": 303958839597000,
+        "interval_not_full_session": true,
+        "last": {
+          "frames_submitted": 870,
+          "idle_repeats": 0,
+          "pending_frames_replaced": 42,
+          "raw_frames": 912
+        },
+        "last_ns": 303995623642000,
+        "rates_per_second": {
+          "frames_submitted": 23.6244,
+          "idle_repeats": 0.0,
+          "pending_frames_replaced": 0.1359,
+          "raw_frames": 23.7059
+        },
+        "same_frame_cohort": false,
+        "snapshots": 895
+      },
+      "selected_whole_session_stage_max_ms": {
+        "raw_condition_wait_ms": 260.042,
+        "raw_header_rgba_flush_attempt_ms": 1311.217,
+        "encoded_socket_write_ms": 1.361,
+        "feed_media_publish_attempt_ms": 0.618
+      }
+    },
+    {
+      "attempt_suffix": "fd8b9ca48ae468f8",
+      "worker_child_matches_encoder_parent": true,
+      "native_pgid_matches_worker_child": true,
+      "worker_cleanup_returned": true,
+      "encoder_cleanup_returned": true,
+      "observer_errors": 0,
+      "dropped_operations": 0,
+      "actual_encoder_exit_poll": -15,
+      "native_end_bracket_present": false,
+      "native_producer_coverage_accepted": false,
+      "whole_pipeline_coverage_accepted": false,
+      "raw_counter_anchors": {
+        "available": true,
+        "counter_regressions": 0,
+        "delta": {
+          "frames_submitted": 102,
+          "idle_repeats": 0,
+          "pending_frames_replaced": 2,
+          "raw_frames": 104
+        },
+        "elapsed_ns": 3549772000,
+        "first": {
+          "frames_submitted": 1,
+          "idle_repeats": 0,
+          "pending_frames_replaced": 0,
+          "raw_frames": 1
+        },
+        "first_ns": 303997762361000,
+        "interval_not_full_session": true,
+        "last": {
+          "frames_submitted": 103,
+          "idle_repeats": 0,
+          "pending_frames_replaced": 2,
+          "raw_frames": 105
+        },
+        "last_ns": 304001312133000,
+        "rates_per_second": {
+          "frames_submitted": 28.7342,
+          "idle_repeats": 0.0,
+          "pending_frames_replaced": 0.5634,
+          "raw_frames": 29.2977
+        },
+        "same_frame_cohort": false,
+        "snapshots": 104
+      },
+      "selected_whole_session_stage_max_ms": {
+        "raw_condition_wait_ms": 91.226,
+        "raw_header_rgba_flush_attempt_ms": 125.662,
+        "encoded_socket_write_ms": 0.427,
+        "feed_media_publish_attempt_ms": 0.599
+      }
+    }
+  ],
+  "performance_acceptance": {
+    "stable_30fps": false,
+    "public_NPS_cellular_Tailnet_V50": false,
+    "optical_acoustic": false,
+    "whole_pipeline_coverage": false,
+    "new_APK_or_manifest": false
+  },
+  "M5_NPS_guest_restarted": false,
+  "raw_sensitive_logs_images_credentials_committed": false
+}

@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "scope": "owner_nonisolated_M1_source_only",
+  "source_identity": {"pid": 3470, "uid": 10235, "start_ticks": 1952},
+  "actual_source_pipeline": "vulkan",
+  "HWUI_property": "skiavk",
+  "RenderEngine_property": "skiaglthreaded",
+  "physical_width": 1080,
+  "physical_height": 1920,
+  "density": 480,
+  "refresh_hz": 30.0,
+  "guest_emulator_pid": 48576,
+  "preparations": [
+    {
+      "stage": "exact_existing_MAIN_launch_and_two_single_captures",
+      "script_sha256": "3fe97d2935bca8fce4eac90dccd01842db67c6748a05e29e704891ed4885bfc2",
+      "exit_code": 0,
+      "operation_seconds": 4.225,
+      "local_clients_started": 80,
+      "local_clients_reaped": 80,
+      "local_timeout_terminations": 0,
+      "actual_role_zero_quiescence_verified": true,
+      "reservation_explicitly_released": true,
+      "initial_ADB_png_sha256": "15217b35d892a203f3a16a05ba4e2e1ec8a23a824387e7e9d421d0c805afb5a1",
+      "initial_grpc_png_sha256": "86ac8937b2158ae060e0770af0ddc5d1833798dba33b6805564ddea739d01763",
+      "later_ADB_png_sha256": "a72f3557db4dc8d0823c9d30232bf671417e663bdb4ad5fab31dbc8912d2bf29"
+    },
+    {
+      "stage": "fixed_native_public_ID_search",
+      "script_sha256": "9f533d695f5c08ab37acdaaad8b70020d2b03927c22fee21a6bed8e913a65c4a",
+      "exit_code": 0,
+      "operation_seconds": 4.631,
+      "local_clients_started": 102,
+      "local_clients_reaped": 102,
+      "local_timeout_terminations": 0,
+      "actual_role_zero_quiescence_verified": true,
+      "reservation_explicitly_released": true,
+      "later_ADB_png_sha256": "c1a9c3a76320948c59ffb33cecac7c3e91ecc42cf64fd47c0810cf7d5b7934f2"
+    },
+    {
+      "stage": "observed_first_native_search_result_open",
+      "script_sha256": "afb509c0ffb301665c6e8c06c96473d39dafdd47a474ddcf12751e494788b044",
+      "exit_code": 0,
+      "operation_seconds": 3.993,
+      "local_clients_started": 81,
+      "local_clients_reaped": 81,
+      "local_timeout_terminations": 0,
+      "actual_role_zero_quiescence_verified": true,
+      "reservation_explicitly_released": true,
+      "later_ADB_png_sha256": "dd2c29642b720ea506e8f0d4256ed393a897f23c4b3d2aa80b756944b5de65f9"
+    }
+  ],
+  "human_pixel_observation": {
+    "loaded_home_layout_upright": true,
+    "native_search_official_BBB_title_observed": true,
+    "watch_movie_single_frame_upright": true,
+    "same_moment_ADB_grpc_comparison": false,
+    "continuous_video_motion_verified": false
+  },
+  "numeric_playing_bracket": {
+    "identity_stable": true,
+    "MediaSession_owner_matches_before_and_after": true,
+    "playing_state_before_and_after": true,
+    "reported_position_changed": false,
+    "all_children_reaped": true,
+    "raw_total_bytes": 12098
+  },
+  "actual_format": {
+    "known": false,
+    "video_ID": null,
+    "codec": null,
+    "itag": null,
+    "width": null,
+    "height": null,
+    "content_fps": null
+  },
+  "guest_resources_data_properties_changed": false,
+  "guest_gateway_NPS_restarted": false,
+  "M5_or_phone_operated_in_these_source_preparations": false,
+  "APK_or_update_manifest_changed": false,
+  "optical_acoustic_latency_measured": false,
+  "media_FPS_public_cellular_V50_acceptance": false,
+  "formal_TCP_admission_atomic": false,
+  "credentials_tokens_raw_images_committed": false
+}
