@@ -1,7 +1,8 @@
 # Owner UDP supervised-service preparation — 2026-10-03
 
-This checkpoint prepares durable, independent owner-trial jobs. **Neither job
-has been bootstrapped, and neither existing gateway was signaled.** The latest
+The initial checkpoint prepared durable, independent owner-trial jobs without
+bootstrapping them or signaling either existing gateway. The later activation
+record below supersedes the prepared-only state. The latest
 user was using the experimental app; both formal and experimental owner sessions
 are protected. A point-in-time empty UDP socket is not an atomic no-new-session
 handover guarantee.
@@ -72,3 +73,29 @@ daemon. `KeepAlive` prevents an exited bounded process from leaving a permanentl
 dead entrance once these jobs are loaded; it does not guarantee uninterrupted
 media across the existing process TTL or machine sleep/reboot. These limits must
 remain explicit until later lifecycle and boot acceptance is measured.
+
+## Activated after natural old-runtime expiry
+
+Both independent labels were subsequently bootstrapped while the original port
+was still occupied. The closed-account candidate exits on bind failure before
+creating a media worker; launchd retried after the original gateways expired
+naturally. No signal was sent to either old process or any formal/NPC service.
+New M1 PID95621 and M5 PID14169 were read back in running jobs; each correct-node
+local HTTPS ping returned200 with its exact existing certificate pin. Formal
+PIDs41650/75248 remained unchanged. These PIDs are point-in-time readbacks, not
+permanent identities.
+
+The new persistent source folder is `source-alpha7-a776828`, frozen at
+`a7768280c31a46cecab794e91e9e19afb4f33eaf`. Both jobs explicitly pass
+`--owner-account wyw --owner-account huoguo`. This supports the owner's previously
+authorized use of existing huoguo credentials for bounded tests; credentials do
+not identify the human operator and this is not friend host/LAN isolation
+acceptance. Default source policy remains wyw-only, normal existing passwords
+and cross-account session ownership still apply, and HTTP cannot alter the
+trusted list. Accounts and private key files were not modified.
+
+The runtime and120-second session bounds remain. No reboot, pre-login boot,
+uninterrupted hour-long session, sleep/wake or long soak is claimed. Restricted
+checkpoint and source hashes are in the same evidence directory. Future service
+handover must protect active candidate sessions as well as formal sessions;
+occupied-port startup does not authorize signaling or force cancellation.
