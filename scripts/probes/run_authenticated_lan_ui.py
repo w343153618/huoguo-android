@@ -17,6 +17,21 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 PRIVATE = '/data/user/0/local.remoteandroid.direct.experiment/files/'
 TARGET_PACKAGE = 'local.remoteandroid.direct.experiment'
+INSTRUMENTATION_NUMERIC_MARKER = 'INSTRUMENTATION_RESULT: numeric_result='
+INSTRUMENTATION_DIAGNOSTIC_BYTES = 65536
+INSTRUMENTATION_FAILURE_CLASSES = frozenset((
+    'IllegalStateException', 'IllegalArgumentException', 'JSONException',
+    'InterruptedException', 'NullPointerException', 'NoSuchFieldException',
+    'IllegalAccessException', 'InvocationTargetException', 'ClassCastException',
+    'SecurityException', 'IOException', 'RuntimeException', 'AssertionError'))
+INSTRUMENTATION_FAILURE_LABELS = frozenset((
+    'private_login_input_bound', 'input_read', 'input_cleanup',
+    'nps_owner_account_required', 'existing_UI_attempt_busy',
+    'normal_UI_start_button_missing', 'normal_UI_start', 'no_authenticated_media',
+    'saved_UI_route_unverified', 'saved_UI_account_unavailable',
+    'saved_UI_credential_unavailable', 'saved_UI_restore_unavailable',
+    'reconnect_UI_button_missing', 'normal_UI_reconnect',
+    'reconnect_no_authenticated_media', 'steady_sampler_completion_missing'))
 sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
 from scripts.probes import owner_source_gate
@@ -313,6 +328,115 @@ def reap_owned_process(proc, report, operation, wait_timeout, terminate=False):
                 record_cleanup_failure(report, operation+'_final_wait', failure=wait_failure)
             return None
     return None
+
+
+def instrumentation_cleanup_diagnostic(output):
+    """Project cleanup output only; never infer media success or phone ownership.
+
+    The byte bound applies to parsing/projection, not the existing communicate
+    pipe capture. Raw child output exists in memory but is never persisted here.
+    Only stdout's single complete numeric marker is eligible; stderr is never a
+    result source. This function does not change any cleanup or failure action.
+    """
+    result = dict(schema=1, scope='cleanup_output_not_media_success_or_phone_ownership',
+        output_available=False, stdout_bytes=None, stderr_bytes=None,
+        stdout_lines=None, stderr_lines=None, numeric_result_status='absent',
+        numeric_result_count=None, stderr_numeric_marker_count=None,
+        instrumentation_failed_marker_count=None, instrumentation_aborted_marker_count=None,
+        security_exception_line_count=None, instrumentation_code_count=None,
+        instrumentation_code_status='absent', instrumentation_code=None)
+    if output is None:
+        return result
+    if (type(output) is not tuple or len(output) != 2
+            or any(type(channel) is not str for channel in output)):
+        result['numeric_result_status'] = 'malformed'
+        return result
+    stdout, stderr = output
+    result['output_available'] = True
+    # Count the already captured text without a second unbounded encoded copy.
+    try:
+        for name, text in (('stdout', stdout), ('stderr', stderr)):
+            result[name+'_lines'] = text.count('\n') + int(bool(text) and not text.endswith('\n'))
+            result[name+'_bytes'] = sum(len(text[start:start+4096].encode('utf-8'))
+                for start in range(0, len(text), 4096))
+    except UnicodeError:
+        result['numeric_result_status'] = 'malformed'
+        return result
+    if result['stdout_bytes'] + result['stderr_bytes'] > INSTRUMENTATION_DIAGNOSTIC_BYTES:
+        result['numeric_result_status'] = 'over_bound'
+        return result
+    def lf_rows(text):
+        # Instrumentation uses LF/CRLF. A bare CR or Unicode separator inside
+        # an arbitrary log line must not create an eligible marker at column0.
+        parts = text.split('\n')
+        return [row+'\n' for row in parts[:-1]] + ([parts[-1]] if parts[-1] else [])
+
+    stdout_rows, stderr_rows = lf_rows(stdout), lf_rows(stderr)
+    candidates = [row for row in stdout_rows if row.startswith(INSTRUMENTATION_NUMERIC_MARKER)]
+    stderr_count = sum(row.startswith(INSTRUMENTATION_NUMERIC_MARKER) for row in stderr_rows)
+    result.update(numeric_result_count=len(candidates), stderr_numeric_marker_count=stderr_count)
+    rows = stdout_rows + stderr_rows
+    result['instrumentation_failed_marker_count'] = sum(row.startswith('INSTRUMENTATION_FAILED:') for row in rows)
+    result['instrumentation_aborted_marker_count'] = sum(row.startswith('INSTRUMENTATION_ABORTED:') for row in rows)
+    result['security_exception_line_count'] = sum('java.lang.SecurityException' in row for row in rows)
+    codes = [row for row in rows if row.startswith('INSTRUMENTATION_CODE:')]
+    result['instrumentation_code_count'] = len(codes)
+    if len(codes) > 1:
+        result['instrumentation_code_status'] = 'ambiguous'
+    elif codes:
+        match = re.fullmatch(r'INSTRUMENTATION_CODE: (-?[0-9]{1,10})\r?\n', codes[0])
+        if match and -(1 << 31) <= int(match[1]) < (1 << 31):
+            result.update(instrumentation_code_status='valid', instrumentation_code=int(match[1]))
+        else:
+            result['instrumentation_code_status'] = 'malformed'
+    if len(candidates) > 1 or (candidates and stderr_count):
+        result['numeric_result_status'] = 'ambiguous'
+        return result
+    if not candidates:
+        return result
+    row = candidates[0]
+    if not row.endswith('\n'):
+        result['numeric_result_status'] = 'malformed'
+        return result
+
+    def closed_object(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('duplicate_key')
+            value[key] = item
+        return value
+
+    def reject_constant(_):
+        raise ValueError('nonfinite_json')
+
+    try:
+        value = json.loads(row[len(INSTRUMENTATION_NUMERIC_MARKER):],
+            object_pairs_hook=closed_object, parse_constant=reject_constant)
+        if type(value) is not dict:
+            raise ValueError('object_required')
+        projected = {}
+        if 'helper_owned_attempt_started' in value:
+            if type(value['helper_owned_attempt_started']) is not bool:
+                raise ValueError('bool_required')
+            projected['helper_owned_attempt_started'] = value['helper_owned_attempt_started']
+        for name, allowed in (('failure_class', INSTRUMENTATION_FAILURE_CLASSES),
+                ('failure_cause_class', INSTRUMENTATION_FAILURE_CLASSES),
+                ('bounded_failure_label', INSTRUMENTATION_FAILURE_LABELS)):
+            if name in value:
+                if type(value[name]) is not str:
+                    raise ValueError('enum_required')
+                projected[name] = value[name] if value[name] in allowed else 'unclassified'
+        if 'connection_failure_code' in value:
+            code = value['connection_failure_code']
+            if type(code) is not int or not (code in (0, 1, 2) or 100 <= code <= 599):
+                raise ValueError('connection_code_bound')
+            projected['connection_failure_code'] = code
+    except (ValueError, TypeError, RecursionError, OverflowError):
+        result['numeric_result_status'] = 'malformed'
+        return result
+    result.update(numeric_result_status='valid', numeric_result=projected)
+    return result
 
 
 def instrumentation_budget_seconds(steady_seconds):
@@ -681,8 +805,13 @@ def main():
                 attempt_cleanup(report, 'stop_'+package,
                                 lambda package=package: adb(args.phone,'am force-stop '+package,False))
         if proc is not None and not instrumentation_reaped:
-            reap_owned_process(proc, report, 'instrumentation', 2, terminate=failed)
+            cleanup_output = reap_owned_process(proc, report, 'instrumentation', 2, terminate=failed)
             report['instrumentation_exit_code']=proc.returncode
+            if failed:
+                try:
+                    report['instrumentation_cleanup_diagnostic'] = instrumentation_cleanup_diagnostic(cleanup_output)
+                except Exception as failure:
+                    record_cleanup_failure(report, 'instrumentation_cleanup_diagnostic', failure=failure)
         for sampler in samplers:
             reap_owned_process(sampler, report, 'sampler', 1 if failed else args.steady_seconds+5, terminate=failed)
             report.setdefault('sampler_exit_codes',[]).append(sampler.returncode)

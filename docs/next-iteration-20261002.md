@@ -1,3 +1,13 @@
+## 2026-10-04 实际 RAM8 LAN source-supply trace 已完成，旧30→19未复现
+
+自动准入源码2ea7ef9实际GitHub run37139764770两个job success，Linux1527tests/84.159s/OK、11既有skip。新清理诊断5e5247bd与18新增fixture仅本地/独立审查，root41targeted及1562全仓/60.140sPASS；它未用在本轮d887421d冻结driver，不追认新诊断或云端验收。见[清理诊断](instrumentation-cleanup-diagnostic-20261004.md)。
+
+actual auto5 supervisor/driver0、supervisor派发原/owned signals0（不涵盖内层worker信号）、actualquiescence true，reservation贯穿收尾；真实限频一加12+机主非隔离M1 RAM8同家Wi-Fi物理LAN authenticatedUDP，alpha8/540x960/30/4M VBR/80ms/lead0/startup-stage-PCMqueueOFF/FIFO2/native3保持。手机OS确实单独停用实验App，校验两个系统按钮后用已校准nativecontact解除本App限制，未改全局安全或CPU设置；该阻塞是启动可用性，不是旧掉帧根因。helper/input已清理，原persistent/M5/NPS/guest没重启。
+
+长会话稳态hostCLOCK_MONOTONIC33.669793s capture846/submit846，各25.1264/s，新增replacement0；rawwritep99/max1.642/4.116ms，conditionwaitmax104.782ms，budgetwait0，encodedwrite/feedpublishmax0.750/0.402ms。源/手机独立SFcadence24.973/25.139、maxgap104.542/107.738ms，各1个>100ms；未知尾254.762/805.069ms保留。初始化write1797.489/163.942ms另列，不叫稳态瓶颈。没有nativeend/footer，完整nativeclock/producercoverage拒绝、acceptedchains0；不能以sinkcleanclose补造。见[实际记录](owner-lan-source-supply-trace-20261004.md)和JSON。
+
+实际源MorphePID3553/UID10235/start2521、skiagl/SkiaOpenGL、publiccartoon，format/itag/contentFPS仍unknown，BBB未验证；后续VIEW/UrlActivity rc0仍显示旧cartoon，不能拿预期URL或旧299填格式。旧capture30→submit19本轮未复现，当前约25供给不能宣布满30改善、公网、V50、光学/声学或同格式AB。下一优先独立固定真实source并审查nativeproducer结束契约；已有agent审查时续接，不盲重复未知源或180s菜单，不扩大Inbox/缓冲。新cleanup源码可推实验分支；APK/manifest不变。
+
 ## 2026-10-04 自动source gate已完成离线审查，尚未真实媒体
 
 新owner-only/defaultoff numericplaying guard、同UID0700/0600且inode pin的有界trace prefix、driver最后source采集与nativefirstcapture freshness已完成。root及独立review95targeted惰性检查通过；两个具体竞态已修：采集≤15s后再次读目标App absence，再nativefreshness→Popen；prefix读取后重新nativeclock再qualify，避免producer并发追加误报future。未资格首capture不启动SF，不把numericplaying/position当实画面/格式，第一次sourcegate不追认reconnect/呈现。见[契约](owner-source-gate-contract-20261004.md)。当前准备新privateauto supervisor取消180s ENTER，冻结f08核心与gold39helper、源PID预检、有限240s listener、原连续reserve/live503/角色零/实际quiescence保持；未执行、无凭据/媒体。最终源码全仓1544/58.235s PASS、supervisor只读审查通过；第一自动准备轮仍在driver之前结束，原/owned signals0、actualquiescence true、没有媒体/trace，宽泛bounded错误不当具体根因。手机包user0/10 UID读回后，下一private候选显式user0＋阶段诊断，核心/手机App不改；已有监督任务active时不重复派。

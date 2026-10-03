@@ -645,7 +645,7 @@
       "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
     }
   },
-  "updated_evidence_utc": "2026-10-03T06:37:27.338704+00:00",
+  "updated_evidence_utc": "2026-10-03T18:09:33.654400+00:00",
   "independent_experimental_app_version": "1.31-alpha.5",
   "latest_surface_submit_experiment": {
     "evidence": "docs/evidence/surface-submit-20261003",
@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "180d0ff five mixed-gap analyzer derivations completed and31 targeted checks plus independent24 host-analyzer checks passed. Capture/core/native and f08 prepared runtime remain frozen. M5 one-shot host-output mute deployed successfully with guest volume5 retained, no gateway/emulator restart. Next protected real-media trace must refresh real source format/position and CPU, phone availability, formal/owner idle witness and continuous reservation; no repeated listener-only validation or default buffer/queue changes. Code40 actual phone cancellation/reconnect and acoustic acceptance remain separate.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -1698,7 +1698,7 @@
     "new_media_started": false
   },
   "owner_source_freshness_candidate_20261004": {
-    "status": "reviewed_targeted_fixtures_pass_not_real_media",
+    "status": "actual_auto5_LAN_first_capture_qualified_real_media_not_WAN_or_stable30",
     "default_enabled": false,
     "scope": "owner_LAN_media_only_numeric_playing_format_unknown",
     "targeted_checks": 95,
@@ -1725,6 +1725,36 @@
     "first_real_attempt_scope": "protected listener only; no driver/media/trace; generic bounded failure not root-cause proof",
     "first_real_attempt_owned_quiescence": true,
     "first_real_attempt_signals": 0,
-    "marker_user_explicit": 0
+    "marker_user_explicit": 0,
+    "actual_media_evidence": "docs/owner-lan-source-supply-trace-20261004.json"
+  },
+  "owner_lan_source_supply_trace_20261004": {
+    "evidence": "docs/owner-lan-source-supply-trace-20261004.json",
+    "description": "docs/owner-lan-source-supply-trace-20261004.md",
+    "source_format_known": false,
+    "steady_host_capture_per_second": 25.1264,
+    "steady_host_submitted_per_second": 25.1264,
+    "steady_pending_replaced": 0,
+    "source_SF_cadence_fps": 24.973,
+    "phone_SF_cadence_fps": 25.139,
+    "native_producer_final_missing": true,
+    "stable30_accepted": false,
+    "historical30_to19_reproduced": false,
+    "actual_driver_sha256": "d887421dafaa6d99ff1e98614ba8d43746c0a37d7c02a467f75677777ccaf552",
+    "actual_owned_quiescence_confirmed": true,
+    "new_APK_published": false,
+    "supervisor_original_or_owned_signals": 0,
+    "inner_encoder_signal_or_exit_receipt_known": false
+  },
+  "instrumentation_cleanup_diagnostic_20261004": {
+    "evidence": "docs/instrumentation-cleanup-diagnostic-20261004.md",
+    "source_sha256": "5e5247bd6e4a0578a771c97928aa140c0984335df785648c8827f707ae68354c",
+    "new_targeted_tests": 18,
+    "targeted_tests": 41,
+    "full_local_tests": 1562,
+    "full_local_seconds": 60.14,
+    "real_auto5_used_this_candidate": false,
+    "cloud_acceptance_for_new_patch": false,
+    "default_runtime_or_APK_changed": false
   }
 }
