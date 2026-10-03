@@ -64,7 +64,18 @@ def trusted_nps_owner_accounts(accounts=None) -> tuple[str, ...]:
     return tuple(sorted(accounts))
 
 
-def parse_udp_settings(settings: dict) -> dict:
+def trusted_max_session_seconds(network_scope: str, seconds: int = 120) -> int:
+    """Closed startup policy; only owner NPS may opt into a one-hour cap."""
+    if type(network_scope) is not str or network_scope not in ('lan', 'tailnet', NPS_OWNER_SCOPE):
+        raise ValueError('Explicit supported UDP network scope required')
+    if type(seconds) is not int or seconds not in (120, 3600):
+        raise ValueError('Trusted session cap must be 120 or 3600 seconds')
+    if seconds != 120 and network_scope != NPS_OWNER_SCOPE:
+        raise ValueError('Long session cap requires explicit NPS owner scope')
+    return seconds
+
+
+def parse_udp_settings(settings: dict, *, max_session_seconds: int = 120) -> dict:
     """Use the formal stream parsers, then narrow the isolated UDP candidate."""
     if not isinstance(settings, dict):
         raise ValueError('Invalid settings object')
@@ -72,6 +83,7 @@ def parse_udp_settings(settings: dict) -> dict:
     scope = normalized.get('network_scope', 'lan')
     if type(scope) is not str or scope not in ('lan', 'tailnet', NPS_OWNER_SCOPE):
         raise ValueError('Explicit supported UDP network scope required')
+    session_cap = trusted_max_session_seconds(scope, max_session_seconds)
     node = None
     if scope == NPS_OWNER_SCOPE:
         if set(settings) - _NPS_OWNER_SETTING_FIELDS:
@@ -93,8 +105,8 @@ def parse_udp_settings(settings: dict) -> dict:
     seconds = settings.get('seconds', 120)
     if type(buffer_ms) is not int or not 30 <= buffer_ms <= 100:
         raise ValueError('Buffer must be 30 to 100 ms')
-    if type(seconds) is not int or not 1 <= seconds <= 120:
-        raise ValueError('Session duration must be 1 to 120 seconds')
+    if type(seconds) is not int or not 1 <= seconds <= session_cap:
+        raise ValueError('Session duration exceeds trusted server cap')
     lead_ms = settings.get('surface_submit_lead_ms', 0)
     if type(lead_ms) is not int or lead_ms not in (0, 16):
         raise ValueError('Owner Surface experiment supports only 0 or 16 ms')
@@ -159,13 +171,15 @@ class UdpLanSessions:
                  allow_owner_surface_submit_lead: bool = False,
                  node: str | None = None, allow_m5_owner_trial: bool = False,
                  guest_serial: str | None = None, guest_avd: str | None = None,
-                 owner_accounts: tuple[str, ...] | list[str] | None = None):
+                 owner_accounts: tuple[str, ...] | list[str] | None = None,
+                 max_session_seconds: int = 120):
         try:
             address = ipaddress.IPv4Address(peer_host)
         except (ipaddress.AddressValueError, TypeError):
             raise ValueError('LAN peer_host must be a literal IPv4 address') from None
         if network_scope not in ('lan', 'tailnet', NPS_OWNER_SCOPE):
             raise ValueError('Invalid UDP network scope')
+        self._max_session_seconds = trusted_max_session_seconds(network_scope, max_session_seconds)
         if network_scope == 'lan' and not rfc1918_address(str(address)):
             raise ValueError('LAN peer_host must be a private LAN IPv4 address')
         if network_scope == 'tailnet' and str(address) != TAILNET_HOST:
@@ -339,7 +353,7 @@ class UdpLanSessions:
         if not self._owner_account_allowed(account):
             raise SessionError(403, 'nps_owner_account_required')
         try:
-            options = parse_udp_settings(settings)
+            options = parse_udp_settings(settings, max_session_seconds=self._max_session_seconds)
         except ValueError:
             raise SessionError(400, 'invalid_udp_settings') from None
         if options['network_scope'] != self._network_scope:

@@ -271,8 +271,10 @@ def parse_arguments(argv=None):
     parser.add_argument('--native-encoder', type=Path, required=True)
     parser.add_argument('--evidence-dir', type=Path, required=True)
     parser.add_argument('--max-runtime', type=int, default=600)
+    parser.add_argument('--max-session-seconds', type=int, choices=(120, 3600), default=120,
+                        help='Trusted owner NPS session cap; 3600 is one hour, not unlimited')
     args = parser.parse_args(argv)
-    if not 30 <= args.max_runtime <= 3600:
+    if args.max_runtime != 0 and not 30 <= args.max_runtime <= 3600:
         parser.error('bounded_gateway_lifetime_required')
     if args.owner_m5_trial and args.node != 'm5':
         parser.error('M5_owner_trial_flag_requires_M5_node')
@@ -298,7 +300,7 @@ def main():
     registry = UdpLanSessions(args.profile.public_media.host, args.profile.public_media.port,
         network_scope=scope.name, node=args.node, scope_guard=scope.healthy,
         allow_m5_owner_trial=args.owner_m5_trial, guest_serial=serial, guest_avd=avd,
-        owner_accounts=args.owner_accounts)
+        owner_accounts=args.owner_accounts, max_session_seconds=args.max_session_seconds)
 
     def factory(config, peer):
         return LanMediaWorker(config, peer, args.profile.local_udp.host,
@@ -317,7 +319,9 @@ def main():
     stop = threading.Event()
 
     def reap():
-        deadline = time.monotonic() + args.max_runtime
+        # Zero disables only the proactive process TTL, never session leases,
+        # scope checks, formal-session guards, authentication or cancellation.
+        deadline = None if args.max_runtime == 0 else time.monotonic() + args.max_runtime
         next_scope_check = time.monotonic() + 1
         while not stop.wait(.1):
             if time.monotonic() >= next_scope_check:
@@ -329,7 +333,7 @@ def main():
                     server.shutdown()
                     return
             registry.reap()
-            if time.monotonic() >= deadline:
+            if deadline is not None and time.monotonic() >= deadline:
                 server.shutdown()
                 return
 
@@ -346,6 +350,7 @@ def main():
         'local_udp_port': args.profile.local_udp.port,
         'advertised_control_port': args.profile.public_control.port,
         'advertised_media_port': args.profile.public_media.port,
+        'max_session_seconds': args.max_session_seconds, 'max_runtime_seconds': args.max_runtime,
         'owner_m5_trial': args.owner_m5_trial, 'host_isolation_accepted': False}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)

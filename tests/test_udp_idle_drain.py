@@ -121,8 +121,8 @@ class IdleDrainChecks(unittest.TestCase):
         import udp_lan_sessions
         original_parse = udp_lan_sessions.parse_udp_settings
         entered, release, wait = self.blocker()
-        def parse(settings):
-            value = original_parse(settings); wait(); return value
+        def parse(settings, **trusted):
+            value = original_parse(settings, **trusted); wait(); return value
         with patch('udp_lan_sessions.parse_udp_settings', side_effect=parse):
             thread, result = self.launch(self.create)
             self.assertTrue(entered.wait(2))
