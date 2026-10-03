@@ -249,7 +249,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             validateDescriptor(descriptor,login.host,login.port,attempt.networkScope,attempt.node,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
-                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,attempt.physicalNetwork,(report,failed)->finished(attempt,report,failed));
+                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,attempt.physicalNetwork,(report,failed,completion)->finished(attempt,report,failed,completion));
             }
         }catch(Exception failure){
             String failureLabel=failure.getMessage();
@@ -319,22 +319,40 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             if(bytes.size()==0)return new JSONObject();byte[] encoded=bytes.toByteArray();try{return new JSONObject(new String(encoded,StandardCharsets.UTF_8));}finally{Arrays.fill(encoded,(byte)0);}
         }finally{try{if(socket!=null)socket.close();}finally{try{if(raw!=null)raw.close();}finally{if(cancellable)attempt.https=null;}}}
     }
-    private void finished(Attempt attempt,JSONObject report,boolean failed){
+    private static boolean cleanupAllowsReconnect(UdpVideoProbe.CompletionReceipt completion){
+        return completion!=null&&completion.audioCleanupConfirmed();
+    }
+    private static JSONObject completedReportPayload(JSONObject report,UdpVideoProbe.CompletionReceipt completion)throws Exception{
+        return completion!=null&&completion.statisticsAccepted()?report
+            :new JSONObject().put("completion_receipt",completion==null?new JSONObject():completion.numeric());
+    }
+    private void finished(Attempt attempt,JSONObject report,boolean failed,UdpVideoProbe.CompletionReceipt completion){
         boolean written=false;
-        try{byte[] bytes=report.toString().getBytes(StandardCharsets.UTF_8);if(bytes.length>65536)throw new IOException("numeric_report_bound");
+        try{
+            // A rejected report is never trimmed or presented as valid stats.
+            // Replace an older report with this small, explicitly typed receipt.
+            JSONObject stored=completedReportPayload(report,completion);
+            byte[] bytes=stored.toString().getBytes(StandardCharsets.UTF_8);if(bytes.length>65536)throw new IOException("numeric_report_bound");
             AtomicFile file=new AtomicFile(new File(activity.getFilesDir(),"udp-app-last-report.json"));FileOutputStream out=null;
             try{out=file.startWrite();out.write(bytes);file.finishWrite(out);out=null;written=true;}finally{if(out!=null)file.failWrite(out);}
         }catch(Exception ignored){}
         final boolean reportWritten=written;
         finishRemote(attempt);
-        if(report.optInt("audio_cleanup_confirmed",0)!=1){
+        if(!cleanupAllowsReconnect(completion)){
             synchronized(lock){attempt.stopped=true;retiring=attempt;if(current==attempt){current=null;generation++;}}
             activity.ui.post(()->{showLogin();status.setText("UDP 已停止，但本机音频资源收尾未确认。此次候选需结束进程后再测，暂时禁止重连；未回退 TCP。");});
             return;
         }
         synchronized(lock){if(retiring==attempt)retiring=null;}
         activity.ui.post(()->{synchronized(lock){if(current!=attempt||generation!=attempt.generation)return;attempt.stopped=true;current=null;}
-            showLogin();if(report.optInt("session_limit_reached",0)==1&&report.optInt("requested_seconds",0)==3600){
+            showLogin();
+            if(completion.statisticsStatus==UdpVideoProbe.CompletionReceipt.REPORT_REJECTED_LIMIT){
+                status.setText("UDP 已结束，统计报告超过 64 KiB，已明确拒绝；音频收尾已确认，可以重新连接。未回退 TCP。");return;
+            }
+            if(!completion.statisticsAccepted()){
+                status.setText("UDP 已结束，统计报告未能生成；音频收尾已确认，可以重新连接。未回退 TCP。");return;
+            }
+            if(report.optInt("session_limit_reached",0)==1&&report.optInt("requested_seconds",0)==3600){
                 status.setText("已连接一小时，休息一下。需要时可以重新连接。");
                 if(!activity.isFinishing()&&!activity.isDestroyed())new AlertDialog.Builder(activity).setTitle("休息一下吧").setMessage("本次已连接一小时，远程会话已结束。休息后可重新连接。").setPositiveButton("知道了",null).show();
                 return;

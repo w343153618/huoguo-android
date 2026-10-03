@@ -20,7 +20,7 @@ import org.json.JSONObject;
  * UDP receive performs bounded parsing/queue admission only. Decoder and PCM
  * scheduling are separate workers sharing the VIDEO PlaybackClock mapping.
  */
-final class UdpAudioReceiver implements AutoCloseable {
+final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup {
     private final MainActivity activity;private final int generation;
     private final UdpAudioAssembler assembler=new UdpAudioAssembler();
     private final ArrayBlockingQueue<UdpAudioAssembler.Frame> queue=new ArrayBlockingQueue<>(8);
@@ -30,6 +30,7 @@ final class UdpAudioReceiver implements AutoCloseable {
     private final PcmQueueTotals pcmQueueTotals=new PcmQueueTotals();
     private final Object pcmLifecycleLock=new Object();
     private volatile boolean pcmCleanupIncomplete;
+    private volatile boolean closeFinished,cleanupReleaseFailed;
     private MediaCodec retiringDecoder;private AudioTrack retiringTrack;
     private volatile boolean closed;private volatile MediaCodec decoder;private volatile AudioTrack output;
     private volatile String failure="",decoderName="";private volatile boolean configured;
@@ -393,8 +394,8 @@ final class UdpAudioReceiver implements AutoCloseable {
         if(activity.audio==old)activity.audio=null;if(activity.track==oldTrack)activity.track=null;
         Thread previous=drain;if(previous!=null&&previous!=Thread.currentThread()){previous.interrupt();try{previous.join(300);}catch(InterruptedException ignored){}}
         if(oldTrack!=null){try{lastPlaybackFrames=oldTrack.getPlaybackHeadPosition()&0xffffffffL;}catch(Exception ignored){}
-            try{oldTrack.pause();oldTrack.flush();oldTrack.stop();}catch(Exception ignored){}try{oldTrack.release();}catch(Exception ignored){}}
-        if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){}}
+            try{oldTrack.pause();oldTrack.flush();oldTrack.stop();}catch(Exception ignored){}try{oldTrack.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
+        if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
     }
     /** Retire a whole B epoch before a new codec can publish. A failed bounded
      * join retains at most one old resource set and prohibits reconfiguration;
@@ -421,8 +422,8 @@ final class UdpAudioReceiver implements AutoCloseable {
                 if(handoff!=null){pcmQueueTotals.accumulate(handoff.snapshot());pcmHandoff=null;}
             }
             if(oldTrack!=null){try{lastPlaybackFrames=oldTrack.getPlaybackHeadPosition()&0xffffffffL;}catch(Exception ignored){}
-                try{oldTrack.pause();oldTrack.flush();oldTrack.stop();}catch(Exception ignored){}try{oldTrack.release();}catch(Exception ignored){}}
-            if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){}}
+                try{oldTrack.pause();oldTrack.flush();oldTrack.stop();}catch(Exception ignored){}try{oldTrack.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
+            if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
             retiringDecoder=null;retiringTrack=null;
         }
     }
@@ -431,7 +432,17 @@ final class UdpAudioReceiver implements AutoCloseable {
         try{thread.join(timeoutMs);}catch(InterruptedException stop){Thread.currentThread().interrupt();}
         return !thread.isAlive();
     }
-    public void close(){closed=true;worker.interrupt();
+    /** Read only after close; release uncertainty and every owned live thread remain fail-closed. */
+    public int cleanupState(){
+        synchronized(pcmLifecycleLock){
+            if(!closed||!closeFinished||cleanupReleaseFailed)return UdpVideoProbe.CompletionReceipt.AUDIO_UNKNOWN;
+            if(pcmCleanupIncomplete||worker.isAlive()||drain!=null&&drain.isAlive()||pcmWorker!=null&&pcmWorker.isAlive()
+                    ||decoder!=null||output!=null||retiringDecoder!=null||retiringTrack!=null||pcmHandoff!=null)
+                return UdpVideoProbe.CompletionReceipt.AUDIO_INCOMPLETE;
+            return UdpVideoProbe.CompletionReceipt.AUDIO_CONFIRMED;
+        }
+    }
+    public void close(){closeFinished=false;closed=true;worker.interrupt();
         if(!boundedPcmQueueEnabled){try{worker.join(500);}catch(InterruptedException ignored){}}
-        queue.clear();releaseCurrent();if(config!=null)Arrays.fill(config,(byte)0);}
+        queue.clear();releaseCurrent();if(config!=null)Arrays.fill(config,(byte)0);closeFinished=true;}
 }

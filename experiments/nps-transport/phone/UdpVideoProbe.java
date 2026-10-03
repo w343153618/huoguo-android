@@ -265,12 +265,45 @@ public final class UdpVideoProbe extends Instrumentation {
         }
     }
 
+    /** App completion is a separate control receipt, never inferred from statistics. */
+    interface AudioCleanup {void close();int cleanupState();}
+    public static final class CompletionReceipt {
+        public static final int AUDIO_UNKNOWN=0,AUDIO_CONFIRMED=1,AUDIO_INCOMPLETE=2;
+        public static final int REPORT_UNAVAILABLE=0,REPORT_ACCEPTED=1,REPORT_REJECTED_LIMIT=2,REPORT_REJECTED_INVALID=3;
+        public final int audioCleanupState,statisticsStatus;
+        private CompletionReceipt(int audioState,int reportState){
+            if(audioState<AUDIO_UNKNOWN||audioState>AUDIO_INCOMPLETE||reportState<REPORT_UNAVAILABLE||reportState>REPORT_REJECTED_INVALID)
+                throw new IllegalArgumentException("completion_receipt_state_invalid");
+            audioCleanupState=audioState;statisticsStatus=reportState;
+        }
+        static CompletionReceipt afterReport(int audioState,JSONObject acceptedReport,Throwable reportFailure){
+            int status=acceptedReport!=null?REPORT_ACCEPTED:reportFailure==null?REPORT_UNAVAILABLE
+                :reportFailure instanceof java.io.IOException&&"numeric_app_report_limit".equals(reportFailure.getMessage())
+                    ?REPORT_REJECTED_LIMIT:REPORT_REJECTED_INVALID;
+            return new CompletionReceipt(audioState,status);
+        }
+        public boolean audioCleanupConfirmed(){return audioCleanupState==AUDIO_CONFIRMED;}
+        public boolean statisticsAccepted(){return statisticsStatus==REPORT_ACCEPTED;}
+        public JSONObject numeric()throws Exception{
+            return new JSONObject().put("schema_version",1).put("audio_cleanup_state",audioCleanupState)
+                .put("statistics_report_status",statisticsStatus).put("statistics_report_accepted",statisticsAccepted()?1:0);
+        }
+    }
+    static int closeOwnedAudio(AudioCleanup receiver){
+        // No receiver was constructed, so this runner has no owned audio to retire.
+        if(receiver==null)return CompletionReceipt.AUDIO_CONFIRMED;
+        try{receiver.close();int state=receiver.cleanupState();
+            return state==CompletionReceipt.AUDIO_CONFIRMED||state==CompletionReceipt.AUDIO_INCOMPLETE
+                ?state:CompletionReceipt.AUDIO_UNKNOWN;
+        }catch(Throwable failure){return CompletionReceipt.AUDIO_UNKNOWN;}
+    }
+
     // App mode is memory-only; instrumentation retains its restrictive temporary file contract.
     private MainActivity appActivity; private Session appSession; private AppListener appListener;
     private NpsPhysicalNetwork appPhysicalNetwork;
     private volatile boolean appCancelled;
     private volatile int appGeneration=-1;
-    public interface AppListener { void complete(JSONObject numericReport, boolean failed); }
+    public interface AppListener { void complete(JSONObject numericReport, boolean failed, CompletionReceipt completion); }
     public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,AppListener listener)throws Exception {
         return startApp(activity,descriptor,false,listener);
     }
@@ -316,6 +349,7 @@ public final class UdpVideoProbe extends Instrumentation {
         Bundle result=new Bundle();JSONObject report=new JSONObject();MainActivity activity=null;
         File keyFile=appActivity==null?new File(getTargetContext().getFilesDir(),SESSION):null;
         DatagramSocket socket=null;Session session=null;UdpVideoSecurity security=null;long nativeHandle=0;JSONObject appReport=null;
+        Throwable appReportFailure=null;int audioCleanupState=CompletionReceipt.AUDIO_UNKNOWN;
         int oldFps=0,oldBuffer=0,oldDisplayModeId=0,oldSubmissionLeadMs=0;boolean oldImmediate=false;float oldRefresh=0;
         try{
             session=appActivity==null?readSession(keyFile):appSession;if(appCancelled)throw new IOException("cancelled");diagnosticEvents=session.diagnosticEvents;
@@ -423,7 +457,8 @@ public final class UdpVideoProbe extends Instrumentation {
             catch(Throwable failure){result.putString("failure","UdpVideoProbe video worker "+failure.getClass().getSimpleName());
                 try{report.put("video_worker_failure_class",failure.getClass().getSimpleName());}catch(Exception ignored){}}
             if(touchControl!=null){try{touchControl.close();}catch(Exception ignored){}}
-            if(audioReceiver!=null)audioReceiver.close();
+            audioCleanupState=closeOwnedAudio(audioReceiver);
+            if(audioCleanupState!=CompletionReceipt.AUDIO_CONFIRMED)result.putString("failure","UdpVideoProbe audio_cleanup_unconfirmed");
             if(appActivity!=null&&socket!=null&&session!=null&&security!=null){
                 for(int i=0;i<3;i++)try{sendPayload(socket,session,security,"STOP".getBytes(StandardCharsets.US_ASCII));}catch(Exception ignored){}
             }
@@ -461,11 +496,11 @@ public final class UdpVideoProbe extends Instrumentation {
                 report.put("content_hint_applications",contentHintApplications)
                     .put("content_hint_application_status",contentHintFps<0?"inherited_main_activity_configure"
                         :contentHintApplications>0?"explicit_request_applied":"explicit_request_not_applied");
+                report.put("audio_cleanup_confirmed",audioCleanupState==CompletionReceipt.AUDIO_CONFIRMED?1:0);
                 if(audioReceiver!=null){JSONObject audioReport=audioReceiver.snapshot();
                     report.put("udp_audio",audioReport).put("audio_tested",audioReceiver.hasDecodedAudio());
-                    report.put("audio_cleanup_confirmed",audioReport.optBoolean("pcm_cleanup_incomplete",false)?0:1);
                     if(audioReport.optBoolean("pcm_cleanup_incomplete",false))result.putString("failure","UdpVideoProbe audio cleanup unconfirmed");
-                }else report.put("audio_cleanup_confirmed",1);
+                }
                 if(touchControl!=null)report.put("udp_touch",touchControl.snapshot());
                 if(nativeHandle!=0){
                     try{readMappingDetails(nativeHandle);}
@@ -507,7 +542,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 }
                 if(appActivity==null)writeReport(new File(getTargetContext().getFilesDir(),REPORT),report,result);
                 else appReport=numericAppSummary(report);
-            }catch(Throwable failure){result.putString("failure","UdpVideoProbe report "+failure.getClass().getSimpleName());}
+            }catch(Throwable failure){appReportFailure=failure;result.putString("failure","UdpVideoProbe report "+failure.getClass().getSimpleName());}
             finally{
                 if(nativeHandle!=0)NativeUdpFec.nativeDestroy(nativeHandle);
                 if(session!=null)Arrays.fill(session.key,(byte)0);
@@ -527,7 +562,8 @@ public final class UdpVideoProbe extends Instrumentation {
             }
         }
         if(appActivity==null)finish(result.containsKey("failure")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
-        else if(appListener!=null)appListener.complete(appReport==null?new JSONObject():appReport,result.containsKey("failure"));
+        else if(appListener!=null)appListener.complete(appReport==null?new JSONObject():appReport,result.containsKey("failure"),
+            CompletionReceipt.afterReport(audioCleanupState,appReport,appReportFailure));
     }
 
     /** Window-only experiment request; never changes global display settings. */

@@ -90,6 +90,14 @@ class UdpAudioRetirementCheck(unittest.TestCase):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(source)
                 sources.append(path)
+            # Receiver now reports a typed completion independently of JSON.
+            # Compile its actual pure receipt/close policy, not a second model.
+            probe = (ROOT/'experiments/nps-transport/phone/UdpVideoProbe.java').read_text()
+            receipt = '    interface AudioCleanup'+probe.split('    interface AudioCleanup', 1)[1].split('    // App mode is memory-only;', 1)[0]
+            policy = folder/'local/remoteandroid/direct/UdpVideoProbe.java'
+            policy.write_text('package local.remoteandroid.direct;import org.json.JSONObject;'
+                              'final class UdpVideoProbe {\n'+receipt+'}\n')
+            sources.append(policy)
             sources.extend(ROOT/relative for relative in (
                 'experiments/nps-transport/phone/UdpAudioReceiver.java',
                 'experiments/nps-transport/phone/UdpAudioAssembler.java',
