@@ -11,8 +11,8 @@ artifact commit `73d196a8193394c9362250aa0e8be92fae15e125`; the sole tracked
 modification is `experiments/moonlight-v2/authenticated-lan/LanUiAcceptance.java`
 copied from `a83b6685dedb98a3248e0503091ea0ba94c7b1ff`. That helper source SHA256
 is `2e652e78c9f65c5b2f70cb170e070c5534f89b4e46abc434a7908c0f7d8a6ee2`.
-No App source, password store or user data was copied or modified. No credentials
-were copied into this clone. Existing native source pins and the local SDK/JDK
+No App source was modified. No private password-store state, user data or
+credentials were copied into this clone. Existing native source pins and the local SDK/JDK
 were used; no new tool or dependency was downloaded.
 
 From that checkout, with existing OpenJDK21 and Android SDK configured, the exact
