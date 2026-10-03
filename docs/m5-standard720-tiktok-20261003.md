@@ -24,14 +24,15 @@ M5 配置 `phone17-root.avd/config.ini` 的 `hw.lcd.width=720`、`hw.lcd.height=
 
 此次明确的物理尺寸变更进行了冷启动，执行前说明正在连接的串流会暂断。首次 launchd bootstrap 因旧作业退出期间的暂态返回非零，随后重新 bootstrap 成功；Android boot1、物理尺寸及 gateway 恢复已读回。Pixel6的两项显示装饰关闭后，最终两个 cutout 资源解析为空，屏幕 Awake。
 
-M5 的旧 gateway 还硬编码了五分钟息屏。按用户此前取消自动息屏的要求，在确认无正式在线连接后，只将这一处改为现有源码的环境参数读取，并设 `DIRECT_IDLE_DELAY=0`；没有再次重启虚拟安卓。安卓 `screen_off_timeout=2147483647`，供电常亮。它不代表 Mac 关机或睡眠时仍能远程使用。
+M5 的旧 gateway 还硬编码了五分钟息屏。按用户此前取消自动息屏的要求，在确认无正式在线连接后，将这一处改为现有源码的环境参数读取，并设 `DIRECT_IDLE_DELAY=0`；没有再次重启虚拟安卓。随后实际收尾发现旧 `idle_power.py` 还把0解释为立即执行计时，不能仅凭环境值认定常亮已验收。已同步现有正式源码的0禁用契约，实际部署模块的8项惰性Timer/陈旧回调/在线保护检查通过。M5此时已有正式会话，未强制重载；受限的单次维护程序等会话自然结束后才重载gateway、唤醒并读回，持有独立reload锁和受限receipt，最长20分钟。receipt完成前常亮运行态验收仍待定。安卓自身 `screen_off_timeout=2147483647`、供电常亮15已读回；它不代表 Mac 关机或睡眠时仍能远程使用。
 
 备份都在 M5 原运行目录的受限 `direct/backups`：
 
 - `m5-standard720-20261003-103012`：AVD配置、gateway、显示profile和LaunchAgent。
 - `m5-always-on-20261003-104402`：修改息屏计时前的gateway和LaunchAgent。
+- `m5-zero-idle-contract-20261003-105848`：旧idle模块及单次重载receipt。
 
-两处目录0700、文件0600。实际运行目录仍在 M5 的 `/Users/yawen/Library/Application Support/AndroidRemote`，没有移动旧目录。回滚需先确认正式会话空闲；恢复旧物理尺寸需要冷启动，不能在朋友使用期间执行。
+备份目录0700、文件0600。实际运行目录仍在 M5 的 `/Users/yawen/Library/Application Support/AndroidRemote`，没有移动旧目录。回滚需先确认正式会话空闲；恢复旧物理尺寸需要冷启动，不能在朋友使用期间执行。
 
 维护后使用 App 自带 M5 受信证书检查局域网 `192.168.9.99:15556` 与公网 `146.56.249.175:15558`，均 HTTP200。NPC身份和NPS主程序、国内来源过滤没有修改。腾讯目标路由仍为 `192.168.9.1/en11`；这是宿主路由读回，不是逐包国家/实际代理链证明。此前503的两个修复阶段保留在 [原故障记录](m5-session-startup-fix-20261003.md)，其中540×1200及432×960是变更前的历史证据，不能覆盖成本轮新尺寸。
 
