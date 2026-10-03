@@ -29,6 +29,8 @@ public final class LanUiAcceptance extends Instrumentation {
     public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
     private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    private boolean codecStartup(){String value=arguments.getString("codec_startup","off");
+        if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("codec_startup_bound");return value.equals("on");}
     private boolean stageDiagnostics(){String value=arguments.getString("stage_diagnostics","on");
         if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("stage_diagnostics_bound");return value.equals("on");}
     private int steadySeconds(){int value=Integer.parseInt(arguments.getString("steady_seconds","20"));if(value<20||value>30)throw new IllegalArgumentException("steady_seconds_bound");return value;}
@@ -62,13 +64,14 @@ public final class LanUiAcceptance extends Instrumentation {
         Object ui=target.lanUdpEntry;String scope=arguments.getString("network_scope","lan");
         if(!scope.equals("lan")&&!scope.equals("tailnet"))throw new IllegalArgumentException("scope_bound");
         ((Spinner)field(ui,"scope")).setSelection(scope.equals("tailnet")?1:0);
-        ((EditText)field(ui,"address")).setText(scope.equals("tailnet")?"100.65.0.2:15560":"192.168.9.128:15560");
+        ((EditText)field(ui,"address")).setText((scope.equals("tailnet")?"100.65.0.2":"192.168.9.128")+":"+LanUdpContract.HTTPS_PORT);
         ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
         ((Spinner)field(ui,"rate")).setSelection(rateIndex());
         ((Spinner)field(ui,"quality")).setSelection(2);((Spinner)field(ui,"fps")).setSelection(0);
         ((Spinner)field(ui,"buffer")).setSelection(2);((CheckBox)field(ui,"sound")).setChecked(true);
         String pcm=arguments.getString("pcm_queue","off");if(!pcm.equals("on")&&!pcm.equals("off"))throw new IllegalArgumentException("pcm_choice_bound");
         ((CheckBox)field(ui,"pcmQueue")).setChecked(pcm.equals("on"));
+        ((CheckBox)field(ui,"codecStartup")).setChecked(codecStartup());
         Field lead=ui.getClass().getDeclaredField("ownerSurfaceSubmitLeadMs");lead.setAccessible(true);lead.setInt(ui,surfaceLeadMs());
         Field stages=ui.getClass().getDeclaredField("ownerStageDiagnosticsEnabled");stages.setAccessible(true);stages.setBoolean(ui,stageDiagnostics());
     }
@@ -100,6 +103,10 @@ public final class LanUiAcceptance extends Instrumentation {
         if(!(enabled instanceof Integer)||((Integer)enabled)!=(stageDiagnostics()?1:0)
                 ||stageDiagnostics()!=report.has("decoder_stage_metrics"))throw new IllegalStateException("stage_diagnostics_readback");
         result.put(stage+"_stage_diagnostics_enabled",enabled).put(stage+"_stage_diagnostics_verified",true);
+        Object startup=report.get("codec_startup_ready_enabled");
+        if(!(startup instanceof Integer)||((Integer)startup)!=(codecStartup()?1:0))throw new IllegalStateException("codec_startup_readback");
+        result.put(stage+"_codec_startup_ready_enabled",startup).put(stage+"_codec_startup_readback_verified",true);
+        if(report.has("codec_startup_gate"))result.put(stage+"_codec_startup_gate",report.getJSONObject("codec_startup_gate"));
     }
     /** Independent test-process liveness check, outside the media window.
      * Never obtain stacks or export names; a full fixed snapshot is inconclusive.
@@ -216,6 +223,7 @@ public final class LanUiAcceptance extends Instrumentation {
         try{
             report.put("requested_surface_submit_lead_ms",surfaceLeadMs());
             report.put("requested_stage_diagnostics_enabled",stageDiagnostics());
+            report.put("requested_codec_startup_ready_enabled",codecStartup());
             report.put("requested_steady_seconds",steadySeconds());
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
             for(boolean enabled:new boolean[]{false,true,true,false})rows.put(new JSONObject()

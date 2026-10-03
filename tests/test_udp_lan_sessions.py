@@ -196,7 +196,7 @@ class SessionChecks(unittest.TestCase):
         self.assertEqual(first['protocol'], 'HGUE_UDP_V1')
         self.assertEqual(first['network_scope'], 'lan')
         self.assertEqual((first['peer_host'], first['peer_port'], first['bind_port']),
-                         ('192.168.9.128', 15963, 0))
+                         ('192.168.9.128', 45963, 0))
         self.assertEqual(first['video_release'], 'scheduled')
         for field in ('async_video', 'decoder_reanchor_enabled', 'network_feedback'):
             self.assertTrue(first[field])

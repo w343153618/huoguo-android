@@ -317,7 +317,7 @@ class TailnetHandlerChecks(unittest.TestCase):
     def test_tailnet_request_descriptor_and_peer_are_exact_and_media_waits_for_ready(self):
         descriptor = self.create()
         self.assertEqual((descriptor['network_scope'], descriptor['peer_host'], descriptor['peer_port']),
-                         ('tailnet', '100.65.0.2', 15963))
+                         ('tailnet', '100.65.0.2', 45963))
         self.assertEqual(self.factory_calls[0][1], '100.65.0.3')
         self.scope.verify.assert_called_once_with()
         self.assertEqual(self.worker.starts, 0)

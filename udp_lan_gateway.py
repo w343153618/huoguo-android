@@ -205,8 +205,8 @@ def main():
     parser.add_argument('--network-scope', choices=('lan', 'tailnet'), default='lan')
     parser.add_argument('--allow-owner-surface-submit-lead', action='store_true',
                         help='Bounded owner experiment only: explicitly permit requested lead 16 ms; default 0 remains')
-    parser.add_argument('--https-port', type=int, default=15560)
-    parser.add_argument('--udp-port', type=int, default=15963)
+    parser.add_argument('--https-port', type=int, default=45560)
+    parser.add_argument('--udp-port', type=int, default=45963)
     parser.add_argument('--runtime', type=Path, required=True,
                         help='Private candidate hardware runtime with patched cancel-capable guest JAR')
     parser.add_argument('--packetizer', type=Path, required=True)
@@ -214,7 +214,7 @@ def main():
     parser.add_argument('--evidence-dir', type=Path, required=True)
     parser.add_argument('--max-runtime', type=int, default=600)
     args = parser.parse_args()
-    if args.https_port != 15560 or args.udp_port != 15963 or not 30 <= args.max_runtime <= 3600:
+    if args.https_port != 45560 or args.udp_port != 45963 or not 30 <= args.max_runtime <= 3600:
         parser.error('fixed isolated ports and bounded lifetime required')
     if not os.environ.get('DIRECT_AUTH_FILE'):
         parser.error('use the existing restricted account file; do not create an account')

@@ -68,7 +68,7 @@ if (authenticatedLanUdp) {
         from(rootProject.file('experiments/nps-transport/phone')) {
             include 'UdpVideoProbe.java', 'UdpVideoSecurity.java', 'NativeUdpFec.java',
                     'UdpAudioAssembler.java', 'UdpAudioReceiver.java', 'BoundedPcmQueue.java', 'UdpTouchControl.java',
-                    'CodecFileProbe.java', 'FramedH264Fixture.java'
+                    'CodecFileProbe.java', 'FramedH264Fixture.java', 'CodecStartupGate.java'
         }
         into(generatedJava.map { it.dir('local/remoteandroid/direct') })
     }

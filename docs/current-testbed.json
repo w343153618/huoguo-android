@@ -631,8 +631,8 @@
       "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
     }
   },
-  "updated_evidence_utc": "2026-10-03T03:27:35.685098+00:00",
-  "independent_experimental_app_version": "1.31-alpha.4",
+  "updated_evidence_utc": "2026-10-03T04:57:57.751314+00:00",
+  "independent_experimental_app_version": "1.31-alpha.5",
   "latest_surface_submit_experiment": {
     "evidence": "docs/evidence/surface-submit-20261003",
     "summary": "docs/surface-submit-real-video-20261003.json",
@@ -862,7 +862,7 @@
     "temporary_accounts_created": false,
     "scope": "M1ownerUID501 environment existing authorized test account; notfriendorhostisolationacceptance"
   },
-  "instrumentation_package_scope": "Matching alpha4 UI helper verified/used, then removed after single mapping observation",
+  "instrumentation_package_scope": "Matching alpha5 helper used and removed after startup comparison; next cancel helper source only not device tested",
   "m1_mapping_real_observation_20261003": {
     "version_name": "1.31-alpha.4",
     "case_count": 1,
@@ -991,5 +991,52 @@
     "phone_fps_or_latency_acceptance": false,
     "repeat_restart_authorized": false,
     "backup_cloud": "/root/nps-backups/formal-quic-20261003-120815"
+  },
+  "latest_codec_startup_experiment": {
+    "record": "docs/codec-startup-ready-real-video-20261003.md",
+    "summary": "docs/codec-startup-ready-real-video-20261003.json",
+    "contract": "docs/codec-startup-ready-contract-20261003.md",
+    "apk_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
+    "version_code": 36,
+    "default_enabled": false,
+    "candidate_https_port": 45560,
+    "candidate_udp_port": 45963,
+    "completed_order": [
+      "off",
+      "on",
+      "on"
+    ],
+    "strict_ABBA_completed": false,
+    "case3_excluded_from_healthy_comparison": true,
+    "case3_failure": "Darwin host udp_video send ENOBUFS errno55 caused worker revoke; phone progress idle13.019s; no Inbox overflow or codec input timeout",
+    "startup_ON_four_sessions_actual_commit_verified": true,
+    "initial_two_second_band_ON_overflow_timeout_zero": true,
+    "initial_band_not_proven_steady_state": true,
+    "phone_sf_cadence": [
+      59.013,
+      49.879,
+      56.802
+    ],
+    "phone_full_requested_window_fps": [
+      57.693,
+      48.189,
+      34.159
+    ],
+    "phone_sf_max_observed_gap_ms": [
+      232.068437,
+      1931.245624,
+      795.759479
+    ],
+    "stable60fps_accepted": false,
+    "public_or_V50_tested": false,
+    "optical_or_acoustic_latency_measured": false,
+    "native_exit_zero_count": 6,
+    "host_error_after_natural_shutdown_does_not_mean_error_free": true,
+    "gateway_quiescent": true,
+    "helper_removed": true,
+    "candidate_closed": true,
+    "formal_services_changed": false,
+    "full_checks": 982,
+    "next_factor": "Explicit deadline-bounded owned sender ENOBUFS handling; keep startupOFF and all original frame/priority/clock policies"
   }
 }

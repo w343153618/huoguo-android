@@ -185,6 +185,12 @@ class LanUiDriverCleanupCheck(unittest.TestCase):
                         ui.update(requested_stage_diagnostics_enabled=True,
                             first_stage_diagnostics_enabled=1,second_stage_diagnostics_enabled=1,
                             first_stage_diagnostics_verified=True,second_stage_diagnostics_verified=True)
+                        ui['requested_codec_startup_ready_enabled']=False
+                        for stage in ('first','second'):
+                            ui[stage+'_codec_startup_ready_enabled']=0
+                            ui[stage+'_codec_startup_readback_verified']=True
+                            ui[stage+'_codec_startup_gate']=dict(enabled=0,phase_before_close=0,failure_code=0,
+                                ready_ns=0,fresh_received_ns=0,committed_ns=0,bootstrap_pts_us=-1,fresh_pts_us=-1)
                         ui.update(steady_progress_monitor_enabled=True,steady_media_progress_healthy=True,
                             steady_progress_max_idle_ns=250000000,steady_progress_stall_threshold_ns=3000000000,
                             steady_progress_samples=[dict(phone_ns=1000000000+i*1000000000,

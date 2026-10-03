@@ -10,7 +10,7 @@ public final class LanUdpContract {
     private LanUdpContract(){}
     public static final String LAN_SCOPE="lan",TAILNET_SCOPE="tailnet";
     public static final String TAILNET_HOST="100.65.0.2";
-    public static final int HTTPS_PORT=15560,UDP_PORT=15963;
+    public static final int HTTPS_PORT=45560,UDP_PORT=45963;
     static boolean privateIpv4(String host){
         if(host==null||!host.matches("(?:0|[1-9][0-9]{0,2})(?:\\.(?:0|[1-9][0-9]{0,2})){3}"))return false;
         String[] values=host.split("\\.");int[] bytes=new int[4];

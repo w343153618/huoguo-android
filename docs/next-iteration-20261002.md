@@ -154,3 +154,9 @@ App连接页展示当前实际路径和失败原因，不把“Tailscale”自�
 候选需通过组件检查、真实手机LAN、公网指定路径和真实V50的分层验收。只有 source和measurement门槛通过的轮次进入比较。小样本表现好可以作为试用候选，但不能承诺稳定60/120FPS或近零延迟。
 
 若新增机制未重复显示收益，保留现有保护并记录未能区分，不继续无目的排列参数。若出现跨会话注入、错误MAC目标、秘密日志、无限队列、明显音画漂移或公网规则绕行，停止该候选推广并恢复隔离环境。发布时保留可以回到上个服务端版本的私有备份；客户端回退通过更高版本码的修复发布完成，避免破坏用户数据。
+
+## 2026-10-03最新：alpha5启动准入三轮已结束，发现host ENOBUFS
+
+先读[实际记录](codec-startup-ready-real-video-20261003.md)、[数字](codec-startup-ready-real-video-20261003.json)及[候选契约](codec-startup-ready-contract-20261003.md)。同APK OFF/ON/ON后第三轮健康失败，不能称完成ABBA。ON四连接实际Gate commit成功，初始2秒带overflow/timeout0，但第二轮手机SF49.879、max1931ms，仍不稳定；默认OFF保持。第三轮host udp_video send明确errno55/ENOBUFS→撤销，手机无进度13.019s；Inbox溢出/timeout0，native1340源/output1340、22.861s后EOF自然0不是整会话无错误。不要把此次停止归因decoder槽、扩大FIFO或buffer。
+
+当前alpha5/code36 APK f5cf8bbf、JNI578347ca、helperd537af16，原签名；982checks+build/lint通过，helper/一次性input和高端口45560/45963已清理，手机保留alpha5。首次旧App15963与新端口45963不一致的描述失败保留但排除性能样本；实际parser联合fixture已补。正式默认APK无UDP JNI/Gate/UI，正式v1.30/M5/NPS此实验未改。下一因素立即推进owned非阻塞sender仅显式opt-in的ENOBUFS有界退让/计数/取消；原视频期限、priority10ms、nonce、参考guard不变，先fixture再同APK真实视频观察。实际没遇到ENOBUFS的轮不能宣称真实拥塞恢复已验收。独立duringprepare取消helper源另外准备，未构建/装机。

@@ -26,9 +26,9 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private EditText address,user,password;
     private TextView status;
     private Spinner scope,fps,quality,rate,buffer;
-    private CheckBox sound,pcmQueue;
+    private CheckBox sound,pcmQueue,codecStartup;
     private static final String SETTINGS="authenticated_udp_candidate";
-    private static final String DEFAULT_LAN_ADDRESS="192.168.9.128:15560";
+    private static final String DEFAULT_LAN_ADDRESS="192.168.9.128:"+LanUdpContract.HTTPS_PORT;
     private String lastLanAddress;
     // Owner instrumentation only: no public widget, Intent extra or saved setting.
     // showLogin resets this one-attempt value; helper must explicitly opt in again.
@@ -36,10 +36,10 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private boolean ownerStageDiagnosticsEnabled=true;
     private static final class Attempt {
         final long generation;final String endpoint,credential,networkScope;
-        final boolean boundedPcmQueueEnabled,stageDiagnosticsEnabled;final int surfaceSubmitLeadMs;
+        final boolean boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled;final int surfaceSubmitLeadMs;
         volatile boolean cancelled;volatile SSLSocket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
-        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue,int surfaceLeadMs,boolean stages){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;}
+        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
@@ -61,7 +61,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
         Button update=new Button(activity);update.setText("检查实验更新");update.setOnClickListener(v->activity.updater.check(true));box.addView(update);
         scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2"},savedScope);
-        address=field(box,"M1 IPv4:15560，可手动修改",restoredAddress);
+        address=field(box,"M1 IPv4:"+LanUdpContract.HTTPS_PORT+"，可手动修改",restoredAddress);
         user=field(box,"现有安卓账号",savedText(saved,"username","huoguo",128));
         password=field(box,"现有账号密码（此次仅保存在内存）","");password.setInputType(129);
         quality=choice(box,"串流清晰度",new String[]{"540P · 960","720P · 1280","1080P · 1920"},savedSelection(saved,"quality",2,2));
@@ -70,7 +70,8 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         buffer=choice(box,"播放缓冲",new String[]{"30 ms","50 ms","80 ms · 推荐","100 ms"},savedSelection(saved,"buffer",3,2));
         sound=new CheckBox(activity);sound.setText("UDP 音频");sound.setChecked(savedSound(saved));box.addView(sound);
         pcmQueue=new CheckBox(activity);pcmQueue.setText("实验：有界 PCM 输出队列（默认关闭）");pcmQueue.setChecked(false);box.addView(pcmQueue);
-        TextView remembered=new TextView(activity);remembered.setText("连接地址、账号及串流参数自动记住；密码与 PCM 实验开关不会保存。");box.addView(remembered);
+        codecStartup=new CheckBox(activity);codecStartup.setText("实验：解码器准备后接收新关键帧（默认关闭）");codecStartup.setChecked(false);box.addView(codecStartup);
+        TextView remembered=new TextView(activity);remembered.setText("连接地址、账号及串流参数自动记住；密码与本次实验开关不会保存。");box.addView(remembered);
         Button start=new Button(activity);start.setText("启动认证 UDP 测试");box.addView(start);status=new TextView(activity);box.addView(status);
         scope.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
             private int previous=savedScope;
@@ -120,7 +121,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             endpoint=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(endpoint);
             networkScope=scope.getSelectedItemPosition()==0?LanUdpContract.LAN_SCOPE:LanUdpContract.TAILNET_SCOPE;
             try{LanUdpContract.validateLogin(parsed.host,parsed.port,networkScope);}
-            catch(IOException invalid){throw new IOException(networkScope.equals(LanUdpContract.TAILNET_SCOPE)?"Tailnet 实验仅接受 M1 100.65.0.2:15560":"局域网范围仅接受私有 IPv4:15560");}
+            catch(IOException invalid){throw new IOException(networkScope.equals(LanUdpContract.TAILNET_SCOPE)?"Tailnet 实验仅接受 M1 100.65.0.2:"+LanUdpContract.HTTPS_PORT:"局域网范围仅接受私有 IPv4:"+LanUdpContract.HTTPS_PORT);}
             String name=user.getText().toString(),secret=password.getText().toString();
             if(name.isEmpty()||secret.isEmpty()||name.indexOf(':')>=0||name.length()>128||secret.length()>1024)throw new IOException("请填写现有账号及密码");
             credential="Basic "+android.util.Base64.encodeToString((name+":"+secret).getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);
@@ -133,7 +134,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             activity.initTLS();
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled);current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();
@@ -145,7 +146,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             validateDescriptor(descriptor,Endpoint.parse(attempt.endpoint).host,attempt.networkScope,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
-                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,(report,failed)->finished(attempt,report,failed));
+                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,(report,failed)->finished(attempt,report,failed));
             }
         }catch(Exception failure){
             finishRemote(attempt);

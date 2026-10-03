@@ -57,7 +57,7 @@ public final class UdpVideoProbe extends Instrumentation {
     private final JSONArray inputs=new JSONArray(),samples=new JSONArray(),feedbackTimes=new JSONArray();
     private final JSONArray inputWait=new JSONArray(),auSizes=new JSONArray();
     private final JSONArray videoQueueWait=new JSONArray(); // Video worker only; snapshot after join.
-    private VideoInbox videoInbox;
+    private volatile VideoInbox videoInbox;
     private Thread videoWorker;
     private volatile Throwable videoWorkerFailure;
     private volatile boolean videoWorkerStop;
@@ -78,6 +78,8 @@ public final class UdpVideoProbe extends Instrumentation {
     private volatile long contentHintApplications;
     // Frozen before the independent App runner thread starts; never a server option.
     boolean stageDiagnosticsEnabled=true;
+    // Owner-only explicit App caller option; descriptors cannot enable it.
+    private boolean codecStartupReadyEnabled;
     private static final int[] FEC_DIAGNOSTIC_STAT_INDEX={6,9,11,12,13,17};
     private final long[] fecDiagnosticPrevious=new long[FEC_DIAGNOSTIC_STAT_INDEX.length];
     // RX-owned fixed native snapshot; only converted to JSON after receive/cleanup.
@@ -117,13 +119,17 @@ public final class UdpVideoProbe extends Instrumentation {
     /** Complete logical frames only. The byte array is immutable after admission. */
     static final class VideoFrame {
         final byte[] body;final int width,height,configBytes,auBytes;
-        final long ptsUs,receivedNs,epoch;final boolean idr;
+        final long ptsUs,receivedNs,epoch;final boolean idr,startupPreparation;
         VideoFrame(byte[] body,int width,int height,int configBytes,int auBytes,long ptsUs,long receivedNs,boolean idr,long epoch){
+            this(body,width,height,configBytes,auBytes,ptsUs,receivedNs,idr,epoch,false);
+        }
+        private VideoFrame(byte[] body,int width,int height,int configBytes,int auBytes,long ptsUs,long receivedNs,boolean idr,long epoch,boolean startupPreparation){
             this.body=body;this.width=width;this.height=height;this.configBytes=configBytes;this.auBytes=auBytes;
-            this.ptsUs=ptsUs;this.receivedNs=receivedNs;this.idr=idr;this.epoch=epoch;
+            this.ptsUs=ptsUs;this.receivedNs=receivedNs;this.idr=idr;this.epoch=epoch;this.startupPreparation=startupPreparation;
         }
         boolean recoveryIdr(){return idr&&configBytes>0;}
-        VideoFrame atEpoch(long value){return new VideoFrame(body,width,height,configBytes,auBytes,ptsUs,receivedNs,idr,value);}
+        VideoFrame atEpoch(long value){return new VideoFrame(body,width,height,configBytes,auBytes,ptsUs,receivedNs,idr,value,startupPreparation);}
+        VideoFrame forStartupPreparation(long value){return new VideoFrame(body,width,height,configBytes,auBytes,ptsUs,receivedNs,idr,value,true);}
     }
 
     /** Pure bounded FIFO / dependency state, separate from codec calls and JSON. */
@@ -134,11 +140,14 @@ public final class UdpVideoProbe extends Instrumentation {
         long recoveryEpochs,recoveryCompleted,lastRecoveredEpoch=-1,maxDepth,maxBytes;
         final boolean diagnosticEvents;final ArrayDeque<InboxEvent> events=new ArrayDeque<>();long eventsEvicted;
         final MediaPresentationMetrics.StageDiagnostics stages;
+        final CodecStartupGate startup;
         boolean waiting=true,acceptingChain,closed;
         VideoInbox(){this(false);}
         VideoInbox(boolean diagnosticEvents){this(diagnosticEvents,null);}
         VideoInbox(boolean diagnosticEvents,MediaPresentationMetrics.StageDiagnostics stages){
-            this.diagnosticEvents=diagnosticEvents;this.stages=stages;}
+            this(diagnosticEvents,stages,false,System.nanoTime());}
+        VideoInbox(boolean diagnosticEvents,MediaPresentationMetrics.StageDiagnostics stages,boolean codecStartupReadyEnabled,long startedNs){
+            this.diagnosticEvents=diagnosticEvents;this.stages=stages;startup=new CodecStartupGate(codecStartupReadyEnabled,startedNs);}
         private void record(String event,String reason,long previousEpoch,VideoFrame frame){
             if(!diagnosticEvents)return;
             if(events.size()>=MAX_INBOX_EVENTS){events.removeFirst();eventsEvicted++;}
@@ -148,10 +157,22 @@ public final class UdpVideoProbe extends Instrumentation {
             if(stages!=null)stages.inboxOffer(frame.receivedNs,System.nanoTime());
             try{
             if(closed){closingDrops++;return false;}
+            int startupAdmission=startup.admission(frame.width,frame.height,frame.ptsUs,frame.receivedNs,
+                frame.recoveryIdr(),frame.body.length,System.nanoTime());
+            if(startupAdmission==CodecStartupGate.DROP)return false;
+            if(startupAdmission==CodecStartupGate.PREPARE){
+                queue.addLast(frame.forStartupPreparation(epoch));bytes+=frame.body.length;admitted++;
+                maxDepth=Math.max(maxDepth,queue.size());maxBytes=Math.max(maxBytes,bytes);
+                record("startup_prepare_admitted","metadata_only_not_media",epoch,frame);notifyAll();return true;
+            }
             if(frame.body.length>MAX_BYTES){oversizeDrops++;lose(frame,"oversized_au");return false;}
             if(queue.size()>=MAX_FRAMES||bytes+frame.body.length>MAX_BYTES){
                 overflowEvents++;lose(frame,queue.size()>=MAX_FRAMES?"queue_frame_overflow":"queue_byte_overflow");
                 if(!frame.recoveryIdr()){overflowRejected++;return false;}
+                // Overflow may have retired a startup CHAIN_PENDING epoch.
+                // The replacement complete IDR must also re-enter its startup gate.
+                if(startup.admission(frame.width,frame.height,frame.ptsUs,frame.receivedNs,
+                        frame.recoveryIdr(),frame.body.length,System.nanoTime())!=CodecStartupGate.ADMIT){overflowRejected++;return false;}
             }
             if(!acceptingChain&&!frame.recoveryIdr()){waitingDrops++;if(stages!=null)stages.waitingIdrDrop(System.nanoTime());return false;}
             if(frame.recoveryIdr()){acceptingChain=true;record("idr_admitted","complete_config_idr",epoch,frame);} // Following P frames may wait behind this complete IDR.
@@ -169,6 +190,7 @@ public final class UdpVideoProbe extends Instrumentation {
             record("chain_lost",reason,epoch,frame);
             cleared+=queue.size();queue.clear();bytes=0;epoch++;recoveryEpochs++;
             waiting=true;acceptingChain=false;notifyAll();
+            startup.chainLost(System.nanoTime());
         }
         synchronized void fail(long observedEpoch){if(observedEpoch==epoch)lose(null,"codec_input_failure");else record("stale_fail_ignored","old_epoch",observedEpoch,null);}
         synchronized void fail(VideoFrame frame,String reason){
@@ -176,11 +198,21 @@ public final class UdpVideoProbe extends Instrumentation {
         }
         synchronized boolean valid(VideoFrame frame){return frame.epoch==epoch&&(!waiting||frame.recoveryIdr());}
         synchronized void success(VideoFrame frame){
-            if(frame.epoch!=epoch||!frame.recoveryIdr())return;
+            if(frame.epoch!=epoch||!frame.recoveryIdr()||frame.startupPreparation)return;
+            if(startup.enabled()&&(closed||startup.phase()==CodecStartupGate.FAILED||startup.phase()==CodecStartupGate.CLOSED))return;
+            // The gate and FIFO commit are one monitor transition; a timeout
+            // or unmatched selected IDR cannot open one without the other.
+            if(startup.enabled()&&!startup.committed(frame.ptsUs,System.nanoTime()))return;
             boolean wasWaiting=waiting;
             waiting=false;
             if(epoch>0&&lastRecoveredEpoch!=epoch){recoveryCompleted++;lastRecoveredEpoch=epoch;}
             if(wasWaiting)record("recovered",epoch==0?"initial_idr_committed":"epoch_idr_committed",epoch,frame);
+        }
+        synchronized void success(VideoFrame frame,MainActivity activity,int generation,boolean stopping){
+            // Read generation/stop under the same Inbox monitor as the epoch
+            // transition. cancelStartup uses this monitor before a late commit.
+            if(startup.enabled()&&(stopping||!activity.running||activity.generation!=generation||activity.video==null))return;
+            success(frame);
         }
         synchronized boolean needsIdr(){return waiting;}
         synchronized VideoFrame take()throws InterruptedException{
@@ -191,7 +223,24 @@ public final class UdpVideoProbe extends Instrumentation {
             return frame;
         }
         synchronized long currentEpoch(){return epoch;}
-        synchronized void close(){closed=true;notifyAll();}
+        synchronized boolean beginStartupPreparation(VideoFrame frame,long nowNs){
+            if(closed||frame.epoch!=epoch||!frame.startupPreparation||!startup.preparing(frame.ptsUs,frame.width,frame.height))return false;
+            if(nowNs<frame.receivedNs||nowNs-frame.receivedNs>=CodecStartupGate.MAX_AGE_NS){startup.bootstrapExpired();return false;}
+            startup.preparationStarted(frame.ptsUs,nowNs);return true;
+        }
+        synchronized boolean completeStartupPreparation(VideoFrame frame,long nowNs){
+            return !closed&&frame.epoch==epoch&&startup.prepared(frame.ptsUs,frame.width,frame.height,nowNs);
+        }
+        synchronized void failStartupPreparation(){startup.configureFailed();}
+        synchronized boolean startupRequestDue(long nowNs){return startup.requestDue(nowNs);}
+        synchronized boolean startupOwnsRecovery(){int phase=startup.phase();return phase!=CodecStartupGate.DISABLED&&phase!=CodecStartupGate.STREAMING;}
+        synchronized int startupFailure(long nowNs){startup.checkTimeout(nowNs);return startup.failureCode();}
+        synchronized void cancelStartup(){if(startup.enabled())startup.close(System.nanoTime());}
+        synchronized JSONObject startupSnapshot()throws Exception{
+            long[] values=startup.snapshot();JSONObject result=new JSONObject();
+            for(int i=0;i<values.length;i++)result.put(CodecStartupGate.STAT_NAMES[i],values[i]);return result;
+        }
+        synchronized void close(){closed=true;startup.close(System.nanoTime());notifyAll();}
         synchronized JSONObject snapshot()throws Exception{
             return new JSONObject().put("capacity_frames",MAX_FRAMES).put("capacity_bytes",MAX_BYTES)
                 .put("maximum_depth",maxDepth).put("maximum_bytes",maxBytes).put("admitted_frames",admitted)
@@ -224,13 +273,18 @@ public final class UdpVideoProbe extends Instrumentation {
         return startApp(activity,descriptor,boundedPcmQueueEnabled,true,listener);
     }
     public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,boolean stageDiagnosticsEnabled,AppListener listener)throws Exception {
+        return startApp(activity,descriptor,boundedPcmQueueEnabled,stageDiagnosticsEnabled,false,listener);
+    }
+    public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,boolean stageDiagnosticsEnabled,boolean codecStartupReadyEnabled,AppListener listener)throws Exception {
         UdpVideoProbe runner=new UdpVideoProbe();runner.appActivity=activity;
         runner.appSession=parseSession(descriptor,true);runner.appSession.boundedPcmQueueEnabled=boundedPcmQueueEnabled;runner.appListener=listener;
         runner.stageDiagnosticsEnabled=stageDiagnosticsEnabled;
+        runner.codecStartupReadyEnabled=codecStartupReadyEnabled;
         new Thread(runner::onStart,"authenticated-lan-udp").start();return runner;
     }
     public void cancelApp(){
         appCancelled=true;
+        VideoInbox inbox=videoInbox;if(inbox!=null)inbox.cancelStartup();
         MainActivity a=appActivity;
         if(a!=null&&appGeneration>=0&&a.generation==appGeneration){a.running=false;}
         // Keep the socket open until close sends CANCEL and STOP; 20ms receive timeout bounds exit.
@@ -254,6 +308,7 @@ public final class UdpVideoProbe extends Instrumentation {
         int oldFps=0,oldBuffer=0,oldDisplayModeId=0,oldSubmissionLeadMs=0;boolean oldImmediate=false;float oldRefresh=0;
         try{
             session=appActivity==null?readSession(keyFile):appSession;if(appCancelled)throw new IOException("cancelled");diagnosticEvents=session.diagnosticEvents;
+            if(codecStartupReadyEnabled&&!session.asyncVideo)throw new IOException("codec_startup_requires_async_video");
             contentHintFps=session.contentHintFps;completed="session_validated";
             report.put("test_scope",session.audioEnabled||session.touchEnabled
                     ?"isolated_real_phone_authenticated_udp_media_and_touch_components"
@@ -262,6 +317,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 .put("video_release_mode",session.release).put("requested_seconds",session.seconds)
                 .put("async_video_enabled",session.asyncVideo)
                 .put("stage_diagnostics_enabled",stageDiagnosticsEnabled?1:0)
+                .put("codec_startup_ready_enabled",codecStartupReadyEnabled)
                 .put("decoder_reanchor_enabled",session.decoderReanchorEnabled)
                 .put("diagnostic_events_enabled",session.diagnosticEvents).put("network_feedback_enabled",session.networkFeedback)
                 .put("requested_display_hz",session.displayHz)
@@ -376,7 +432,7 @@ public final class UdpVideoProbe extends Instrumentation {
                     .put("receive_loop_iterations",receiveIterations).put("receive_loop_max_ms",receiveLoopMaxNs/1e6)
                     .put("receive_processing_max_ms",receiveProcessingMaxNs/1e6).put("receive_socket_wait_max_ms",receiveSocketWaitMaxNs/1e6)
                     .put("receive_loop_over_80ms",receiveLoopOver80);
-                if(videoInbox!=null){report.put("video_input_queue",videoInbox.snapshot());
+                if(videoInbox!=null){report.put("video_input_queue",videoInbox.snapshot()).put("codec_startup_gate",videoInbox.startupSnapshot());
                     if(!workerAlive)report.put("inbox_epoch_events",videoInbox.eventSnapshot());
                     if(!workerAlive)report.put("video_worker_frames",videoWorkerFrames).put("video_worker_expired_frames",videoWorkerExpired)
                         .put("video_worker_stale_epoch_drops",videoWorkerStale).put("video_input_reservations_cancelled",videoInputReservationsCancelled)
@@ -573,12 +629,21 @@ public final class UdpVideoProbe extends Instrumentation {
                 long[] stats=NativeUdpFec.nativeStats(handle);if(stats.length!=NativeUdpFec.STAT_NAMES.length)throw new IOException("native_stats_contract");
                 observeFecDiagnostics(a,System.nanoTime(),stats);
                 readMappingDetails(handle);
-                boolean needs=(videoInbox==null?waitingIdr:videoInbox.needsIdr())||stats[19]!=0;
-                if(needs&&!recoveryActive){recoveryActive=true;recoveryAttempts=0;nextFeedbackNs=now;}
-                if(!needs){recoveryActive=false;recoveryAttempts=0;}
-                if(firstServerNs!=0&&needs&&recoveryAttempts<3&&now>=nextFeedbackNs){
-                    sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;feedbackTimes.put(now);
-                    recoveryAttempts++;nextFeedbackNs=now+(500_000_000L<<(recoveryAttempts-1));
+                if(videoInbox!=null&&videoInbox.startupOwnsRecovery()){
+                    // Preparing never spends the post-ready request budget. RX owns
+                    // nonce allocation/sending; no codec call holds the Inbox monitor.
+                    if(videoInbox.startupRequestDue(now)){
+                        sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;feedbackTimes.put(now);
+                    }
+                    recoveryActive=false;recoveryAttempts=0;
+                }else{
+                    boolean needs=(videoInbox==null?waitingIdr:videoInbox.needsIdr())||stats[19]!=0;
+                    if(needs&&!recoveryActive){recoveryActive=true;recoveryAttempts=0;nextFeedbackNs=now;}
+                    if(!needs){recoveryActive=false;recoveryAttempts=0;}
+                    if(firstServerNs!=0&&needs&&recoveryAttempts<3&&now>=nextFeedbackNs){
+                        sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;feedbackTimes.put(now);
+                        recoveryAttempts++;nextFeedbackNs=now+(500_000_000L<<(recoveryAttempts-1));
+                    }
                 }
                 lastStatsNs=now;
             }
@@ -636,7 +701,8 @@ public final class UdpVideoProbe extends Instrumentation {
     }
 
     private void startVideoWorker(MainActivity activity,int generation){
-        videoInbox=new VideoInbox(diagnosticEvents,activity.presentationMetrics==null?null:activity.presentationMetrics.decoderStages);
+        videoInbox=new VideoInbox(diagnosticEvents,activity.presentationMetrics==null?null:activity.presentationMetrics.decoderStages,
+            codecStartupReadyEnabled,System.nanoTime());
         videoWorker=new Thread(()->{
             try{
                 while(!videoWorkerStop&&activity.running&&activity.generation==generation){
@@ -648,6 +714,7 @@ public final class UdpVideoProbe extends Instrumentation {
                     videoWorkerWaitSamples++;videoWorkerWaitTotalNs+=waited;videoWorkerWaitMaxNs=Math.max(videoWorkerWaitMaxNs,waited);
                     if(videoQueueWait.length()<3600)videoQueueWait.put(waited/1e6);
                     videoWorkerFrames++;
+                    if(frame.startupPreparation){prepareStartupDecoder(activity,generation,frame);continue;}
                     if(!videoInbox.valid(frame)){videoWorkerStale++;continue;}
                     if(waited>=80_000_000L){videoWorkerExpired++;videoInbox.fail(frame,"worker_complete_au_expired");continue;}
                     processVideo(activity,generation,frame);
@@ -684,6 +751,8 @@ public final class UdpVideoProbe extends Instrumentation {
 
     private void checkVideoWorker()throws IOException{
         if(videoWorkerFailure!=null)throw new IOException("video_worker_failed",videoWorkerFailure);
+        if(videoInbox!=null){int failure=videoInbox.startupFailure(System.nanoTime());
+            if(failure!=0)throw new IOException("codec_startup_failed_"+failure);}
     }
 
     private void finishVideoWorker(boolean drain)throws InterruptedException,IOException{
@@ -699,6 +768,7 @@ public final class UdpVideoProbe extends Instrumentation {
 
     /** Called by exactly one input owner: receive thread (A), or video worker (B). */
     private void processVideo(MainActivity a,int gen,VideoFrame frame)throws Exception{
+        if(frame.startupPreparation)throw new IOException("metadata_only_bootstrap_reached_media_input");
         MediaPresentationMetrics.StageDiagnostics stages=a.presentationMetrics==null?null:a.presentationMetrics.decoderStages;
         boolean ownsConsumer=videoInbox==null;
         if(ownsConsumer)beginConsumer(stages,frame.ptsUs);
@@ -715,15 +785,7 @@ public final class UdpVideoProbe extends Instrumentation {
             if(stages!=null)stages.configureStarted(System.nanoTime(),frame.ptsUs,frame.receivedNs);
             try{a.configure(frame.width,frame.height,gen);configured=true;}
             finally{if(stages!=null)stages.configureFinished(System.nanoTime(),frame.ptsUs,configured);}
-            if(contentHintFps>=0){
-                if(!a.running||a.generation!=gen||a.video==null)throw new IOException("codec_stopped_before_content_hint");
-                Surface surface=a.screen.getHolder().getSurface();
-                if(!surface.isValid())throw new IOException("surface_invalid_for_content_hint");
-                // No codec format, clock, listener, decoder output thread or
-                // absolute release timestamp changes in this one-factor test.
-                surface.setFrameRate(contentHintFps,Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);
-                contentHintApplications++;
-            }
+            applyContentHint(a,gen);
             width=frame.width;height=frame.height;completed="decoder_configured";
         }
         if(touchControl!=null)touchControl.setGeometry(frame.width,frame.height,0);
@@ -734,12 +796,49 @@ public final class UdpVideoProbe extends Instrumentation {
         if(!queue(a,gen,frame,20+frame.configBytes,frame.auBytes,false)){
             rejectInput(a,frame);return;
         }
-        if(videoInbox!=null)videoInbox.success(frame);else waitingIdr=false;
+        if(videoInbox!=null)videoInbox.success(frame,a,gen,videoWorkerStop||appCancelled);else waitingIdr=false;
         lastQueuedPts=frame.ptsUs;
         inputs.put(new JSONObject().put("pts_us",frame.ptsUs).put("received_ns",frame.receivedNs).put("input_queued_ns",lastInputNs)
             .put("access_unit_bytes",frame.auBytes).put("config_bytes",frame.configBytes).put("keyframe",frame.idr));
         inputWait.put((lastInputNs-frame.receivedNs)/1e6);completed="media_queued";
         }finally{if(ownsConsumer)finishConsumer(stages,frame.ptsUs);}
+    }
+
+    /** Bootstrap geometry prepares the codec; its AU/PTS never enters media/clock. */
+    private void prepareStartupDecoder(MainActivity a,int gen,VideoFrame frame)throws Exception{
+        if(videoWorkerStop||appCancelled||!a.running||a.generation!=gen){videoInbox.cancelStartup();return;}
+        if(!videoInbox.beginStartupPreparation(frame,System.nanoTime())){checkVideoWorker();return;}
+        MediaPresentationMetrics.StageDiagnostics stages=a.presentationMetrics==null?null:a.presentationMetrics.decoderStages;
+        boolean configured=false;
+        if(stages!=null)stages.configureStarted(System.nanoTime(),frame.ptsUs,frame.receivedNs);
+        try{
+            // configure owns its existing codec lock. Keep the Inbox monitor free
+            // so RX can authenticate/control/drop preparing traffic and cancel.
+            if(videoWorkerStop||appCancelled||!a.running||a.generation!=gen){videoInbox.cancelStartup();return;}
+            a.configure(frame.width,frame.height,gen);
+            if(videoWorkerStop||appCancelled||!a.running||a.generation!=gen){videoInbox.cancelStartup();return;}
+            if(a.video==null)throw new IOException("codec_missing_after_startup_prepare");
+            configured=true;applyContentHint(a,gen);
+            width=frame.width;height=frame.height;
+            if(videoInbox.completeStartupPreparation(frame,System.nanoTime()))completed="startup_decoder_ready_waiting_fresh_idr";
+            else checkVideoWorker();
+        }catch(Exception failure){
+            if(videoWorkerStop||appCancelled||!a.running||a.generation!=gen){
+                videoInbox.cancelStartup();if(failure instanceof InterruptedException)Thread.currentThread().interrupt();return;
+            }
+            videoInbox.failStartupPreparation();throw failure;
+        }
+        finally{if(stages!=null)stages.configureFinished(System.nanoTime(),frame.ptsUs,configured);}
+    }
+
+    private void applyContentHint(MainActivity a,int gen)throws Exception{
+        if(contentHintFps<0)return;
+        if(!a.running||a.generation!=gen||a.video==null)throw new IOException("codec_stopped_before_content_hint");
+        Surface surface=a.screen.getHolder().getSurface();
+        if(!surface.isValid())throw new IOException("surface_invalid_for_content_hint");
+        // No codec format, clock, listener, decoder output thread or absolute
+        // release timestamp changes in this existing content-hint option.
+        surface.setFrameRate(contentHintFps,Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE);contentHintApplications++;
     }
 
     private void loseVideoChain(VideoFrame frame,String reason){
@@ -916,7 +1015,9 @@ public final class UdpVideoProbe extends Instrumentation {
         result.asyncVideo=json.optBoolean("async_video",false);result.decoderReanchorEnabled=json.optBoolean("decoder_reanchor_enabled",true);
         for(String option:new String[]{"diagnostic_events","network_feedback"})if(json.has(option)&&!(json.get(option) instanceof Boolean))throw new IOException("feedback_option_boolean_required");
         result.diagnosticEvents=json.optBoolean("diagnostic_events",false);result.networkFeedback=json.optBoolean("network_feedback",false);
-        if(result.peerPort!=(appMode?15963:15961)||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
+        // App sessions use the dedicated high-port gateway. Standalone legacy
+        // component probes retain their separately frozen 15961/15960 contract.
+        if(result.peerPort!=(appMode?45963:15961)||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
                 ||result.buffer<30||result.buffer>100||!result.release.equals("scheduled")&&!result.release.equals("immediate")||result.profile.length()>160
                 ||result.displayHz!=0&&result.displayHz!=60&&result.displayHz!=90&&result.displayHz!=120)
             throw new IOException("session_options_invalid");
@@ -1021,7 +1122,8 @@ public final class UdpVideoProbe extends Instrumentation {
         out.put("surface_submit_status_code",status.equals("disabled_existing_release_path")?0:status.equals("applied_bounded_wait")?1
             :status.equals("enabled_no_wait_observed")?2:-1);
         out.put("hardware_video",report.optBoolean("hardware",false)?1:0);
-        for(String key:new String[]{"native_fec","native_mapping_details","udp_audio","udp_touch","video_input_queue","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
+        out.put("codec_startup_ready_enabled",report.optBoolean("codec_startup_ready_enabled",false)?1:0);
+        for(String key:new String[]{"native_fec","native_mapping_details","udp_audio","udp_touch","video_input_queue","codec_startup_gate","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
             Object value=report.opt(key);if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
         }
         if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");

@@ -113,7 +113,7 @@ class UdpLanSessions:
     TOMBSTONE_SECONDS = 300.0
     MAX_TOMBSTONES = 256
 
-    def __init__(self, peer_host: str, peer_port: int = 15963,
+    def __init__(self, peer_host: str, peer_port: int = 45963,
                  clock: Callable[[], float] = time.monotonic, *,
                  network_scope: str = 'lan', scope_guard: Callable[[], bool] | None = None,
                  allow_owner_surface_submit_lead: bool = False):
