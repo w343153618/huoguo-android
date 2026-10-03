@@ -21,14 +21,14 @@ import time
 
 from gateway import Handler as ExistingHandler, CERT, KEY
 from udp_lan_gateway import BoundedTlsServer, formal_busy, shutdown_registry
-from udp_lan_sessions import UdpLanSessions, SessionError
+from udp_lan_sessions import UdpLanSessions, SessionError, trusted_nps_owner_accounts
 from udp_lan_worker import LanMediaWorker
 from udp_network_scope import ScopeUnavailable
 from udp_nps_profile import (ProfileError, owner_profile, validate_owner_request,
                              validate_proxy_peer)
 
 
-OWNER_ACCOUNT = 'wyw'
+OWNER_ACCOUNT = 'wyw'  # Original default; explicit startup policy may narrow/extend to huoguo.
 GUESTS = {'m1': ('emulator-5556', 'RemoteAndroid17Compare'),
           'm5': ('emulator-5554', 'phone17-root')}
 SETTING_FIELDS = frozenset(('node', 'network_scope', 'max_size', 'video_bit_rate',
@@ -151,8 +151,11 @@ class LoopbackTlsServer(BoundedTlsServer):
 
 
 def handler_for(registry, worker_factory, profile, busy=trial_busy, *, scope=None,
-                allow_m5_owner_trial=False):
+                allow_m5_owner_trial=False, owner_accounts=None):
     scope = scope or OwnerNpsScope(profile, allow_m5_owner_trial=allow_m5_owner_trial)
+    accounts = trusted_nps_owner_accounts(owner_accounts)
+    if registry.owner_accounts != accounts:
+        raise ValueError('NPS_handler_registry_owner_accounts_mismatch')
 
     class Handler(ExistingHandler):
         def proxy_admission(self):
@@ -164,7 +167,7 @@ def handler_for(registry, worker_factory, profile, busy=trial_busy, *, scope=Non
         def owner_auth(self):
             if not self.auth():
                 return False
-            if self.account != OWNER_ACCOUNT:
+            if self.account not in accounts:
                 self.reply(403, {'error': 'nps_owner_account_required'})
                 return False
             return True
@@ -260,7 +263,9 @@ def parse_arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--node', required=True, choices=('m1', 'm5'))
     parser.add_argument('--owner-m5-trial', action='store_true',
-                        help='Explicit bounded M5 owner trial; never opens friend admission')
+                        help='Explicit bounded M5 owner trial; does not establish friend isolation')
+    parser.add_argument('--owner-account', action='append', choices=('wyw', 'huoguo'),
+                        help='Trusted owner credential trial; repeat at most twice, default wyw')
     parser.add_argument('--runtime', type=Path, required=True)
     parser.add_argument('--packetizer', type=Path, required=True)
     parser.add_argument('--native-encoder', type=Path, required=True)
@@ -271,6 +276,10 @@ def parse_arguments(argv=None):
         parser.error('bounded_gateway_lifetime_required')
     if args.owner_m5_trial and args.node != 'm5':
         parser.error('M5_owner_trial_flag_requires_M5_node')
+    try:
+        args.owner_accounts = trusted_nps_owner_accounts(args.owner_account)
+    except ValueError:
+        parser.error('bounded_trusted_NPS_owner_accounts_required')
     try:
         args.profile = owner_profile(args.node, allow_m5_owner_trial=args.owner_m5_trial)
     except ProfileError:
@@ -288,7 +297,8 @@ def main():
     scope = OwnerNpsScope(args.profile, allow_m5_owner_trial=args.owner_m5_trial)
     registry = UdpLanSessions(args.profile.public_media.host, args.profile.public_media.port,
         network_scope=scope.name, node=args.node, scope_guard=scope.healthy,
-        allow_m5_owner_trial=args.owner_m5_trial, guest_serial=serial, guest_avd=avd)
+        allow_m5_owner_trial=args.owner_m5_trial, guest_serial=serial, guest_avd=avd,
+        owner_accounts=args.owner_accounts)
 
     def factory(config, peer):
         return LanMediaWorker(config, peer, args.profile.local_udp.host,
@@ -301,7 +311,8 @@ def main():
     context.load_cert_chain(CERT, KEY)
     server = LoopbackTlsServer(args.profile,
         handler_for(registry, factory, args.profile, scope=scope,
-                    allow_m5_owner_trial=args.owner_m5_trial),
+                    allow_m5_owner_trial=args.owner_m5_trial,
+                    owner_accounts=args.owner_accounts),
         context, allow_m5_owner_trial=args.owner_m5_trial)
     stop = threading.Event()
 

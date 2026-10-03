@@ -43,6 +43,27 @@ class Worker(Protocol):
     def stop(self) -> None: ...
 
 
+def trusted_nps_owner_accounts(accounts=None) -> tuple[str, ...]:
+    """Closed server configuration, never an HTTP/session setting.
+
+    Default admission remains the original owner account. Explicit ``huoguo``
+    admission is an owner credential trial, not friend isolation acceptance.
+    Copy and canonicalize the sequence so caller mutation/order cannot change
+    either the registry's policy or its agreement with the HTTPS handler.
+    """
+    if accounts is None:
+        return ('wyw',)
+    if type(accounts) not in (tuple, list):
+        raise ValueError('bounded_trusted_NPS_owner_accounts_required')
+    accounts = tuple(accounts)
+    if not 1 <= len(accounts) <= 2:
+        raise ValueError('bounded_trusted_NPS_owner_accounts_required')
+    if any(type(account) is not str or account not in ('wyw', 'huoguo')
+           for account in accounts) or len(set(accounts)) != len(accounts):
+        raise ValueError('bounded_trusted_NPS_owner_accounts_required')
+    return tuple(sorted(accounts))
+
+
 def parse_udp_settings(settings: dict) -> dict:
     """Use the formal stream parsers, then narrow the isolated UDP candidate."""
     if not isinstance(settings, dict):
@@ -137,7 +158,8 @@ class UdpLanSessions:
                  network_scope: str = 'lan', scope_guard: Callable[[], bool] | None = None,
                  allow_owner_surface_submit_lead: bool = False,
                  node: str | None = None, allow_m5_owner_trial: bool = False,
-                 guest_serial: str | None = None, guest_avd: str | None = None):
+                 guest_serial: str | None = None, guest_avd: str | None = None,
+                 owner_accounts: tuple[str, ...] | list[str] | None = None):
         try:
             address = ipaddress.IPv4Address(peer_host)
         except (ipaddress.AddressValueError, TypeError):
@@ -158,7 +180,9 @@ class UdpLanSessions:
             raise ValueError('Trusted M5 owner trial opt-in must be a boolean')
         self._nps_profile = None
         self._worker_backend = {}
+        self._owner_accounts = None
         if network_scope == NPS_OWNER_SCOPE:
+            self._owner_accounts = trusted_nps_owner_accounts(owner_accounts)
             profile = owner_profile(node, allow_m5_owner_trial=allow_m5_owner_trial)
             if not callable(scope_guard):
                 raise ValueError('NPS owner requires a current verified scope guard')
@@ -174,7 +198,8 @@ class UdpLanSessions:
             self._worker_backend = dict(local_bind_host=profile.local_udp.host,
                 local_bind_port=profile.local_udp.port,
                 guest_serial=guest_serial, guest_avd=guest_avd)
-        elif node is not None or allow_m5_owner_trial or guest_serial is not None or guest_avd is not None:
+        elif (node is not None or allow_m5_owner_trial or guest_serial is not None
+              or guest_avd is not None or owner_accounts is not None):
             raise ValueError('NPS owner parameters require explicit NPS owner scope')
         self._peer_host, self._peer_port, self._clock = str(address), peer_port, clock
         self._network_scope, self._scope_guard = network_scope, scope_guard
@@ -191,6 +216,14 @@ class UdpLanSessions:
         # returned and its exactly-once owned cleanup has finished.
         self._quiescent = threading.Event()
         self._quiescent.set()
+
+    @property
+    def owner_accounts(self) -> tuple[str, ...] | None:
+        """Immutable trusted policy; absent in unchanged LAN/Tailnet scopes."""
+        return self._owner_accounts
+
+    def _owner_account_allowed(self, account: str) -> bool:
+        return self._owner_accounts is None or account in self._owner_accounts
 
     def _scope_ok(self) -> bool:
         """Read an in-memory verifier state; never do IPC on the UDP hot path.
@@ -281,7 +314,7 @@ class UdpLanSessions:
     def create(self, account: str, settings: dict,
                factory: Callable[[dict], Worker]) -> dict:
         self._account(account)
-        if self._network_scope == NPS_OWNER_SCOPE and account != 'wyw':
+        if not self._owner_account_allowed(account):
             raise SessionError(403, 'nps_owner_account_required')
         try:
             options = parse_udp_settings(settings)
@@ -443,6 +476,8 @@ class UdpLanSessions:
 
     def cancel(self, account: str, session_id: str) -> bool:
         self._account(account)
+        if not self._owner_account_allowed(account):
+            return False
         self.reap()
         with self._lock:
             record = self._active
@@ -479,6 +514,8 @@ class UdpLanSessions:
 
     def status(self, account: str, session_id: str) -> dict | None:
         self._account(account)
+        if not self._owner_account_allowed(account):
+            return None
         self.reap()
         with self._lock:
             if not self._scope_ok():
