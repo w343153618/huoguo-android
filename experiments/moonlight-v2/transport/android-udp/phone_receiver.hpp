@@ -18,6 +18,7 @@ class PhoneReceiver {
     };
     struct Mapping {
         Header original;uint64_t arrival,lastArrival,quorumReady=0;bool metadataValid=true;
+        uint64_t observedCoreSettleReason=0,observedCoreSettleAt=0;
         std::map<uint16_t,SeenBlock> seen;
         Mapping(const Header& h,uint64_t at):original(h),arrival(at),lastArrival(at){}
     };
@@ -35,6 +36,18 @@ public:
         MappingDetailEventCapacity*MappingDetailEventColumns;
     using MappingDetailEvent=std::array<uint64_t,MappingDetailEventColumns>;
     using MappingDetails=std::array<uint64_t,MappingDetailValues>;
+    // Separate, default-off contract. The legacy 292 mapping values, 21 stats
+    // and drained frame-event records remain unchanged.
+    static constexpr size_t LifecycleHeaderColumns=32,LifecycleSettleCapacity=16,LifecycleSettleColumns=4;
+    static constexpr size_t LifecycleCapacitySnapshots=2,LifecycleCapacityHeaderColumns=8;
+    static constexpr size_t LifecycleOccupantCapacity=8,LifecycleOccupantColumns=8,LifecycleDedupCapacity=32;
+    static constexpr size_t LifecycleSnapshotColumns=LifecycleCapacityHeaderColumns+
+        LifecycleOccupantCapacity*LifecycleOccupantColumns;
+    static constexpr size_t LifecycleValues=LifecycleHeaderColumns+
+        LifecycleSettleCapacity*LifecycleSettleColumns+LifecycleCapacitySnapshots*LifecycleSnapshotColumns;
+    using LifecycleSettleEvent=std::array<uint64_t,LifecycleSettleColumns>;
+    using LifecycleCapacitySnapshot=std::array<uint64_t,LifecycleSnapshotColumns>;
+    using LifecycleDetails=std::array<uint64_t,LifecycleValues>;
     enum MappingDetailReason:uint64_t {
         MappingOldFrame=1,MappingCapacity=2,MappingHeaderMismatch=3,MappingCapacityAdmitted=4
     };
@@ -64,6 +77,63 @@ private:
     uint64_t newMappingsObserved_=0,admissionsAfterCapacity_=0,capacityTrackingEvicted_=0;
     struct CapacityObservation { uint64_t id=0,firstRejectedAt=0; };
     std::array<CapacityObservation,MappingCapacityTrackingCapacity> capacityObservations_{};
+    bool lifecycleDiagnostics_=false;
+    uint64_t lifecycleObserved_=0,lifecycleSettleEvicted_=0,lifecycleSettleCleared_=0;
+    std::array<uint64_t,4> lifecycleReasons_{};
+    std::array<LifecycleSettleEvent,LifecycleSettleCapacity> lifecycleSettles_{};
+    size_t lifecycleSettleHead_=0,lifecycleSettleCount_=0;
+    uint64_t lifecycleCapacityCalls_=0,lifecycleCapacityUnobserved_=0;
+    uint64_t lifecycleSnapshotsTotal_=0,lifecycleSnapshotsEvicted_=0,lifecycleSnapshotsCleared_=0;
+    uint64_t lifecycleSuppressed_=0,lifecycleDedupEvicted_=0;
+    std::array<LifecycleCapacitySnapshot,LifecycleCapacitySnapshots> lifecycleSnapshots_{};
+    size_t lifecycleSnapshotHead_=0,lifecycleSnapshotCount_=0;
+    std::array<uint64_t,LifecycleDedupCapacity> lifecycleDedup_{};
+    size_t lifecycleDedupHead_=0,lifecycleDedupCount_=0;
+    uint64_t lifecycleEnableTransitions_=0,lifecycleDisableTransitions_=0,lifecycleLastEnable_=0;
+    void observeCoreSettle(Receiver::SettleReason reason,uint64_t id,uint64_t at) noexcept {
+        // Installed only while enabled. Fixed metadata writes and an existing
+        // map lookup: no allocation, erase, core reentry, lock, I/O or waiting.
+        lifecycleObserved_++;lifecycleReasons_[uint64_t(reason)-1]++;
+        if(lifecycleSettleCount_==LifecycleSettleCapacity){
+            lifecycleSettleHead_=(lifecycleSettleHead_+1)%LifecycleSettleCapacity;lifecycleSettleEvicted_++;
+        }else lifecycleSettleCount_++;
+        const auto index=(lifecycleSettleHead_+lifecycleSettleCount_-1)%LifecycleSettleCapacity;
+        lifecycleSettles_[index]={lifecycleObserved_,id,uint64_t(reason),at};
+        const auto found=mappings_.find(id);
+        if(found!=mappings_.end()){
+            found->second.observedCoreSettleReason=uint64_t(reason);found->second.observedCoreSettleAt=at;
+        }
+    }
+    void observeLifecycleCapacity(const Header& h,uint64_t at) noexcept {
+        lifecycleCapacityCalls_++;
+        if(std::find(lifecycleDedup_.begin(),lifecycleDedup_.end(),h.frame)!=lifecycleDedup_.end()){
+            lifecycleSuppressed_++;return;
+        }
+        if(lifecycleDedupCount_==LifecycleDedupCapacity){
+            lifecycleDedup_[lifecycleDedupHead_]=h.frame;
+            lifecycleDedupHead_=(lifecycleDedupHead_+1)%LifecycleDedupCapacity;lifecycleDedupEvicted_++;
+        }else{
+            lifecycleDedup_[(lifecycleDedupHead_+lifecycleDedupCount_)%LifecycleDedupCapacity]=h.frame;
+            lifecycleDedupCount_++;
+        }
+        if(lifecycleSnapshotCount_==LifecycleCapacitySnapshots){
+            lifecycleSnapshotHead_=(lifecycleSnapshotHead_+1)%LifecycleCapacitySnapshots;lifecycleSnapshotsEvicted_++;
+        }else lifecycleSnapshotCount_++;
+        const auto index=(lifecycleSnapshotHead_+lifecycleSnapshotCount_-1)%LifecycleCapacitySnapshots;
+        auto& snapshot=lifecycleSnapshots_[index];snapshot={};
+        const std::array<uint64_t,LifecycleCapacityHeaderColumns> header{
+            ++lifecycleSnapshotsTotal_,h.frame,at,h.flags,h.reference,mappings_.size(),
+            core_.pendingFrames(),mappings_.size()};
+        std::copy(header.begin(),header.end(),snapshot.begin());
+        size_t row=0;
+        for(const auto& [id,m]:mappings_){
+            const std::array<uint64_t,LifecycleOccupantColumns> occupant{id,m.arrival,
+                m.arrival+m.original.lifetimeUs,m.original.flags,m.original.reference,core_.frameState(id),
+                m.observedCoreSettleReason,m.observedCoreSettleAt};
+            std::copy(occupant.begin(),occupant.end(),snapshot.begin()+LifecycleCapacityHeaderColumns+row*LifecycleOccupantColumns);
+            row++;
+        }
+    }
     uint64_t oldestMappingAge(uint64_t at)const {
         uint64_t oldest=0;
         for(const auto& [id,m]:mappings_){(void)id;oldest=std::max(oldest,at>=m.arrival?at-m.arrival:uint64_t(0));}
@@ -192,7 +262,10 @@ public:
         auto found=mappings_.find(h.frame);
         if(found==mappings_.end()) {
             if(mappings_.size()>=8) {
-                mappingRejected_++;observeMappingRejection(h,arrival,MappingCapacity);return take();
+                mappingRejected_++;observeMappingRejection(h,arrival,MappingCapacity);
+                if(lifecycleDiagnostics_)observeLifecycleCapacity(h,arrival);
+                else lifecycleCapacityUnobserved_++;
+                return take();
             }
             found=mappings_.emplace(h.frame,Mapping(h,arrival)).first;
             highest_=std::max(highest_,h.frame);
@@ -230,6 +303,49 @@ public:
             mappingDisableTransitions_++;mappingEventCleared_+=mappingEventCount_;
             mappingEventHead_=0;mappingEventCount_=0;capacityObservations_={};
         }
+    }
+    void setMappingLifecycleDiagnostics(bool enabled) noexcept {
+        if(enabled==lifecycleDiagnostics_)return;
+        lifecycleDiagnostics_=enabled;
+        if(enabled){
+            lifecycleEnableTransitions_++;lifecycleLastEnable_=now_;
+            core_.setSettleObserver(this,[](void* context,Receiver::SettleReason reason,uint64_t id,uint64_t at) noexcept {
+                static_cast<PhoneReceiver*>(context)->observeCoreSettle(reason,id,at);
+            });
+        }else{
+            core_.setSettleObserver(nullptr,nullptr);lifecycleDisableTransitions_++;
+            lifecycleSettleCleared_+=lifecycleSettleCount_;lifecycleSettleHead_=0;lifecycleSettleCount_=0;lifecycleSettles_={};
+            lifecycleSnapshotsCleared_+=lifecycleSnapshotCount_;lifecycleSnapshotHead_=0;lifecycleSnapshotCount_=0;lifecycleSnapshots_={};
+            lifecycleDedup_={};lifecycleDedupHead_=0;lifecycleDedupCount_=0;
+            for(auto& [id,m]:mappings_){(void)id;m.observedCoreSettleReason=0;m.observedCoreSettleAt=0;}
+        }
+    }
+    LifecycleDetails mappingLifecycle()const noexcept {
+        // Actual settle calls, not pre-output framesDelivered: an existing
+        // output callback may throw before the original settle point. The
+        // default OFF path keeps only this scalar and installs no observer.
+        const auto terminated=core_.settleCalls();
+        LifecycleDetails result{};
+        const std::array<uint64_t,LifecycleHeaderColumns> header{
+            1,uint64_t(lifecycleDiagnostics_),15,lifecycleObserved_,terminated-lifecycleObserved_,
+            lifecycleReasons_[0],lifecycleReasons_[1],lifecycleReasons_[2],lifecycleReasons_[3],
+            lifecycleObserved_,lifecycleSettleCount_,lifecycleSettleEvicted_,lifecycleSettleCleared_,
+            LifecycleSettleCapacity,LifecycleSettleColumns,lifecycleCapacityCalls_,lifecycleCapacityUnobserved_,
+            lifecycleSnapshotsTotal_,lifecycleSnapshotCount_,lifecycleSnapshotsEvicted_,lifecycleSnapshotsCleared_,
+            lifecycleSuppressed_,LifecycleCapacitySnapshots,LifecycleCapacityHeaderColumns,
+            LifecycleOccupantCapacity,LifecycleOccupantColumns,lifecycleEnableTransitions_,lifecycleDisableTransitions_,
+            now_,LifecycleDedupCapacity,lifecycleDedupEvicted_,lifecycleLastEnable_};
+        std::copy(header.begin(),header.end(),result.begin());
+        for(size_t row=0;row<lifecycleSettleCount_;row++){
+            const auto& event=lifecycleSettles_[(lifecycleSettleHead_+row)%LifecycleSettleCapacity];
+            std::copy(event.begin(),event.end(),result.begin()+LifecycleHeaderColumns+row*LifecycleSettleColumns);
+        }
+        constexpr auto offset=LifecycleHeaderColumns+LifecycleSettleCapacity*LifecycleSettleColumns;
+        for(size_t row=0;row<lifecycleSnapshotCount_;row++){
+            const auto& snapshot=lifecycleSnapshots_[(lifecycleSnapshotHead_+row)%LifecycleCapacitySnapshots];
+            std::copy(snapshot.begin(),snapshot.end(),result.begin()+offset+row*LifecycleSnapshotColumns);
+        }
+        return result;
     }
     MappingDetails mappingDetails()const {
         // Header names/indexes are mirrored by NativeUdpFec.MAPPING_DETAIL_NAMES.

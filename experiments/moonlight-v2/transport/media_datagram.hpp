@@ -169,6 +169,15 @@ struct Stats {
 };
 
 class Receiver {
+public:
+    // Optional metadata sink only. Caller-local time is supplied by receive /
+    // expire; it is not a cross-host or physical latency measurement. A sink
+    // must not reenter this Receiver or mutate its pending container.
+    enum SettleReason:uint64_t {
+        CoreDelivered=1,SupersededByDelivered=2,AssemblyDeadline=3,DependencyRejected=4
+    };
+    using SettleObserver=void(*)(void*,SettleReason,uint64_t,uint64_t) noexcept;
+private:
     struct Part {
         std::unique_ptr<FecBlock> fec;
         Bytes payload;
@@ -190,7 +199,14 @@ class Receiver {
     uint64_t lastReference_=0, lastDelivered_=0;
     bool needsKeyframe_=true;
     std::function<void(uint64_t,uint64_t,const Bytes&)> output_;
-    void settle(uint64_t id) { settled_.push_back(id); if(settled_.size()>256) settled_.pop_front(); }
+    void* settleContext_=nullptr;
+    SettleObserver settleObserver_=nullptr;
+    uint64_t settleCalls_=0;
+    void settle(uint64_t id,uint64_t nowUs,SettleReason reason) {
+        settled_.push_back(id); if(settled_.size()>256) settled_.pop_front();
+        settleCalls_++;
+        if(settleObserver_)settleObserver_(settleContext_,reason,id,nowUs);
+    }
     void requestKeyframe(uint64_t captureUs) {
         if(!needsKeyframe_ || !recoveryCaptureUs) { stats.keyframeRequests++; recoveryCaptureUs=captureUs; }
         needsKeyframe_=true;
@@ -206,14 +222,27 @@ public:
     explicit Receiver(std::function<void(uint64_t,uint64_t,const Bytes&)> output):output_(std::move(output)) {}
     size_t pendingFrames() const { return pending_.size(); }
     bool needsKeyframe() const { return needsKeyframe_; }
+    uint64_t settleCalls()const noexcept{return settleCalls_;}
+    void setSettleObserver(void* context,SettleObserver observer) noexcept {
+        settleContext_=context;settleObserver_=observer;
+    }
+    // Query only at an outer receive/expire boundary, never from the settle
+    // observer. State 0 is unknown/absent, not evidence that a frame settled.
+    uint64_t frameState(uint64_t id)const noexcept {
+        if(!id)return 0;
+        const auto found=pending_.find(id);
+        if(found!=pending_.end())return found->second.complete()?2:1;
+        if(std::find(settled_.begin(),settled_.end(),id)!=settled_.end())return 3;
+        return id<=lastDelivered_?4:0;
+    }
     void expire(uint64_t nowUs) {
         for(auto it=pending_.begin(); it!=pending_.end();) {
             if(it->first<=lastDelivered_) {
-                stats.dependencyDropped++; settle(it->first); it=pending_.erase(it);
+                stats.dependencyDropped++; settle(it->first,nowUs,SupersededByDelivered); it=pending_.erase(it);
             } else if(nowUs>=it->second.h.captureUs+it->second.h.lifetimeUs) {
                 stats.framesExpired++;
                 if(it->second.h.flags&Reference) lostReference(it->second.h.captureUs);
-                settle(it->first); it=pending_.erase(it);
+                settle(it->first,nowUs,AssemblyDeadline); it=pending_.erase(it);
             } else ++it;
         }
         drain(nowUs);
@@ -224,14 +253,14 @@ public:
             if(!frame.complete() || nowUs>=frame.h.captureUs+frame.h.lifetimeUs) { ++it; continue; }
             const bool key=frame.h.flags&Keyframe;
             if(frame.h.frame<=lastDelivered_) {
-                stats.dependencyDropped++; settle(it->first); it=pending_.erase(it); continue;
+                stats.dependencyDropped++; settle(it->first,nowUs,SupersededByDelivered); it=pending_.erase(it); continue;
             }
             const bool earlierKeyPending=std::any_of(pending_.begin(),it,[](const auto& item) {
                 return item.second.h.flags&Keyframe;
             });
             if(!key && ((needsKeyframe_ && !earlierKeyPending) || frame.h.reference<lastReference_)) {
                 if(needsKeyframe_ && !earlierKeyPending) requestKeyframe(frame.h.captureUs);
-                stats.dependencyDropped++; settle(it->first); it=pending_.erase(it); continue;
+                stats.dependencyDropped++; settle(it->first,nowUs,DependencyRejected); it=pending_.erase(it); continue;
             }
             if(!key && (needsKeyframe_ || frame.h.reference!=lastReference_)) { ++it; continue; }
             Bytes data; data.reserve(frame.h.frameBytes);
@@ -244,7 +273,7 @@ public:
             if(frame.h.flags&Reference) lastReference_=frame.h.frame;
             output_(frame.h.frame,frame.h.captureUs,data);
             if(key) recoveryCaptureUs=0;
-            settle(it->first); it=pending_.erase(it);
+            settle(it->first,nowUs,CoreDelivered); it=pending_.erase(it);
             // A dependency that arrived later may unblock a lower map entry.
             it=pending_.begin();
         }

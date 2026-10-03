@@ -1,6 +1,6 @@
 # Native mapping 生命周期诊断设计 — 2026-10-03
 
-状态：只读设计，尚未实现、构建、安装或运行。当前源码、设备、服务和正式默认值不变。下一轮先采集逐帧身份，再决定是否做仅针对明确 core-settled mapping 的 owner opt-in 回收实验；不扩大 cap8，不延长原 80ms grant，不以 `core_pending==0` 全清 adapter。
+状态：native源码与owned fixture已完成，独立只读review无阻挡，root核对SHA并完成全仓1010项检查。JNI、Java、App、helper及手机尚未集成或验收；此前APK不含新生命周期字段。新native诊断默认关闭，设备、服务及正式默认值未改。下一轮先完成同步契约与逐帧采样，再决定是否做仅针对明确 core-settled mapping 的 owner opt-in 回收实验；不扩大 cap8，不延长原 80ms grant，不以 `core_pending==0` 全清 adapter。
 
 ## 已知路径与尚缺的证据
 
@@ -19,7 +19,7 @@
 
 ## 最小新增观察点
 
-新增独立、默认关闭的生命周期诊断，不扩展或解释重写现有292/21字段。core 增加可选的 settle observer；无 observer 的其他 `Receiver` 使用者保留现有 constructor 调用。建议独立 setter传入 `void* context` 与 `void (*sink)(void*, Reason, uint64_t, uint64_t) noexcept`，默认null，避免可抛异常的公共std::function和新的每帧分配；实现时冻结准确接口并fixture验明。
+新增独立、默认关闭的生命周期诊断，不扩展或解释重写现有292/21字段。core 已增加可选的 settle observer；无 observer 的其他 `Receiver` 使用者保留现有 constructor 调用。native实际接口通过独立setter传入 `void* context` 与 `void (*sink)(void*, SettleReason, uint64_t, uint64_t) noexcept`，默认null，避免可抛异常的公共std::function和新的每帧分配；准确接口及fixture结果见末尾checkpoint。
 
 将所有实际 settle 调用统一为 `settle(id, nowUs, reason)`。observer只接收固定数值 `(reason, id, local_now_us)`，不接收媒体 body，不使用新的系统时钟。PhoneReceiver 通过现有 accept/expire 把手机 `System.nanoTime()/1000` 域传入；generic Receiver 的这个时间仅称 caller-local time，不自行称手机或网络延时。
 
@@ -34,15 +34,15 @@
 
 通知点紧邻原 settle，保持 stats、输出调用、settled tombstone 和 erase 的原顺序。若通知发生在 erase 前，observer只向固定诊断存储写入元数据：不得在 observer 中调用 `PhoneReceiver::retire`、再次进入 core、JNI、Java、文件或等待。callback 不增加锁，不更改 core pending 容器，且本实现必须不抛异常。对一般 callback 抛异常的契约不能宣称已自动保持原语义；优先限定私有/noexcept sink，fixture验明。
 
-PhoneReceiver observer可在现有 mapping（按同一 ID 查找）写两个只用于诊断的值：`observed_core_settle_reason`、`observed_core_settle_phone_us`。mapping 不存在则只记录 settle ring。关闭诊断时不记录 ID/时间/ring，也不查八个 slot；可保留一个未观察计数。disable同时清ring/dedup以及至多8个现存mapping的观察标记，reenable不补造此前通知。这个 fast branch 仍有成本，不能声称零开销。
+PhoneReceiver observer可在现有 mapping（按同一 ID 查找）写两个只用于诊断的值：`observed_core_settle_reason`、`observed_core_settle_phone_us`。mapping 不存在则只记录 settle ring。关闭诊断时不记录 ID/时间/ring，也不查八个 slot；实现中core仅保留原settle点的实际标量总计数，`core_settle_unobserved`由该总计数减去已观察通知数得到。不能用 `framesDelivered + dependencyDropped + framesExpired` 代替实际settle次数：原output回调可在增加framesDelivered之后、settle之前抛异常。disable同时清ring/dedup以及至多8个现存mapping的观察标记，reenable不补造此前通知。这个 fast branch 和新增固定存储仍有成本，不能声称零开销。
 
-core 新增只读 `frameState(id)`，仅在容量诊断快照时查询。建议编码：0 absent/unclassified，1 pending-incomplete，2 pending-complete，3 retained settled tombstone，4 ID不高于 lastDelivered（隐含交付推进）。查询使用现有 pending/settled/lastDelivered，不推进 expire，不分配、不改变依赖。Code0不能推定为 settled，Code2不能单凭状态认定 vendor decoder 或网络堵塞，Code4不证明这个具体 ID曾输出。确切终止原因仅来自上述 observer。
+core 已新增只读 `frameState(id)`，仅在容量诊断快照时查询。实际编码：0 absent/unclassified，1 pending-incomplete，2 pending-complete，3 retained settled tombstone，4 ID不高于 lastDelivered（隐含交付推进）。查询使用现有 pending/settled/lastDelivered，不推进 expire，不分配、不改变依赖。Code0不能推定为 settled，Code2不能单凭状态认定 vendor decoder 或网络堵塞，Code4不证明这个具体 ID曾输出。确切终止原因仅来自上述 observer。
 
 ## 独立定长 schema1 提案
 
 新增 `nativeSetMappingLifecycleDiagnostics(long, boolean)` 与 `nativeMappingLifecycle(long)`，Java添加独立 checked wrapper / status / validation。建议输出**恰好240个非负 signed longs**：32 header + 16×4 settle rows + 2×(8 snapshot header + 8×8 occupant rows)。JNI payload为1920 bytes；这不是序列化 JSON 大小。常量、名称、索引必须在 C++、JNI、Java 同版本冻结，旧方法仍返回原292。
 
-Header 32项固定提案如下；这些是待实现契约，不是当前APK已存在字段。
+Header 32项固定契约如下；native源码已实现，JNI/Java/App仍待同步，当前APK不含这些字段。
 
 | Index | 字段 |
 | --- | --- |
@@ -95,4 +95,16 @@ Fixture至少覆盖：四种settle来源；callback不重入/不改变core迭代
 
 该后续开关必须与本诊断开关分离、默认关闭，比较同一APK、内容格式/位置、CPU限制、host sender、cap8、80ms、reference/epoch/lead0等实际读回；事件覆盖和未知尾部独立记录。结果看恢复IDR准入、capacity rejection、FEC/参考链/Inbox损失及独立SF长空档，不只看callback或平均FPS。没有异地、公网或V50实测，不扩大验收边界。
 
-本设计与 `docs/native-mapping-capacity-lifecycle-20261003.md` 对齐；本轮只新增本文档，未修改源码或运行任何fixture/设备/服务，未commit。
+## Native实施 checkpoint
+
+2026-10-03完成范围仅为 `media_datagram.hpp`、`phone_receiver.hpp` 和新增 `tests/native/udp_mapping_lifecycle.cpp` / `tests/test_udp_mapping_lifecycle.py`。源码任务与四文件SHA保存在ignored的 `docs/evidence/mapping-lifecycle-diagnostics-20261003/source-task-state.json`，状态done。没有修改JNI、Java、gateway、sender、build、APK或运行设备/服务，没有commit。
+
+已冻结的native接口为 `Receiver::SettleReason`（1—4）、`SettleObserver`（noexcept函数指针）、`setSettleObserver(context, sink)`、`settleCalls()`、`frameState(id)`（0—4），以及 `PhoneReceiver::setMappingLifecycleDiagnostics(bool)` / `mappingLifecycle()`（240值）。observer在原tombstone更新后、pending erase之前接收caller-local时间；只写固定settle ring和现存Map诊断标记，不调用retire或core、不阻塞、不分配、不打印日志。默认OFF卸载observer，原settle点的标量计数仍精确记录通知覆盖缺口。
+
+Owned native10项、既有mapping7项、native build boundary12项通过，共29项；真实C++/既有pinned FEC编译使用 `-std=c++20 -Wall -Wextra -Werror -O2`。覆盖四种实际settle来源、core状态0—4、决策时occupant身份/历史快照、16/2/32边界与clear/reenable、79999/80000µs和1ms短合法grant、logical parser拒绝、原output回调异常。逐数据报对照保持旧21统计、292诊断、旧frame事件及交付结果一致，cap8、grant、参考链和retire策略未改。root随后完成1010项全仓检查，核对四文件SHA；独立只读review未发现阻挡。
+
+Header SHA-256：`media_datagram.hpp` 为 `746651ea2613fc92b55bb21a5b52d1befbe6a10d229cd2d2459600164e7f615c`；`phone_receiver.hpp` 为 `c3b7732ce696f509f744e26c63625b1b8bd8bd173e428ffcccc8900ad847299f`。这些是本次native源码pin，不是此前APK/JNI新字段验收，也不能追认历史报告的八个占槽ID。
+
+下一步仍须同版JNI/Java/App/helper集成、240契约/缺symbol/交叉长度校验、实际numeric summary联合64KiB最坏边界、独立并发采样开销及手机真实内容验证。native fixture通过不代表Android构建、真实生命周期样本或流畅度收益。新的retire策略尚未实施，默认仍OFF。
+
+本设计与 `docs/native-mapping-capacity-lifecycle-20261003.md` 对齐。原设计阶段只新增文档；上述checkpoint明确区分后来完成的native源码/fixture和仍未开始的Android/手机验收。
