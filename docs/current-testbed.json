@@ -1066,5 +1066,13 @@
     "next_action": "bounded mapping/core settlement diagnostics",
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
+  },
+  "next_source_task": {
+    "checkpoint": "docs/evidence/mapping-lifecycle-diagnostics-20261003/source-task-state.json",
+    "design": "docs/native-mapping-lifecycle-diagnostics-design-20261003.md",
+    "scope": "native diagnostics and owned fixtures only; no JNI/Java/APK/phone execution yet",
+    "source_task_started": true,
+    "independent_liveness_design": "docs/udp-media-revocation-liveness-design-20261003.md",
+    "liveness_candidate_implemented": false
   }
 }
