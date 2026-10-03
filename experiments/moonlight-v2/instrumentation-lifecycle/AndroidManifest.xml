@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="local.huoguo.instrumentationlifecyclefixture"
+    android:versionCode="1" android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+    <application android:debuggable="true" android:allowBackup="false"
+        android:hasCode="true" android:usesCleartextTraffic="false">
+        <!-- No intent filter: only an explicitly named receiver can start this fixture. -->
+        <receiver android:name=".SnapshotReceiver" android:exported="true" />
+    </application>
+    <instrumentation android:name=".LifecycleInstrumentation"
+        android:targetPackage="local.huoguo.instrumentationlifecyclefixture" />
+</manifest>
