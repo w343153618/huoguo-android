@@ -788,7 +788,8 @@
     "m5_formal_busy_skip_interrupting_work": true,
     "m1_experiments_may_continue_without_affecting_m5": true,
     "do_not_clone_or_migrate_existing_android_data_for_role_split": true,
-    "m5_repair_evidence": "docs/m5-session-startup-fix-20261003.md"
+    "m5_repair_evidence": "docs/m5-session-startup-fix-20261003.md",
+    "m5_display_evidence": "docs/m5-standard720-tiktok-20261003.md"
   },
   "mapping_diagnostics_candidate_build_20261003": {
     "version_name": "1.31-alpha.4",
@@ -800,7 +801,46 @@
     "phone_installed": false,
     "phone_retains_version": "1.31-alpha.3",
     "classification": "offline_diagnostics_candidate_not_performance_acceptance",
-    "next_action": "Build matching UI helper and record helper SHA, verify M1 formal idle, then bounded same-source M1 owner real phone sampling; do not touch busy M5",
-    "contract_doc": "docs/native-mapping-details-contract-20261003.md"
+    "next_action": "Matching helper built; recheck M1 formalidle/phone before bounded same-source alpha4 mapping observation with existing owner wyw account; no tempaccounts/no M5 change",
+    "contract_doc": "docs/native-mapping-details-contract-20261003.md",
+    "helper_sha256": "35c92b41c9da9069591b70fb34ca583ae453abc2457b4e06ef1f55e47c88b220",
+    "helper_build_verified": true,
+    "preflight_evidence": "docs/evidence/native-mapping-observation-20261003/preflight-readonly-20261003.json"
+  },
+  "m5_daily_display_20261003": {
+    "physical_size": [
+      720,
+      1280
+    ],
+    "physical_density": 320,
+    "avd": "phone17-root",
+    "cpu_cores_preserved": 8,
+    "memory_mib_preserved": 8192,
+    "actual_host_encoded_sizes": {
+      "540P": [
+        540,
+        960
+      ],
+      "720P": [
+        720,
+        1280
+      ],
+      "1080P_request": [
+        720,
+        1280
+      ]
+    },
+    "hardware_ready_all_geometry_checks": true,
+    "scope": "M5 actual host encoded metadata staticloginpage; notphone/WAN_FPS_orTikTok_playback",
+    "DIRECT_IDLE_DELAY": 0,
+    "trusted_lan_public_ping_http200": true,
+    "tiktok_installed": "47.0.3/2024700030",
+    "tiktok_playback_verified": false,
+    "tiktok_pending": "Existingaccount login requested; no guestentryfound",
+    "evidence": "docs/m5-standard720-tiktok-20261003.md",
+    "M1_physical_size_unchanged": [
+      1080,
+      1920
+    ]
   }
 }
