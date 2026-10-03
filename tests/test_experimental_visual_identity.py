@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import math
+import os
 import re
 import subprocess
 import tempfile
@@ -11,7 +12,9 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 RES = ROOT / 'app/src/udp/res'
 ANDROID = '{http://schemas.android.com/apk/res/android}'
-AAPT2 = Path('/Users/wyw/Library/Android/sdk/build-tools/36.0.0/aapt2')
+SDK = Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
+    or str(Path.home() / 'Library/Android/sdk'))
+AAPT2 = SDK / 'build-tools/36.0.0/aapt2'
 
 
 def outline_points(path):

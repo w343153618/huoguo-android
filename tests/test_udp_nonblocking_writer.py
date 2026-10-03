@@ -186,6 +186,17 @@ class OwnedDupAndFailureChecks(unittest.TestCase):
             decoded=[open_packet(KEY,17,p,replay,SERVER_NONCE)for p in packets]
             self.assertEqual(len(decoded),sum(v['datagrams']for v in sender.snapshot().values()))
             self.assertEqual(len({HEADER.unpack(p[:HEADER.size])[3]for p in packets}),len(packets))
+            # The final peer response can arrive after the receive thread stops.
+            # Both threads are joined, so draining only these known fixture
+            # responses is bounded and leaves a deterministic ownership check.
+            peer.send(b'ALIVE')  # Deliberately cover a queued response every run.
+            drained=[]
+            for _ in range(len(packets)+2):
+                try:drained.append(reader.recv(64))
+                except socket.timeout:break
+            else:self.fail('fixture response queue exceeded sent datagrams')
+            self.assertTrue(all(value==b'ALIVE' for value in drained))
+            self.assertEqual(len(alive)+len(drained),len(packets)+1)
             sender.close();sender.close();self.assertEqual(writer.fileno(),-1)
             self.assertGreaterEqual(reader.fileno(),0);self.assertEqual(reader.gettimeout(),.1)
             peer.send(b'READER_STILL_OWNED');self.assertEqual(reader.recv(64),b'READER_STILL_OWNED')

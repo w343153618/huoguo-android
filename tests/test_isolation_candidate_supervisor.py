@@ -176,9 +176,17 @@ class SupervisorReceiptTest(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()/'root'; self.root.mkdir(mode=0o755)
         real_fstat = os.fstat
+        # The mock root deployment needs immutable root-owned ancestors. The
+        # runner's /tmp is 1777 on Linux; model that scaffold, never a directory
+        # inside the owned candidate root where permissions are under test.
+        scaffold_ids = {(info.st_dev, info.st_ino) for parent in self.root.parents
+                        for info in (parent.stat(),)}
         def root_metadata(fd):
             info = real_fstat(fd)
-            return SimpleNamespace(st_uid=0, st_gid=0, st_mode=info.st_mode, st_nlink=info.st_nlink)
+            mode = info.st_mode
+            if stat.S_ISDIR(mode) and (info.st_dev, info.st_ino) in scaffold_ids:
+                mode &= ~0o022
+            return SimpleNamespace(st_uid=0, st_gid=0, st_mode=mode, st_nlink=info.st_nlink)
         for patcher in (patch.object(supervisor, 'ROOT', self.root),
                         patch.object(supervisor.os, 'getuid', return_value=0),
                         patch.object(supervisor.os, 'geteuid', return_value=0),
@@ -186,6 +194,15 @@ class SupervisorReceiptTest(unittest.TestCase):
                         patch.object(supervisor.os, 'fchown'),
                         patch.object(supervisor.secrets, 'token_hex', return_value='a'*24)):
             patcher.start(); self.addCleanup(patcher.stop)
+
+    def test_fixture_scaffold_does_not_mask_writable_candidate_root(self):
+        for mode, reason in ((0o777, 'world_write'), (0o775, 'group_writable')):
+            with self.subTest(mode=mode):
+                self.root.chmod(mode)
+                with self.assertRaisesRegex(supervisor.Refused, reason):
+                    supervisor.TrialReceipt()
+                self.assertFalse((self.root/'reports').exists())
+        self.root.chmod(0o755)
 
     def test_new_root_ordinary_0644_receipt_is_durable_whitelisted_jsonl(self):
         with patch.object(supervisor.os, 'fsync', wraps=os.fsync) as sync:

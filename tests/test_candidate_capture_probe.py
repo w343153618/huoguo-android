@@ -221,8 +221,19 @@ class CandidateFixture(unittest.TestCase):
         token = 'owned-fixture-token-not-live'
         reader, writer = os.pipe()
         try:
+            # Darwin anonymous pipes have nlink0. Linux reports nlink1 for
+            # the same owned pipe, so model only that platform metadata here;
+            # the production Darwin guard and real pipe IO remain unchanged.
+            real_fstat = os.fstat
+            self.assertTrue(stat.S_ISFIFO(real_fstat(writer).st_mode))
+            def darwin_pipe_metadata(fd):
+                info = real_fstat(fd)
+                if fd == writer:
+                    return SimpleNamespace(st_mode=info.st_mode, st_nlink=0)
+                return info
             with patch.object(probe.os, 'getuid', return_value=0), \
                     patch.object(probe.os, 'geteuid', return_value=0), \
+                    patch.object(probe.os, 'fstat', side_effect=darwin_pipe_metadata), \
                     patch.object(probe, '_read_discovery', return_value=token):
                 result = probe.broker_token(123, writer)
             data = json.loads(os.read(reader, 4096))
@@ -236,6 +247,23 @@ class CandidateFixture(unittest.TestCase):
                 with patch.object(probe.os, 'getuid', return_value=0), \
                         patch.object(probe.os, 'geteuid', return_value=0), self.assertRaises(probe.Refused):
                     probe.broker_token(123, ordinary.fileno())
+        finally:
+            os.close(reader); os.close(writer)
+
+    def test_token_broker_rejects_linked_fifo_and_anonymous_read_end(self):
+        reader, writer = os.pipe()
+        try:
+            for descriptor, links, reason in ((writer, 1, 'anonymous_token_pipe_required'),
+                                              (reader, 0, 'token_pipe_writer_required')):
+                with self.subTest(reason=reason), \
+                        patch.object(probe.os, 'getuid', return_value=0), \
+                        patch.object(probe.os, 'geteuid', return_value=0), \
+                        patch.object(probe.os, 'fstat', return_value=SimpleNamespace(
+                            st_mode=stat.S_IFIFO | 0o600, st_nlink=links)), \
+                        patch.object(probe, '_read_discovery') as discovery, \
+                        self.assertRaisesRegex(probe.Refused, reason):
+                    probe.broker_token(123, descriptor)
+                discovery.assert_not_called()
         finally:
             os.close(reader); os.close(writer)
 

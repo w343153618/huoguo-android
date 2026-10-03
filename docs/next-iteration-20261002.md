@@ -1,3 +1,9 @@
+## 2026-10-04 续接：用户 GitHub 失败邮件优先修复；RAM8 源轮仍无媒体
+
+用户截图对应 780d863 的 Actions run37133401441。Android compile/lint 通过，Python 1443项中10 ERROR/2 FAIL使后续UDP job跳过；四轮日志确认Mac绝对JDK/SDK路径、Darwin私有路径/pipe夹具假设和间歇socket残留回包误报。八个test文件只修fixture/toolchain发现，production安全guard、检查与workflow保留；root独立1462项全仓64.508s PASS，后续须核对精确pushed SHA的GitHub Linux实际结果，不以本地PASS代替。见[CI修复](github-ci-portability-repair-20261003.md)。公开alpha8/code39、alpha9本地候选及全部服务未因此发布/替换。
+
+RAM8 formatunknown supervisor实际0257e1d0准备轮再次因root_enter_deadline退出2，actualownedquiescencetrue、original/ownedsignals0；没有driver/helper/phonecredential/READY/media/trace，端口已释放。新源PID3553/UID10235/start2521当前playing/motion确认但format仍unknown；ADB捕获源布局异常，actualdebug.hwui.renderer=skiagl、PipelineSkiaOpenGL。此前skiavk恢复没有boot持久化，不能借旧Vulkan/itag299或把无媒体轮当FPS。下一不要再盲重跑180秒手动gate；优先经独立审查把fresh source gate与一次有界trace衔接，保持原reserve/witness/角色零/实际ownedquiescence。当前没有新手机媒体任务。
+
 ## 2026-10-03 最新用户要求：M1 已实际冷启为 6 核 / 8GiB
 
 M1 `hw.ramSize` 唯一从16384改为8192，原启动plist无RAM覆盖且字节不变；受限备份已经建立。existing huoguo受信HTTPS/live原registry取得精确空闲证明、持续UDP45965准入保留及formalTCP两次clear后，只bootout/bootstrap指定M1模拟器job。冷启实际PID65956、boot1、MemTotal8123368KiB、nproc6、1080x1920/density480/30.00Hz；原ownerPID26875/runtimeSHA/媒体零保留，M5/NPS/gateway没有信号或重启。第一验收仅因“30.00 Hz”空格被string断言拒绝，随后独立数字regex读取通过，未再次重启。见[m1-ram8](m1-ram8-deployment-20261003.md)。旧16GiB实验仅历史，不改写其结果；新source PID/clock身份需要重建，没有新性能改善数据。

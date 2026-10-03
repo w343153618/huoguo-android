@@ -1,5 +1,6 @@
 """Actual source and inert Android-API doubles; not a device/VPN/route acceptance."""
 from pathlib import Path
+import os
 import shutil
 import subprocess
 import tempfile
@@ -7,13 +8,15 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[1]
 UDP=ROOT/'app/src/udp/java/local/remoteandroid/direct'
-JDK=Path('/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin')
-ANDROID=Path('/Users/wyw/Library/Android/sdk/platforms/android-37.0/android.jar')
+JDK=Path(os.environ.get('JAVA_HOME') or '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home')/'bin'
+SDK=Path(os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
+    or str(Path.home()/'Library/Android/sdk'))
+ANDROID=SDK/'platforms/android-37.0/android.jar'
 
 
 def java_tools():
-    javac=str(JDK/'javac') if (JDK/'javac').is_file() else shutil.which('javac')
-    java=str(JDK/'java') if (JDK/'java').is_file() else shutil.which('java')
+    if (JDK/'javac').is_file() and (JDK/'java').is_file():return str(JDK/'javac'),str(JDK/'java')
+    javac,java=shutil.which('javac'),shutil.which('java')
     if not javac or not java:raise RuntimeError('Existing JDK required')
     return javac,java
 

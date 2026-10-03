@@ -1,11 +1,20 @@
 """Execute beta profile/migration policy; this is not real V50 playback evidence."""
 from pathlib import Path
+import os
+import shutil
 import subprocess
 import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-JDK = Path('/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin')
+JDK = Path(os.environ.get('JAVA_HOME') or '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home') / 'bin'
+
+
+def java_tools():
+    if (JDK/'javac').is_file() and (JDK/'java').is_file():return str(JDK/'javac'),str(JDK/'java')
+    javac,java=shutil.which('javac'),shutil.which('java')
+    if not javac or not java:raise RuntimeError('Existing JDK required')
+    return javac,java
 
 
 class LowLoadProfileCheck(unittest.TestCase):
@@ -31,13 +40,14 @@ public final class ProfileCheck {
   System.out.println("profile checks passed");
  }
 }'''
+        javac,java=java_tools()
         with tempfile.TemporaryDirectory(prefix='huoguo-low-load-') as folder:
             source = Path(folder)/'ProfileCheck.java'
             source.write_text(fixture)
-            subprocess.run([JDK/'javac', '-d', folder, source,
+            subprocess.run([javac, '-d', folder, source,
                 ROOT/'app/src/udp/java/local/remoteandroid/direct/UdpLowLoadProfile.java'],
                 check=True, capture_output=True, timeout=30)
-            result = subprocess.run([JDK/'java', '-cp', folder,
+            result = subprocess.run([java, '-cp', folder,
                 'local.remoteandroid.direct.ProfileCheck'], check=True,
                 capture_output=True, text=True, timeout=5)
             self.assertIn('passed', result.stdout)

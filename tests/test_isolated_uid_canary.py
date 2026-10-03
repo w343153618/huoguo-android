@@ -262,11 +262,26 @@ class CanaryFreshFixtureTest(unittest.TestCase):
             sdk.mkdir()
             immutable_preexisting = sdk / 'preexisting-owned-fixture'
             immutable_preexisting.write_bytes(b'preserve fixture')
+            # Keep the full production fixture/cleanup algorithm, but contain
+            # its one Darwin /private/var/tmp base within this owned test tree.
+            # Linux CI does not provide that parent and must not create it.
+            nonce = 'e' * 24
+            requested_base = Path('/private/var/tmp') / ('huoguo-uid-canary-' + nonce)
+            owned_base = root / 'world-fixture'
+            original_directory = canary.Fixtures.directory
+            relocated_bases = []
+
+            def owned_directory(registry, path, mode, uid=0):
+                if path == requested_base:
+                    relocated_bases.append(path)
+                    path = owned_base
+                self.assertTrue(path.is_relative_to(root))
+                return original_directory(registry, path, mode, uid)
 
             def fake_file_case(name, command, sandboxed, expected_stdout=None, expected_denied=False):
                 if command[0] == '/bin/sh' and not expected_denied:
                     path = Path(command[-2])
-                    self.assertTrue(path.is_relative_to(root) or path.is_relative_to(Path('/private/var/tmp')))
+                    self.assertTrue(path.is_relative_to(root))
                     path.write_bytes(command[-1].encode())
                 return {'case': name, 'passed': True, 'sandboxed': sandboxed,
                         'expected_denied': expected_denied}
@@ -279,12 +294,17 @@ class CanaryFreshFixtureTest(unittest.TestCase):
                      'uid': 600, 'gid': 600, 'profile_sha256': '0' * 64,
                      'identity_readback_verified': True}), \
                  patch.object(canary.os, 'fchown'), patch.object(canary.os, 'fchmod'), \
+                 patch.object(canary.secrets, 'token_hex', return_value=nonce), \
+                 patch.object(canary.Fixtures, 'directory', autospec=True,
+                              side_effect=owned_directory), \
                  patch.object(canary, 'file_case', side_effect=fake_file_case), \
                  patch.object(canary, 'network_case', side_effect=fake_network_case), \
                  patch.object(canary, 'own_lan_address', return_value='192.0.2.1'), \
                  patch.object(canary, 'drop_privileges') as drop:
                 report = canary.execute_canaries('0' * 64)
             drop.assert_not_called()
+            self.assertEqual(relocated_bases, [requested_base])
+            self.assertFalse(owned_base.exists())
             self.assertEqual({item['case'] for item in report['cases']}, canary.REQUIRED_CASES)
             self.assertEqual(len(report['cases']), 18)
             self.assertTrue(report['all_required_cases_passed'], report)
