@@ -9,3 +9,5 @@
 本次立即开始的下一项是native接收诊断：独立拆分frame Mapping的旧frame、cap8及header mismatch拒绝，固定数值事件关联frame ID、准入和容量状态，保留原21项stats及所有接收策略。需要新JNI和APK的变化记录新SHA，不能追认到alpha3历史结果。随后在相同媒体行为和参数下做有界真实视频测试，再决定是否需要单因素队列候选。
 
 本地自动任务需要Mac开机并保持Codex运行；若任务被应用关闭或设备断开中断，以最后一个工程checkpoint续接，不声称离线时仍在测试手机。
+
+2026-10-03后续分工：火锅在M5正式15558使用，机主在M1实验。M5正式会话保持在线时，不重启或抢占它；独立M1源码/构建和不影响M5的机主实验可继续。M5两阶段503修复见[m5-session-startup-fix-20261003.md](m5-session-startup-fix-20261003.md)。native Mapping诊断已完成源码与Mac JVM/JNI验证，新增字段不能追认到旧alpha3，下一步是新alpha4构建及有界真机采样。
