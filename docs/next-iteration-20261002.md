@@ -1,4 +1,10 @@
+## 2026-10-04 自动source gate已完成离线审查，尚未真实媒体
+
+新owner-only/defaultoff numericplaying guard、同UID0700/0600且inode pin的有界trace prefix、driver最后source采集与nativefirstcapture freshness已完成。root及独立review95targeted惰性检查通过；两个具体竞态已修：采集≤15s后再次读目标App absence，再nativefreshness→Popen；prefix读取后重新nativeclock再qualify，避免producer并发追加误报future。未资格首capture不启动SF，不把numericplaying/position当实画面/格式，第一次sourcegate不追认reconnect/呈现。见[契约](owner-source-gate-contract-20261004.md)。当前准备新privateauto supervisor取消180s ENTER，冻结f08核心与gold39helper、源PID预检、有限240s listener、原连续reserve/live503/角色零/实际quiescence保持；未执行、无凭据/媒体。最终源码全仓1544/58.235s PASS、supervisor只读审查通过；第一自动准备轮仍在driver之前结束，原/owned signals0、actualquiescence true、没有媒体/trace，宽泛bounded错误不当具体根因。手机包user0/10 UID读回后，下一private候选显式user0＋阶段诊断，核心/手机App不改；已有监督任务active时不重复派。
+
 ## 2026-10-04 续接：用户 GitHub 失败邮件优先修复；RAM8 源轮仍无媒体
+
+修复已经真实云端验收：实验7894bb7/run37135320411的build和udp_candidate均success，Linux1445tests/87.718s/OK，11既有平台skip保留；Android及独立UDP compile/lint/APK/JNI验证通过。稳定main此前86189ce/run37106309068只有updater绝对SDK路径1 ERROR，仅backport该test文件为f5b976a；stable本地656/15.561sPASS、run37136211052整体success（buildsuccess/UDPjob按原branchpolicy跳过）。没有新APK发布、manifest变化或服务重启。CI修复完成，不重复运行失败历史或归因RAM8；next/source-supply仍继续。当前只读freshgate设计agent可先取其结果，不重复手动180s源准备。
 
 用户截图对应 780d863 的 Actions run37133401441。Android compile/lint 通过，Python 1443项中10 ERROR/2 FAIL使后续UDP job跳过；四轮日志确认Mac绝对JDK/SDK路径、Darwin私有路径/pipe夹具假设和间歇socket残留回包误报。八个test文件只修fixture/toolchain发现，production安全guard、检查与workflow保留；root独立1462项全仓64.508s PASS，后续须核对精确pushed SHA的GitHub Linux实际结果，不以本地PASS代替。见[CI修复](github-ci-portability-repair-20261003.md)。公开alpha8/code39、alpha9本地候选及全部服务未因此发布/替换。
 

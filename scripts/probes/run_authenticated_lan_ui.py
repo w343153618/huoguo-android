@@ -19,6 +19,8 @@ PRIVATE = '/data/user/0/local.remoteandroid.direct.experiment/files/'
 TARGET_PACKAGE = 'local.remoteandroid.direct.experiment'
 sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
+from scripts.probes import owner_source_gate
+from scripts.probes.owner_trace_prefix import TracePrefixReader, SourceTraceError, LABELS as TRACE_LABELS
 
 
 def target_process_state(result):
@@ -40,6 +42,19 @@ def target_process_state(result):
         if all(0 < value <= 4194304 for value in values):
             return 'active'
     return 'unavailable'
+
+
+def target_user0_uid(result):
+    """Only the exact --user0 package readback may own the /data/user/0 marker."""
+    if (type(result.returncode) is not int or result.returncode != 0
+            or type(result.stdout) is not str or type(result.stderr) is not str
+            or result.stderr.strip() or len(result.stdout) > 4096):
+        raise ValueError('isolated_App_uid_readback')
+    match = re.fullmatch('package:'+re.escape(TARGET_PACKAGE)+r' uid:([0-9]+)',
+                         result.stdout.strip())
+    if match is None or not 10000 <= int(match[1]) <= 999999:
+        raise ValueError('isolated_App_uid_readback')
+    return match[1]
 
 
 def verify_credential_source_readback(result, expected_source):
@@ -336,7 +351,28 @@ def parse_arguments(argv=None):
                    help='Bounded20..150s SF steady window; helper waits this duration plus2s before reconnect')
     p.add_argument('--media-only', action='store_true')
     p.add_argument('--source-description', default='Morphe YouTube real video; selected content format requires separate readback')
+    p.add_argument('--owner-source-guard', choices=['off','numeric-playing-unknown'], default='off',
+                   help='Owner LAN only: one bounded source observation immediately before instrumentation')
+    p.add_argument('--source-listener-monotonic-ns', type=int, default=None)
+    p.add_argument('--source-expected-pid', type=int, default=None)
+    p.add_argument('--source-expected-uid', type=int, default=None)
+    p.add_argument('--source-expected-start-ticks', type=int, default=None)
+    p.add_argument('--source-trace-root', type=Path, default=None,
+                   help='Fresh private empty root for this owned listener; never a historical trace directory')
     args = p.parse_args(argv)
+    source_options = (args.source_listener_monotonic_ns, args.source_expected_pid,
+                      args.source_expected_uid, args.source_expected_start_ticks, args.source_trace_root)
+    if args.owner_source_guard == 'off':
+        if any(value is not None for value in source_options):
+            p.error('Source guard options require explicit owner source guard')
+    elif (args.network_scope != 'lan' or not args.media_only or args.phone_only_sampler
+            or any(value is None for value in source_options)
+            or args.source_listener_monotonic_ns <= 0
+            or not 0 < args.source_expected_pid <= 2147483647
+            or not 0 <= args.source_expected_uid <= 2147483647
+            or not 0 < args.source_expected_start_ticks <= 9223372036854775807
+            or not args.source_trace_root.is_absolute()):
+        p.error('Numeric source guard requires owner LAN media-only and complete bounded identity/trace options')
     if args.v50_profile == 'on':
         if args.pcm_queue != 'off' or args.codec_startup != 'off' or args.surface_submit_lead_ms != 0:
             p.error('V50 preset acceptance cannot also enable PCM/startup/Surface experiments')
@@ -373,8 +409,15 @@ def main():
     def root(command, check=True):
         return adb(args.phone, 'su -c '+shlex.quote(command), check)
 
+    def app_uid():
+        if args.owner_source_guard != 'off':
+            return target_user0_uid(adb(args.phone,
+                'cmd package list packages --user 0 -U '+TARGET_PACKAGE))
+        return adb(args.phone,'cmd package list packages -U '+TARGET_PACKAGE).stdout.split('uid:',1)[1].split(',',1)[0].strip()
+
     flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
     proc = None
+    source_reader = source_gate = None
     instrumentation_reaped = False
     samplers=[]
     scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
@@ -396,6 +439,10 @@ def main():
         physical_FPS_acceptance=False, requested_credential_source=args.credential_source,
         preinstrument_target_process_absent_verified=False,
         instrumentation_no_restart_lifecycle_verified=False)
+    report.update(owner_source_guard_enabled=args.owner_source_guard != 'off',
+        source_launch_freshness_verified=False, source_first_capture_freshness_verified=False,
+        source_final_target_process_absent_verified=False,
+        source_freshness_scope='first_owned_session_capture_only_not_reconnect_or_presentation')
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -413,11 +460,52 @@ def main():
         if args.credential_source == 'private-file' and root('test -s '+PRIVATE+'udp-test-login.json',False).returncode:
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
+        if args.owner_source_guard != 'off':
+            # All slow preflight/marker work precedes this one synchronous read.
+            # Reservation/registry/quiescence still belong to the supervisor.
+            source_reader = TracePrefixReader(args.source_trace_root)
+            source_gate = owner_source_gate.collect_playing_unknown('adb', args.guest,
+                args.source_listener_monotonic_ns, {'pid': args.source_expected_pid,
+                'uid': args.source_expected_uid, 'start_ticks': args.source_expected_start_ticks})
+            report['source_observation'] = source_gate
+            # The bounded collector can take15s. Recheck the target before am
+            # instrument, which may restart it. This narrows that availability
+            # gap; it is not an atomic phone-side reservation or no-restart proof.
+            state = target_process_state(adb(args.phone, 'pidof '+TARGET_PACKAGE, False))
+            report['source_preinstrument_target_process_state'] = state
+            if state != 'absent':
+                raise RuntimeError('target_App_process_active_skip' if state == 'active'
+                    else 'target_App_process_check_unavailable_skip')
+            report['source_final_target_process_absent_verified'] = True
+            launch_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+            owner_source_gate.validate_launch_fresh(source_gate, launch_ns)
+            report.update(source_launch_freshness_verified=True,
+                          source_instrumentation_launch_monotonic_ns=launch_ns)
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
             'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e credential_source '+args.credential_source+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
+            if source_gate is not None and not report['source_first_capture_freshness_verified']:
+                now_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+                owner_source_gate.validate_launch_fresh(source_gate, now_ns)
+                prefix = source_reader.read()
+                # The producer may append between the pre-read deadline check
+                # and pread. Qualify against a fresh post-read clock sample.
+                observed_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+                try:
+                    qualification = owner_source_gate.qualify_first_capture(source_gate,
+                        prefix, observed_ns,
+                        clock_domain='host_clock_gettime_CLOCK_MONOTONIC_ns')
+                except owner_source_gate.SourceGateError as error:
+                    if str(error) != 'source_first_capture_missing':
+                        raise
+                else:
+                    report['source_first_capture'] = qualification
+                    report['source_first_capture_freshness_verified'] = True
+                if not report['source_first_capture_freshness_verified']:
+                    time.sleep(.1)
+                    continue
             if not report['phone_sampler_started']:
                 if root('test -f '+PRIVATE+'udp-ui-phase-steady-media',False).returncode==0:
                     selections = [('phone',args.phone,'local.remoteandroid.direct.experiment')]
@@ -433,7 +521,7 @@ def main():
                     and all(child.poll() is not None for child in samplers)):
                 if any(child.returncode!=0 for child in samplers):
                     raise RuntimeError('steady_sampler_failed')
-                uid=adb(args.phone,'cmd package list packages -U local.remoteandroid.direct.experiment').stdout.split('uid:',1)[1].split(',',1)[0].strip()
+                uid=app_uid()
                 if not uid.isdigit():
                     raise ValueError('isolated_App_uid_readback')
                 done=PRIVATE+'udp-ui-phase-steady-sampled';staged=done+'.tmp'
@@ -451,7 +539,7 @@ def main():
                 # Focus can precede a usable fullscreen input window. This is
                 # test setup, outside the media sampling window.
                 time.sleep(4)
-                uid=adb(args.phone,'cmd package list packages -U local.remoteandroid.direct.experiment').stdout.split('uid:',1)[1].split(',',1)[0].strip()
+                uid=app_uid()
                 if not uid.isdigit():
                     raise ValueError('isolated_App_uid_readback')
                 ready=PRIVATE+'udp-ui-phase-touch-ready'
@@ -563,6 +651,8 @@ def main():
             raise RuntimeError('codec_startup_readback_unverified')
         if not report['steady_media_progress_verified']:
             raise RuntimeError('steady_media_progress_stalled_or_unverified')
+        if source_gate is not None and not report['source_first_capture_freshness_verified']:
+            raise owner_source_gate.SourceGateError('source_first_capture_missing')
     except (Exception, KeyboardInterrupt) as failure:
         report['driver_failure_class']=type(failure).__name__
         labels = {'formal_gate_failed','formal_session_active','private_login_missing',
@@ -579,6 +669,7 @@ def main():
                   'nps_physical_network_binding_unverified','credential_save_readback_unverified',
                   'credential_source_readback_unverified',
                   'v50_profile_readback_unverified'}
+        labels.update(owner_source_gate.SOURCE_GATE_LABELS, TRACE_LABELS)
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
@@ -595,6 +686,11 @@ def main():
         for sampler in samplers:
             reap_owned_process(sampler, report, 'sampler', 1 if failed else args.steady_seconds+5, terminate=failed)
             report.setdefault('sampler_exit_codes',[]).append(sampler.returncode)
+        if source_reader is not None:
+            try:
+                source_reader.close()
+            except Exception as failure:
+                record_cleanup_failure(report, 'close_source_trace_prefix', failure=failure)
         cleanup_paths = ([PRIVATE+'udp-test-login.json'] if args.credential_source == 'private-file' else [])
         # A pre-instrument saved-mode refusal owns no App markers or input.
         if args.credential_source == 'private-file' or proc is not None:

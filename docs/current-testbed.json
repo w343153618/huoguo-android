@@ -1696,5 +1696,35 @@
     "live_format_known": false,
     "media_codec_stdout_bytes": 0,
     "new_media_started": false
+  },
+  "owner_source_freshness_candidate_20261004": {
+    "status": "reviewed_targeted_fixtures_pass_not_real_media",
+    "default_enabled": false,
+    "scope": "owner_LAN_media_only_numeric_playing_format_unknown",
+    "targeted_checks": 95,
+    "source_pins": {
+      "scripts/probes/owner_source_gate.py": "8b9f0cf4264a6605a103db4ef69ec1a7a85e19898c3cd93f9db76db4e8b853fa",
+      "scripts/probes/owner_trace_prefix.py": "4e2348215b8b1389a875159d77a8eaa56f8faaa1dcb2c82f88d369062c5d0255",
+      "scripts/probes/run_authenticated_lan_ui.py": "d887421dafaa6d99ff1e98614ba8d43746c0a37d7c02a467f75677777ccaf552",
+      "tests/test_owner_source_gate.py": "df8eaa5e59753633566f3548b70443537b41466f61d8fa5500ffb669a695ce76",
+      "tests/test_owner_trace_prefix.py": "f88f5d8bd4f15cacf344c41a71ba25a6f1ff17e4254a9fdfa32d7df409b2abf1",
+      "tests/test_owner_source_driver.py": "3bbeb7de5bb6d286a17d7fd7d029a483b4b23b9ccef9911216506215dd222896"
+    },
+    "clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "collector_timeout_seconds": 15,
+    "source_freshness_seconds": 30,
+    "first_capture_only": true,
+    "visual_motion_known": false,
+    "actual_format_known": false,
+    "phone_presentation_accepted": false,
+    "new_APK_published": false,
+    "persistent_runtime_deployed": false,
+    "evidence": "docs/owner-source-gate-contract-20261004.md",
+    "full_source_checks": 1544,
+    "full_source_seconds": 58.235,
+    "first_real_attempt_scope": "protected listener only; no driver/media/trace; generic bounded failure not root-cause proof",
+    "first_real_attempt_owned_quiescence": true,
+    "first_real_attempt_signals": 0,
+    "marker_user_explicit": 0
   }
 }

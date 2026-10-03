@@ -9,6 +9,29 @@ examined; the same ten errors and canary fixture failure repeated, while the
 duplex socket failure was intermittent. This does not prove every historical
 failure has the same cause.
 
+## Actual cloud completion, 2026-10-04 Asia/Shanghai
+
+- Experimental repair `7894bb760253921d3613512af514e961ab091df0`:
+  [run37135320411](https://github.com/w343153618/huoguo-android/actions/runs/37135320411)
+  completed `success`; both `build` and `udp_candidate` succeeded. Linux
+  discovery executed 1445 tests in 87.718 seconds, `OK (skipped=11)`; these are
+  the existing platform-specific skips. Android and isolated UDP compilation,
+  lint, pinned dependency validation, APK package/JNI/signature checks passed.
+- The latest stable failure was independently examined: `86189ce`,
+  [run37106309068](https://github.com/w343153618/huoguo-android/actions/runs/37106309068),
+  Android compile/lint passed, one updater SDK-path test error. Only the same
+  updater fixture discovery change was backported to main; no experimental
+  production implementation was merged. Local stable discovery passed 656
+  tests in 15.561 seconds. Stable repair
+  `f5b976a099c0a0372d3d79f32f7240dde1d81d9c`:
+  [run37136211052](https://github.com/w343153618/huoguo-android/actions/runs/37136211052)
+  completed `success`; `build` succeeded, `udp_candidate` was skipped by its
+  existing branch policy.
+
+Both pushed repair commits were verified by final Actions API reads, not just
+local test results. Remaining action/runner migration annotations are warnings
+in successful runs, not the failed test causes above.
+
 ## Confirmed causes and scoped changes
 
 - Four test modules used the owner's absolute Mac JDK/Android SDK paths.
