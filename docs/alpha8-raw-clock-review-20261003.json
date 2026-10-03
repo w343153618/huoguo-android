@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "scope": "read_only_M1_existing_owner_public_UDP_raw_supply_clock_review_no_new_media_test",
+  "gateway_observation": {
+    "method": "LaunchAgent_ProgramArguments_and_KERN_PROCARGS2_whitelisted_fields_only",
+    "pid": 26875,
+    "entrypoint": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/source-alpha8-dd43a39/udp_nps_gateway.py",
+    "selected_native_encoder": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/session-pool-encoder",
+    "selected_encoder_sha256": "59264ab7cd9d6e76ed3328a117bbf3c866513bc505244203c2328d6808879ecf",
+    "proof_boundary": "active_gateway_dependency_selection_not_gold39_child_executable_hash_at_execution",
+    "media_child_observed_in_this_review": false
+  },
+  "fallback_encoder": {
+    "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/hardware/macos-h264",
+    "sha256": "3ad91b912768e1fd00c9a10690c582bbdcac7ac1f0fd415a1d7a8d372def5de2",
+    "selected_by_gateway": false
+  },
+  "packetizer": {
+    "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/h264_udp_packetizer",
+    "sha256": "567231ae8165bd09c46e343f436db647210e70d7f60d74a144950c8ca84c8142"
+  },
+  "frozen_source_sha256": {
+    "hardware_stream.py": "6fe47b938b1db88e09175ece5a465cffdcfb71144c753be0f2a90164dce64e72",
+    "udp_lan_worker.py": "19d1c18e15016afde74ecc9773464047c9c72674eba13c5c3ccccbcf7a19b14f",
+    "scripts/probes/emulator_hardware_encoder.swift": "ae4223b67298322dbe19da16360590ce8d5f620e2b9871d3c339c91d7f7bb250",
+    "experiments/moonlight-v2/transport/android-udp/h264_udp_packetizer.cpp": "494a8ece7026415a65a42089792d3e5f6cdbf616513245a9b95a4e84d3fc5d4a"
+  },
+  "recent_native_ready": {
+    "rows_observed": 4,
+    "width": 540,
+    "height": 960,
+    "expected_frame_rate_readback": 30,
+    "expected_frame_rate_read_status": 0,
+    "using_hardware": true,
+    "pixel_pool_mode": "manual",
+    "low_latency_mode_requested": false,
+    "low_latency_mode_read_status": -12900,
+    "low_latency_mode_readback_present": false,
+    "join_boundary": "ready_rows_lack_session_id_and_unix_timestamp_log_order_association_only"
+  },
+  "source_semantics": {
+    "raw_fps_budget": "token_bucket_burst2_consume_before_pipe_write_elapsed_write_time_refills_credit",
+    "last_submit_use": "idle_repeat_only_1second",
+    "completion_plus_period_wait_present": false,
+    "grpc_request_fps_limit_present": false,
+    "swift_explicit_fps_sleep_present": false,
+    "trace_clock": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "packetizer_clock": "host_clock_gettime_CLOCK_UPTIME_RAW_us"
+  },
+  "offline_fixture": {
+    "kind": "actual_class_extracted_by_AST_fake_clock_backlogged_60seconds_not_performance",
+    "cases": [
+      {
+        "fixed_write_ms": 2,
+        "submitted_fps": 30.033
+      },
+      {
+        "fixed_write_ms": 10,
+        "submitted_fps": 30.033
+      },
+      {
+        "fixed_write_ms": 20,
+        "submitted_fps": 30.033
+      },
+      {
+        "fixed_write_ms": 30,
+        "submitted_fps": 30.033
+      },
+      {
+        "fixed_write_ms": 40,
+        "submitted_fps": 25.017
+      },
+      {
+        "fixed_write_ms": 50,
+        "submitted_fps": 20.017
+      }
+    ]
+  },
+  "one_existing_sample_quantile_bound": {
+    "unix_ms": 1791027711895,
+    "raw_fps": 29.95,
+    "submitted_fps": 17.7,
+    "replaced_fps": 12.25,
+    "sample_interval_ms": 5142,
+    "raw_pipe_count": 91,
+    "raw_pipe_p50_ms": 3.086,
+    "raw_pipe_p95_ms": 10.238,
+    "raw_pipe_max_ms": 19.803,
+    "quantile_count_le_p50": 46,
+    "quantile_count_between_p50_p95": 41,
+    "quantile_count_above_p95": 4,
+    "sum_upper_bound_ms_using_rounded_percentiles": 640.926,
+    "rounded_precision_extra_upper_bound_ms": 0.091,
+    "mean_upper_bound_ms_using_rounded_percentiles": 7.043143,
+    "boundary": "completed_write_samples_not_exact_all_loop_time_or_synchronized_frame_cohort"
+  },
+  "limitations": [
+    "No new host media or phone test executed",
+    "No credentials or full argv/env exported",
+    "No actual gold39 child runtime hash proof by this review",
+    "No unique root cause attribution from histograms",
+    "No phone optical FPS/latency or V50/cellular acceptance",
+    "No production changes"
+  ]
+}
