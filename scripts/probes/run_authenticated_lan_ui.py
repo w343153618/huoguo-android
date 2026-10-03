@@ -55,7 +55,7 @@ def verify_exit_confirmation_readback(result):
     if not isinstance(result,dict) or 'failure_class' in result:return False
     fields=('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt',
             'exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled',
-            'exit_used_actual_UI_buttons')
+            'exit_used_actual_UI_buttons','exit_UI_callbacks_observed')
     return all(result.get(stage+'_'+field) is True for stage in ('first','second') for field in fields)
 
 

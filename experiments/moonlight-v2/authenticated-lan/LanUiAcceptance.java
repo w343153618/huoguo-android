@@ -177,6 +177,22 @@ public final class LanUiAcceptance extends Instrumentation {
             .put(stage+"_network_readback_verified",true).put(stage+"_media_transport_code",1)
             .put(stage+"_media_transport_is_App_UDP_not_NPC_outer_verification",true);
     }
+    @FunctionalInterface private interface CallbackPause {void sleep(long millis)throws InterruptedException;}
+    /** performClick posts AlertDialog's listener; completion must be observed separately.
+     * Monotonic, <=1500ms/76 polls; never holds an attempt monitor while sleeping. */
+    private static boolean awaitUiCallback(java.util.concurrent.Callable<Boolean> condition,
+            java.util.function.LongSupplier clock,CallbackPause pause)throws Exception{
+        long started=clock.getAsLong(),last=started;if(started<0)throw new IllegalStateException("UI_callback_clock_invalid");
+        for(int polls=0;polls<76;polls++){
+            long now=clock.getAsLong();if(now<last)throw new IllegalStateException("UI_callback_clock_invalid");
+            if(now-started>1500)return false;
+            boolean ready=Boolean.TRUE.equals(condition.call());long observed=clock.getAsLong();
+            if(observed<now)throw new IllegalStateException("UI_callback_clock_invalid");
+            if(observed-started>1500)return false;if(ready)return true;
+            long remaining=1500-(observed-started);if(remaining<=0)return false;
+            pause.sleep(Math.min(20,remaining));last=observed;
+        }return false;
+    }
     /** Actual Back dialog and button listeners; never bypass positive action with backend cancel. */
     private void leaveThroughConfirmation(MainActivity target,JSONObject report,String stage)throws Exception{
         Object ui=target.lanUdpEntry;Object captured;long generation;
@@ -204,6 +220,21 @@ public final class LanUiAcceptance extends Instrumentation {
             dialogs[0].getButton(DialogInterface.BUTTON_NEGATIVE).performClick();
         }catch(Throwable failure){problem[0]=failure;}});
         if(problem[0]!=null)throw new IllegalStateException("exit_continue_UI",problem[0]);
+        // ButtonHandler and dismissal are messages queued by performClick.
+        boolean continued=awaitUiCallback(()->{
+            final boolean[] complete={false};final Throwable[] failure={null};
+            runOnMainSync(()->{try{
+                synchronized(field(ui,"lock")){
+                    if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation||(Boolean)field(captured,"cancelled"))
+                        throw new IllegalStateException("exit_continue_captured_attempt_changed");
+                }
+                complete[0]=!dialogs[0].isShowing()&&field(ui,"exitDialog")!=dialogs[0]
+                    &&!((UdpExitConfirmationGate)field(ui,"exitGate")).pending();
+            }catch(Throwable e){failure[0]=e;}});
+            if(failure[0]!=null)throw new IllegalStateException("exit_continue_callback_state",failure[0]);
+            return complete[0];
+        },SystemClock::elapsedRealtime,Thread::sleep);
+        if(!continued)throw new IllegalStateException("exit_continue_callback_timeout");
         long beforeReceived=target.receivedFrames.get(),beforeCallback=target.presentedFrames.get();
         long deadline=SystemClock.elapsedRealtime()+3000;
         while(target.running&&target.receivedFrames.get()<=beforeReceived&&target.presentedFrames.get()<=beforeCallback
@@ -227,14 +258,19 @@ public final class LanUiAcceptance extends Instrumentation {
             next.getButton(DialogInterface.BUTTON_POSITIVE).performClick();
         }catch(Throwable failure){problem[0]=failure;}});
         if(problem[0]!=null)throw new IllegalStateException("exit_positive_UI",problem[0]);
-        synchronized(field(ui,"lock")){
-            if(!(Boolean)field(captured,"cancelled")||field(ui,"current")==captured)
-                throw new IllegalStateException("exit_captured_attempt_not_cancelled");
-        }
+        boolean exited=awaitUiCallback(()->{
+            synchronized(field(ui,"lock")){
+                if((Boolean)field(captured,"cancelled")&&field(ui,"current")!=captured)return true;
+                if(field(ui,"current")!=captured||(Long)field(ui,"generation")!=generation)
+                    throw new IllegalStateException("exit_positive_callback_captured_attempt_changed");
+                return false;
+            }
+        },SystemClock::elapsedRealtime,Thread::sleep);
+        if(!exited)throw new IllegalStateException("exit_captured_attempt_not_cancelled");
         report.put(stage+"_exit_dialog_shown",true).put(stage+"_exit_repeated_back_same_dialog",true)
             .put(stage+"_exit_continue_preserved_attempt",true).put(stage+"_exit_continue_media_progress",progress)
             .put(stage+"_exit_positive_button_clicked",true).put(stage+"_exit_captured_attempt_cancelled",true)
-            .put(stage+"_exit_used_actual_UI_buttons",true);
+            .put(stage+"_exit_used_actual_UI_buttons",true).put(stage+"_exit_UI_callbacks_observed",true);
     }
     private boolean ownsAttempt(Object ui,Object owned)throws Exception{
         if(owned==null)return false;

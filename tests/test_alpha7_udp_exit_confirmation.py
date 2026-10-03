@@ -55,7 +55,7 @@ public final class ExitCheck{
     def test_invalid_attempt_and_generation_fail_closed(self):self.gate('bound')
     def test_synchronized_gate_has_one_concurrent_dialog_owner(self):self.gate('concurrency')
     def test_readback_requires_real_buttons_and_media_continuity_in_both_sessions(self):
-        valid={stage+'_'+field:True for stage in ('first','second') for field in ('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt','exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled','exit_used_actual_UI_buttons')}
+        valid={stage+'_'+field:True for stage in ('first','second') for field in ('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt','exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled','exit_used_actual_UI_buttons','exit_UI_callbacks_observed')}
         self.assertTrue(DRIVER.verify_exit_confirmation_readback(valid))
         for key in valid:
             for bad in (False,1,'true',None):
@@ -94,6 +94,7 @@ public final class ExitCheck{
         self.assertIn('attempt!=expected||generation!=expected.generation',source)
         for text in ('要退出远程连接吗？','继续使用','退出连接'):self.assertIn(text,source)
         self.assertIn('BUTTON_NEGATIVE).performClick()',helper);self.assertIn('BUTTON_POSITIVE).performClick()',helper)
+        self.assertIn('boolean continued=awaitUiCallback(',helper);self.assertIn('boolean exited=awaitUiCallback(',helper)
         self.assertEqual(helper.count('throw new IllegalStateException("exit_positive_captured_attempt_changed")'),2)
         self.assertIn('leaveThroughConfirmation(target,report,"first")',helper);self.assertIn('leaveThroughConfirmation(target,report,"second")',helper)
         self.assertIn('lanUdpEntry.requestBack()', (ROOT/'app/src/main/java/local/remoteandroid/direct/MainActivity.java').read_text())

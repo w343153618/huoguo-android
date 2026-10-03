@@ -39,7 +39,7 @@ def complete_report(node):
     result = network_report(node)
     result['requested_credential_save_acceptance']=False
     for stage in ('first','second'):
-        for field in ('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt','exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled','exit_used_actual_UI_buttons'):result[stage+'_'+field]=True
+        for field in ('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt','exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled','exit_used_actual_UI_buttons','exit_UI_callbacks_observed'):result[stage+'_'+field]=True
         result.update({stage+'_physical_network_same_lease':True,stage+'_physical_network_handle':123,
             stage+'_physical_network_transport':1,stage+'_physical_https_bind_calls':1,stage+'_physical_udp_bind_calls':1,
             stage+'_physical_packet_route_verified':False,stage+'_physical_domestic_country_verified':False})

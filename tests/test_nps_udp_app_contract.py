@@ -102,7 +102,7 @@ public final class UiSelectionsCheck {
         self.assertIn('socket.startHandshake()', source)
         self.assertIn('attempt.networkScope,attempt.node,attempt.surfaceSubmitLeadMs', source)
         self.assertIn('address.setEnabled(position<2)', source)
-        self.assertIn('新账号字段默认 huoguo；保留上次手动使用的账号', source)
+        self.assertIn('给火锅的安卓 · 测试版', source)
         self.assertIn('update.setText("检查更新")', source)
         self.assertNotIn('activity.session(', source)
         self.assertNotIn('activity.connect(', source)

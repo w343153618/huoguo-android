@@ -68,7 +68,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         String restoredAddress=savedScope>=2?publicAddress(savedScope):savedAddress(saved,"address",selectedScope(savedScope),
             savedScope==0?lastLanAddress:LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT);
         LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(32,32,32,32);
-        TextView title=new TextView(activity);title.setText("认证 UDP · 独立实验版\nHTTPS 仅登录；视频、声音、多指触控均走 UDP\n最长 120 秒；断线不会切换成 TCP 媒体\n公网 M1／M5 仅授权试用，不代表已完成朋友发布验收\n新账号字段默认 huoguo；保留上次手动使用的账号\n公网控制与媒体绑定同一非 VPN Wi-Fi／移动网络；网络丢失时停止，不绕回 VPN\nTailnet 仅已登记测试手机；底层可能使用 DERP 中继");box.addView(title);
+        TextView title=new TextView(activity);title.setText("给火锅的安卓 · 测试版\n公网 M1/M5 认证 UDP · 机主有界体验（单次 120 秒）\n可选局域网或 Tailnet；断线不会改用 TCP 媒体");box.addView(title);
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
         Button update=new Button(activity);update.setText("检查更新");update.setOnClickListener(v->activity.updater.check(true));box.addView(update);
         scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 机主试用", "公网 UDP · M5 · 机主试用（新安装默认）"},savedScope);
@@ -114,7 +114,14 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         address.addTextChangedListener(watcher);user.addTextChangedListener(watcher);
         sound.setOnCheckedChangeListener((button,checked)->saveSettings());
         start.setOnClickListener(v->start());
-        restorePassword();ScrollView scroll=new ScrollView(activity);scroll.addView(box);activity.setContentView(scroll);
+        restorePassword();ScrollView scroll=new ScrollView(activity);scroll.addView(box);
+        // API37 edge-to-edge: reserve system bars only on the login scroll root.
+        // The existing inner spacing and remote video/touch coordinates are unchanged.
+        scroll.setOnApplyWindowInsetsListener((view,insets)->{
+            android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars());
+            view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;
+        });
+        activity.setContentView(scroll);scroll.requestApplyInsets();
     }
     private EditText field(LinearLayout box,String hint,String value){EditText input=new EditText(activity);input.setSingleLine();input.setHint(hint);input.setText(value);box.addView(input);return input;}
     private Spinner choice(LinearLayout box,String label,String[] values,int selected){TextView text=new TextView(activity);text.setText(label);box.addView(text);Spinner input=new Spinner(activity);input.setAdapter(new ArrayAdapter<>(activity,android.R.layout.simple_spinner_dropdown_item,values));input.setSelection(selected);box.addView(input);return input;}
