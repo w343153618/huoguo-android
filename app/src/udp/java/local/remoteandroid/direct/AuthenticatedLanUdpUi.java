@@ -25,6 +25,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private final PasswordStore passwordStore;
     private final Object lock=new Object();
     private long generation,loginRevision;
+    private volatile int lastConnectionFailureCode;
     private Attempt current,retiring;
     private final UdpExitConfirmationGate exitGate=new UdpExitConfirmationGate();
     private AlertDialog exitDialog;
@@ -71,7 +72,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             savedScope==0?lastLanAddress:LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT);
         LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(32,32,32,32);
         box.addView(loginHeader(pageRevision));
-        TextView summary=new TextView(activity);summary.setText("公网 M1/M5 认证 UDP · 机主有界体验（单次 120 秒）\n可选局域网或 Tailnet；断线不会改用 TCP 媒体");box.addView(summary);
+        TextView summary=new TextView(activity);summary.setText("公网 M1/M5 认证 UDP · 机主体验（公网单次 1 小时，届时提醒休息）\n可选局域网或 Tailnet；断线不会改用 TCP 媒体");box.addView(summary);
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
         scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 机主试用", "公网 UDP · M5 · 机主试用（新安装默认）"},savedScope);
         address=field(box,"HTTPS 控制地址；公网节点使用固定地址",restoredAddress);address.setEnabled(savedScope<2);
@@ -81,7 +82,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         remember.setOnClickListener(v->savePassword());forget.setOnClickListener(v->{try{passwordStore.clear();password.setText("");status.setText("已清除本机保存的密码。");}catch(Exception failure){status.setText("清除失败，请重试。");}});
         quality=choice(box,"串流清晰度",new String[]{"540P · 540×960 · 流畅","720P · 720×1280 · 高清","1080P · 1080×1920 · 清晰"},savedSelection(saved,"quality",2,lowLoad?0:2));
         rate=choice(box,"视频 VBR 目标码率",new String[]{"4 Mbps","8 Mbps","12 Mbps","16 Mbps","24 Mbps"},savedSelection(saved,"rate",4,lowLoad?0:2));
-        fps=choice(box,"串流上限（不代表实际内容帧率）",new String[]{"60 FPS","120 FPS","30 FPS · V50 均衡"},savedSelection(saved,"fps",2,lowLoad?2:0));
+        fps=choice(box,"串流上限（不代表实际内容帧率）",new String[]{"30 FPS · 稳定优先","60 FPS"},savedFpsSelection(saved));
         buffer=choice(box,"播放缓冲",new String[]{"30 ms","50 ms","80 ms · 推荐","100 ms"},savedSelection(saved,"buffer",3,2));
         Button optimize=new Button(activity);optimize.setText("真我 V50 · 一键均衡优化");box.addView(optimize);
         Button capabilities=new Button(activity);capabilities.setText("查看本机硬解能力");box.addView(capabilities);
@@ -119,7 +120,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         sound.setOnCheckedChangeListener((button,checked)->saveSettings());
         optimize.setOnClickListener(v->{
             restoringFields=true;
-            try{quality.setSelection(0);rate.setSelection(0);fps.setSelection(2);buffer.setSelection(2);
+            try{quality.setSelection(0);rate.setSelection(0);fps.setSelection(0);buffer.setSelection(2);
                 pcmQueue.setChecked(false);codecStartup.setChecked(false);ownerStageDiagnosticsEnabled=false;
             }finally{restoringFields=false;}
             activity.getSharedPreferences(SETTINGS,0).edit().putBoolean("low_load_profile",true).apply();saveSettings();
@@ -162,6 +163,12 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private Spinner choice(LinearLayout box,String label,String[] values,int selected){TextView text=new TextView(activity);text.setText(label);box.addView(text);Spinner input=new Spinner(activity);input.setAdapter(new ArrayAdapter<>(activity,android.R.layout.simple_spinner_dropdown_item,values));input.setSelection(selected);box.addView(input);return input;}
     private static int savedSelection(SharedPreferences saved,String key,int max,int fallback){try{int value=saved.getInt(key,fallback);return value>=0&&value<=max?value:fallback;}catch(ClassCastException invalid){return fallback;}}
     private static String savedText(SharedPreferences saved,String key,String fallback,int max){try{String value=saved.getString(key,fallback);return value!=null&&!value.isEmpty()&&value.length()<=max?value:fallback;}catch(ClassCastException invalid){return fallback;}}
+    private static int savedFpsSelection(SharedPreferences saved){
+        Integer value=null,legacy=null;
+        try{if(saved.contains("fps_value"))value=saved.getInt("fps_value",30);}catch(ClassCastException invalid){}
+        try{if(saved.contains("fps"))legacy=saved.getInt("fps",-1);}catch(ClassCastException invalid){}
+        return UdpLowLoadProfile.indexForSaved(value,legacy);
+    }
     private static boolean savedSound(SharedPreferences saved){try{return saved.getBoolean("sound",true);}catch(ClassCastException invalid){return true;}}
     private static boolean savedLowLoad(SharedPreferences saved,boolean fallback){try{return saved.getBoolean("low_load_profile",fallback);}catch(ClassCastException invalid){return fallback;}}
     private static String selectedScope(int selection){return selection>=2?LanUdpContract.NPS_SCOPE:selection==1?LanUdpContract.TAILNET_SCOPE:LanUdpContract.LAN_SCOPE;}
@@ -183,7 +190,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         SharedPreferences.Editor edit=activity.getSharedPreferences(SETTINGS,0).edit()
             .putInt("scope",selected).putString("address",endpoint).putString(usernamePreference(selected),user.getText().toString())
             .putInt("quality",quality.getSelectedItemPosition()).putInt("rate",rate.getSelectedItemPosition())
-            .putInt("fps",fps.getSelectedItemPosition()).putInt("buffer",buffer.getSelectedItemPosition()).putBoolean("sound",sound.isChecked());
+            .putInt("fps_value",UdpLowLoadProfile.fpsForIndex(fps.getSelectedItemPosition())).putInt("buffer",buffer.getSelectedItemPosition()).putBoolean("sound",sound.isChecked());
         if(selected==0)try{Endpoint.Address parsed=Endpoint.parse(Endpoint.destination(endpoint));LanUdpContract.validateLogin(parsed.host,parsed.port,LanUdpContract.LAN_SCOPE);
             lastLanAddress=endpoint;edit.putString("lan_address",endpoint);}catch(Exception invalid){}
         edit.apply();
@@ -205,7 +212,9 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         catch(Exception failure){password.setText("");if(status!=null)status.setText("已保存的密码无法读取，请重新输入并保存。");}
     }
     private void start(){
+        if(activity.updater.isBusy()){status.setText("更新检查或安装正在进行，请完成或取消后再连接。");return;}
         synchronized(lock){if(retiring!=null){status.setText("上一条 UDP 会话正在收尾，请稍后重新连接。");return;}}
+        lastConnectionFailureCode=0;
         final String endpoint,credential,networkScope,node;final NpsPhysicalNetwork physicalNetwork;final int requestedSurfaceLeadMs;final JSONObject request=new JSONObject();
         try{
             endpoint=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(endpoint);
@@ -219,7 +228,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             request.put("max_size",new int[]{960,1280,1920}[quality.getSelectedItemPosition()]);
             request.put("video_bit_rate",new int[]{4000000,8000000,12000000,16000000,24000000}[rate.getSelectedItemPosition()]);
             request.put("max_fps",UdpLowLoadProfile.fpsForIndex(fps.getSelectedItemPosition())).put("buffer_ms",new int[]{30,50,80,100}[buffer.getSelectedItemPosition()]);
-            request.put("seconds",120).put("audio_enabled",sound.isChecked()).put("touch_enabled",true).put("network_scope",networkScope);
+            request.put("seconds",LanUdpContract.NPS_SCOPE.equals(networkScope)?3600:120).put("audio_enabled",sound.isChecked()).put("touch_enabled",true).put("network_scope",networkScope);
             if(LanUdpContract.NPS_SCOPE.equals(networkScope))request.put("node",node);
             requestedSurfaceLeadMs=ownerSurfaceSubmitLeadMs;LanUdpContract.validateOwnerSurfaceLead(requestedSurfaceLeadMs);
             request.put("surface_submit_lead_ms",requestedSurfaceLeadMs);
@@ -243,11 +252,23 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
                 attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,attempt.physicalNetwork,(report,failed)->finished(attempt,report,failed));
             }
         }catch(Exception failure){
+            String failureLabel=failure.getMessage();
+            if(failureLabel!=null&&failureLabel.matches("https_status_[0-9]{3}"))lastConnectionFailureCode=Integer.parseInt(failureLabel.substring(13));
+            else if(failureLabel!=null&&failureLabel.startsWith("descriptor_"))lastConnectionFailureCode=1;
+            else lastConnectionFailureCode=2;
             finishRemote(attempt);
             synchronized(lock){if(retiring==attempt)retiring=null;}
             activity.ui.post(()->{synchronized(lock){if(current!=attempt||generation!=attempt.generation)return;attempt.stopped=true;current=null;}
-                showLogin();status.setText(attempt.cancelled?"已取消连接":"UDP 连接失败（"+failure.getClass().getSimpleName()+"），未回退 TCP。");});
+                showLogin();status.setText(attempt.cancelled?"已取消连接":connectionFailureMessage(lastConnectionFailureCode));});
         }
+    }
+    private static String connectionFailureMessage(int code){
+        if(code==401||code==403)return "登录被拒绝（"+code+"），请核对账号、密码及节点权限。";
+        if(code==409)return "此节点正在使用或维护（409），请稍后连接。";
+        if(code==400)return "服务器拒绝本次串流参数（400），请检查 App 和服务版本。";
+        if(code==503)return "远端 UDP 服务暂未就绪（503），请稍后连接。";
+        if(code==429)return "尝试登录过于频繁（429），请稍后重试。";
+        return "UDP 连接失败（"+(code==1?"会话校验":code==2?"网络或 TLS":String.valueOf(code))+"），未回退 TCP。";
     }
     static boolean privateIpv4(String host){return LanUdpContract.privateIpv4(host);}
     static void validateDescriptor(JSONObject json,String loginHost)throws Exception{
@@ -313,7 +334,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         }
         synchronized(lock){if(retiring==attempt)retiring=null;}
         activity.ui.post(()->{synchronized(lock){if(current!=attempt||generation!=attempt.generation)return;attempt.stopped=true;current=null;}
-            showLogin();status.setText(!reportWritten?"UDP 已结束，但数值报告保存失败；未回退 TCP。":failed?"UDP 测试中断，数值报告已保存；未回退 TCP。":"UDP 测试结束，数值报告已保存在 App 私有目录。");});
+            showLogin();if(report.optInt("session_limit_reached",0)==1&&report.optInt("requested_seconds",0)==3600){
+                status.setText("已连接一小时，休息一下。需要时可以重新连接。");
+                if(!activity.isFinishing()&&!activity.isDestroyed())new AlertDialog.Builder(activity).setTitle("休息一下吧").setMessage("本次已连接一小时，远程会话已结束。休息后可重新连接。").setPositiveButton("知道了",null).show();
+                return;
+            }if(report.optInt("session_end_reason_code",0)==2){status.setText("UDP 首帧等待超时，请检查节点是否在线后重新连接；未回退 TCP。");return;}
+            if(report.optInt("session_end_reason_code",0)==3){status.setText("与远端的 UDP 连接已中断，请检查网络后重新连接；未回退 TCP。");return;}
+            status.setText(!reportWritten?"UDP 已结束，但数值报告保存失败；未回退 TCP。":failed?"UDP 测试中断，数值报告已保存；未回退 TCP。":"UDP 测试结束，数值报告已保存在 App 私有目录。");});
     }
     private void finishRemote(Attempt attempt){
         String id=attempt.sessionId;if(id==null)return;

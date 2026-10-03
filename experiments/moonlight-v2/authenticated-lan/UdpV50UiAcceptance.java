@@ -34,14 +34,14 @@ public final class UdpV50UiAcceptance extends Instrumentation {
             }catch(Throwable failure){error[0]=failure;}});waitForIdleSync();if(error[0]!=null)throw new IllegalStateException(error[0]);
             Object ui=app.lanUdpEntry;
             if(((Spinner)field(ui,"quality")).getSelectedItemPosition()!=0||((Spinner)field(ui,"rate")).getSelectedItemPosition()!=0
-                ||((Spinner)field(ui,"fps")).getSelectedItemPosition()!=2||((Spinner)field(ui,"buffer")).getSelectedItemPosition()!=2
+                ||((Spinner)field(ui,"fps")).getSelectedItemPosition()!=0||((Spinner)field(ui,"buffer")).getSelectedItemPosition()!=2
                 ||(Boolean)field(ui,"ownerStageDiagnosticsEnabled"))throw new IllegalStateException("preset_readback");
             report.putBoolean("actual_V50_button_preset_readback",true);
-            runOnMainSync(()->{try{((Spinner)field(first.lanUdpEntry,"fps")).setSelection(0);}catch(Exception failure){error[0]=failure;}});
+            runOnMainSync(()->{try{((Spinner)field(first.lanUdpEntry,"fps")).setSelection(1);}catch(Exception failure){error[0]=failure;}});
             waitForIdleSync();if(error[0]!=null)throw new IllegalStateException(error[0]);runOnMainSync(first::finish);waitForIdleSync();
             app=(MainActivity)startActivitySync(new Intent().setClassName(getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));waitForIdleSync();
             ui=app.lanUdpEntry;
-            if(((Spinner)field(ui,"fps")).getSelectedItemPosition()!=0||((Spinner)field(ui,"quality")).getSelectedItemPosition()!=0
+            if(((Spinner)field(ui,"fps")).getSelectedItemPosition()!=1||((Spinner)field(ui,"quality")).getSelectedItemPosition()!=0
                 ||((Boolean)field(ui,"ownerStageDiagnosticsEnabled")))throw new IllegalStateException("manual_choice_reopen");
             report.putBoolean("manual_60fps_preserved_after_reopen",true);
             report.putString("advertised_codec_capabilities",UdpDeviceCapabilities.summary());

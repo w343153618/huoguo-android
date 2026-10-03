@@ -51,6 +51,7 @@ final class AppUpdater {
         closed=true;int phase=OPERATIONS.phase(operation);
         if(phase==UpdateOperationGate.SELECTING||phase==UpdateOperationGate.DIALOG)end(operation);
     }
+    boolean isBusy(){return OPERATIONS.phase()!=UpdateOperationGate.IDLE;}
     void check(boolean manual) {
         if(manual){
             long token=begin(UpdateOperationGate.SELECTING);if(token==0)return;

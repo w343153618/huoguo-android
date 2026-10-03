@@ -105,3 +105,13 @@ pending checkpoint as historical success.
 - Preserve friend/host/LAN isolation gates; the M1 owner environment remains
   explicitly nonisolated. Same-home owner testing does not certify friend
   deployment or V50 performance.
+
+## Completed follow-up
+
+M1 actual public UDP UI completed135-second sampling (137.043seconds helper window), exit confirmation and reconnect with the final alpha8 APK a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51. Independent phone SF cadence26.423FPS/full window26.310, maxgap265.225ms,78 gaps over100ms; trailing429.435ms unknown. It crossed the previous120-second cap but is not stable30 or an hour-long soak. Both current public descriptors requested3600seconds. Source BBB format was not independently reverified in this round.
+
+Cloud read-only follow-up found all26 `geo_in`/`geo_fwd` rule lines identical, temporary owned admission rule absent and formal NPS PID3412973 present. This excludes dynamic provider chains and counters; no whole-firewall byte identity claim.
+
+Current regression1301 checks passed unrestricted, Gradle assemble and lint passed. The restricted first attempt had local socket permission failures and is not reported as passing. Earlier unpublished e119e3 APK M5 run reported no_authenticated_media; final diagnostic APK repeated the existing-account path successfully. This is not evidence of a causal performance or connection fix.
+
+Phone lifetime is locally measured from the first authenticated video datagram; server lease begins at authenticated READY. One-hour reason1 is a local deadline, not a server expiry notification. End-reason3 can precede it under abnormal timing/network conditions. Array details are bounded prefix samples, not full-hour sampling.

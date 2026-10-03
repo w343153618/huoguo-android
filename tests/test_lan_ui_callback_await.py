@@ -80,7 +80,7 @@ public final class CallbackAwaitCheck {
         self.assertIn('box.setPadding(32,32,32,32)',source)
         self.assertIn('activity.setContentView(scroll);scroll.requestApplyInsets()',source)
         self.assertIn('给火锅的安卓 · 测试版',source)
-        self.assertIn('单次 120 秒',source)
+        self.assertIn('公网单次 1 小时',source)
         self.assertNotIn('HTTPS 仅登录；视频、声音、多指触控均走 UDP',source)
 
 if __name__=='__main__':unittest.main()

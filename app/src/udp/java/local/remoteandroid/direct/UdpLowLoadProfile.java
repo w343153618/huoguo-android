@@ -5,10 +5,15 @@ import java.util.Locale;
 /** Beta-only conservative starting point, not a claim of V50 performance. */
 final class UdpLowLoadProfile {
     private UdpLowLoadProfile(){}
-    // Append 30 FPS: alpha6/7 persisted indices 0=60, 1=120 stay unchanged.
+    // Save semantic FPS values so removed 120-FPS indices never become 60.
     static int fpsForIndex(int index){
-        if(index==0)return 60;if(index==1)return 120;if(index==2)return 30;
+        if(index==0)return 30;if(index==1)return 60;
         throw new IllegalArgumentException("fps_index_bound");
+    }
+    static int indexForSaved(Integer value,Integer legacy){
+        if(value!=null)return value==60?1:0;
+        // alpha6/7: 0=60, 1=120; earlier alpha8 candidate: 2=30.
+        return legacy!=null&&legacy==0?1:0;
     }
     static int displayHint(int fps){return Math.max(60,fps);}
     static boolean preferLowLoad(String manufacturer,String model,String hardware,String board,String soc){

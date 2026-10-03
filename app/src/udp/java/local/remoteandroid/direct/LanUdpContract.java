@@ -89,7 +89,7 @@ public final class LanUdpContract {
         try{if(key.length!=32)throw new IOException("descriptor_key_length");}finally{Arrays.fill(key,(byte)0);}
         int seconds=integer(data,"seconds"),fps=integer(data,"fps"),buffer=integer(data,"buffer_ms");
         validateAppMediaPeer(string(data,"peer_host"),integer(data,"peer_port"),expectedScope,expectedNode);
-        if(integer(data,"bind_port")!=0||seconds<1||seconds>120||fps!=30&&fps!=60&&fps!=120||buffer<30||buffer>100
+        if(integer(data,"bind_port")!=0||seconds<1||seconds>(NPS_SCOPE.equals(expectedScope)?3600:120)||fps!=30&&fps!=60&&fps!=120||buffer<30||buffer>100
             ||integer(data,"display_hz")!=(fps==30?0:120)||integer(data,"surface_submit_lead_ms")!=expectedLeadMs||!string(data,"video_release").equals("scheduled"))throw new IOException("descriptor_options");
         for(String name:new String[]{"audio_enabled","touch_enabled","async_video","decoder_reanchor_enabled"})if(!(data.get(name) instanceof Boolean))throw new IOException("descriptor_boolean");
         if(!((Boolean)data.get("touch_enabled"))||!((Boolean)data.get("async_video"))||!((Boolean)data.get("decoder_reanchor_enabled")))throw new IOException("descriptor_required_components");

@@ -62,6 +62,7 @@ import java.util.HashMap;
 public final class UiSelectionsCheck {
     private static final class SharedPreferences {
         final HashMap<String,Object> values=new HashMap<>();
+        boolean contains(String key){return values.containsKey(key);}
         int getInt(String key,int fallback){Object value=values.get(key);return value==null?fallback:(Integer)value;}
         String getString(String key,String fallback){Object value=values.get(key);return value==null?fallback:(String)value;}
     }
@@ -69,8 +70,11 @@ public final class UiSelectionsCheck {
     public static void main(String[] args)throws Exception{
         SharedPreferences saved=new SharedPreferences();
         if(savedSelection(saved,"scope",3,3)!=3)throw new AssertionError("fresh alpha6 not public M5");
-        if(savedSelection(saved,"fps",2,2)!=2||savedSelection(saved,"fps",2,0)!=0)throw new AssertionError("fresh FPS fallback lost");
-        for(int i=0;i<3;i++){saved.values.put("fps",i);if(savedSelection(saved,"fps",2,2)!=i||savedSelection(saved,"fps",2,0)!=i)throw new AssertionError("existing FPS selection reset");}
+        if(savedFpsSelection(saved)!=0)throw new AssertionError("fresh not stable30");
+        for(int i=0;i<3;i++){saved.values.put("fps",i);if(savedFpsSelection(saved)!=(i==0?1:0))throw new AssertionError("legacy FPS migration drift");}
+        saved.values.put("fps_value",60);if(savedFpsSelection(saved)!=1)throw new AssertionError("manual60 lost");
+        saved.values.put("fps_value",30);if(savedFpsSelection(saved)!=0)throw new AssertionError("manual30 lost");
+        saved.values.put("fps_value","60");if(savedFpsSelection(saved)!=0)throw new AssertionError("invalid FPS value accepted");
         for(int i=0;i<4;i++){saved.values.put("scope",i);if(savedSelection(saved,"scope",3,3)!=i)throw new AssertionError("legacy valid preference reset");}
         for(Object bad:new Object[]{-1,4,true,"3",3.0}){saved.values.put("scope",bad);if(savedSelection(saved,"scope",3,3)!=3)throw new AssertionError("invalid selection accepted");}
         if(!selectedScope(0).equals("lan")||!selectedScope(1).equals("tailnet")||!selectedScope(2).equals("nps_owner")||!selectedScope(3).equals("nps_owner"))throw new AssertionError("scope positions drift");
@@ -88,7 +92,7 @@ public final class UiSelectionsCheck {
     }
 }
 '''
-        result = run_java('local.remoteandroid.direct.UiSelectionsCheck', [(CONTRACT, None), ('UiSelectionsCheck.java', source)])
+        result = run_java('local.remoteandroid.direct.UiSelectionsCheck', [(CONTRACT, None), (ROOT/'app/src/udp/java/local/remoteandroid/direct/UdpLowLoadProfile.java',None), ('UiSelectionsCheck.java', source)])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('PASS actual scope and saved preference', result.stdout)
 

@@ -42,6 +42,9 @@ public final class UdpVideoProbe extends Instrumentation {
     private long packets,udpBytes,foreign,oversized,headerErrors,authErrors,replayErrors,authenticated;
     private long receivedMedia,bodyErrors;
     private volatile long queuedMedia,configRecords,inputTimeouts,waitingIdrDrops;
+    private boolean sessionLimitReached;
+    private int sessionEndReasonCode;
+    private long lastAuthenticatedServerNs;
     private long firstServerNs,startNs,endNs,clientSequence,readySent,feedbackSent,lastStatsNs;
     private volatile long lastQueuedPts=-1;
     private long lastBodyPts=-1;
@@ -426,7 +429,7 @@ public final class UdpVideoProbe extends Instrumentation {
             if(socket!=null)socket.close();
             try{
                 report.put("last_completed_stage",completed).put("start_ns",startNs).put("first_server_packet_ns",firstServerNs)
-                    .put("receive_end_ns",endNs).put("observation_end_ns",System.nanoTime())
+                    .put("session_limit_reached",sessionLimitReached?1:0).put("session_end_reason_code",sessionEndReasonCode).put("receive_end_ns",endNs).put("observation_end_ns",System.nanoTime())
                     .put("udp_packets",packets).put("udp_payload_bytes",udpBytes).put("foreign_peer_packets",foreign)
                     .put("oversized_packets",oversized).put("header_errors",headerErrors).put("authentication_errors",authErrors)
                     .put("replay_errors",replayErrors).put("authenticated_packets",authenticated).put("ready_requests",readySent)
@@ -595,7 +598,9 @@ public final class UdpVideoProbe extends Instrumentation {
         while(a.running&&a.generation==gen&&!appCancelled){
             checkVideoWorker();
             long now=System.nanoTime();long deadline=firstServerNs==0?overall:Math.min(overall,firstServerNs+session.seconds*1_000_000_000L);
-            if(now>=deadline)break;
+            if(now>=deadline){sessionLimitReached=true;sessionEndReasonCode=1;break;}
+            if(firstServerNs==0&&now-startNs>=10_000_000_000L){sessionEndReasonCode=2;throw new IOException("udp_first_video_timeout");}
+            if(firstServerNs!=0&&lastAuthenticatedServerNs!=0&&now-lastAuthenticatedServerNs>=10_000_000_000L){sessionEndReasonCode=3;throw new IOException("udp_authenticated_peer_timeout");}
             if(appActivity!=null&&now>=nextAlive){if(appPhysicalNetwork!=null)appPhysicalNetwork.requireUsable();sendPayload(socket,session,security,"ALIVE".getBytes(StandardCharsets.US_ASCII));nextAlive=now+750_000_000L;}
             if(firstServerNs==0&&now>=nextReady){sendPayload(socket,session,security,"READY".getBytes(StandardCharsets.US_ASCII));readySent++;nextReady=now+500_000_000L;}
             packet.setLength(data.length);
@@ -608,7 +613,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 else if(packet.getLength()>UdpVideoSecurity.MAX_DATAGRAM)oversized++;
                 else{
                     try{
-                        byte[] plaintext=security.open(data,packet.getLength());authenticated++;
+                        byte[] plaintext=security.open(data,packet.getLength());authenticated++;lastAuthenticatedServerNs=arrival;
                         int application=plaintext.length>=4?ByteBuffer.wrap(plaintext).getInt():0;
                         if(application==0x48475544){
                             authenticatedVideoPackets++;authenticatedVideoWireBytes+=packet.getLength()+28L;
@@ -646,7 +651,7 @@ public final class UdpVideoProbe extends Instrumentation {
                     // Preparing never spends the post-ready request budget. RX owns
                     // nonce allocation/sending; no codec call holds the Inbox monitor.
                     if(videoInbox.startupRequestDue(now)){
-                        sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;feedbackTimes.put(now);
+                        sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;if(keepDetail(feedbackTimes))feedbackTimes.put(now);
                     }
                     recoveryActive=false;recoveryAttempts=0;
                 }else{
@@ -654,7 +659,7 @@ public final class UdpVideoProbe extends Instrumentation {
                     if(needs&&!recoveryActive){recoveryActive=true;recoveryAttempts=0;nextFeedbackNs=now;}
                     if(!needs){recoveryActive=false;recoveryAttempts=0;}
                     if(firstServerNs!=0&&needs&&recoveryAttempts<3&&now>=nextFeedbackNs){
-                        sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;feedbackTimes.put(now);
+                        sendPayload(socket,session,security,"KEYFRAME".getBytes(StandardCharsets.US_ASCII));feedbackSent++;if(keepDetail(feedbackTimes))feedbackTimes.put(now);
                         recoveryAttempts++;nextFeedbackNs=now+(500_000_000L<<(recoveryAttempts-1));
                     }
                 }
@@ -662,7 +667,7 @@ public final class UdpVideoProbe extends Instrumentation {
             }
             if(now-previous[0]>=1_000_000_000L){
                 double seconds=(now-previous[0])/1e9;
-                samples.put(new JSONObject().put("t_ns",now).put("media_receive_fps",(receivedMedia-previous[1])/seconds)
+                if(keepDetail(samples))samples.put(new JSONObject().put("t_ns",now).put("media_receive_fps",(receivedMedia-previous[1])/seconds)
                     .put("codec_callback_fps",(a.presentedFrames.get()-previous[2])/seconds)
                     .put("authenticated_packets",authenticated).put("udp_payload_mbps",(udpBytes-previous[3])*8/seconds/1e6)
                     .put("late_discarded_fps",(a.lateDiscardedFrames.get()-previous[4])/seconds).put("native_fec",nativeStats(handle)));
@@ -707,7 +712,7 @@ public final class UdpVideoProbe extends Instrumentation {
             if(w<16||h<16||w>4096||h>4096||flags<0||(flags&CONFIG)!=0||pts>Long.MAX_VALUE/1000L
                     ||config<0||config>65536||au<5||au>8*1024*1024||config>0&&!idr
                     ||!annexB(body,20+config,au)||config>0&&!annexB(body,20,config)){bodyErrors++;continue;}
-            lastBodyPts=pts;receivedMedia++;auSizes.put(au);
+            lastBodyPts=pts;receivedMedia++;if(keepDetail(auSizes))auSizes.put(au);
             VideoFrame frame=new VideoFrame(body,w,h,config,au,pts,receivedNs,idr,0);
             if(videoInbox!=null)videoInbox.offer(frame);else processVideo(a,gen,frame);
         }
@@ -811,9 +816,9 @@ public final class UdpVideoProbe extends Instrumentation {
         }
         if(videoInbox!=null)videoInbox.success(frame,a,gen,videoWorkerStop||appCancelled);else waitingIdr=false;
         lastQueuedPts=frame.ptsUs;
-        inputs.put(new JSONObject().put("pts_us",frame.ptsUs).put("received_ns",frame.receivedNs).put("input_queued_ns",lastInputNs)
+        if(keepDetail(inputs))inputs.put(new JSONObject().put("pts_us",frame.ptsUs).put("received_ns",frame.receivedNs).put("input_queued_ns",lastInputNs)
             .put("access_unit_bytes",frame.auBytes).put("config_bytes",frame.configBytes).put("keyframe",frame.idr));
-        inputWait.put((lastInputNs-frame.receivedNs)/1e6);completed="media_queued";
+        if(keepDetail(inputWait))inputWait.put((lastInputNs-frame.receivedNs)/1e6);completed="media_queued";
         }finally{if(ownsConsumer)finishConsumer(stages,frame.ptsUs);}
     }
 
@@ -1007,6 +1012,7 @@ public final class UdpVideoProbe extends Instrumentation {
         JSONObject json=new JSONObject(new String(bytes,StandardCharsets.UTF_8));Arrays.fill(bytes,(byte)0);
         return parseSession(json,false);
     }
+    private boolean keepDetail(JSONArray values){return appActivity==null||values.length()<3600;}
     private static Session parseSession(JSONObject json,boolean appMode)throws Exception{
         String encoded=json.getString("key_b64"),tag=json.getString("session_tag_hex"),host=json.getString("peer_host");
         if(!encoded.matches("[A-Za-z0-9+/]{43}=")||!tag.matches("[0-9a-fA-F]{16}"))throw new IOException("session_key_encoding");
@@ -1031,7 +1037,7 @@ public final class UdpVideoProbe extends Instrumentation {
         // App NPS profiles are exact node/scope/public UDP tuples. Standalone
         // component probes retain their separately frozen 15961/15960 contract.
         if(appMode)LanUdpContract.validateAppMediaPeer(host,result.peerPort,json.getString("network_scope"),json.optString("node",""));
-        if(!appMode&&result.peerPort!=15961||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=30&&result.fps!=60&&result.fps!=120
+        if(!appMode&&result.peerPort!=15961||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>(appMode&&LanUdpContract.NPS_SCOPE.equals(json.optString("network_scope",""))?3600:120)||result.fps!=30&&result.fps!=60&&result.fps!=120
                 ||result.buffer<30||result.buffer>100||!result.release.equals("scheduled")&&!result.release.equals("immediate")||result.profile.length()>160
                 ||result.displayHz!=0&&result.displayHz!=60&&result.displayHz!=90&&result.displayHz!=120)
             throw new IOException("session_options_invalid");
@@ -1125,7 +1131,7 @@ public final class UdpVideoProbe extends Instrumentation {
 
     static JSONObject numericAppSummary(JSONObject report)throws Exception{
         JSONObject out=new JSONObject();
-        String[] scalars={"start_ns","first_server_packet_ns","receive_end_ns","observation_end_ns","fps_limit","buffer_ms",
+        String[] scalars={"requested_seconds","session_limit_reached","session_end_reason_code","start_ns","first_server_packet_ns","receive_end_ns","observation_end_ns","fps_limit","buffer_ms",
             "udp_packets","udp_payload_bytes","foreign_peer_packets","authentication_errors","replay_errors","received_media_frames",
             "queued_media_frames","source_width","source_height","decoder_input_timeouts","late_discarded_count","codec_callback_count","receive_loop_max_ms",
             "receive_processing_max_ms","receive_socket_wait_max_ms","video_worker_expired_frames","video_worker_stale_epoch_drops","audio_cleanup_confirmed",

@@ -52,13 +52,20 @@ HARNESS = r'''
         Session low=parseSession(descriptor(LanUdpContract.UDP_PORT,0).put("fps",30).put("display_hz",0),true);
         if(low.fps!=30||low.displayHz!=0)throw new AssertionError("30FPS parser drift");
         for(int bad:new int[]{0,24,90,121}){try{parseSession(descriptor(LanUdpContract.UDP_PORT,0).put("fps",bad),true);throw new AssertionError("unknown FPS accepted");}catch(IOException expected){}}
+        for(boolean appMode:new boolean[]{true,false}){
+            JSONObject bounded=descriptor(appMode?LanUdpContract.UDP_PORT:15961,appMode?0:15960).put("seconds",121);
+            try{parseSession(bounded,appMode);throw new AssertionError("non NPS duration extended");}catch(IOException expected){}
+        }
         Session legacy=parseSession(descriptor(15961,15960),false);
         if(legacy.peerPort!=15961||legacy.bindPort!=15960)throw new AssertionError("legacy probe changed");
         reject(45963,15960,false);reject(15961,0,false);
         for(String node:new String[]{"m1","m5"}){
             JSONObject publicDescriptor=descriptor(LanUdpContract.npsUdpPort(node),0)
                 .put("peer_host",LanUdpContract.NPS_HOST).put("network_scope",LanUdpContract.NPS_SCOPE).put("node",node);
-            Session publicSession=parseSession(publicDescriptor,true);
+            Session publicSession=parseSession(publicDescriptor.put("seconds",3600),true);
+            if(publicSession.seconds!=3600)throw new AssertionError("one-hour NPS parser drift");
+            try{parseSession(publicDescriptor.put("seconds",3601),true);throw new AssertionError("unbounded NPS duration");}catch(IOException expected){}
+            publicDescriptor.put("seconds",3600);
             if(publicSession.peerPort!=LanUdpContract.npsUdpPort(node))throw new AssertionError("public UDP parser mismatch");
             publicDescriptor.put("peer_port",node.equals("m1")?15558:15556);
             try{parseSession(publicDescriptor,true);throw new AssertionError("cross-node UDP accepted");}catch(IOException expected){}

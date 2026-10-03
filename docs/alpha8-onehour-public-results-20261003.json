@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "version": "1.31-alpha.8",
+  "code": 39,
+  "apk_sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+  "apk_size": 8373093,
+  "validation_scope": "CPU-limited OnePlus12, same-home WiFi via public NPS authenticated App UDP, nonisolated owner test",
+  "actual_V50_tested": false,
+  "cellular_tested": false,
+  "hour_soak_tested": false,
+  "optical_latency_measured": false,
+  "acoustic_sync_measured": false,
+  "format_reverified_this_round": false,
+  "tests_passed": 1301,
+  "nodes": {
+    "m1": {
+      "control_port": 49556,
+      "media_port": 15556,
+      "login_media": true,
+      "reconnect_media": true,
+      "exit_confirmation": true,
+      "v50_profile_button": true,
+      "seconds_observed": 137.042943021,
+      "requested_session_seconds": 3600,
+      "geometry": [
+        540,
+        960
+      ],
+      "fps_limit": 30,
+      "buffer_ms": 80,
+      "independent_sf_cadence_fps": 26.423,
+      "independent_sf_full_window_fps": 26.31,
+      "gaps_ms": {
+        "p50": 33.155,
+        "p95": 82.884,
+        "p99": 124.332,
+        "max": 265.225,
+        "over_50": 308,
+        "over_100": 78
+      },
+      "trailing_unobserved_ms": 429.435,
+      "sf_is_optical_measurement": false,
+      "source_format_readback_verified": false
+    },
+    "m5": {
+      "control_port": 49558,
+      "media_port": 15558,
+      "login_media": true,
+      "reconnect_media": true,
+      "exit_confirmation": true,
+      "v50_profile_button": true,
+      "seconds_observed": 22.076399678999998,
+      "requested_session_seconds": 3600,
+      "geometry": [
+        540,
+        960
+      ],
+      "fps_limit": 30,
+      "buffer_ms": 80,
+      "independent_sf_cadence_fps": 29.999,
+      "independent_sf_full_window_fps": 29.493,
+      "gaps_ms": {
+        "p50": 33.152,
+        "p95": 49.721,
+        "p99": 49.73,
+        "max": 49.735157,
+        "over_50": 0,
+        "over_100": 0
+      },
+      "trailing_unobserved_ms": 193.575,
+      "sf_is_optical_measurement": false,
+      "source_format_readback_verified": false
+    }
+  }
+}

@@ -9,13 +9,17 @@ JDK = Path('/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin')
 
 
 class LowLoadProfileCheck(unittest.TestCase):
-    def test_existing_fps_indices_and_conservative_identity_hints(self):
+    def test_semantic_fps_migration_and_conservative_identity_hints(self):
         fixture = '''package local.remoteandroid.direct;
 public final class ProfileCheck {
  static void ok(boolean value){if(!value)throw new AssertionError();}
  public static void main(String[] args){
-  ok(UdpLowLoadProfile.fpsForIndex(0)==60);ok(UdpLowLoadProfile.fpsForIndex(1)==120);ok(UdpLowLoadProfile.fpsForIndex(2)==30);
-  for(int index:new int[]{-1,3,Integer.MAX_VALUE}){try{UdpLowLoadProfile.fpsForIndex(index);throw new AssertionError();}catch(IllegalArgumentException expected){}}
+  ok(UdpLowLoadProfile.fpsForIndex(0)==30);ok(UdpLowLoadProfile.fpsForIndex(1)==60);
+  ok(UdpLowLoadProfile.indexForSaved(null,null)==0);ok(UdpLowLoadProfile.indexForSaved(null,0)==1);
+  ok(UdpLowLoadProfile.indexForSaved(null,1)==0);ok(UdpLowLoadProfile.indexForSaved(null,2)==0);
+  ok(UdpLowLoadProfile.indexForSaved(30,0)==0);ok(UdpLowLoadProfile.indexForSaved(60,1)==1);
+  ok(UdpLowLoadProfile.indexForSaved(120,0)==0);ok(UdpLowLoadProfile.indexForSaved(999,0)==0);
+  for(int index:new int[]{-1,2,3,Integer.MAX_VALUE}){try{UdpLowLoadProfile.fpsForIndex(index);throw new AssertionError();}catch(IllegalArgumentException expected){}}
   ok(UdpLowLoadProfile.displayHint(30)==60);ok(UdpLowLoadProfile.displayHint(60)==60);ok(UdpLowLoadProfile.displayHint(120)==120);
   ok(UdpLowLoadProfile.preferLowLoad("realme","真我 V50","","",""));
   ok(UdpLowLoadProfile.preferLowLoad("realme","RMX3783","mt6835","",""));

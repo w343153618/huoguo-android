@@ -504,7 +504,10 @@ public final class LanUiAcceptance extends Instrumentation {
             if(problem[0]!=null)throw new IllegalStateException("normal_UI_start",problem[0]);
             long deadline=SystemClock.elapsedRealtime()+25000;
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
-            if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("no_authenticated_media");
+            if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10){
+                try{report.put("connection_failure_code",(Integer)field(target.lanUdpEntry,"lastConnectionFailureCode"));}catch(NoSuchFieldException olderCandidate){}
+                throw new IllegalStateException("no_authenticated_media");
+            }
             report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");Thread.sleep(3000);
             long steadyStart=System.nanoTime();report.put("steady_media_started_ns",steadyStart);
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}

@@ -169,10 +169,21 @@
   "formal_app_version_code": 32,
   "formal_media_transport": "TLS/TCP maintenance release; isolated UDP experiment is separate",
   "current_source_display_setting_readback": {
-    "min_hz": 60.0,
-    "peak_hz": 60.0,
-    "scope": "live read-only ABBA preflight; not proof of 120 unique source FPS",
-    "evidence": "docs/evidence/socket-wait-20261002/preflight-live.json"
+    "m1": {
+      "physical_size": "1080x1920",
+      "density": 480,
+      "actual_mode_hz": 30.0,
+      "cpu_cores": 6,
+      "memory_mib": 16384
+    },
+    "m5": {
+      "physical_size": "720x1280",
+      "density": 320,
+      "actual_mode_hz": 30.0,
+      "cpu_cores": 8,
+      "memory_mib": 8192
+    },
+    "evidence": "docs/alpha8-physical30-onehour-deployment-20261003.md"
   },
   "latest_socket_wait_experiment": {
     "scope": "M1 real YouTube1080p60 UI selection; encoded720x1280, physicalLAN AES-GCM UDP to user CPU-limited OnePlus12; not WAN/V50/unique120FPS",
@@ -1071,7 +1082,7 @@
   },
   "next_source_task": {
     "priority": "UDP media only",
-    "immediate": "Safe owner gateway admission drain/handover and bounded real 30FPS media; friend host/LAN isolation separate",
+    "immediate": "Publish exact alpha8 artifact and update manifest; then UDP30 queue tail investigation on M1, no repeated TCP media matrix",
     "secondary": "Measure and reduce UDP receive/codec/Surface queue tails, then controlled50/80ms buffer comparison; no TCP media matrix",
     "preserve_formal": true
   },
@@ -1206,6 +1217,41 @@
     "VPN_on_packet_route_acceptance": false
   },
   "owner_udp_supervision_current": {
+    "source_commit": "dd43a39f49f6dceb55854fbc6e43367d34f381c3",
+    "observed_pids": {
+      "m1": 26875,
+      "m5": 55681
+    },
+    "jobs": {
+      "m1": "local.huoguo.m1.udp-owner-trial",
+      "m5": "local.huoguo.m5.udp-owner-trial"
+    },
+    "session_max_seconds": 3600,
+    "session_cap_scope": "public NPS owner only; LAN/Tailnet120",
+    "process_max_seconds": 0,
+    "formal_gateway_pids_unchanged": {
+      "m1": 41650,
+      "m5": 75248
+    },
+    "formal_NPS_pid_unchanged": 3412973,
+    "friend_isolation_accepted": false,
+    "evidence": "docs/alpha8-physical30-onehour-deployment-20261003.md"
+  },
+  "v50_udp_client_candidate_20261003": {
+    "version": "1.31-alpha.8",
+    "code": 39,
+    "published": false,
+    "apk_sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+    "source_checks": 1301,
+    "actual_phone": "CPU-limited OnePlus12; not V50",
+    "live_gateway_30fps_compatibility_deployed": true,
+    "public_m1_cross120_seconds_verified": true,
+    "public_m5_media_and_reconnect_verified": true,
+    "hour_soak_tested": false,
+    "friend_isolation_accepted": false,
+    "evidence": "docs/alpha8-onehour-public-results-20261003.json"
+  },
+  "owner_udp_supervision_previous": {
     "source_commit": "a7768280c31a46cecab794e91e9e19afb4f33eaf",
     "jobs": {
       "m1": "local.huoguo.m1.udp-owner-trial",
@@ -1234,17 +1280,5 @@
     "login_launchagents_reboot_acceptance": false,
     "friend_isolation_accepted": false,
     "evidence": "docs/owner-udp-launchagents-20261003.md"
-  },
-  "v50_udp_client_candidate_20261003": {
-    "version": "1.31-alpha.8",
-    "code": 39,
-    "published": false,
-    "apk_sha256": "c9dd06294e48855caf6a81c7d13190cfe37c76c071cd8e9c5d8045e3987a0de1",
-    "source_and_UI_checks_passed": true,
-    "source_check_count": 1252,
-    "actual_phone": "OnePlus12; not V50",
-    "live_gateway_30fps_compatibility_deployed": false,
-    "friend_isolation_accepted": false,
-    "evidence": "docs/v50-beta-adaptation-20261003.md"
   }
 }
