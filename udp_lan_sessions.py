@@ -19,6 +19,15 @@ from typing import Callable, Protocol
 
 from stream_settings import parse_bitrate_mode, parse_max_fps, parse_settings
 from udp_network_scope import TAILNET_HOST, rfc1918_address
+from udp_nps_profile import (Endpoint, NPS_OWNER_SCOPE, owner_profile,
+                             planned_profile, validate_public_endpoints)
+
+
+_NPS_OWNER_SETTING_FIELDS = frozenset({
+    'network_scope', 'node', 'max_size', 'video_bit_rate', 'bitrate_mode',
+    'max_fps', 'buffer_ms', 'seconds', 'surface_submit_lead_ms',
+    'audio', 'audio_enabled', 'touch', 'touch_enabled',
+})
 
 
 class SessionError(Exception):
@@ -40,8 +49,15 @@ def parse_udp_settings(settings: dict) -> dict:
         raise ValueError('Invalid settings object')
     normalized = dict(settings)
     scope = normalized.get('network_scope', 'lan')
-    if type(scope) is not str or scope not in ('lan', 'tailnet'):
+    if type(scope) is not str or scope not in ('lan', 'tailnet', NPS_OWNER_SCOPE):
         raise ValueError('Explicit supported UDP network scope required')
+    node = None
+    if scope == NPS_OWNER_SCOPE:
+        if set(settings) - _NPS_OWNER_SETTING_FIELDS:
+            raise ValueError('Closed NPS owner settings required')
+        # This only validates the identity. The trusted registry constructor
+        # controls M5 opt-in, guest bindings and account admission separately.
+        node = planned_profile(settings.get('node')).node
     normalized.setdefault('max_size', 1280)
     normalized.setdefault('video_bit_rate', 8_000_000)
     normalized.setdefault('bitrate_mode', 'VBR')
@@ -72,7 +88,7 @@ def parse_udp_settings(settings: dict) -> dict:
         if short_present and long_present and settings[name] != value:
             raise ValueError('Conflicting ' + name + ' options')
         toggles[long_name] = value
-    return {
+    result = {
         'max_size': size, 'video_bit_rate': bitrate,
         'bitrate_mode': mode, 'android_bitrate_mode': android_mode,
         'max_fps': fps, 'fps': fps, 'buffer_ms': buffer_ms, 'seconds': seconds,
@@ -80,6 +96,9 @@ def parse_udp_settings(settings: dict) -> dict:
         'surface_submit_lead_ms': lead_ms,
         **toggles,
     }
+    if scope == NPS_OWNER_SCOPE:
+        result['node'] = node
+    return result
 
 
 @dataclass(repr=False)
@@ -116,12 +135,14 @@ class UdpLanSessions:
     def __init__(self, peer_host: str, peer_port: int = 45963,
                  clock: Callable[[], float] = time.monotonic, *,
                  network_scope: str = 'lan', scope_guard: Callable[[], bool] | None = None,
-                 allow_owner_surface_submit_lead: bool = False):
+                 allow_owner_surface_submit_lead: bool = False,
+                 node: str | None = None, allow_m5_owner_trial: bool = False,
+                 guest_serial: str | None = None, guest_avd: str | None = None):
         try:
             address = ipaddress.IPv4Address(peer_host)
         except (ipaddress.AddressValueError, TypeError):
             raise ValueError('LAN peer_host must be a literal IPv4 address') from None
-        if network_scope not in ('lan', 'tailnet'):
+        if network_scope not in ('lan', 'tailnet', NPS_OWNER_SCOPE):
             raise ValueError('Invalid UDP network scope')
         if network_scope == 'lan' and not rfc1918_address(str(address)):
             raise ValueError('LAN peer_host must be a private LAN IPv4 address')
@@ -133,6 +154,28 @@ class UdpLanSessions:
             raise ValueError('Invalid UDP port')
         if type(allow_owner_surface_submit_lead) is not bool:
             raise ValueError('Owner Surface experiment opt-in must be a boolean')
+        if type(allow_m5_owner_trial) is not bool:
+            raise ValueError('Trusted M5 owner trial opt-in must be a boolean')
+        self._nps_profile = None
+        self._worker_backend = {}
+        if network_scope == NPS_OWNER_SCOPE:
+            profile = owner_profile(node, allow_m5_owner_trial=allow_m5_owner_trial)
+            if not callable(scope_guard):
+                raise ValueError('NPS owner requires a current verified scope guard')
+            if type(peer_host) is not str or peer_host != profile.public_media.host:
+                raise ValueError('Exact NPS public IPv4 required')
+            validate_public_endpoints(profile, profile.public_control,
+                Endpoint(peer_host, peer_port, 'udp'), network_scope=network_scope,
+                proxy_protocol=0, allow_m5_owner_trial=allow_m5_owner_trial)
+            if (type(guest_serial) is not str or type(guest_avd) is not str
+                    or guest_serial != profile.guest_serial or guest_avd != profile.guest_avd):
+                raise ValueError('Exact trusted node guest binding required')
+            self._nps_profile = profile
+            self._worker_backend = dict(local_bind_host=profile.local_udp.host,
+                local_bind_port=profile.local_udp.port,
+                guest_serial=guest_serial, guest_avd=guest_avd)
+        elif node is not None or allow_m5_owner_trial or guest_serial is not None or guest_avd is not None:
+            raise ValueError('NPS owner parameters require explicit NPS owner scope')
         self._peer_host, self._peer_port, self._clock = str(address), peer_port, clock
         self._network_scope, self._scope_guard = network_scope, scope_guard
         self._allow_owner_surface_submit_lead = allow_owner_surface_submit_lead
@@ -238,12 +281,16 @@ class UdpLanSessions:
     def create(self, account: str, settings: dict,
                factory: Callable[[dict], Worker]) -> dict:
         self._account(account)
+        if self._network_scope == NPS_OWNER_SCOPE and account != 'wyw':
+            raise SessionError(403, 'nps_owner_account_required')
         try:
             options = parse_udp_settings(settings)
         except ValueError:
             raise SessionError(400, 'invalid_udp_settings') from None
         if options['network_scope'] != self._network_scope:
             raise SessionError(400, 'udp_network_scope_mismatch')
+        if self._nps_profile is not None and options.get('node') != self._nps_profile.node:
+            raise SessionError(400, 'udp_node_profile_mismatch')
         if options['surface_submit_lead_ms'] != 0 and not self._allow_owner_surface_submit_lead:
             raise SessionError(400, 'owner_surface_submit_experiment_not_enabled')
         if not self._scope_ok():
@@ -276,7 +323,9 @@ class UdpLanSessions:
             self._quiescent.clear()
         worker = None
         try:
-            worker = factory(dict(config))
+            # Only the owned factory sees server-selected loopback/guest data.
+            # The public descriptor and lifecycle record remain projection-only.
+            worker = factory({**config, **self._worker_backend})
             if not callable(getattr(worker, 'start', None)) or not callable(getattr(worker, 'stop', None)):
                 raise TypeError('Worker lifecycle required')
         except Exception:

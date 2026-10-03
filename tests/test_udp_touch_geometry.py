@@ -63,6 +63,25 @@ class UdpTouchGeometryCheck(unittest.TestCase):
                 with self.assertRaises(type(error)):
                     read_touch_geometry('/independent/platform-tools/adb')
 
+    def test_explicit_m5_emulator_queries_only_that_source_and_retains_parser(self):
+        with patch('run_phone_udp.subprocess.run', return_value=SimpleNamespace(
+                stdout=b'Physical size: 720x1280\n')) as run:
+            report = read_touch_geometry('/independent/platform-tools/adb',
+                                         source_serial='emulator-5554')
+        self.assertEqual((report['effective_width'], report['effective_height']), (720, 1280))
+        run.assert_called_once_with(['/independent/platform-tools/adb', '-s', 'emulator-5554',
+                                     'shell', 'wm', 'size'], stdin=subprocess.DEVNULL,
+                                    check=True, capture_output=True, timeout=5)
+
+    def test_untrusted_phone_or_malformed_source_serial_never_queries_adb(self):
+        for serial in ('physical-phone', '127.0.0.1:5555', '', 'emulator-0',
+                       'emulator-05554', 'emulator-65536', 'emulator-5554;id',
+                       'emulator-5554\n', None, True, 5554):
+            with self.subTest(serial=serial), patch('run_phone_udp.subprocess.run') as run:
+                with self.assertRaises(ValueError):
+                    read_touch_geometry('/independent/platform-tools/adb', source_serial=serial)
+                run.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

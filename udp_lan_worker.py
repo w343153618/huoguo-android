@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import select
 import socket
 import struct
@@ -46,9 +47,31 @@ class LanMediaWorker:
         'udp_sender_state', 'udp_auth_seal', 'formal_busy_guard', 'not_instrumented'))
 
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
-                 native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False):
+                 native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False,
+                 *, guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare'):
         if type(enobufs_retry_enabled) is not bool:
             raise ValueError('owner_enobufs_retry_boolean_required')
+        if (type(guest_serial) is not str
+                or re.fullmatch(r'emulator-[1-9][0-9]{0,4}', guest_serial) is None
+                or int(guest_serial[len('emulator-'):]) > 65535
+                or type(guest_avd) is not str
+                or re.fullmatch(r'[A-Za-z0-9_.-]{1,64}', guest_avd) is None):
+            raise ValueError('explicit_emulator_guest_required')
+        # Only the authenticated owner NPS adapter may separate the public
+        # advertised tuple from this worker's fixed loopback bind. LAN/Tailnet
+        # retain their previous peer_port bind and M1 guest defaults exactly.
+        self.guest_serial, self.guest_avd = guest_serial, guest_avd
+        if config.get('network_scope') == 'nps_owner':
+            if (peer_ip != '127.0.0.1' or host_ip != '127.0.0.1' or interface != 'lo0'
+                    or config.get('local_bind_host') != '127.0.0.1'
+                    or type(config.get('local_bind_port')) is not int
+                    or config['local_bind_port'] != 45965
+                    or config.get('guest_serial') != guest_serial
+                    or config.get('guest_avd') != guest_avd):
+                raise ValueError('fixed_NPS_loopback_worker_required')
+            self.local_bind_port = config['local_bind_port']
+        else:
+            self.local_bind_port = config['peer_port']
         self.enobufs_retry_enabled = enobufs_retry_enabled
         self.config = dict(config)
         self.sid = config['session']
@@ -95,7 +118,7 @@ class LanMediaWorker:
             if self.udp.getsockopt(socket.IPPROTO_IP, 25) != ifindex:
                 raise RuntimeError('physical_UDP_interface_mismatch')
             self.udp.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024*1024)
-            self.udp.bind((host_ip, config['peer_port']))
+            self.udp.bind((host_ip, self.local_bind_port))
             self.udp.settimeout(.1)
             self._background('authenticated_udp_ingress', self._receive)
         except Exception:
@@ -266,7 +289,7 @@ class LanMediaWorker:
         self.recovery = RecoveryController(self.target_bps, 32_000_000)
         self.network = NetworkFeedbackController(self.target_bps, 32_000_000)
         # Hardware owns only this candidate worker's process group and channels.
-        hardware = HostHardwareSession(self.runtime, 'emulator-5556', 'RemoteAndroid17Compare',
+        hardware = HostHardwareSession(self.runtime, self.guest_serial, self.guest_avd,
             config['max_size'], self.target_bps, config['fps'], config['bitrate_mode'],
             raw_queue_policy='fifo', native_encoder=self.native_encoder, sps_low_delay=True,
             raw_submit_fps=config['fps'], matched_experimental_client=True)
@@ -281,7 +304,8 @@ class LanMediaWorker:
             self.gate = SocketVideoGate(self.sender, lambda reason: self._request_idr('socket'), max_events=128)
             if config['touch_enabled']:
                 from run_phone_udp import read_touch_geometry
-                geometry = read_touch_geometry(str(Path.home()/'Library/Android/sdk/platform-tools/adb'))
+                geometry = read_touch_geometry(str(Path.home()/'Library/Android/sdk/platform-tools/adb'),
+                                               source_serial=self.guest_serial)
                 self.touch = UdpTouchBridge(geometry['effective_width'], geometry['effective_height'],
                     self._write_touch, lambda data: self.sender.send(data, 'touch_ack'), cancel_capable=True)
             for name, operation in (('feed', self._feed), ('video', self._video), ('audio', self._audio),
@@ -707,9 +731,15 @@ class LanMediaWorker:
             'missing_after_graceful_exit' if self.native_shutdown['process_exit_confirmed'] else
             'missing_process_exit_unconfirmed')
         network_scope = self.config.get('network_scope', 'lan')
+        source = 'M1_emulator_5556'
+        path = ('physical_LAN_AESGCM_UDP' if network_scope == 'lan'
+                else 'registered_Tailnet_inner_AESGCM_UDP_outer_path_unverified')
+        if network_scope == 'nps_owner':
+            source = self.config['node'] + '_' + self.guest_serial.replace('-', '_')
+            path = 'NPS_public_UDP_task_AESGCM_UDP_inner_bridge_unverified'
         report = {'scope': 'authenticated_App_'+network_scope+'_UDP_candidate_not_public_or_optical_acceptance',
                   'network_scope': network_scope,
-                  'source': 'M1_emulator_5556', 'path': ('physical_LAN_AESGCM_UDP' if network_scope=='lan' else 'registered_Tailnet_inner_AESGCM_UDP_outer_path_unverified'),
+                  'source': source, 'path': path,
                   'counts': dict(self.counts), 'failure_class': self.failure,
                   'failure_role': self.failure_role, 'failure_operation': self.failure_operation,
                   'failure_observed_host_monotonic_ns': self.failure_observed_host_ns,

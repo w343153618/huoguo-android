@@ -52,6 +52,44 @@ class ProfileChecks(unittest.TestCase):
         with self.assertRaisesRegex(ProfileError, 'friend_deployment_isolation_gate_required'):
             owner_profile('m5')
 
+    def test_m5_owner_trial_needs_a_trusted_typed_server_flag(self):
+        profile = owner_profile('m5', allow_m5_owner_trial=True)
+        self.assertEqual(profile.deployment, 'owner_nonisolated')
+        self.assertEqual((profile.guest_serial, profile.guest_avd), ('emulator-5554', 'phone17-root'))
+        self.assertIs(validate_owner_request({'node': 'm5', 'network_scope': 'nps_owner'},
+                                             allow_m5_owner_trial=True), profile)
+        validate_public_endpoints(profile, profile.public_control, profile.public_media,
+            network_scope='nps_owner', proxy_protocol=0, allow_m5_owner_trial=True)
+        validate_loopback_backend(profile, profile.local_https, profile.local_udp,
+            'lo0', proxy_protocol=0, allow_m5_owner_trial=True)
+        validate_proxy_peer(profile, ('127.0.0.1', 50001), allow_m5_owner_trial=True)
+        # Possessing the trial profile cannot bypass a default-OFF call site.
+        with self.assertRaises(ProfileError):
+            validate_proxy_peer(profile, ('127.0.0.1', 50001))
+        for value in (None, 0, 1, 'true', 'false', 1.0):
+            with self.subTest(value=value), self.assertRaises(ProfileError):
+                owner_profile('m5', allow_m5_owner_trial=value)
+
+    def test_client_owner_trial_flag_and_guest_fields_cannot_authorize_m5(self):
+        for field, value in (('allow_m5_owner_trial', True), ('owner_trial', True),
+                             ('guest_serial', 'emulator-5554'), ('guest_avd', 'phone17-root')):
+            body = {'node': 'm5', 'network_scope': 'nps_owner', field: value}
+            with self.subTest(field=field), self.assertRaisesRegex(ProfileError, 'closed_nps_identity_required'):
+                validate_owner_request(body, allow_m5_owner_trial=True)
+
+    def test_guest_targets_are_bound_to_the_known_node(self):
+        self.assertEqual((M1_OWNER.guest_serial, M1_OWNER.guest_avd),
+                         ('emulator-5556', 'RemoteAndroid17Compare'))
+        for profile, changes in (
+            (M1_OWNER, {'guest_serial': 'emulator-5554'}),
+            (M1_OWNER, {'guest_avd': 'phone17-root'}),
+            (M5_PLANNED, {'guest_serial': 'emulator-5556'}),
+            (M5_PLANNED, {'guest_avd': 'RemoteAndroid17Compare'}),
+            (M1_OWNER, {'guest_serial': None}),
+        ):
+            with self.subTest(node=profile.node, changes=changes), self.assertRaises(ProfileError):
+                replace(profile, **changes)
+
     def test_unknown_node_and_aliases_do_not_select_another_host(self):
         for node in (None, True, 1, b'm1', '', 'M1', 'M5', 'm1 ', 'm2',
                      'Macbook-m1-64', '100.65.0.2', ['m1']):
@@ -210,10 +248,12 @@ class AdmissionChecks(unittest.TestCase):
             with self.subTest(seconds=seconds), self.assertRaises(ProfileError):
                 validate_session_seconds(seconds)
 
-    def test_existing_lan_tailnet_contract_remains_unmodified_and_public_scope_unintegrated(self):
+    def test_existing_lan_tailnet_parser_contract_remains_unmodified(self):
         from udp_lan_sessions import UdpLanSessions, parse_udp_settings
         self.assertEqual(parse_udp_settings({})['network_scope'], 'lan')
         self.assertEqual(parse_udp_settings({'network_scope': 'tailnet'})['network_scope'], 'tailnet')
+        # New scope is closed and requires an explicit node; old callers do not
+        # acquire a public profile merely by changing their scope string.
         with self.assertRaises(ValueError):
             parse_udp_settings({'network_scope': 'nps_owner'})
         with self.assertRaises(ValueError):

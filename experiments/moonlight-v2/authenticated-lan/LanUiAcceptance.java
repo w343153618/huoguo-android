@@ -29,6 +29,16 @@ public final class LanUiAcceptance extends Instrumentation {
     public void onCreate(Bundle arguments){this.arguments=arguments;super.onCreate(arguments);start();}
     private int rateIndex(){int value=Integer.parseInt(arguments.getString("rate_index","2"));if(value<0||value>4)throw new IllegalArgumentException("rate_index_bound");return value;}
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    private String networkScope(){String value=arguments.getString("network_scope","lan");
+        if(!value.equals("lan")&&!value.equals("tailnet")&&!value.equals("nps_owner"))throw new IllegalArgumentException("scope_bound");return value;}
+    private String node(){String value=arguments.getString("node","");
+        if(networkScope().equals("nps_owner")){
+            if(!value.equals("m1")&&!value.equals("m5"))throw new IllegalArgumentException("node_bound");
+        }else if(!value.isEmpty())throw new IllegalArgumentException("unexpected_node");return value;}
+    private int scopeIndex(){return networkScope().equals("nps_owner")?(node().equals("m1")?2:3):networkScope().equals("tailnet")?1:0;}
+    private String controlAddress()throws Exception{return networkScope().equals("nps_owner")?
+        LanUdpContract.NPS_HOST+":"+LanUdpContract.npsHttpsPort(node()):
+        (networkScope().equals("tailnet")?LanUdpContract.TAILNET_HOST:"192.168.9.128")+":"+LanUdpContract.HTTPS_PORT;}
     private boolean codecStartup(){String value=arguments.getString("codec_startup","off");
         if(!value.equals("on")&&!value.equals("off"))throw new IllegalArgumentException("codec_startup_bound");return value.equals("on");}
     private boolean stageDiagnostics(){String value=arguments.getString("stage_diagnostics","on");
@@ -61,10 +71,10 @@ public final class LanUiAcceptance extends Instrumentation {
             .put("steady_progress_samples",rows).put("steady_progress_is_presented_fps",false);
     }
     private void prepareUi(MainActivity target,String username,String password)throws Exception{
-        Object ui=target.lanUdpEntry;String scope=arguments.getString("network_scope","lan");
-        if(!scope.equals("lan")&&!scope.equals("tailnet"))throw new IllegalArgumentException("scope_bound");
-        ((Spinner)field(ui,"scope")).setSelection(scope.equals("tailnet")?1:0);
-        ((EditText)field(ui,"address")).setText((scope.equals("tailnet")?"100.65.0.2":"192.168.9.128")+":"+LanUdpContract.HTTPS_PORT);
+        Object ui=target.lanUdpEntry;
+        if(networkScope().equals("nps_owner")&&!username.equals("wyw"))throw new IllegalArgumentException("nps_owner_account_required");
+        ((Spinner)field(ui,"scope")).setSelection(scopeIndex());
+        ((EditText)field(ui,"address")).setText(controlAddress());
         ((EditText)field(ui,"user")).setText(username);((EditText)field(ui,"password")).setText(password);
         ((Spinner)field(ui,"rate")).setSelection(rateIndex());
         ((Spinner)field(ui,"quality")).setSelection(2);((Spinner)field(ui,"fps")).setSelection(0);
@@ -78,6 +88,45 @@ public final class LanUiAcceptance extends Instrumentation {
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
         Field field=target.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(target);
+    }
+    /** Actual in-flight App attempt and parsed receiver tuple, not a request echo.
+     * No credential, key, tag, session id or arbitrary server text is read/exported.
+     * Release the UI monitor before any wait, Back, codec call or network work.
+     */
+    private void verifyNetworkReadback(MainActivity target,JSONObject report,String stage)throws Exception{
+        Object ui=target.lanUdpEntry;String actualScope,actualNode,actualControl,peer;int port;
+        synchronized(field(ui,"lock")){
+            Object current=field(ui,"current");if(current==null)throw new IllegalStateException("network_attempt_missing");
+            actualScope=(String)field(current,"networkScope");actualControl=(String)field(current,"endpoint");
+            // Existing alpha5 attempts have no node; only alpha6 public trials
+            // require this new field. Preserve old LAN/Tailnet helper behavior.
+            actualNode=networkScope().equals("nps_owner")?(String)field(current,"node"):"";
+            Object receiver=field(current,"receiver");if(receiver==null)throw new IllegalStateException("network_receiver_missing");
+            Object parsed=field(receiver,"appSession");if(parsed==null)throw new IllegalStateException("network_session_missing");
+            peer=((java.net.InetAddress)field(parsed,"peer")).getHostAddress();port=(Integer)field(parsed,"peerPort");
+        }
+        Endpoint.Address expected=Endpoint.parse(Endpoint.destination(controlAddress()));
+        if(!actualScope.equals(networkScope())||!actualNode.equals(node())
+                ||!actualControl.equals(Endpoint.destination(controlAddress())))throw new IllegalStateException("network_attempt_binding");
+        if(networkScope().equals("nps_owner")){
+            LanUdpContract.validateLogin(expected.host,expected.port,actualScope,actualNode);
+            LanUdpContract.validateAppMediaPeer(peer,port,actualScope,actualNode);
+        }else{
+            LanUdpContract.validateLogin(expected.host,expected.port,actualScope);
+            if(port!=LanUdpContract.UDP_PORT)throw new IllegalStateException("network_media_port_binding");
+        }
+        if(!peer.equals(expected.host))throw new IllegalStateException("network_peer_binding");
+        report.put(stage+"_actual_network_scope",actualScope).put(stage+"_actual_node",actualNode)
+            .put(stage+"_actual_control_host",expected.host).put(stage+"_actual_control_port",expected.port)
+            .put(stage+"_actual_media_peer_host",peer).put(stage+"_actual_media_peer_port",port)
+            .put(stage+"_actual_received_frames",target.receivedFrames.get())
+            .put(stage+"_actual_codec_callback_count",target.presentedFrames.get())
+            .put(stage+"_network_readback_verified",true).put(stage+"_media_transport_code",1)
+            .put(stage+"_media_transport_is_App_UDP_not_NPC_outer_verification",true);
+    }
+    private boolean ownsAttempt(Object ui,Object owned)throws Exception{
+        if(owned==null)return false;
+        synchronized(field(ui,"lock")){return field(ui,"current")==owned||field(ui,"retiring")==owned;}
     }
     private void waitReport(File report)throws Exception{
         long deadline=SystemClock.elapsedRealtime()+20000;
@@ -219,12 +268,16 @@ public final class LanUiAcceptance extends Instrumentation {
     }
     public void onStart(){
         JSONObject report=new JSONObject();Bundle result=new Bundle();MainActivity a=null;
+        final boolean publicTrial=arguments.getString("network_scope","lan").equals("nps_owner");
+        final Object[] ownedAttempt={null};
         File credential=new File(getTargetContext().getFilesDir(),"udp-test-login.json");Window.Callback original=null;
         try{
             report.put("requested_surface_submit_lead_ms",surfaceLeadMs());
             report.put("requested_stage_diagnostics_enabled",stageDiagnostics());
             report.put("requested_codec_startup_ready_enabled",codecStartup());
             report.put("requested_steady_seconds",steadySeconds());
+            report.put("requested_network_scope",networkScope()).put("requested_node",node())
+                .put("requested_scope_index",scopeIndex()).put("physical_FPS_acceptance",false);
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
             for(boolean enabled:new boolean[]{false,true,true,false})rows.put(new JSONObject()
                 .put("diagnostics_enabled",enabled).put("iterations",100000).put("elapsed_ns",bench(enabled,100000)));
@@ -234,8 +287,11 @@ public final class LanUiAcceptance extends Instrumentation {
             try(FileInputStream in=new FileInputStream(credential)){if(in.read(bytes)!=bytes.length)throw new IllegalStateException("input_read");}
             JSONObject login=new JSONObject(new String(bytes,StandardCharsets.UTF_8));java.util.Arrays.fill(bytes,(byte)0);
             if(!credential.delete())throw new IllegalStateException("input_cleanup");
+            if(networkScope().equals("nps_owner")&&!login.getString("username").equals("wyw"))throw new IllegalStateException("nps_owner_account_required");
             a=(MainActivity)startActivitySync(new Intent().setClassName(getTargetContext().getPackageName(),"local.remoteandroid.direct.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             waitForIdleSync();MainActivity target=a;testActivity=a;
+            if(publicTrial){Object ui=target.lanUdpEntry;
+                synchronized(field(ui,"lock")){if(field(ui,"current")!=null||field(ui,"retiring")!=null)throw new IllegalStateException("existing_UI_attempt_busy");}}
             final Window.Callback[] previous={null};runOnMainSync(()->previous[0]=target.getWindow().getCallback());
             original=previous[0];final Window.Callback delegate=original;
             runOnMainSync(()->target.getWindow().setCallback((Window.Callback)java.lang.reflect.Proxy.newProxyInstance(
@@ -253,6 +309,7 @@ public final class LanUiAcceptance extends Instrumentation {
                 prepareUi(target,login.getString("username"),login.getString("password"));
                 android.view.ViewGroup decor=(android.view.ViewGroup)target.getWindow().getDecorView();
                 if(!clickStart(decor))throw new IllegalStateException("normal_UI_start_button_missing");
+                if(publicTrial)ownedAttempt[0]=field(target.lanUdpEntry,"current");
             }catch(Throwable e){problem[0]=e;}});
             final String username=login.getString("username"),password=login.getString("password");
             login.remove("password");login.remove("username");
@@ -260,7 +317,7 @@ public final class LanUiAcceptance extends Instrumentation {
             long deadline=SystemClock.elapsedRealtime()+25000;
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("no_authenticated_media");
-            report.put("normal_UI_login_received_media",true);Thread.sleep(3000);
+            report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");Thread.sleep(3000);
             long steadyStart=System.nanoTime();report.put("steady_media_started_ns",steadyStart);
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
             waitSteady(target,report,steadyStart);
@@ -325,19 +382,22 @@ public final class LanUiAcceptance extends Instrumentation {
             runOnMainSync(()->{try{
                 prepareUi(target,username,password);
                 if(!clickStart(target.getWindow().getDecorView()))throw new IllegalStateException("reconnect_UI_button_missing");
+                if(publicTrial)ownedAttempt[0]=field(target.lanUdpEntry,"current");
             }catch(Throwable e){problem[0]=e;}});
             if(problem[0]!=null)throw new IllegalStateException("normal_UI_reconnect",problem[0]);
             deadline=SystemClock.elapsedRealtime()+25000;
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)throw new IllegalStateException("reconnect_no_authenticated_media");
-            Thread.sleep(2500);report.put("normal_UI_reconnected_received_media",true);
+            Thread.sleep(2500);report.put("normal_UI_reconnected_received_media",true);verifyNetworkReadback(target,report,"second");
             if(!mediaOnly()){pointers(target,2,false,false);Thread.sleep(400);}
             runOnMainSync(()->target.handleBack());waitReport(first);
             verifySurfaceReadback(first,report,"second");
             waitAudioThreadsGone(report,"second_leave");
             report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
-        finally{credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);if(target.lanUdpEntry!=null)target.lanUdpEntry.cancel(true);});}}
+        finally{credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);
+            if(target.lanUdpEntry!=null)try{if(!publicTrial||ownsAttempt(target.lanUdpEntry,ownedAttempt[0]))target.lanUdpEntry.cancel(true);}catch(Exception ignored){}
+        });}}
         result.putString("numeric_result",report.toString());finish(report.has("failure_class")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
     }
     private static boolean clickStart(android.view.View view){

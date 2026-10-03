@@ -163,9 +163,18 @@ def parse_touch_geometry(output):
             'override_present': 'Override' in sizes}
 
 
-def read_touch_geometry(adb_path):
-    """Only query the explicit source emulator; never the phone --serial."""
-    result = subprocess.run([str(adb_path), '-s', TOUCH_SOURCE_SERIAL,
+def read_touch_geometry(adb_path, *, source_serial=TOUCH_SOURCE_SERIAL):
+    """Only query an explicitly selected emulator; never the phone --serial.
+
+    The old M1 probe default remains unchanged. The independent authenticated
+    NPS adapter supplies its server-selected guest; HTTP/App settings cannot
+    select a host ADB target or a physical phone.
+    """
+    if (type(source_serial) is not str
+            or re.fullmatch(r'emulator-[1-9][0-9]{0,4}', source_serial) is None
+            or int(source_serial[len('emulator-'):]) > 65535):
+        raise ValueError('Explicit source emulator serial required')
+    result = subprocess.run([str(adb_path), '-s', source_serial,
                              'shell', 'wm', 'size'],
                             stdin=subprocess.DEVNULL, check=True,
                             capture_output=True, timeout=5)

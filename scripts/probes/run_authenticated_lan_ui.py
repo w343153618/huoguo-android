@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded normal-UI LAN acceptance; preplaced owner-only account input required.
+"""Bounded normal-UI UDP acceptance; preplaced owner-only account input required.
 
 Does not create accounts, read a host credential or provision a UDP key. Outputs
 only bounded numeric test reports, never instrumentation/system raw logs.
@@ -15,6 +15,39 @@ import time
 
 ROOT = Path(__file__).resolve().parents[2]
 PRIVATE = '/data/user/0/local.remoteandroid.direct.experiment/files/'
+sys.path.insert(0, str(ROOT))
+from udp_nps_profile import planned_profile
+
+
+def verify_nps_network_readback(result, node):
+    """Check the App's current attempt and parsed receiver, not requested settings.
+
+    This establishes selected public tuples only. NPC outer transit, geography,
+    independent content presentation and physical latency need separate evidence.
+    """
+    if not isinstance(result, dict) or 'failure_class' in result or node not in ('m1', 'm5'):
+        return False
+    profile = planned_profile(node)
+    if (result.get('requested_network_scope') != 'nps_owner'
+            or result.get('requested_node') != node):
+        return False
+    for stage in ('first', 'second'):
+        expected = {'actual_network_scope': 'nps_owner', 'actual_node': node,
+            'actual_control_host': profile.public_control.host,
+            'actual_control_port': profile.public_control.port,
+            'actual_media_peer_host': profile.public_media.host,
+            'actual_media_peer_port': profile.public_media.port,
+            'network_readback_verified': True, 'media_transport_code': 1,
+            'media_transport_is_App_UDP_not_NPC_outer_verification': True}
+        for key, value in expected.items():
+            actual = result.get(stage + '_' + key)
+            if type(actual) is not type(value) or actual != value:
+                return False
+        for key, floor in (('actual_received_frames', 15), ('actual_codec_callback_count', 10)):
+            value = result.get(stage + '_' + key)
+            if type(value) is not int or value < floor:
+                return False
+    return True
 
 
 def verify_surface_submit_readback(result, expected_lead):
@@ -161,14 +194,19 @@ def reap_owned_process(proc, report, operation, wait_timeout, terminate=False):
     return None
 
 
-def main():
+def parse_arguments(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phone', default='f7fc9469')
-    p.add_argument('--guest', default='emulator-5556')
+    p.add_argument('--guest', default=None,
+                   help='Explicit source emulator on this ADB server; public M5 may use phone-only sampling')
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--touch-mode', choices=['direct','os','adb','kernel'], default='direct')
     p.add_argument('--rate-index', type=int, choices=range(5), default=2)
-    p.add_argument('--network-scope', choices=['lan','tailnet'], default='lan')
+    p.add_argument('--network-scope', choices=['lan','tailnet','nps_owner'], default='lan')
+    p.add_argument('--node', choices=['m1','m5'], default=None,
+                   help='Required exact public owner-trial node; not allowed for LAN/Tailnet')
+    p.add_argument('--phone-only-sampler', action='store_true',
+                   help='Media-only: collect phone SF, omit unavailable remote source ADB; never claim source cadence')
     p.add_argument('--pcm-queue', choices=['off','on'], default='off')
     p.add_argument('--stage-diagnostics', choices=['off','on'], default='on',
                    help='Owner instrumentation only: stage sampling on/off, frozen before media startup')
@@ -180,7 +218,25 @@ def main():
                    help='Bounded SF steady window; helper waits this duration plus 2 seconds before reconnect')
     p.add_argument('--media-only', action='store_true')
     p.add_argument('--source-description', default='Morphe YouTube real video; selected content format requires separate readback')
-    args = p.parse_args()
+    args = p.parse_args(argv)
+    if (args.network_scope == 'nps_owner') != (args.node is not None):
+        p.error('Public owner scope requires explicit node; existing scopes do not accept node')
+    if args.phone_only_sampler and not args.media_only:
+        p.error('Phone-only sampler requires media-only; no remote source touch setup')
+    if args.network_scope == 'nps_owner' and args.node == 'm5' and not args.phone_only_sampler:
+        p.error('Public M5 requires phone-only media sampling; remote source ADB identity is not verified by this driver')
+    if args.network_scope == 'nps_owner':
+        profile = planned_profile(args.node)
+        args.guest = args.guest or profile.guest_serial
+        if args.guest != profile.guest_serial:
+            p.error('Explicit source guest must match the fixed public node profile')
+    else:
+        args.guest = args.guest or 'emulator-5556'
+    return args
+
+
+def main():
+    args = parse_arguments()
     args.output.mkdir(parents=True, exist_ok=True)
 
     def adb(serial, command, check=True):
@@ -194,10 +250,23 @@ def main():
     proc = None
     instrumentation_reaped = False
     samplers=[]
-    report={'scope':'normal App UI existing account; isolated '+('physical LAN' if args.network_scope=='lan' else 'registered Tailnet')+' UDP; outer path requires separate evidence',
+    scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
+                   if args.network_scope == 'tailnet' else 'owner nonisolated public NPS')
+    report={'scope':'normal App UI existing account; isolated '+scope_label+' UDP; outer path requires separate evidence',
             'source':args.source_description+('' if args.media_only else '; dedicated receipt only during touch phase'),
             'phone_sampler_started':False,'touch_source_switched':False}
     report.update(touch_mode=args.touch_mode, video_target_bps=[4000000,8000000,12000000,16000000,24000000][args.rate_index],network_scope=args.network_scope,pcm_queue_enabled=args.pcm_queue=='on',media_only=args.media_only,requested_surface_submit_lead_ms=args.surface_submit_lead_ms,requested_steady_seconds=args.steady_seconds,requested_stage_diagnostics_enabled=args.stage_diagnostics=='on',requested_codec_startup_ready_enabled=args.codec_startup=='on')
+    if args.network_scope == 'nps_owner':
+        profile = planned_profile(args.node)
+        report.update(node=args.node, advertised_control_host=profile.public_control.host,
+            advertised_control_port=profile.public_control.port,
+            advertised_media_host=profile.public_media.host,
+            advertised_media_port=profile.public_media.port,
+            host_isolation_accepted=False, NPC_outer_path_verified=False,
+            local_driver_formal_gate_is_remote_host_gate=False)
+    report.update(phone_only_sampler=args.phone_only_sampler,
+        source_SF_sampled_by_this_driver=not args.phone_only_sampler,
+        physical_FPS_acceptance=False)
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -210,20 +279,23 @@ def main():
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+120+(args.steady_seconds-20)
         while proc.poll() is None and time.monotonic()<deadline:
             if not report['phone_sampler_started']:
                 if root('test -f '+PRIVATE+'udp-ui-phase-steady-media',False).returncode==0:
-                    for name,serial,package in [('phone',args.phone,'local.remoteandroid.direct.experiment'),
-                                               ('source',args.guest,'app.morphe.android.youtube')]:
+                    selections = [('phone',args.phone,'local.remoteandroid.direct.experiment')]
+                    if not args.phone_only_sampler:
+                        selections.append(('source',args.guest,'app.morphe.android.youtube'))
+                    for name,serial,package in selections:
                         samplers.append(subprocess.Popen([sys.executable,str(ROOT/'scripts/probes/measure_surface_cadence.py'),
                             '--serial',serial,'--package',package,'--seconds',str(args.steady_seconds),'--wait-layer','3',
                             '--output',str(args.output/(name+'-cadence.json'))],stdout=subprocess.PIPE,stderr=subprocess.PIPE))
                     report['phone_sampler_started']=True
             if (report['phone_sampler_started'] and not report.get('steady_samplers_completed_before_leave')
-                    and len(samplers)==2 and all(child.poll() is not None for child in samplers)):
+                    and len(samplers)==(1 if args.phone_only_sampler else 2)
+                    and all(child.poll() is not None for child in samplers)):
                 if any(child.returncode!=0 for child in samplers):
                     raise RuntimeError('steady_sampler_failed')
                 uid=adb(args.phone,'cmd package list packages -U local.remoteandroid.direct.experiment').stdout.split('uid:',1)[1].split(',',1)[0].strip()
@@ -298,11 +370,21 @@ def main():
             report['ui_result']=json.loads(numeric)
         else:
             report['numeric_result_missing']=True
+        ui_result = report.get('ui_result')
+        if (args.network_scope == 'nps_owner' and isinstance(ui_result, dict)
+                and ui_result.get('bounded_failure_label') == 'existing_UI_attempt_busy'
+                and ui_result.get('normal_UI_login_received_media') is not True):
+            # The normal UI helper declined before owning an attempt. Its
+            # failure must not turn into a force-stop of somebody else's App.
+            report['existing_phone_UI_attempt_busy_skip'] = True
         report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
         report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
         report['codec_startup_readback_verified']=verify_codec_startup_readback(report.get('ui_result'),args.codec_startup=='on')
         report['steady_media_progress_verified']=verify_steady_media_progress(report.get('ui_result'))
         report['steady_window_readback_verified']=verify_steady_window_readback(report.get('ui_result'),args.steady_seconds)
+        if args.network_scope == 'nps_owner':
+            report['nps_network_profile_readback_verified'] = verify_nps_network_readback(
+                report.get('ui_result'), args.node)
         reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
                  ('App-first',args.phone,PRIVATE+'udp-app-first-report.json')]
         if not args.media_only:
@@ -317,6 +399,8 @@ def main():
                 report[name+'_report_read']=True
         if not report['surface_submit_execution_verified']:
             raise RuntimeError('surface_submit_readback_unverified')
+        if args.network_scope == 'nps_owner' and not report['nps_network_profile_readback_verified']:
+            raise RuntimeError('nps_network_profile_readback_unverified')
         if not report['steady_window_readback_verified']:
             raise RuntimeError('steady_window_readback_unverified')
         if not report['stage_diagnostics_readback_verified']:
@@ -333,11 +417,12 @@ def main():
                   'test_coordinate_bound','kernel_test_dedicated_phone_only',
                   'kernel_touch_capability_mismatch','surface_submit_readback_unverified',
                   'steady_sampler_failed','steady_window_readback_unverified','stage_diagnostics_readback_unverified',
-                  'steady_media_progress_stalled_or_unverified','codec_startup_readback_unverified'}
+                  'steady_media_progress_stalled_or_unverified','codec_startup_readback_unverified',
+                  'nps_network_profile_readback_unverified'}
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
-        if proc is not None and failed:
+        if proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip'):
             # Terminating the local adb client alone does not end Android
             # instrumentation. Stop only these two known isolated packages.
             for package in ('local.huoguo.lanuitest','local.remoteandroid.direct.experiment'):

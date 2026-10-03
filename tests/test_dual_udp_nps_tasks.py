@@ -80,6 +80,36 @@ class FakeAdmin:
 
 
 class DualUdpScope(unittest.TestCase):
+    def test_live_payload_http_classifier_is_not_task_configuration(self):
+        before = fixture()
+        for index, scope in enumerate(HELPER.SCOPES):
+            install_udp(before, scope, 2000 + index)
+        before['tasks'][1409]['IsHttp'] = True
+        before['runtime_tasks'][1409]['IsHttp'] = True
+        after = copy.deepcopy(before)
+        after['tasks'][1409]['IsHttp'] = False
+        after['runtime_tasks'][1409]['IsHttp'] = False
+        HELPER.preserved(before, after)
+        for field, value in (('HttpProxy', True), ('Mode', 'mixProxy'), ('Status', False)):
+            wrong = copy.deepcopy(after)
+            wrong['tasks'][1409][field] = value
+            with self.subTest(field=field), self.assertRaises(HELPER.Refuse):
+                HELPER.preserved(before, wrong)
+
+    def test_http_classifier_type_and_presence_are_still_guarded(self):
+        before = fixture()
+        for index, scope in enumerate(HELPER.SCOPES):
+            install_udp(before, scope, 2000 + index)
+        before['tasks'][1409]['IsHttp'] = True
+        for change in ('missing', None, 1, 'false'):
+            after = copy.deepcopy(before)
+            if change == 'missing':
+                del after['tasks'][1409]['IsHttp']
+            else:
+                after['tasks'][1409]['IsHttp'] = change
+            with self.subTest(change=change), self.assertRaises(HELPER.Refuse):
+                HELPER.preserved(before, after)
+
     def setUp(self):
         self.snapshot = fixture()
 

@@ -51,6 +51,10 @@ _INSPECTION_DEADLINE = ContextVar('dual_udp_inspection_deadline', default=None)
 CLIENT_RUNTIME = frozenset(('Mode', 'Addr', 'LocalAddr', 'IsConnect',
                            'ExportFlow', 'InletFlow', 'Rate', 'NowConn',
                            'Version', 'LastOnlineTime'))
+# v0.34.7 (5edda053) lib/goroutine/pool.go:43-68 classifies each first
+# payload into task.IsHttp. lib/file/obj.go exports the field into JSON, but
+# it is neither an edit parameter nor a routing/auth switch; full-table saves
+# may persist this live classifier. Keep all real proxy/config fields guarded.
 TASK_RUNTIME = frozenset(('RunStatus', 'NowConn', 'TargetAddr', 'HealthNextTime',
                          'HealthMap', 'HealthRemoveArr'))
 
@@ -125,6 +129,12 @@ def stable_client(row):
 
 def stable_task(row):
     value = {k: v for k, v in row.items() if k not in TASK_RUNTIME}
+    # Preserve schema/presence and reject coercion; only the live bool value is
+    # normalized. A missing/added classifier field still changes the snapshot.
+    if 'IsHttp' in row:
+        if type(row['IsHttp']) is not bool:
+            raise Refuse('runtime_http_classifier_type_invalid')
+        value['IsHttp'] = False
     if isinstance(value.get('Client'), dict):
         value['Client'] = stable_client(value['Client'])
     if isinstance(value.get('Flow'), dict):

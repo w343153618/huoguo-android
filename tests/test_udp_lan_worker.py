@@ -71,6 +71,7 @@ def bare_worker():
     worker.config = config()
     worker.sid, worker.key, worker.tag = SESSION, KEY, TAG
     worker.peer_ip, worker.host_ip = '192.168.9.149', '192.168.9.128'
+    worker.guest_serial, worker.guest_avd = 'emulator-5556', 'RemoteAndroid17Compare'
     worker.stop_event, worker.startup_done = threading.Event(), threading.Event()
     worker.enobufs_retry_enabled = False
     worker.control_lock, worker.lifecycle_lock = threading.RLock(), threading.RLock()
