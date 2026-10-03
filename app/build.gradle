@@ -32,8 +32,8 @@ android {
         applicationId(probeApplicationId == null ? 'local.remoteandroid.direct' : probeApplicationId)
         minSdk 30
         targetSdk 37
-        versionCode 31
-        versionName '1.30'
+        versionCode 32
+        versionName '1.31'
         if (authenticatedLanUdp && experimentalVersionName != null && experimentalVersionCode != null) {
             versionName experimentalVersionName
             versionCode experimentalVersionCode.toInteger()
@@ -58,7 +58,7 @@ android {
     buildTypes { release { signingConfig System.getenv('ANDROID_KEYSTORE_FILE') ? signingConfigs.distribution : signingConfigs.debug; minifyEnabled false } }
 }
 
-// This source/JNI set is absent from the signed formal v1.30 build.
+// This source/JNI set is absent from signed formal builds.
 if (authenticatedLanUdp) {
     def generatedJava = layout.buildDirectory.dir('generated/udpCandidateJava')
     def generatedJni = layout.buildDirectory.dir('generated/udpCandidateJni')
