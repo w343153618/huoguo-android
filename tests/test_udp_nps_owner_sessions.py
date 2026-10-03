@@ -46,7 +46,7 @@ class NpsSettingsChecks(unittest.TestCase):
         self.assertEqual((got['max_size'], got['video_bit_rate'], got['fps']), (960, 4_000_000, 120))
         self.assertFalse(got['audio_enabled'])
         for changes in ({'seconds': 121}, {'seconds': True}, {'buffer_ms': 120},
-                        {'max_fps': 30}, {'video_bit_rate': '4000000'}, {'audio': 1}):
+                        {'max_fps': 90}, {'video_bit_rate': '4000000'}, {'audio': 1}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 parse_udp_settings(settings(**changes))
 

@@ -141,6 +141,16 @@ class HandlerChecks(unittest.TestCase):
         self.assertEqual(descriptor['fps'], 120)
         self.assertEqual(self.worker.starts, 0)
 
+    def test_authenticated_30fps_request_keeps_soft_display_hint_and_waits_for_ready(self):
+        request = self.request(body=b'{"max_size":960,"max_fps":30,"buffer_ms":80}')
+        status, descriptor = self.dispatch(request)
+        self.assertEqual(status, 201)
+        self.assertEqual(request.auth_calls, 1)
+        self.assertEqual((descriptor['fps'], descriptor['max_fps'], descriptor['display_hz']),
+                         (30, 30, 0))
+        self.assertEqual(len(self.factory_calls), 1)
+        self.assertEqual((self.worker.starts, self.worker.stops), (0, 0))
+
     def test_default_gateway_rejects_authenticated_nonzero_surface_lead_without_worker(self):
         self.assertEqual(self.dispatch(self.request(body=b'{"surface_submit_lead_ms":16}')),
             (400, {'error': 'owner_surface_submit_experiment_not_enabled'}))
@@ -182,7 +192,7 @@ class HandlerChecks(unittest.TestCase):
     def test_exact_body_size_and_json_object_are_required(self):
         for body, length in ((b'{', '2'), (b'{broken}', '8'), (b'null', '4'),
                              (b'[]', '2'), (b'\xff\xff', '2'),
-                             (b'{"max_fps":30}', '14'), (b'{"buffer_ms":120}', '17')):
+                             (b'{"max_fps":90}', '14'), (b'{"buffer_ms":120}', '17')):
             with self.subTest(body=body):
                 request = self.request(body=body, headers=[('Content-Length', length)])
                 self.assertEqual(self.dispatch(request)[0], 400)

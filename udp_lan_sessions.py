@@ -87,8 +87,8 @@ def parse_udp_settings(settings: dict) -> dict:
     fps = parse_max_fps(normalized)
     if size not in (960, 1280, 1920):
         raise ValueError('LAN UDP supports 540P, 720P and 1080P')
-    if fps not in (60, 120):
-        raise ValueError('LAN UDP supports 60 and 120 FPS limits')
+    if fps not in (30, 60, 120):
+        raise ValueError('UDP supports 30, 60 and 120 FPS limits')
     buffer_ms = settings.get('buffer_ms', 80)
     seconds = settings.get('seconds', 120)
     if type(buffer_ms) is not int or not 30 <= buffer_ms <= 100:
@@ -347,7 +347,11 @@ class UdpLanSessions:
                 'bind_port': 0, **options,
                 'video_release': 'scheduled', 'async_video': True,
                 'decoder_reanchor_enabled': True,
-                'diagnostic_events': False, 'display_hz': 120,
+                # A 30 FPS media cap must not require a 120 Hz phone panel.
+                # Zero is the candidate client's soft display hint; it is not
+                # a request to lower the guest or phone refresh rate to 30 Hz.
+                'diagnostic_events': False,
+                'display_hz': 0 if options['fps'] == 30 else 120,
                 'network_feedback': True,
             }
             now = self._clock()

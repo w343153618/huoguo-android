@@ -60,7 +60,7 @@ class SettingsChecks(unittest.TestCase):
 
     def test_reject_wrong_types_ranges_and_legacy_presets(self):
         invalid = [None, [], {'max_size': 1080}, {'max_size': 1600},
-                   {'max_size': True}, {'max_fps': 30}, {'max_fps': 90},
+                   {'max_size': True}, {'max_fps': True}, {'max_fps': 90},
                    {'max_fps': 60.0}, {'video_bit_rate': 499_999},
                    {'video_bit_rate': 40_000_001}, {'bitrate_mode': 'AVBR'},
                    {'buffer_ms': 29}, {'buffer_ms': 101}, {'buffer_ms': True},
