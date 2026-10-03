@@ -1,8 +1,8 @@
-> 当前有两台可手选的主机：M1 默认公网 `146.56.249.175:15556`，M5 备选公网 `146.56.249.175:15558`，各用独立 NPS 身份。v1.30 的 Tailscale M1 备选使用 yilufa 尾网 `100.65.0.2:15556` 与手动地址；手机需先加入相同网络。正式 App 媒体仍为 TLS/TCP，独立 UDP 实验尚未合入产品。部署边界见 [双主机方案](docs/dual-host-nps-plan-20261002.md) 和 [M1 部署说明](docs/m1-deployment.md)。
+> 当前正式版为 [v1.31](https://github.com/w343153618/huoguo-android/releases/tag/v1.31)，独立机主 UDP 测试版为 [1.31-alpha.6](https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.6)。两版“检查更新”均可手动选择稳定版或测试版，查看内容后确认、取消或打开另一版；包名、设置和更新清单独立。正式媒体仍为 TLS/TCP。
 
-正式与实验使用独立包名、版本、清单及源码发布分支，见 [双通道说明](docs/dual-release-channels-20261002.md)。**机主 UDP 实验版 1.31-alpha.5 已发布：[APK 下载](https://github.com/w343153618/huoguo-android/releases/download/experimental-v1.31-alpha.5/HuoguoAndroidExperimental.apk) · [发布说明](https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.5)**。已有限实测受信HTTPS认证、Tailnet内层UDP真实视频/音频/退出与重认证；当前有界M1 LAN入口为 `192.168.9.128:45560`，会话最长120秒。详见[实际发布和试用范围](docs/experimental-alpha5-release-20261003.md)。它是可调试、机主非隔离试用包；NPS公网UDP App适配、V50和朋友宿主/LAN隔离未验收，M5正式仍v1.30 TLS/TCP。
+测试版已加入固定公网 M1、M5 UDP 入口：选择公网 M1 使用视频/音频/触控 UDP15556，公网 M5 使用 UDP15558；受信 HTTPS49556/49558 只作认证与会话控制，不退回 TCP 媒体。原正式 TCP15556/15558 与独立 NPC 身份保留。实测、下载和边界见 [alpha6 公网记录](docs/experimental-alpha6-public-results-20261003.md)。当前仅为机主有界、非隔离试用；朋友日常使用保留 M5 正式服务，宿主/LAN 隔离、蜂窝/V50、多指与声学音画验收尚未完成。
 
-2026-10-03 NPS 配置：M1/M5 NPC已用物理出口绑定的 QUIC；新增公网UDP15556/15558 companion任务有各10/10小包往返，原TCP任务保留给正式App。NPS桥接内部仍可靠quic.Stream，不能当成端到端QUIC Datagram或App UDP公网媒体验收。见[UDP任务部署](docs/nps-dual-udp-tasks-20261003.md)和[公网App适配计划](docs/nps-public-udp-app-integration-plan-20261003.md)。
+M1/M5 NPC 使用物理出口绑定的 QUIC；NPS 桥接内部仍为可靠 quic.Stream，与端到端 QUIC Datagram 不同。NPS 官方核心和国内来源过滤未改，不能由外层 UDP 推断整条链路没有重传等待。见 [正式 QUIC 部署](docs/nps-formal-quic-deployment-20261003.md) 与 [公网控制部署](docs/nps-public-owner-control-deployment-20261003.md)。
 
 2026-10-03最新进展：四轮[解码与队列分层基线](docs/decoder-queue-real-video-20261003.md)找到一次约100ms发送超时导致整个实验会话停止。独立主机候选改为原帧deadline内的非阻塞发送，保留认证、nonce、参考链和取消保护；[两轮真实视频复测](docs/udp-send-backpressure-real-video-20261003.md)未再出现发送失败，手机SF节拍约59.43FPS，仍有174–232ms空档邻近四帧Inbox溢出。这不是稳定60FPS或公网UDP验收，下一步继续区分队列突发与参考帧恢复，不能只看平均FPS。
 
@@ -12,7 +12,7 @@
 
 本对话后续的**主工程目录**是 `/Users/wyw/Documents/Codex/others/huoguo-android/`。目录用途、测试证据与旧运行目录的关系见 [PROJECT_LAYOUT.md](PROJECT_LAYOUT.md)。
 
-原生 Android 客户端，用手机直接控制 Apple Silicon Mac 上的 Android Emulator。视频为 H.264，音频为 AAC，触控直接发送到安卓；不依赖 Mac 桌面鼠标。本次维护版本 1.30（正式媒体仍为 TLS/TCP，独立 UDP 管线继续实验）。UDP 原生管线研究与验证见 [第二代实验](experiments/moonlight-v2/README.md) 和 [网易产品研究](docs/udp-product-research-20261001.md)。2026-10-01 历史反馈、有限发包追赶、真实视频及手机 LTR 对照见 [当日实践记录](docs/udp-feedback-and-pacing-results-20261001.md)，尚未作为正式升级包发布。
+原生 Android 客户端，用手机直接控制 Apple Silicon Mac 上的 Android Emulator。视频为 H.264，音频为 AAC，触控直接发送到安卓；不依赖 Mac 桌面鼠标。本次维护版本 1.31（正式媒体仍为 TLS/TCP，独立 UDP 管线继续实验）。UDP 原生管线研究与验证见 [第二代实验](experiments/moonlight-v2/README.md) 和 [网易产品研究](docs/udp-product-research-20261001.md)。2026-10-01 历史反馈、有限发包追赶、真实视频及手机 LTR 对照见 [当日实践记录](docs/udp-feedback-and-pacing-results-20261001.md)，尚未作为正式升级包发布。
 
 ## 2026-10-02 最新实验结果
 

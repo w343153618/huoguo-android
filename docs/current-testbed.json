@@ -165,8 +165,8 @@
     "tailnet_scope_after_rename_evidence": "docs/evidence/tailscale-m1-retained-20261003/tailnet-scope-readback.json",
     "latest_tailnet_media_evidence": "docs/evidence/tailnet-owner-media-20261003-attempt7"
   },
-  "formal_app_version": "1.30",
-  "formal_app_version_code": 31,
+  "formal_app_version": "1.31",
+  "formal_app_version_code": 32,
   "formal_media_transport": "TLS/TCP maintenance release; isolated UDP experiment is separate",
   "current_source_display_setting_readback": {
     "min_hz": 60.0,
@@ -220,11 +220,13 @@
     "apk_installed": false
   },
   "formal_release_delivery": {
-    "version_name": "1.30",
-    "version_code": 31,
-    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/v1.30",
+    "version_name": "1.31",
+    "version_code": 32,
+    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/v1.31",
     "public_m1_and_m5_actual_full_apk_sha_verified": true,
-    "evidence": "docs/evidence/release-1.30-20261002/public-delivery-check.json",
+    "apk_sha256": "9df4340696de74bd0488872aea42ee27311d792fb9905537f2bb2c06eb49fc53",
+    "source_commit": "86189ce5d7469cd9bc474cc0006158c74eedc537",
+    "evidence": "docs/evidence/nps-public-udp-contract-20261003/stable-public-delivery.json",
     "apk_in_new_updates_git": false
   },
   "latest_1080p_socket_wait_experiment": {
@@ -387,21 +389,21 @@
   "dual_release_channels": {
     "formal": {
       "branch": "main",
-      "published_version": "1.30",
-      "version_code": 31,
+      "published_version": "1.31",
+      "version_code": 32,
       "media": "TLS/TCP",
       "update_path": "/updates/update.json"
     },
     "experimental": {
       "branch": "codex/experimental-udp",
-      "candidate_version": "1.31-alpha.1",
-      "version_code": 32,
+      "candidate_version": "1.31-alpha.6",
+      "version_code": 37,
       "package": "local.remoteandroid.direct.experiment",
-      "media": "authenticated UDP, LAN or exact registered Tailnet",
+      "media": "authenticated UDP public NPS owner trial; LAN or exact registered Tailnet",
       "update_path": "/experimental/experiment.json",
-      "public_download_deployed": false,
-      "release_published": false,
-      "current_version_validation": "Same installed1.31alpha1 authenticated Tailnet real phone video/audio, leave and new auth reconnect; nonisolated owner/same-home WiFi only; no friend/publicUDP/WAN/V50 release acceptance"
+      "public_download_deployed": true,
+      "release_published": true,
+      "current_version_validation": "Real OnePlus12 same-home WiFi over public NPS address, both nodes media/leave/re-auth; owner nonisolated, no cellular/V50/physical touch or acoustic acceptance"
     }
   },
   "nps_provenance_audit": {
@@ -1144,8 +1146,8 @@
     "source_doc": "docs/experimental-alpha5-release-20261003.md"
   },
   "owner_udp_user_trial_20261003": {
-    "stage": "active_user_trial",
-    "pid": 45354,
+    "stage": "closed_idle_for_public_owner_trial",
+    "pid": null,
     "started_utc": "2026-10-03T06:35:18.325220+00:00",
     "accepting_until_utc": "2026-10-03T07:35:18.325220+00:00",
     "max_runtime_seconds": 3600,
@@ -1162,5 +1164,36 @@
     "other_tailnet_gateway_allowed": false,
     "checkpoint": "docs/evidence/alpha5-owner-trial-20261003/runtime-state.json",
     "preserve_until_natural_shutdown": true
+  },
+  "formal_release_delivery_previous": {
+    "version_name": "1.30",
+    "version_code": 31,
+    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/v1.30",
+    "public_m1_and_m5_actual_full_apk_sha_verified": true,
+    "evidence": "docs/evidence/release-1.30-20261002/public-delivery-check.json",
+    "apk_in_new_updates_git": false
+  },
+  "public_owner_udp_alpha6_20261003": {
+    "version_name": "1.31-alpha.6",
+    "version_code": 37,
+    "source_commit": "b38587d241eaa51e713e469968603fa0febc86ab",
+    "apk_sha256": "10080a883ae563850603a9e375f03a5b860596766eeed25accbda6a08bae29e5",
+    "native_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.6",
+    "scope": "owner-only bounded nonisolated public trial; account wyw",
+    "media_ports": {
+      "m1": 15556,
+      "m5": 15558
+    },
+    "control_ports": {
+      "m1": 49556,
+      "m5": 49558
+    },
+    "same_home_wifi_real_phone": true,
+    "cellular_acceptance": false,
+    "friend_isolation_acceptance": false,
+    "evidence": "docs/experimental-alpha6-public-results-20261003.md",
+    "single_session_max_seconds": 120,
+    "durable_launchagents_stage": "prepared_not_loaded"
   }
 }

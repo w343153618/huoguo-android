@@ -110,9 +110,10 @@ def validate_apk(apk, sdk, version_name, version_code):
 
 def manifest(identity, repository, branch, sha, version_name, version_code, notes):
     tag = checked_version(version_name, version_code)
-    # The alpha6 contract adds fixed public owner-only profiles. Capability is
+    # The alpha6/7 contracts add fixed public owner-only profiles. Capability is
     # not a claim of cellular, V50, friend isolation or performance acceptance.
-    public_owner = (version_name == '1.31-alpha.6' and version_code == 37)
+    public_owner = (version_name, version_code) in {
+        ('1.31-alpha.6', 37), ('1.31-alpha.7', 38)}
     return dict(schema=1, channel='experimental', prerelease=True,
                 version_name=version_name, version_code=version_code, release_tag=tag,
                 source_commit=sha, source_branch=branch,
