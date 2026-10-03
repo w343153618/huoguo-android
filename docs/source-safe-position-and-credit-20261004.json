@@ -1,0 +1,328 @@
+{
+  "schema": "owner-source-safe-position-qualification-v1",
+  "status": "protected source-only position reset complete; no phone media test",
+  "nonisolated_M1_owner": true,
+  "source_ID_expected": "aqz-KE-bpKQ",
+  "fixed_single_seek_from": [
+    947,
+    734
+  ],
+  "fixed_single_seek_to": [
+    430,
+    734
+  ],
+  "gesture_duration_ms": 450,
+  "root_visual_target_reviewed": true,
+  "root_after_pixels_show_same_paused_BBB": true,
+  "position_before_ms": 557283,
+  "position_after_ms": 268111,
+  "fresh_descriptors": {
+    "before": {
+      "schema": "owner-source-stats-gate-v1",
+      "identity": {
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "required_state": "paused",
+      "video_id": "aqz-KE-bpKQ",
+      "video_format": {
+        "itag": 299,
+        "codec": "avc1",
+        "width": 1920,
+        "height": 1080,
+        "descriptor_fps": 60.0
+      },
+      "audio_format": {
+        "itag": 251,
+        "codec": "opus"
+      },
+      "position_before_ms": 557283,
+      "position_after_ms": 557283,
+      "dropped_frames_cumulative": {
+        "dropped": 271,
+        "total": 16825
+      },
+      "process_session_focus_bracket_verified": true,
+      "continuous_content_coverage_verified": false,
+      "collection_or_overlay_overhead_measured": false
+    },
+    "after": {
+      "schema": "owner-source-stats-gate-v1",
+      "identity": {
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "required_state": "paused",
+      "video_id": "aqz-KE-bpKQ",
+      "video_format": {
+        "itag": 299,
+        "codec": "avc1",
+        "width": 1920,
+        "height": 1080,
+        "descriptor_fps": 60.0
+      },
+      "audio_format": {
+        "itag": 251,
+        "codec": "opus"
+      },
+      "position_before_ms": 268111,
+      "position_after_ms": 268111,
+      "dropped_frames_cumulative": {
+        "dropped": 271,
+        "total": 16835
+      },
+      "process_session_focus_bracket_verified": true,
+      "continuous_content_coverage_verified": false,
+      "collection_or_overlay_overhead_measured": false
+    }
+  },
+  "endpoint_match": {
+    "endpoint_content_matches": true,
+    "reported_position_progress_ms": -289172,
+    "continuous_content_coverage_verified": false,
+    "visual_motion_observed": null,
+    "decoded_or_presented_fps": null
+  },
+  "actual_view_seconds": 2.79,
+  "actual_seek_seconds": 8.434,
+  "view_clients_started_reaped": [
+    65,
+    65
+  ],
+  "seek_clients_started_reaped": [
+    69,
+    69
+  ],
+  "timeout_terminations": 0,
+  "reserve_live_registry_formal_role_protection_verified": true,
+  "actual_explicit_release_and_original_identity_preserved": true,
+  "guest_or_host_or_phone_or_NPS_settings_changed": false,
+  "new_APK_or_service_restart": false,
+  "source_descriptor_FPS_is_not_observed_FPS": true,
+  "video_motion_or_latency_measured": false,
+  "credit_audit": {
+    "schema": "private-credit-formula-audit-v1",
+    "scope": "capture-only fixed observed calls, no counterfactual FPS or physical latency",
+    "raw_fps": 30,
+    "quantized_credit_formula_tolerance_ns": 16668,
+    "no_Python_native_clock_subtraction": true,
+    "cases": {
+      "fifo_reversal": {
+        "rows": 1091,
+        "requested_wait_count": 283,
+        "formula_abs_error_ns_max": 16583.66666666791,
+        "requested_wait_ms": {
+          "count": 283,
+          "p50": 18.4067,
+          "p95": 19.9512,
+          "p99": 20.3903,
+          "max": 27.7524,
+          "over_50_ms": 0,
+          "over_100_ms": 0
+        },
+        "actual_wait_minus_requested_ms": {
+          "count": 283,
+          "p50": 4.4687,
+          "p95": 9.6134,
+          "p99": 15.2705,
+          "max": 33.0626,
+          "over_50_ms": 0,
+          "over_100_ms": 0
+        },
+        "first_eight_observed_loops": [
+          {
+            "iteration": 1,
+            "native_ready_flag": false,
+            "capture_seq": 1,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 2000,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 1000
+          },
+          {
+            "iteration": 2,
+            "native_ready_flag": false,
+            "capture_seq": 43,
+            "queued_after_condition": 2,
+            "tokens_after_delay_milli": 2000,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 1000
+          },
+          {
+            "iteration": 3,
+            "native_ready_flag": true,
+            "capture_seq": 48,
+            "queued_after_condition": 2,
+            "tokens_after_delay_milli": 2000,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 1000
+          },
+          {
+            "iteration": 4,
+            "native_ready_flag": true,
+            "capture_seq": 49,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 1076,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 76
+          },
+          {
+            "iteration": 5,
+            "native_ready_flag": true,
+            "capture_seq": 50,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 428,
+            "requested_wait_ns": 19065291,
+            "consumed": true,
+            "tokens_after_consume_milli": 20
+          },
+          {
+            "iteration": 6,
+            "native_ready_flag": true,
+            "capture_seq": 51,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 548,
+            "requested_wait_ns": 15076083,
+            "consumed": true,
+            "tokens_after_consume_milli": 146
+          },
+          {
+            "iteration": 7,
+            "native_ready_flag": true,
+            "capture_seq": 52,
+            "queued_after_condition": 0,
+            "tokens_after_delay_milli": 167,
+            "requested_wait_ns": 27752416,
+            "consumed": true,
+            "tokens_after_consume_milli": 96
+          },
+          {
+            "iteration": 8,
+            "native_ready_flag": true,
+            "capture_seq": 53,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 444,
+            "requested_wait_ns": 18522874,
+            "consumed": true,
+            "tokens_after_consume_milli": 53
+          }
+        ]
+      },
+      "latest_replication": {
+        "rows": 1092,
+        "requested_wait_count": 0,
+        "formula_abs_error_ns_max": 0,
+        "requested_wait_ms": {
+          "count": 0
+        },
+        "actual_wait_minus_requested_ms": {
+          "count": 0
+        },
+        "first_eight_observed_loops": [
+          {
+            "iteration": 1,
+            "native_ready_flag": false,
+            "capture_seq": 1,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 2000,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 1000
+          },
+          {
+            "iteration": 2,
+            "native_ready_flag": false,
+            "capture_seq": 26,
+            "queued_after_condition": 2,
+            "tokens_after_delay_milli": 2000,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 1000
+          },
+          {
+            "iteration": 3,
+            "native_ready_flag": true,
+            "capture_seq": 31,
+            "queued_after_condition": 2,
+            "tokens_after_delay_milli": 2000,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 1000
+          },
+          {
+            "iteration": 4,
+            "native_ready_flag": true,
+            "capture_seq": 32,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 1529,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 529
+          },
+          {
+            "iteration": 5,
+            "native_ready_flag": true,
+            "capture_seq": 33,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 1529,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 529
+          },
+          {
+            "iteration": 6,
+            "native_ready_flag": true,
+            "capture_seq": 0,
+            "queued_after_condition": 0,
+            "tokens_after_delay_milli": 1450,
+            "requested_wait_ns": 0,
+            "consumed": false,
+            "tokens_after_consume_milli": null
+          },
+          {
+            "iteration": 7,
+            "native_ready_flag": true,
+            "capture_seq": 34,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 1502,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 502
+          },
+          {
+            "iteration": 8,
+            "native_ready_flag": true,
+            "capture_seq": 35,
+            "queued_after_condition": 1,
+            "tokens_after_delay_milli": 1505,
+            "requested_wait_ns": 0,
+            "consumed": true,
+            "tokens_after_consume_milli": 505
+          }
+        ]
+      }
+    }
+  },
+  "credit_audit_is_private_not_reusable_fixture_validated": true,
+  "private_view_sha256": "f62bce2a35db13079d42475214496ee04022bf27534d6a9b7ba68ca9a9035e47",
+  "private_seek_sha256": "95ed7ab8aa48788a9160cbe756403b204188f36d419e97c0f46177d2b1333ee4",
+  "raw_budget_trial_initial_attempt": {
+    "source_commit": "9ea78de544b56810df6555386d095e16a5481c8e",
+    "no_driver_or_media_READY_or_trace": true,
+    "fixed_reason": "owned_LAN_ready_contract_rejected",
+    "cause": "private supervisor retained prior latest-policy listener expectation while requesting FIFO",
+    "actual_owned_quiescence": true,
+    "supervisor_exit": 2,
+    "owned_and_original_signals": 0,
+    "helper_input_target_clear_root_verified": true,
+    "corrected_in_new_private_candidate_only": true,
+    "new_actual_readiness_expression_inert_cases": 18,
+    "not_a_production_gateway_or_App_failure": true
+  }
+}

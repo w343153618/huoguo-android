@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30\u219219 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -2080,5 +2080,31 @@
       "tests/test_owner_raw_submit_budget.py": "57d9cff112df8aeaff8cfaa5dbf424108563001a94a1b33d0cd376522d657323"
     },
     "next_action": "trace-only credit/first-ready audit and qualified playback-position preparation, then NEW frozen one-factor LAN trial; do not blindly resume near end"
+  },
+  "owner_raw_budget60_real_LAN_20261004": {
+    "status": "actual owner LAN window complete, not promoted default/public acceptance",
+    "source_commit": "9ea78de544b56810df6555386d095e16a5481c8e",
+    "evidence": "docs/owner-raw-budget60-real-LAN-20261004.json",
+    "actual_raw_budget": 60,
+    "actual_native_arg_and_phone_limit": 30,
+    "raw_queue": "fifo",
+    "queue_median_ms": 0.088,
+    "queue_p99_ms": 0.2591,
+    "steady_budget_wait_count": 0,
+    "phone_SF_cadence": 29.866,
+    "phone_max_observed_gap_ms": 66.302395,
+    "phone_tail_unknown_ms": 584.412,
+    "native_final_coverage_accepted": false,
+    "CPU_caps_changed_without_test_write": true,
+    "next": "NEW same-source raw30 reversal, actual exec state in private checkpoint",
+    "new_APK": false
+  },
+  "source_safe_playback_position_20261004": {
+    "status": "actual protected source-only seek and same paused descriptors",
+    "evidence": "docs/source-safe-position-and-credit-20261004.json",
+    "from_ms": 557283,
+    "to_ms": 268111,
+    "source_final_after_media_ms": 309601,
+    "real_phone_media_during_seek": false
   }
 }
