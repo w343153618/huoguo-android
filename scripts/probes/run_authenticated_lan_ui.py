@@ -35,6 +35,7 @@ INSTRUMENTATION_FAILURE_LABELS = frozenset((
 sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
 from scripts.probes import owner_source_gate
+from scripts.probes import owner_source_stats_gate, source_window_control
 from scripts.probes.owner_trace_prefix import TracePrefixReader, SourceTraceError, LABELS as TRACE_LABELS
 
 
@@ -483,6 +484,8 @@ def parse_arguments(argv=None):
     p.add_argument('--source-expected-start-ticks', type=int, default=None)
     p.add_argument('--source-trace-root', type=Path, default=None,
                    help='Fresh private empty root for this owned listener; never a historical trace directory')
+    p.add_argument('--source-stats-window', choices=['off','on'], default='off',
+                   help='Explicit protected M1 owner experiment: paused Stats endpoints around owned playback')
     args = p.parse_args(argv)
     source_options = (args.source_listener_monotonic_ns, args.source_expected_pid,
                       args.source_expected_uid, args.source_expected_start_ticks, args.source_trace_root)
@@ -497,6 +500,8 @@ def parse_arguments(argv=None):
             or not 0 < args.source_expected_start_ticks <= 9223372036854775807
             or not args.source_trace_root.is_absolute()):
         p.error('Numeric source guard requires owner LAN media-only and complete bounded identity/trace options')
+    if args.source_stats_window == 'on' and (args.owner_source_guard == 'off' or args.guest not in (None, 'emulator-5556')):
+        p.error('Stats window requires the protected M1 numeric source guard')
     if args.v50_profile == 'on':
         if args.pcm_queue != 'off' or args.codec_startup != 'off' or args.surface_submit_lead_ms != 0:
             p.error('V50 preset acceptance cannot also enable PCM/startup/Surface experiments')
@@ -541,7 +546,7 @@ def main():
 
     flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
     proc = None
-    source_reader = source_gate = None
+    source_reader = source_gate = source_stats_before = None
     instrumentation_reaped = False
     samplers=[]
     scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
@@ -567,6 +572,7 @@ def main():
         source_launch_freshness_verified=False, source_first_capture_freshness_verified=False,
         source_final_target_process_absent_verified=False,
         source_freshness_scope='first_owned_session_capture_only_not_reconnect_or_presentation')
+    report['source_stats_window_enabled'] = args.source_stats_window == 'on'
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -588,6 +594,14 @@ def main():
             # All slow preflight/marker work precedes this one synchronous read.
             # Reservation/registry/quiescence still belong to the supervisor.
             source_reader = TracePrefixReader(args.source_trace_root)
+            if args.source_stats_window == 'on':
+                source_stats_before = owner_source_stats_gate.collect_fresh('adb', args.guest,
+                    {'pid': args.source_expected_pid, 'uid': args.source_expected_uid,
+                     'start_ticks': args.source_expected_start_ticks}, 'aqz-KE-bpKQ',
+                    required_state='paused', listener_ready_ns=args.source_listener_monotonic_ns)
+                report['source_Stats_before'] = source_stats_before
+                report['source_resume_receipt'] = source_window_control.transition('adb', args.guest,
+                    source_stats_before['identity'], 'playing')
             source_gate = owner_source_gate.collect_playing_unknown('adb', args.guest,
                 args.source_listener_monotonic_ns, {'pid': args.source_expected_pid,
                 'uid': args.source_expected_uid, 'start_ticks': args.source_expected_start_ticks})
@@ -603,6 +617,8 @@ def main():
             report['source_final_target_process_absent_verified'] = True
             launch_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
             owner_source_gate.validate_launch_fresh(source_gate, launch_ns)
+            if source_stats_before is not None:
+                owner_source_stats_gate.require_fresh(source_stats_before, launch_ns)
             report.update(source_launch_freshness_verified=True,
                           source_instrumentation_launch_monotonic_ns=launch_ns)
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
@@ -635,6 +651,9 @@ def main():
                     selections = [('phone',args.phone,'local.remoteandroid.direct.experiment')]
                     if not args.phone_only_sampler:
                         selections.append(('source',args.guest,'app.morphe.android.youtube'))
+                    if source_stats_before is not None:
+                        report['sampler_dispatch_started_MONOTONIC_ns'] = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+                        owner_source_stats_gate.require_fresh(source_stats_before, report['sampler_dispatch_started_MONOTONIC_ns'])
                     for name,serial,package in selections:
                         samplers.append(subprocess.Popen([sys.executable,str(ROOT/'scripts/probes/measure_surface_cadence.py'),
                             '--serial',serial,'--package',package,'--seconds',str(args.steady_seconds),'--wait-layer','3',
@@ -645,6 +664,25 @@ def main():
                     and all(child.poll() is not None for child in samplers)):
                 if any(child.returncode!=0 for child in samplers):
                     raise RuntimeError('steady_sampler_failed')
+                if source_stats_before is not None:
+                    # Bounds cover dispatch through observed Popen completion,
+                    # not exact SF sample timestamps or continuous content.
+                    end_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+                    report['sampler_Popens_completion_observed_MONOTONIC_ns'] = end_ns
+                    # A playing-window UI dump exceeded its fixed command
+                    # budget in a real source-only probe. Pause first, outside
+                    # the sampler dispatch/completion bounds; no larger timeout.
+                    report['source_pause_receipt'] = source_window_control.transition('adb', args.guest,
+                        source_stats_before['identity'], 'paused')
+                    source_stats_after = owner_source_stats_gate.collect_fresh('adb', args.guest,
+                        source_stats_before['identity'], 'aqz-KE-bpKQ', required_state='paused',
+                        listener_ready_ns=args.source_listener_monotonic_ns)
+                    report['source_Stats_after'] = source_stats_after
+                    match = owner_source_stats_gate.endpoint_match(source_stats_before, source_stats_after,
+                        window_started_ns=report['sampler_dispatch_started_MONOTONIC_ns'], window_finished_ns=end_ns)
+                    report['source_Stats_endpoint_match'] = match
+                    if not match['endpoint_content_matches']:
+                        raise RuntimeError('source_Stats_endpoint_mismatch')
                 uid=app_uid()
                 if not uid.isdigit():
                     raise ValueError('isolated_App_uid_readback')
@@ -794,9 +832,18 @@ def main():
                   'credential_source_readback_unverified',
                   'v50_profile_readback_unverified'}
         labels.update(owner_source_gate.SOURCE_GATE_LABELS, TRACE_LABELS)
+        labels.update(owner_source_stats_gate.LABELS)
+        labels.update(source_window_control.LABELS)
+        labels.add('source_Stats_endpoint_mismatch')
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
+        if source_stats_before is not None and 'source_pause_receipt' not in report:
+            # Still under the caller's continuous admission lease. This routine
+            # independently rechecks identity/focus/session before any keyevent.
+            attempt_cleanup(report, 'pause_owned_source_window',
+                lambda: report.update(source_pause_receipt=source_window_control.transition(
+                    'adb', args.guest, source_stats_before['identity'], 'paused')))
         if (proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
                 and not report.get('saved_UI_unavailable_skip')):
             # Terminating the local adb client alone does not end Android

@@ -1954,5 +1954,33 @@
       "build": "success",
       "udp_candidate": "success"
     }
+  },
+  "M1_paused_Stats_real_LAN_window_20261004": {
+    "status": "one_real_bounded_window_completed_not_controlled_performance_improvement",
+    "evidence": "docs/source-paused-endpoints-real-LAN-20261004.json",
+    "APK": "1.31-alpha.8/code39",
+    "new_APK_published": false,
+    "source_video": "aqz-KE-bpKQ",
+    "descriptor": "itag299 avc1 1920x1080@60; audio251 Opus; paused endpoints qualified",
+    "path": "same_home_WiFi physicalLAN authenticatedUDP owner_nonisolatedM1",
+    "parameters": "540x960/30cap/4M VBR/80ms/lead0/PCM-stage-startupOFF/AACON",
+    "phone_SF_cadence": 29.953,
+    "phone_SF_fullwindow": 29.158,
+    "phone_SF_maxgap_ms": 66.301354,
+    "phone_observed_over100ms": 0,
+    "phone_tail_unknown_ms": 620.842,
+    "source_SF_cadence": 29.965,
+    "host_raw_capture_submit_anchor_rates": [
+      29.9928,
+      29.9928
+    ],
+    "host_capture_enqueue_to_dequeue_p50_ms": 28.358,
+    "native_full_coverage_accepted": false,
+    "CPU_caps_drifted_without_test_writes": true,
+    "source_final_paused": true,
+    "original_gateway_unchanged": true,
+    "owned_quiescence": true,
+    "M5_NPS_or_phone_settings_changed": false,
+    "next": "bounded enqueue/pacing age analysis; distinct protected public-path plan; no default or APK promotion"
   }
 }

@@ -49,7 +49,8 @@ class OwnerSourceDriverCheck(unittest.TestCase):
             str(folder/'trace')]
 
     def invoke(self, folder, *, guard=True, collect_error=None, qualify_error=None,
-               close_error=None, loops=0, target_started_during_collection=False):
+               close_error=None, loops=0, target_started_during_collection=False, stats=False,
+               stats_error=None, endpoints_match=True):
         events = []
         pid_reads = 0
         reader = Mock()
@@ -93,6 +94,19 @@ class OwnerSourceDriverCheck(unittest.TestCase):
             return Child(loops if command[0] == 'adb' else 0)
 
         argv = self.arguments(folder) if guard else ['--output', str(folder), '--media-only']
+        if stats:
+            argv.extend(['--source-stats-window', 'on'])
+        stats_calls = 0
+        def collect_stats(*args, **kwargs):
+            nonlocal stats_calls
+            stats_calls += 1
+            events.append(('Stats', stats_calls))
+            if stats_calls == 2 and stats_error:
+                raise stats_error
+            return {'identity': {'pid': 3553, 'uid': 10235, 'start_ticks': 2521}}
+        def pause(*args):
+            events.append(('source-control', args[-1]))
+            return {'state_after': 2 if args[-1] == 'paused' else 3}
         clock_value = 1000
         def native_clock(domain):
             nonlocal clock_value
@@ -112,11 +126,58 @@ class OwnerSourceDriverCheck(unittest.TestCase):
             stack.enter_context(patch.object(DRIVER.time, 'clock_gettime_ns', side_effect=native_clock))
             stack.enter_context(patch.object(DRIVER.time, 'monotonic', return_value=0))
             stack.enter_context(patch.object(DRIVER.time, 'sleep'))
+            stack.enter_context(patch.object(DRIVER.owner_source_stats_gate, 'collect_fresh', side_effect=collect_stats))
+            stack.enter_context(patch.object(DRIVER.owner_source_stats_gate, 'require_fresh'))
+            stack.enter_context(patch.object(DRIVER.owner_source_stats_gate, 'endpoint_match',
+                return_value={'endpoint_content_matches': endpoints_match}))
+            stack.enter_context(patch.object(DRIVER.source_window_control, 'transition', side_effect=pause))
             stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
             code = DRIVER.main()
         return (code, json.loads((folder/'ui-acceptance.json').read_text()),
             events, reader, collected.call_count, qualified.call_count,
             factory.call_count, spawned.call_count)
+
+    def test_opt_in_Stats_precedes_instrument_and_pause_precedes_marker(self):
+        with tempfile.TemporaryDirectory() as path:
+            _, report, events, *_ = self.invoke(Path(path), stats=True, loops=2)
+        before = events.index(('Stats', 1))
+        instrument = next(i for i,e in enumerate(events) if e[0] == 'spawn' and e[1][0] == 'adb')
+        post = events.index(('Stats', 2))
+        pause = events.index(('source-control', 'paused'))
+        marker = next(i for i,e in enumerate(events) if e[0] == 'run' and "'touch " in e[1] and 'steady-sampled.tmp' in e[1])
+        self.assertLess(before, instrument)
+        self.assertLess(instrument, post)
+        self.assertLess(pause, post)
+        self.assertLess(pause, marker)
+        self.assertEqual(report['source_pause_receipt']['state_after'], 2)
+        self.assertTrue(report['source_Stats_endpoint_match']['endpoint_content_matches'])
+
+    def test_post_Stats_rejection_still_pauses_and_does_not_publish_marker(self):
+        with tempfile.TemporaryDirectory() as path:
+            code, report, events, *_ = self.invoke(Path(path), stats=True, loops=2,
+                stats_error=DRIVER.owner_source_stats_gate.Rejected('collector_failed'))
+        self.assertEqual(code, 1)
+        self.assertIn(('source-control', 'paused'), events)
+        self.assertNotIn('steady_samplers_completed_before_leave', report)
+        self.assertEqual(report['source_pause_receipt']['state_after'], 2)
+
+    def test_endpoint_mismatch_pauses_but_refuses_window_acceptance(self):
+        with tempfile.TemporaryDirectory() as path:
+            code, report, events, *_ = self.invoke(Path(path), stats=True, loops=2, endpoints_match=False)
+        self.assertEqual(code, 1)
+        self.assertEqual(report['driver_failure_label'], 'source_Stats_endpoint_mismatch')
+        self.assertIn(('source-control', 'paused'), events)
+        self.assertNotIn('steady_samplers_completed_before_leave', report)
+
+    def test_Stats_default_off_and_missing_guard_or_foreign_guest_refuse(self):
+        with tempfile.TemporaryDirectory() as path:
+            _, report, events, *_ = self.invoke(Path(path), loops=2)
+            self.assertFalse(report['source_stats_window_enabled'])
+            self.assertFalse(any(e[0] in ('Stats','source-control') for e in events))
+            for args in (['--output',path,'--source-stats-window','on'],
+                         self.arguments(Path(path))+['--source-stats-window','on','--guest','emulator-5554']):
+                with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                    DRIVER.parse_arguments(args)
 
     def test_default_off_does_not_read_source_trace_or_use_native_gate(self):
         with tempfile.TemporaryDirectory() as path:

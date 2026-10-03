@@ -17,6 +17,12 @@ SCHEMA = 'owner-source-stats-gate-v1'
 CLOCK = 'host_clock_gettime_CLOCK_MONOTONIC_ns'
 MAX_COLLECT_NS = 15_000_000_000
 MAX_AGE_NS = 30_000_000_000
+LABELS = frozenset(('clock_invalid', 'identity_invalid', 'Stats_descriptor_invalid',
+    'video_id_invalid', 'state_invalid', 'selector_invalid', 'listener_required',
+    'listener_not_ready', 'collector_failed', 'collection_budget', 'collector_not_qualified',
+    'collector_incomplete', 'source_identity_changed', 'collector_clock_invalid',
+    'gate_clock_invalid', 'gate_evidence_invalid', 'gate_stale', 'window_invalid',
+    'post_observation_not_adjacent'))
 
 
 class Rejected(ValueError):
