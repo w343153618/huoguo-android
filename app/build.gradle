@@ -12,6 +12,12 @@ if (authenticatedLanUdp && probeApplicationId != 'local.remoteandroid.direct.exp
 }
 def experimentalVersionName = project.findProperty('experimentalVersionName')
 def experimentalVersionCode = project.findProperty('experimentalVersionCode')
+// Only the isolated UDP variant has a candidate default. The formal package
+// and explicitly pinned historical UDP versions retain separate identities.
+if (authenticatedLanUdp && experimentalVersionName == null && experimentalVersionCode == null) {
+    experimentalVersionName = '1.31-alpha.6'
+    experimentalVersionCode = '37'
+}
 if ((experimentalVersionName == null) != (experimentalVersionCode == null)) {
     throw new GradleException('Experimental version name and code must be provided together')
 }
@@ -32,8 +38,8 @@ android {
         applicationId(probeApplicationId == null ? 'local.remoteandroid.direct' : probeApplicationId)
         minSdk 30
         targetSdk 37
-        versionCode 31
-        versionName '1.30'
+        versionCode 32
+        versionName '1.31'
         if (authenticatedLanUdp && experimentalVersionName != null && experimentalVersionCode != null) {
             versionName experimentalVersionName
             versionCode experimentalVersionCode.toInteger()
@@ -58,7 +64,7 @@ android {
     buildTypes { release { signingConfig System.getenv('ANDROID_KEYSTORE_FILE') ? signingConfigs.distribution : signingConfigs.debug; minifyEnabled false } }
 }
 
-// This source/JNI set is absent from the signed formal v1.30 build.
+// This source/JNI set is absent from every formal build.
 if (authenticatedLanUdp) {
     def generatedJava = layout.buildDirectory.dir('generated/udpCandidateJava')
     def generatedJni = layout.buildDirectory.dir('generated/udpCandidateJni')

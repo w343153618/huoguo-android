@@ -35,6 +35,7 @@ HARNESS = r'''
     private static JSONObject descriptor(int peerPort,int bindPort){
         return new JSONObject().put("key_b64",Base64.getEncoder().encodeToString(new byte[32]))
             .put("session_tag_hex","0000000000000001").put("peer_host","100.65.0.2")
+            .put("network_scope","tailnet")
             .put("peer_port",peerPort).put("bind_port",bindPort).put("seconds",30)
             .put("fps",60).put("buffer_ms",80).put("video_release","scheduled")
             .put("async_video",true).put("display_hz",120).put("surface_submit_lead_ms",0);
@@ -51,6 +52,20 @@ HARNESS = r'''
         Session legacy=parseSession(descriptor(15961,15960),false);
         if(legacy.peerPort!=15961||legacy.bindPort!=15960)throw new AssertionError("legacy probe changed");
         reject(45963,15960,false);reject(15961,0,false);
+        for(String node:new String[]{"m1","m5"}){
+            JSONObject publicDescriptor=descriptor(LanUdpContract.npsUdpPort(node),0)
+                .put("peer_host",LanUdpContract.NPS_HOST).put("network_scope",LanUdpContract.NPS_SCOPE).put("node",node);
+            Session publicSession=parseSession(publicDescriptor,true);
+            if(publicSession.peerPort!=LanUdpContract.npsUdpPort(node))throw new AssertionError("public UDP parser mismatch");
+            publicDescriptor.put("peer_port",node.equals("m1")?15558:15556);
+            try{parseSession(publicDescriptor,true);throw new AssertionError("cross-node UDP accepted");}catch(IOException expected){}
+            publicDescriptor.put("peer_port",LanUdpContract.npsUdpPort(node)).put("peer_host","127.0.0.1");
+            try{parseSession(publicDescriptor,true);throw new AssertionError("internal loopback disclosed as media peer");}catch(IOException expected){}
+        }
+        for(String scope:new String[]{"lan","tailnet","nps_owner","public","owner_nps"}){
+            JSONObject publicWithoutNode=descriptor(15558,0).put("peer_host",LanUdpContract.NPS_HOST).put("network_scope",scope);
+            try{parseSession(publicWithoutNode,true);throw new AssertionError("implicit public scope accepted");}catch(IOException expected){}
+        }
         System.out.println("PASS actual parseSession App45963/ephemeral and legacy15961/15960 are disjoint");
     }
 '''

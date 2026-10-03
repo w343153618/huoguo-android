@@ -3,6 +3,10 @@
  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
  <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+ <queries>
+  <package android:name="local.remoteandroid.direct" />
+  <package android:name="local.remoteandroid.direct.experiment" />
+ </queries>
  <application android:label="${appLabel}" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher" android:allowBackup="false" android:usesCleartextTraffic="false">
   <provider android:name=".UpdateProvider" android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true" />
   <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true" android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" >

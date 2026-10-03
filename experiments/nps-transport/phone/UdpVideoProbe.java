@@ -1015,9 +1015,10 @@ public final class UdpVideoProbe extends Instrumentation {
         result.asyncVideo=json.optBoolean("async_video",false);result.decoderReanchorEnabled=json.optBoolean("decoder_reanchor_enabled",true);
         for(String option:new String[]{"diagnostic_events","network_feedback"})if(json.has(option)&&!(json.get(option) instanceof Boolean))throw new IOException("feedback_option_boolean_required");
         result.diagnosticEvents=json.optBoolean("diagnostic_events",false);result.networkFeedback=json.optBoolean("network_feedback",false);
-        // App sessions use the dedicated high-port gateway. Standalone legacy
+        // App NPS profiles are exact node/scope/public UDP tuples. Standalone
         // component probes retain their separately frozen 15961/15960 contract.
-        if(result.peerPort!=(appMode?45963:15961)||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
+        if(appMode)LanUdpContract.validateAppMediaPeer(host,result.peerPort,json.getString("network_scope"),json.optString("node",""));
+        if(!appMode&&result.peerPort!=15961||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
                 ||result.buffer<30||result.buffer>100||!result.release.equals("scheduled")&&!result.release.equals("immediate")||result.profile.length()>160
                 ||result.displayHz!=0&&result.displayHz!=60&&result.displayHz!=90&&result.displayHz!=120)
             throw new IOException("session_options_invalid");

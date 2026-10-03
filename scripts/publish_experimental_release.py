@@ -110,12 +110,18 @@ def validate_apk(apk, sdk, version_name, version_code):
 
 def manifest(identity, repository, branch, sha, version_name, version_code, notes):
     tag = checked_version(version_name, version_code)
+    # The alpha6 contract adds fixed public owner-only profiles. Capability is
+    # not a claim of cellular, V50, friend isolation or performance acceptance.
+    public_owner = (version_name == '1.31-alpha.6' and version_code == 37)
     return dict(schema=1, channel='experimental', prerelease=True,
                 version_name=version_name, version_code=version_code, release_tag=tag,
                 source_commit=sha, source_branch=branch,
                 apk_url='https://github.com/' + repository + '/releases/download/' + tag + '/' + APK_ASSET,
                 installation='standalone_signed_apk', automatic_formal_update=False,
-                media_transport='authenticated_udp_lan_and_registered_tailnet_experiment',
+                media_transport=('authenticated_udp_public_NPS_owner_and_LAN_tailnet_experiment'
+                    if public_owner else 'authenticated_udp_lan_and_registered_tailnet_experiment'),
+                public_owner_profiles=['m1', 'm5'] if public_owner else [],
+                public_cellular_acceptance=False, friend_isolation_acceptance=False,
                 public_udp_acceptance=False, changelog=notes[:4000], **identity)
 
 

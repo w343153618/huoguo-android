@@ -15,7 +15,7 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import javax.net.ssl.SSLSocket;
 
-/** Isolated, opt-in physical LAN or explicit registered Tailnet entry.
+/** Isolated, opt-in LAN, registered Tailnet or fixed owner-only NPS trial entry.
  * HTTPS carries authentication/description only;
  * AES-GCM UDP carries video, AAC and Android native touch. No media fallback. */
 public final class AuthenticatedLanUdpUi implements LanUdpEntry {
@@ -30,16 +30,17 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private static final String SETTINGS="authenticated_udp_candidate";
     private static final String DEFAULT_LAN_ADDRESS="192.168.9.128:"+LanUdpContract.HTTPS_PORT;
     private String lastLanAddress;
+    private boolean restoringFields;
     // Owner instrumentation only: no public widget, Intent extra or saved setting.
     // showLogin resets this one-attempt value; helper must explicitly opt in again.
     private int ownerSurfaceSubmitLeadMs;
     private boolean ownerStageDiagnosticsEnabled=true;
     private static final class Attempt {
-        final long generation;final String endpoint,credential,networkScope;
+        final long generation;final String endpoint,credential,networkScope,node;
         final boolean boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled;final int surfaceSubmitLeadMs;
         volatile boolean cancelled;volatile SSLSocket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
-        Attempt(long generation,String endpoint,String credential,String scope,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
+        Attempt(long generation,String endpoint,String credential,String scope,String node,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;this.node=node;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
@@ -52,17 +53,19 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         ownerSurfaceSubmitLeadMs=0;
         ownerStageDiagnosticsEnabled=true;
         SharedPreferences saved=activity.getSharedPreferences(SETTINGS,0);
-        final int savedScope=savedSelection(saved,"scope",1,0);
+        // Existing 0/1 selections retain their meaning. A fresh alpha6 install
+        // defaults to the user's explicitly requested M5 public owner trial.
+        final int savedScope=savedSelection(saved,"scope",3,3);
         lastLanAddress=savedAddress(saved,"lan_address",LanUdpContract.LAN_SCOPE,DEFAULT_LAN_ADDRESS);
-        String restoredAddress=savedAddress(saved,"address",savedScope==0?LanUdpContract.LAN_SCOPE:LanUdpContract.TAILNET_SCOPE,
+        String restoredAddress=savedScope>=2?publicAddress(savedScope):savedAddress(saved,"address",selectedScope(savedScope),
             savedScope==0?lastLanAddress:LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT);
         LinearLayout box=new LinearLayout(activity);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(32,32,32,32);
-        TextView title=new TextView(activity);title.setText("认证 UDP · 隔离实验版\nHTTPS 仅登录；视频、声音、多指触控均走 UDP\n最长 120 秒；断线不会切换成 TCP 媒体\nTailnet 实验仅开放已登记测试手机；底层可能使用 DERP 中继");box.addView(title);
+        TextView title=new TextView(activity);title.setText("认证 UDP · 独立实验版\nHTTPS 仅登录；视频、声音、多指触控均走 UDP\n最长 120 秒；断线不会切换成 TCP 媒体\n公网 M1／M5 仅机主试用，不代表已完成朋友发布验收\n公网 UDP 请用 wyw；朋友 huoguo 暂用稳定版\nTailnet 仅已登记测试手机；底层可能使用 DERP 中继");box.addView(title);
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
-        Button update=new Button(activity);update.setText("检查实验更新");update.setOnClickListener(v->activity.updater.check(true));box.addView(update);
-        scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2"},savedScope);
-        address=field(box,"M1 IPv4:"+LanUdpContract.HTTPS_PORT+"，可手动修改",restoredAddress);
-        user=field(box,"现有安卓账号",savedText(saved,"username","huoguo",128));
+        Button update=new Button(activity);update.setText("检查更新");update.setOnClickListener(v->activity.updater.check(true));box.addView(update);
+        scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 机主试用", "公网 UDP · M5 · 机主试用（新安装默认）"},savedScope);
+        address=field(box,"HTTPS 控制地址；公网节点使用固定地址",restoredAddress);address.setEnabled(savedScope<2);
+        user=field(box,"现有安卓账号",savedText(saved,usernamePreference(savedScope),defaultUsername(savedScope),128));
         password=field(box,"现有账号密码（此次仅保存在内存）","");password.setInputType(129);
         quality=choice(box,"串流清晰度",new String[]{"540P · 960","720P · 1280","1080P · 1920"},savedSelection(saved,"quality",2,2));
         rate=choice(box,"视频 VBR 目标码率",new String[]{"4 Mbps","8 Mbps","12 Mbps","16 Mbps","24 Mbps"},savedSelection(saved,"rate",4,2));
@@ -77,7 +80,15 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             private int previous=savedScope;
             public void onItemSelected(AdapterView<?> parent,android.view.View view,int position,long id){
                 if(position==previous)return;previous=position;
-                address.setText(position==1?LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT:lastLanAddress);saveSettings();
+                // Programmatic address changes must not save the old scope's
+                // username into the newly selected public preference.
+                restoringFields=true;
+                try{
+                    address.setEnabled(position<2);
+                    address.setText(position>=2?publicAddress(position):position==1?LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT:lastLanAddress);
+                    user.setText(savedText(activity.getSharedPreferences(SETTINGS,0),usernamePreference(position),defaultUsername(position),128));
+                }finally{restoringFields=false;}
+                saveSettings();
             }
             public void onNothingSelected(AdapterView<?> parent){}
         });
@@ -100,14 +111,24 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private static int savedSelection(SharedPreferences saved,String key,int max,int fallback){try{int value=saved.getInt(key,fallback);return value>=0&&value<=max?value:fallback;}catch(ClassCastException invalid){return fallback;}}
     private static String savedText(SharedPreferences saved,String key,String fallback,int max){try{String value=saved.getString(key,fallback);return value!=null&&!value.isEmpty()&&value.length()<=max?value:fallback;}catch(ClassCastException invalid){return fallback;}}
     private static boolean savedSound(SharedPreferences saved){try{return saved.getBoolean("sound",true);}catch(ClassCastException invalid){return true;}}
+    private static String selectedScope(int selection){return selection>=2?LanUdpContract.NPS_SCOPE:selection==1?LanUdpContract.TAILNET_SCOPE:LanUdpContract.LAN_SCOPE;}
+    private static String selectedNode(int selection){return selection==2?LanUdpContract.M1_NODE:selection==3?LanUdpContract.M5_NODE:"";}
+    private static String usernamePreference(int selection){return selection>=2?"nps_username":"username";}
+    private static String defaultUsername(int selection){return selection>=2?"wyw":"huoguo";}
+    private static String publicAddress(int selection){
+        if(selection==2)return LanUdpContract.NPS_HOST+":"+LanUdpContract.NPS_M1_HTTPS_PORT;
+        if(selection==3)return LanUdpContract.NPS_HOST+":"+LanUdpContract.NPS_M5_HTTPS_PORT;
+        throw new IllegalArgumentException("public_selection_invalid");
+    }
     private static String savedAddress(SharedPreferences saved,String key,String scope,String fallback){
         try{String value=savedText(saved,key,fallback,256);Endpoint.Address parsed=Endpoint.parse(Endpoint.destination(value));
             LanUdpContract.validateLogin(parsed.host,parsed.port,scope);return value;}catch(Exception invalid){return fallback;}
     }
     private void saveSettings(){
+        if(restoringFields)return;
         int selected=scope.getSelectedItemPosition();String endpoint=address.getText().toString();
         SharedPreferences.Editor edit=activity.getSharedPreferences(SETTINGS,0).edit()
-            .putInt("scope",selected).putString("address",endpoint).putString("username",user.getText().toString())
+            .putInt("scope",selected).putString("address",endpoint).putString(usernamePreference(selected),user.getText().toString())
             .putInt("quality",quality.getSelectedItemPosition()).putInt("rate",rate.getSelectedItemPosition())
             .putInt("fps",fps.getSelectedItemPosition()).putInt("buffer",buffer.getSelectedItemPosition()).putBoolean("sound",sound.isChecked());
         if(selected==0)try{Endpoint.Address parsed=Endpoint.parse(Endpoint.destination(endpoint));LanUdpContract.validateLogin(parsed.host,parsed.port,LanUdpContract.LAN_SCOPE);
@@ -116,12 +137,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     }
     private void start(){
         synchronized(lock){if(retiring!=null){status.setText("上一条 UDP 会话正在收尾，请稍后重新连接。");return;}}
-        final String endpoint,credential,networkScope;final int requestedSurfaceLeadMs;final JSONObject request=new JSONObject();
+        final String endpoint,credential,networkScope,node;final int requestedSurfaceLeadMs;final JSONObject request=new JSONObject();
         try{
             endpoint=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(endpoint);
-            networkScope=scope.getSelectedItemPosition()==0?LanUdpContract.LAN_SCOPE:LanUdpContract.TAILNET_SCOPE;
-            try{LanUdpContract.validateLogin(parsed.host,parsed.port,networkScope);}
-            catch(IOException invalid){throw new IOException(networkScope.equals(LanUdpContract.TAILNET_SCOPE)?"Tailnet 实验仅接受 M1 100.65.0.2:"+LanUdpContract.HTTPS_PORT:"局域网范围仅接受私有 IPv4:"+LanUdpContract.HTTPS_PORT);}
+            int selection=scope.getSelectedItemPosition();if(selection<0||selection>3)throw new IOException("请手动选择测试节点");
+            networkScope=selectedScope(selection);node=selectedNode(selection);
+            try{LanUdpContract.validateLogin(parsed.host,parsed.port,networkScope,node);}
+            catch(IOException invalid){throw new IOException(networkScope.equals(LanUdpContract.NPS_SCOPE)?"公网试用只接受所选节点的固定 HTTPS 控制地址":networkScope.equals(LanUdpContract.TAILNET_SCOPE)?"Tailnet 实验仅接受 M1 100.65.0.2:"+LanUdpContract.HTTPS_PORT:"局域网范围仅接受私有 IPv4:"+LanUdpContract.HTTPS_PORT);}
             String name=user.getText().toString(),secret=password.getText().toString();
             if(name.isEmpty()||secret.isEmpty()||name.indexOf(':')>=0||name.length()>128||secret.length()>1024)throw new IOException("请填写现有账号及密码");
             credential="Basic "+android.util.Base64.encodeToString((name+":"+secret).getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);
@@ -129,12 +151,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             request.put("video_bit_rate",new int[]{4000000,8000000,12000000,16000000,24000000}[rate.getSelectedItemPosition()]);
             request.put("max_fps",fps.getSelectedItemPosition()==0?60:120).put("buffer_ms",new int[]{30,50,80,100}[buffer.getSelectedItemPosition()]);
             request.put("seconds",120).put("audio_enabled",sound.isChecked()).put("touch_enabled",true).put("network_scope",networkScope);
+            if(LanUdpContract.NPS_SCOPE.equals(networkScope))request.put("node",node);
             requestedSurfaceLeadMs=ownerSurfaceSubmitLeadMs;LanUdpContract.validateOwnerSurfaceLead(requestedSurfaceLeadMs);
             request.put("surface_submit_lead_ms",requestedSurfaceLeadMs);
             activity.initTLS();
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,node,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();
@@ -143,7 +166,8 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         try{
             JSONObject descriptor=http(attempt,"POST","/udp/session",request,true);
             String id=descriptor.optString("session","");if(!id.matches("[0-9a-f]{32}"))throw new IOException("invalid_session_id");attempt.sessionId=id;
-            validateDescriptor(descriptor,Endpoint.parse(attempt.endpoint).host,attempt.networkScope,attempt.surfaceSubmitLeadMs);
+            Endpoint.Address login=Endpoint.parse(attempt.endpoint);
+            validateDescriptor(descriptor,login.host,login.port,attempt.networkScope,attempt.node,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
                 attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,(report,failed)->finished(attempt,report,failed));
@@ -163,18 +187,27 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         validateDescriptor(json,loginHost,expectedScope,0);
     }
     static void validateDescriptor(JSONObject json,String loginHost,String expectedScope,int expectedLeadMs)throws Exception{
+        validateDescriptor(json,loginHost,LanUdpContract.HTTPS_PORT,expectedScope,"",expectedLeadMs);
+    }
+    static void validateDescriptor(JSONObject json,String loginHost,int loginPort,String expectedScope,String expectedNode,int expectedLeadMs)throws Exception{
         java.util.Map<String,Object> fields=new java.util.HashMap<>();java.util.Iterator<String> keys=json.keys();
         while(keys.hasNext()){String key=keys.next();fields.put(key,json.get(key));}
-        LanUdpContract.validate(fields,loginHost,expectedScope,expectedLeadMs);
+        LanUdpContract.validate(fields,loginHost,loginPort,expectedScope,expectedNode,expectedLeadMs);
     }
     private JSONObject http(Attempt attempt,String method,String path,JSONObject data,boolean cancellable)throws Exception{
         if(cancellable&&attempt.cancelled)throw new IOException("cancelled");Endpoint.Address endpoint=Endpoint.parse(attempt.endpoint);
+        LanUdpContract.validateLogin(endpoint.host,endpoint.port,attempt.networkScope,attempt.node);
         SSLSocket socket=(SSLSocket)activity.tls.getSocketFactory().createSocket();
         if(cancellable){synchronized(lock){if(attempt.cancelled){socket.close();throw new IOException("cancelled");}attempt.https=socket;}}
         try{
             socket.connect(new InetSocketAddress(endpoint.host,endpoint.port),5000);socket.setSoTimeout(7000);socket.setTcpNoDelay(true);socket.startHandshake();
             byte[] leaf=MessageDigest.getInstance("SHA-256").digest(socket.getSession().getPeerCertificates()[0].getEncoded());boolean pinned=false;
-            for(byte[] pin:activity.fingerprints)pinned|=MessageDigest.isEqual(pin,leaf);if(!pinned)throw new IOException("certificate_pin");
+            if(LanUdpContract.NPS_SCOPE.equals(attempt.networkScope)){
+                String hex=LanUdpContract.npsCertificateSha256(attempt.node);byte[] nodePin=new byte[32];
+                for(int i=0;i<nodePin.length;i++)nodePin[i]=(byte)Integer.parseInt(hex.substring(i*2,i*2+2),16);
+                pinned=MessageDigest.isEqual(nodePin,leaf);
+            }else for(byte[] pin:activity.fingerprints)pinned|=MessageDigest.isEqual(pin,leaf);
+            if(!pinned)throw new IOException("certificate_pin");
             byte[] body=data==null?new byte[0]:data.toString().getBytes(StandardCharsets.UTF_8);
             OutputStream out=socket.getOutputStream();out.write((method+" "+path+" HTTP/1.1\r\nHost: "+attempt.endpoint+"\r\nAuthorization: "+attempt.credential+"\r\nContent-Type: application/json\r\nContent-Length: "+body.length+"\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));out.write(body);out.flush();
             InputStream in=socket.getInputStream();int status=activity.header(in);if(status!=200&&!(method.equals("POST")&&status==201)&&!(method.equals("DELETE")&&status==204))throw new IOException("https_status_"+status);

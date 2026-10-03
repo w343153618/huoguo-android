@@ -108,6 +108,15 @@ class ExperimentalReleaseCheck(unittest.TestCase):
                                 self.BRANCH, self.SHA, self.NAME, self.CODE, '实验说明')
             self.assertEqual((destination / 'keep').read_text(), 'previous frozen release')
 
+    def test_alpha6_public_profiles_do_not_assert_cellular_or_friend_acceptance(self):
+        metadata = release.manifest(self.identity(), self.REPOSITORY, self.BRANCH,
+            self.SHA, '1.31-alpha.6', 37, 'Public owner trial only')
+        self.assertEqual(metadata['public_owner_profiles'], ['m1', 'm5'])
+        self.assertIn('public_NPS_owner', metadata['media_transport'])
+        for key in ('public_udp_acceptance', 'public_cellular_acceptance', 'friend_isolation_acceptance'):
+            self.assertIs(metadata[key], False)
+        self.assertEqual(self.metadata()['public_owner_profiles'], [])
+
     def test_apk_output_inside_source_tree_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'outside the source tree'):
             release.prepare(ROOT / 'output', '/missing.apk', '/sdk', self.REPOSITORY,
