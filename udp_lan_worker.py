@@ -46,7 +46,10 @@ class LanMediaWorker:
         'udp_sender_state', 'udp_auth_seal', 'formal_busy_guard', 'not_instrumented'))
 
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
-                 native_encoder, registry, evidence_dir, busy):
+                 native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False):
+        if type(enobufs_retry_enabled) is not bool:
+            raise ValueError('owner_enobufs_retry_boolean_required')
+        self.enobufs_retry_enabled = enobufs_retry_enabled
         self.config = dict(config)
         self.sid = config['session']
         self.key = base64.b64decode(config['key_b64'], validate=True)
@@ -185,7 +188,9 @@ class LanMediaWorker:
                     try:
                         self.sender = AuthenticatedSender(writer, self.key, self.tag, pacer=pacer,
                             send_policy='owned_nonblocking_deadline', owns_socket=True,
-                            cancelled=self.stop_event.is_set)
+                            cancelled=self.stop_event.is_set,
+                            enobufs_retry_enabled=self.enobufs_retry_enabled,
+                            backpressure_wait=self.stop_event.wait)
                     except Exception:
                         writer.close()
                         self.send_udp = None

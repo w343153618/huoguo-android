@@ -97,7 +97,7 @@
   "renderer": "skiavk",
   "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
-  "independent_experimental_app_sha256": "8c00a1660ccef0e84b11c98c16091fd630c5980d29704e069562b92a04c94351",
+  "independent_experimental_app_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
     "real_video_sessions": 33,
@@ -124,7 +124,7 @@
     "new_public_udp_path_tested": false,
     "audio_visual_optical_sync_tested": false
   },
-  "instrumentation_package_sha256": "35c92b41c9da9069591b70fb34ca583ae453abc2457b4e06ef1f55e47c88b220",
+  "instrumentation_package_sha256": "d537af1660b2162eb168a402222c6c1e410e1cf042be2bdc8728ad69c96ac3cc",
   "latest_network_readback": {
     "readback_date": "2026-10-03",
     "headscale_control_url": "https://hs.yilufa.site",
@@ -526,7 +526,7 @@
       "no_runtime_security_checks_disabled": true
     }
   },
-  "independent_experimental_app_sha_scope": "Current alpha4/code35 actual base.apk SHA verified on OnePlus12 in single mapping observation; older alpha1/alpha3 reports retain their own history",
+  "independent_experimental_app_sha_scope": "Current alpha5/code36 same actual base.apk verified on OnePlus12 for startup and owner ENOBUFS normal-path observations; historical alpha4/alpha3/alpha1 fields retain their recorded evidence",
   "latest_owner_tailnet_media": {
     "report": "tailnet-owner-media-20261003.md",
     "evidence": "evidence/tailnet-owner-media-20261003-attempt7",
@@ -1038,5 +1038,33 @@
     "formal_services_changed": false,
     "full_checks": 982,
     "next_factor": "Explicit deadline-bounded owned sender ENOBUFS handling; keep startupOFF and all original frame/priority/clock policies"
+  },
+  "instrumentation_package_state": "matching helper removed after two real observations",
+  "latest_enobufs_retry_observation": {
+    "record": "docs/udp-enobufs-real-video-20261003.json",
+    "same_apk_version": "1.31-alpha.5/code36",
+    "owner_optin": true,
+    "steady_startup_gate": false,
+    "phone_sf_cadence_fps": [
+      59.164,
+      59.579
+    ],
+    "phone_sf_full_requested_window_fps": [
+      57.758,
+      58.258
+    ],
+    "phone_sf_max_observed_gap_ms": [
+      149.198905,
+      74.593385
+    ],
+    "actual_enobufs_calls": 0,
+    "actual_recovery_branch_covered": false,
+    "source_pins_unchanged_at_end": true,
+    "cleanup_complete": true,
+    "formal_udp_release_published": false,
+    "phone_cpu_limits_preserved_not_locked": true,
+    "next_action": "bounded mapping/core settlement diagnostics",
+    "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
+    "same_home_tailnet_outer_path_verified": false
   }
 }

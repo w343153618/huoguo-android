@@ -72,6 +72,7 @@ def bare_worker():
     worker.sid, worker.key, worker.tag = SESSION, KEY, TAG
     worker.peer_ip, worker.host_ip = '192.168.9.149', '192.168.9.128'
     worker.stop_event, worker.startup_done = threading.Event(), threading.Event()
+    worker.enobufs_retry_enabled = False
     worker.control_lock, worker.lifecycle_lock = threading.RLock(), threading.RLock()
     worker.registry = Mock()
     worker.registry.touch_allowed.return_value = True
@@ -165,8 +166,9 @@ class ConstructorChecks(unittest.TestCase):
 
 
 class IngressChecks(unittest.TestCase):
-    def run_ingress(self, messages, *, touch_allowed=True):
+    def run_ingress(self, messages, *, touch_allowed=True, enobufs_retry_enabled=False):
         worker = bare_worker()
+        worker.enobufs_retry_enabled = enobufs_retry_enabled
         worker.registry.touch_allowed.return_value = touch_allowed
         worker.touch = Mock()
         worker._request_idr = Mock()
@@ -177,6 +179,19 @@ class IngressChecks(unittest.TestCase):
 
     def packet(self, sequence, payload, key=KEY, tag=TAG):
         return seal(key, tag, sequence, payload, CLIENT_NONCE)
+
+    def test_enobufs_optin_is_owned_local_flag_and_uses_cancelable_event_wait(self):
+        peer = ('192.168.9.149', 34567)
+        for enabled in (False, True):
+            worker, sender = self.run_ingress([
+                (self.packet(1, b'READY'), peer),
+                (self.packet(2, b'STOP'), peer)],
+                enobufs_retry_enabled=enabled)
+            keywords = sender.call_args.kwargs
+            self.assertIs(keywords['enobufs_retry_enabled'], enabled)
+            self.assertEqual(keywords['send_policy'], 'owned_nonblocking_deadline')
+            self.assertEqual(keywords['backpressure_wait'], worker.stop_event.wait)
+            self.assertEqual(keywords['cancelled'], worker.stop_event.is_set)
 
     def test_foreign_source_cannot_pin_peer_or_poison_replay_before_real_ready(self):
         real = ('192.168.9.149', 34567)

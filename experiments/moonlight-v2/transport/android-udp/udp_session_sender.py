@@ -123,16 +123,28 @@ class AuthenticatedSender:
     WRITABLE_WAIT_NS = 5_000_000
     PRIORITY_BUDGET_NS = 10_000_000
     MAX_WOULD_BLOCK_ATTEMPTS = 64
+    MAX_ENOBUFS_CALLS = 8
+    ENOBUFS_BACKOFF_NS = (1_000_000, 2_000_000, 4_000_000, 5_000_000)
 
     def __init__(self, sock, key, session, video_drop_every=0, *, pacer=None, clock_ns=time.monotonic_ns,
-                 send_policy='legacy_socket_timeout', owns_socket=False, cancelled=None, wait_writable=None):
+                 send_policy='legacy_socket_timeout', owns_socket=False, cancelled=None, wait_writable=None,
+                 enobufs_retry_enabled=False, backpressure_wait=None):
         if type(video_drop_every) is not int or video_drop_every != 0 and video_drop_every < 20:
             raise ValueError('Fault injection must be disabled or at most 5 percent')
         if send_policy not in self.SEND_POLICIES or type(owns_socket) is not bool:
             raise ValueError('UDP send policy/ownership contract')
         if send_policy == 'owned_nonblocking_deadline' and sock.gettimeout() != 0:
             raise ValueError('Owned candidate writer must have Python nonblocking timeout')
+        if type(enobufs_retry_enabled) is not bool or enobufs_retry_enabled and send_policy != 'owned_nonblocking_deadline':
+            raise ValueError('ENOBUFS retry requires explicit owned nonblocking opt-in')
+        if backpressure_wait is not None and not callable(backpressure_wait):
+            raise ValueError('ENOBUFS backpressure wait must be callable')
         self.send_policy, self.owns_socket = send_policy, owns_socket
+        self.enobufs_retry_enabled = enobufs_retry_enabled
+        # Unlike EAGAIN readiness, ENOBUFS may persist while select is writable.
+        # A caller can inject stop_event.wait for prompt cancellation; the default
+        # sleep is bounded by one <=5ms slice, never the authentication lock.
+        self.backpressure_wait = time.sleep if backpressure_wait is None else backpressure_wait
         self.cancelled = cancelled or (lambda: False)
         self.wait_writable = wait_writable or self._wait_writable
         self.socket_close_attempted = self.socket_close_confirmed = False
@@ -151,7 +163,12 @@ class AuthenticatedSender:
                              'would_block_calls': 0, 'would_block_retries': 0, 'retry_wait_ns': 0,
                              'max_retry_wait_ns': 0, 'max_total_send_call_ns': 0,
                              'would_block_deadline_drops': 0, 'priority_budget_dropped_datagrams': 0,
-                             'retry_bound_dropped_datagrams': 0}
+                             'retry_bound_dropped_datagrams': 0,
+                             'enobufs_calls': 0, 'enobufs_retry_syscalls': 0,
+                             'enobufs_recovered_datagrams': 0, 'enobufs_fatal_calls': 0,
+                             'enobufs_deadline_drops': 0, 'enobufs_retry_bound_drops': 0,
+                             'enobufs_transient_bound_drops': 0, 'enobufs_backoff_waits': 0,
+                             'enobufs_backoff_wait_ns': 0, 'max_enobufs_backoff_wait_ns': 0}
 
                        for lane in self.LANES}
 
@@ -254,12 +271,20 @@ class AuthenticatedSender:
         error.huoguo_udp_failure_operation = operation
         return error
 
-    def _drop_nonblocking_locked(self, lane, would_block, retry_bound=False):
+    def _drop_nonblocking_locked(self, lane, would_block, retry_bound=False, *,
+                                 enobufs=False, enobufs_bound=False):
         counts = self.counts[lane]
         if would_block:
             counts['would_block_deadline_drops'] += 1
         if retry_bound:
             counts['retry_bound_dropped_datagrams'] += 1
+        if enobufs:
+            if enobufs_bound:
+                counts['enobufs_retry_bound_drops'] += 1
+            elif retry_bound:
+                counts['enobufs_transient_bound_drops'] += 1
+            else:
+                counts['enobufs_deadline_drops'] += 1
         if lane == 'video':
             counts['deadline_rejections'] += 1
             if self.pacer:
@@ -272,6 +297,8 @@ class AuthenticatedSender:
         began = self.clock_ns()
         bound_ns = deadline_us*1000 if lane == 'video' else began+self.PRIORITY_BUDGET_NS
         attempts = 0
+        would_block_calls = enobufs_calls = 0
+        retry_reason = None
         try:
             while True:
                 waiting = self.clock_ns()
@@ -287,14 +314,16 @@ class AuthenticatedSender:
                         try:
                             self._check_deadline_locked(len(payload)+68, deadline_us, acquired)
                         except PacingDeadline:
-                            if attempts:
+                            if would_block_calls:
                                 counts['would_block_deadline_drops'] += 1
+                            if enobufs_calls:
+                                counts['enobufs_deadline_drops'] += 1
                             raise
                     elif acquired >= bound_ns:
-                        return self._drop_nonblocking_locked(lane, bool(attempts))
+                        return self._drop_nonblocking_locked(lane, bool(would_block_calls), enobufs=bool(enobufs_calls))
                     if attempts >= self.MAX_WOULD_BLOCK_ATTEMPTS:
-                        return self._drop_nonblocking_locked(lane, True, True)
-                    if attempts:
+                        return self._drop_nonblocking_locked(lane, bool(would_block_calls), True, enobufs=bool(enobufs_calls))
+                    if retry_reason == 'would_block':
                         counts['would_block_retries'] += 1
                     sequence = self.sequence
                     self.sequence += 1  # A failed attempt never reuses this nonce.
@@ -310,8 +339,10 @@ class AuthenticatedSender:
                         try:
                             self._check_deadline_locked(len(payload)+68, deadline_us, start)
                         except PacingDeadline:
-                            if attempts:
+                            if would_block_calls:
                                 counts['would_block_deadline_drops'] += 1
+                            if enobufs_calls:
+                                counts['enobufs_deadline_drops'] += 1
                             raise
                         self.video_attempts += 1
                         if self.video_drop_every and self.video_attempts % self.video_drop_every == 0:
@@ -320,8 +351,10 @@ class AuthenticatedSender:
                                 self.pacer.sent(len(payload)+68)
                             return 0
                     elif start >= bound_ns:
-                        return self._drop_nonblocking_locked(lane, bool(attempts))
+                        return self._drop_nonblocking_locked(lane, bool(would_block_calls), enobufs=bool(enobufs_calls))
                     try:
+                        if retry_reason == 'enobufs':
+                            counts['enobufs_retry_syscalls'] += 1
                         size = self.socket.send(packet)
                         end = self.clock_ns()
                         if size != len(packet):
@@ -330,7 +363,20 @@ class AuthenticatedSender:
                         counts['send_errors'] += 1
                         if isinstance(error, BlockingIOError) and error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
                             counts['would_block_calls'] += 1
+                            would_block_calls += 1
                             attempts += 1
+                            retry_reason = 'would_block'
+                        elif error.errno == errno.ENOBUFS:
+                            counts['enobufs_calls'] += 1
+                            if not self.enobufs_retry_enabled:
+                                counts['enobufs_fatal_calls'] += 1
+                                raise self._failure_context(error, lane, 'udp_socket_send')
+                            enobufs_calls += 1
+                            attempts += 1
+                            retry_reason = 'enobufs'
+                            if enobufs_calls >= self.MAX_ENOBUFS_CALLS:
+                                return self._drop_nonblocking_locked(lane, bool(would_block_calls), True,
+                                    enobufs=True, enobufs_bound=True)
                         else:
                             raise self._failure_context(error, lane, 'udp_socket_send')
                     else:
@@ -339,18 +385,24 @@ class AuthenticatedSender:
                             counts['max_send_deadline_overshoot_ns'] = max(counts['max_send_deadline_overshoot_ns'], end-deadline_us*1000)
                         counts['datagrams'] += 1
                         counts['encrypted_bytes'] += size
+                        if enobufs_calls:
+                            counts['enobufs_recovered_datagrams'] += 1
                         self.last_timing[lane] = (start, end)
                         if self.pacer:
                             self.pacer.sent(size+28) if lane == 'video' else self.pacer.priority(size+28)
                         return size
                     finally:
                         counts['max_send_syscall_ns'] = max(counts['max_send_syscall_ns'], max(0, self.clock_ns()-start))
-                # No authentication or pacer mutex is held during socket wait.
+                # No authentication or pacer mutex is held during either wait.
                 before_wait = self.clock_ns()
                 remaining = bound_ns-before_wait
                 if remaining > 0 and not self.cancelled():
                     try:
-                        self.wait_writable(self.socket, min(self.WRITABLE_WAIT_NS, remaining)/1e9)
+                        if retry_reason == 'enobufs':
+                            pause = self.ENOBUFS_BACKOFF_NS[min(enobufs_calls-1, len(self.ENOBUFS_BACKOFF_NS)-1)]
+                            self.backpressure_wait(min(pause, remaining)/1e9)
+                        else:
+                            self.wait_writable(self.socket, min(self.WRITABLE_WAIT_NS, remaining)/1e9)
                     except (OSError, ValueError) as error:
                         # Closing this owned socket while select examines it can
                         # raise ValueError for fd=-1. Keep its class and hard
@@ -359,8 +411,13 @@ class AuthenticatedSender:
                     finally:
                         elapsed = max(0, self.clock_ns()-before_wait)
                         with self.lock:
-                            self.counts[lane]['retry_wait_ns'] += elapsed
-                            self.counts[lane]['max_retry_wait_ns'] = max(self.counts[lane]['max_retry_wait_ns'], elapsed)
+                            if retry_reason == 'enobufs':
+                                self.counts[lane]['enobufs_backoff_waits'] += 1
+                                self.counts[lane]['enobufs_backoff_wait_ns'] += elapsed
+                                self.counts[lane]['max_enobufs_backoff_wait_ns'] = max(self.counts[lane]['max_enobufs_backoff_wait_ns'], elapsed)
+                            else:
+                                self.counts[lane]['retry_wait_ns'] += elapsed
+                                self.counts[lane]['max_retry_wait_ns'] = max(self.counts[lane]['max_retry_wait_ns'], elapsed)
         finally:
             with self.lock:
                 self.counts[lane]['max_total_send_call_ns'] = max(self.counts[lane]['max_total_send_call_ns'], max(0, self.clock_ns()-began))
@@ -370,6 +427,13 @@ class AuthenticatedSender:
             return dict(send_policy=self.send_policy, nonblocking_writer=self.send_policy=='owned_nonblocking_deadline',
                         owns_send_socket=self.owns_socket, writable_wait_slice_ns=self.WRITABLE_WAIT_NS,
                         priority_budget_ns=self.PRIORITY_BUDGET_NS, max_would_block_attempts=self.MAX_WOULD_BLOCK_ATTEMPTS,
+                        max_transient_failure_calls=self.MAX_WOULD_BLOCK_ATTEMPTS,
+                        enobufs_retry_enabled=self.enobufs_retry_enabled, max_enobufs_calls=self.MAX_ENOBUFS_CALLS,
+                        enobufs_retry_counter_scope='syscalls_directly_following_an_ENOBUFS_timed_wait',
+                        enobufs_backoff_slices_ns=list(self.ENOBUFS_BACKOFF_NS),
+                        enobufs_wait_policy='cancel_injectable_timed_backoff_not_select_readiness',
+                        enobufs_video_budget='original_frame_deadline_never_renewed',
+                        enobufs_priority_budget='original_10ms_send_call_budget_never_renewed',
                         priority_would_block_expiry_policy='drop_count_not_sent',
                         video_would_block_expiry_policy='PacingDeadline_existing_reference_guard',
                         retry_seals_fresh_nonce=True, send_mutex_held_across_wait=False,

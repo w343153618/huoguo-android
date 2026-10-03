@@ -205,6 +205,8 @@ def main():
     parser.add_argument('--network-scope', choices=('lan', 'tailnet'), default='lan')
     parser.add_argument('--allow-owner-surface-submit-lead', action='store_true',
                         help='Bounded owner experiment only: explicitly permit requested lead 16 ms; default 0 remains')
+    parser.add_argument('--allow-owner-enobufs-retry', action='store_true',
+                        help='Owner sender experiment only: bounded ENOBUFS backoff within original deadlines; default off')
     parser.add_argument('--https-port', type=int, default=45560)
     parser.add_argument('--udp-port', type=int, default=45963)
     parser.add_argument('--runtime', type=Path, required=True,
@@ -233,7 +235,8 @@ def main():
     def factory(config, peer):
         return LanMediaWorker(config, peer, host, args.interface, args.runtime,
                               args.packetizer, args.native_encoder, registry,
-                              args.evidence_dir, busy=formal_busy)
+                              args.evidence_dir, busy=formal_busy,
+                              enobufs_retry_enabled=args.allow_owner_enobufs_retry)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(CERT, KEY)
@@ -268,7 +271,8 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     print(json.dumps({'event': 'listening', 'host': host, 'https_port': args.https_port,
                       'udp_port': args.udp_port, 'scope': scope.ping_scope,
-                      'network_scope': scope.name, 'inner_interface': args.interface}), flush=True)
+                      'network_scope': scope.name, 'inner_interface': args.interface,
+                      'owner_enobufs_retry_enabled': args.allow_owner_enobufs_retry}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)
     finally:

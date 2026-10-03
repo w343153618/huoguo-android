@@ -160,3 +160,9 @@ App连接页展示当前实际路径和失败原因，不把“Tailscale”自�
 先读[实际记录](codec-startup-ready-real-video-20261003.md)、[数字](codec-startup-ready-real-video-20261003.json)及[候选契约](codec-startup-ready-contract-20261003.md)。同APK OFF/ON/ON后第三轮健康失败，不能称完成ABBA。ON四连接实际Gate commit成功，初始2秒带overflow/timeout0，但第二轮手机SF49.879、max1931ms，仍不稳定；默认OFF保持。第三轮host udp_video send明确errno55/ENOBUFS→撤销，手机无进度13.019s；Inbox溢出/timeout0，native1340源/output1340、22.861s后EOF自然0不是整会话无错误。不要把此次停止归因decoder槽、扩大FIFO或buffer。
 
 当前alpha5/code36 APK f5cf8bbf、JNI578347ca、helperd537af16，原签名；982checks+build/lint通过，helper/一次性input和高端口45560/45963已清理，手机保留alpha5。首次旧App15963与新端口45963不一致的描述失败保留但排除性能样本；实际parser联合fixture已补。正式默认APK无UDP JNI/Gate/UI，正式v1.30/M5/NPS此实验未改。下一因素立即推进owned非阻塞sender仅显式opt-in的ENOBUFS有界退让/计数/取消；原视频期限、priority10ms、nonce、参考guard不变，先fixture再同APK真实视频观察。实际没遇到ENOBUFS的轮不能宣称真实拥塞恢复已验收。独立duringprepare取消helper源另外准备，未构建/装机。
+
+## 2026-10-03最新：ENOBUFS显式候选两轮已完成，下一步mapping生命周期
+
+读[新记录](udp-enobufs-real-video-20261003.md)及[裁剪JSON](udp-enobufs-real-video-20261003.json)。同alpha5/startupOFF，host显式ENOBUFS原deadline/priority10ms退让，两轮真实BBB前后itag299/avc1/1080@60、四会话正常退出/重连；实际ENOBUFS/EAGAIN/senderror均0，因此只验收ON正常路径，恢复分支仍fixture。1000全仓checks，17新sender fixtures。手机SF cadence59.164/59.579、完整请求窗57.758/58.258、max149.199/74.593ms；有约0.52s未知尾部，不称无卡顿60、公网/V50或光学音画验收。CPU与位置动态，不能归因候选恢复。全部pins结束匹配、gateway0/quiescent、helper/输入清理、45560/45963关闭，机主保留alpha5，正式服务与更新渠道未改。
+
+下一因素先读[adapter/core生命周期](native-mapping-capacity-lifecycle-20261003.md)：历史8次仅两帧数据报，adapter8/core0/56～76ms；本轮再出现10/82容量拒绝，但未知八occupantID/settle原因。先定长settle(ID,reason,phone_us)及capacity occupant快照，不改变292 schema、cap8/80ms/参考链、不凭pending0全清、不直接扩容。独立duringprepare取消helper已javac源码编译，未构建安装/真机，不能当取消覆盖。新的真实campaign已结束，checkpoint在docs/evidence/udp-enobufs-retry-20261003/iteration-state.json；先接续生命周期诊断源码/owned fixture准备，再冻结新JNI/Java/APK/SHA。NPS一次正式重启和两Mac QUIC维护早已完成，不重复。
