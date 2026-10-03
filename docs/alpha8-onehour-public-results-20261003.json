@@ -40,7 +40,23 @@
       },
       "trailing_unobserved_ms": 429.435,
       "sf_is_optical_measurement": false,
-      "source_format_readback_verified": false
+      "source_format_readback_verified": false,
+      "host_feed_followup": {
+        "elapsed_us": 141465269,
+        "source_frames": 3900,
+        "output_frames": 3897,
+        "frame_budget_drops": 0,
+        "output_deadline_drops": 1,
+        "dependent_source_drops": 2,
+        "stdout_blocked_us": 0,
+        "max_wire_frame_bytes": 47310,
+        "source_record_rate_full_host_session": 27.569,
+        "host_window_not_identical_to_phone_steady": true,
+        "actual_source_SF_or_unique_content_fps_measured": false,
+        "cleanup_confirmed": true,
+        "native_natural_exit_zero": true,
+        "tcp_media_used": false
+      }
     },
     "m5": {
       "control_port": 49558,

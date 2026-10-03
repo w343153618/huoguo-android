@@ -1082,7 +1082,7 @@
   },
   "next_source_task": {
     "priority": "UDP media only",
-    "immediate": "Publish exact alpha8 artifact and update manifest; then UDP30 queue tail investigation on M1, no repeated TCP media matrix",
+    "immediate": "M1 authenticated UDP30 queue-tail cause investigation; retain released alpha8 and real format readback before controlled buffer comparison",
     "secondary": "Measure and reduce UDP receive/codec/Surface queue tails, then controlled50/80ms buffer comparison; no TCP media matrix",
     "preserve_formal": true
   },
@@ -1203,18 +1203,24 @@
     "durable_launchagents_stage": "prepared_not_loaded"
   },
   "latest_experimental_delivery": {
-    "version_name": "1.31-alpha.7",
-    "version_code": 38,
-    "source_commit": "3387b56f1e6ef2a5530c9f9dcda1663aebfbc349",
-    "apk_sha256": "1f4c6c1b7dc61b2de9dd24dfdc647ee6424d347ad1cde143db20237c6b57f2a7",
-    "apk_size": 8347265,
+    "version_name": "1.31-alpha.8",
+    "version_code": 39,
+    "source_commit": "73d196a8193394c9362250aa0e8be92fae15e125",
+    "apk_sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+    "apk_size": 8373093,
     "native_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
     "github_assets_full_readback_verified": true,
     "pinned_nps_full_readback_verified": true,
-    "public_download_url": "https://146.56.249.175:15556/experimental/HuoguoAndroidExperiment-v1.31-alpha.7.apk",
-    "evidence": "docs/experimental-alpha7-ux-release-20261003.md",
-    "phone_ui_password_and_exit_acceptance": true,
-    "VPN_on_packet_route_acceptance": false
+    "public_download_url": "https://146.56.249.175:15556/experimental/HuoguoAndroidExperiment-v1.31-alpha.8.apk",
+    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.8",
+    "evidence": "docs/alpha8-onehour-public-results-20261003.json",
+    "public_session_seconds": 3600,
+    "experimental_fps_choices": [
+      30,
+      60
+    ],
+    "guest_physical_hz": 30,
+    "friend_isolation_accepted": false
   },
   "owner_udp_supervision_current": {
     "source_commit": "dd43a39f49f6dceb55854fbc6e43367d34f381c3",
@@ -1240,7 +1246,7 @@
   "v50_udp_client_candidate_20261003": {
     "version": "1.31-alpha.8",
     "code": 39,
-    "published": false,
+    "published": true,
     "apk_sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
     "source_checks": 1301,
     "actual_phone": "CPU-limited OnePlus12; not V50",
@@ -1280,5 +1286,19 @@
     "login_launchagents_reboot_acceptance": false,
     "friend_isolation_accepted": false,
     "evidence": "docs/owner-udp-launchagents-20261003.md"
+  },
+  "latest_experimental_delivery_previous": {
+    "version_name": "1.31-alpha.7",
+    "version_code": 38,
+    "source_commit": "3387b56f1e6ef2a5530c9f9dcda1663aebfbc349",
+    "apk_sha256": "1f4c6c1b7dc61b2de9dd24dfdc647ee6424d347ad1cde143db20237c6b57f2a7",
+    "apk_size": 8347265,
+    "native_sha256": "981f13d279ffc20232816c1e646256189cf35e02181353e9eaba89041832cd03",
+    "github_assets_full_readback_verified": true,
+    "pinned_nps_full_readback_verified": true,
+    "public_download_url": "https://146.56.249.175:15556/experimental/HuoguoAndroidExperiment-v1.31-alpha.7.apk",
+    "evidence": "docs/experimental-alpha7-ux-release-20261003.md",
+    "phone_ui_password_and_exit_acceptance": true,
+    "VPN_on_packet_route_acceptance": false
   }
 }

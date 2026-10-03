@@ -1,0 +1,10 @@
+{
+  "version_name": "1.31-alpha.8",
+  "version_code": 39,
+  "sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+  "size": 8373093,
+  "pinned_full_public_readback": true,
+  "physical_interface": "en7",
+  "public_download_url": "https://146.56.249.175:15556/experimental/HuoguoAndroidExperiment-v1.31-alpha.8.apk",
+  "stable_manifest_untouched_by_sync": true
+}
