@@ -24,7 +24,9 @@ M5 配置 `phone17-root.avd/config.ini` 的 `hw.lcd.width=720`、`hw.lcd.height=
 
 此次明确的物理尺寸变更进行了冷启动，执行前说明正在连接的串流会暂断。首次 launchd bootstrap 因旧作业退出期间的暂态返回非零，随后重新 bootstrap 成功；Android boot1、物理尺寸及 gateway 恢复已读回。Pixel6的两项显示装饰关闭后，最终两个 cutout 资源解析为空，屏幕 Awake。
 
-M5 的旧 gateway 还硬编码了五分钟息屏。按用户此前取消自动息屏的要求，在确认无正式在线连接后，将这一处改为现有源码的环境参数读取，并设 `DIRECT_IDLE_DELAY=0`；没有再次重启虚拟安卓。随后实际收尾发现旧 `idle_power.py` 还把0解释为立即执行计时，不能仅凭环境值认定常亮已验收。已同步现有正式源码的0禁用契约，实际部署模块的8项惰性Timer/陈旧回调/在线保护检查通过。M5此时已有正式会话，未强制重载；受限的单次维护程序等会话自然结束后才重载gateway、唤醒并读回，持有独立reload锁和受限receipt，最长20分钟。receipt完成前常亮运行态验收仍待定。安卓自身 `screen_off_timeout=2147483647`、供电常亮15已读回；它不代表 Mac 关机或睡眠时仍能远程使用。
+M5 的旧 gateway 还硬编码了五分钟息屏。按用户此前取消自动息屏的要求，在确认无正式在线连接后，将这一处改为现有源码的环境参数读取，并设 `DIRECT_IDLE_DELAY=0`；没有再次重启虚拟安卓。随后实际收尾发现旧 `idle_power.py` 还把0解释为立即执行计时，不能仅凭环境值认定常亮已验收。已同步现有正式源码的0禁用契约，实际部署模块的8项惰性Timer/陈旧回调/在线保护检查通过。M5此时已有正式会话，未强制重载；受限的单次维护程序持有独立reload锁，在会话自然结束后完成gateway重载和唤醒。
+
+现在受限receipt已读回 `status=reloaded_after_formal_idle`、`no_vm_restart=true`，模块SHA为 `ae7ed8232a012b7c3b22c2d3f073d4980f4673a77b629edda1052b287fe9b5a3`，与M5实际文件匹配。receipt记录加载后 Awake、无keepalive再等10秒仍 Awake。2026-10-03T03:27:35Z再次只读核对时，gateway已加载运行（当时PID75248），LaunchAgent环境仍为0，局域网与公网受信ping均HTTP200；当时已有正式连接，本次没有打断、重载或新增测试。该单次维护已经完成，不再创建或重复执行等待重载程序。这确认了0禁用契约已加载和即时执行误息屏已消除，10秒观察不等于无限期运行压力测试。安卓自身 `screen_off_timeout=2147483647`、供电常亮15已读回；这些设置不代表 Mac 关机或睡眠时仍能远程使用。
 
 备份都在 M5 原运行目录的受限 `direct/backups`：
 
