@@ -252,7 +252,8 @@ public final class UdpVideoProbe extends Instrumentation {
                 .put("oversize_admission_drops",oversizeDrops).put("closing_drops",closingDrops)
                 .put("recovery_epochs",recoveryEpochs).put("recovery_idrs_completed",recoveryCompleted)
                 .put("needs_idr",waiting).put("pending_frames",queue.size()).put("pending_bytes",bytes)
-                .put("epoch_event_capacity",MAX_INBOX_EVENTS).put("epoch_events_evicted",eventsEvicted);
+                .put("epoch_event_capacity",MAX_INBOX_EVENTS).put("epoch_events_evicted",eventsEvicted)
+                .put("epoch_events_enabled",diagnosticEvents).put("epoch_events_retained",events.size());
         }
         synchronized JSONArray eventSnapshot()throws Exception{
             JSONArray result=new JSONArray();
@@ -1146,8 +1147,101 @@ public final class UdpVideoProbe extends Instrumentation {
         for(String key:new String[]{"nps_physical_network_binding","native_fec","native_mapping_details","udp_audio","udp_touch","video_input_queue","codec_startup_gate","codec_timestamp_validity","display_mode_start","display_mode_end","decoder_stage_metrics"}){
             Object value=report.opt(key);if(value instanceof JSONObject)out.put(key,numericTree((JSONObject)value));
         }
+        // Object-array events deliberately bypass numericTree's 128-number
+        // truncation. Only this closed, bounded numeric schema may cross App mode.
+        out.put("inbox_epoch_events_numeric",numericInboxEpochEvents(report));
         if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");
         return out;
+    }
+    /** Report-time only: codes are stable; zero means an unknown event/reason. */
+    private static int inboxEventCode(Object value){
+        if("chain_lost".equals(value))return 1;
+        if("idr_admitted".equals(value))return 2;
+        if("recovered".equals(value))return 3;
+        if("stale_fail_ignored".equals(value))return 4;
+        if("startup_prepare_admitted".equals(value))return 5;
+        return 0;
+    }
+    private static int inboxReasonCode(Object value){
+        if("oversized_au".equals(value))return 1;
+        if("queue_frame_overflow".equals(value))return 2;
+        if("queue_byte_overflow".equals(value))return 3;
+        if("worker_complete_au_expired".equals(value))return 4;
+        if("codec_input_timeout".equals(value))return 5;
+        if("codec_input_failure".equals(value))return 6;
+        if("old_epoch".equals(value))return 7;
+        if("metadata_only_not_media".equals(value))return 8;
+        if("complete_config_idr".equals(value))return 9;
+        if("initial_idr_committed".equals(value))return 10;
+        if("epoch_idr_committed".equals(value))return 11;
+        if("stale_codec_epoch".equals(value))return 12;
+        if("codec_stopped".equals(value))return 13;
+        return 0;
+    }
+    private static long inboxEventLong(JSONObject object,String key)throws IOException{
+        Object value=object.opt(key);
+        if(!(value instanceof Byte||value instanceof Short||value instanceof Integer||value instanceof Long))
+            throw new IOException("inbox_event_integral_field_required");
+        return ((Number)value).longValue();
+    }
+    static JSONObject numericInboxEpochEvents(JSONObject report)throws Exception{
+        final String[] fields={"epoch","previous_epoch","time_ns","pts_us","received_ns","queue_frames","queue_bytes"};
+        JSONObject result=new JSONObject().put("schema_version",1).put("available",0).put("enabled",-1)
+            .put("capacity",MAX_INBOX_EVENTS).put("retained_count",0).put("exported_count",0)
+            .put("evicted_count",0).put("observed_count",0).put("unknown_event_count",0).put("unknown_reason_count",0)
+            .put("worker_alive",-1).put("worker_join_timed_out",-1).put("worker_cleanup_confirmed",0)
+            .put("snapshot_complete",0).put("all_recorded_events_retained",0).put("known_codes_complete",0)
+            .put("availability_code",0).put("all_pipeline_events_covered",0);
+        JSONArray eventCodes=new JSONArray(),reasonCodes=new JSONArray();
+        result.put("event_code",eventCodes).put("reason_code",reasonCodes);
+        JSONArray[] columns=new JSONArray[fields.length];
+        for(int i=0;i<fields.length;i++){columns[i]=new JSONArray();result.put(fields[i],columns[i]);}
+        Object alive=report.opt("video_worker_alive"),timedOut=report.opt("video_worker_join_timed_out");
+        boolean cleanupKnown=alive instanceof Boolean&&timedOut instanceof Boolean;
+        if(alive instanceof Boolean)result.put("worker_alive",(Boolean)alive?1:0);
+        if(timedOut instanceof Boolean)result.put("worker_join_timed_out",(Boolean)timedOut?1:0);
+        boolean cleanup=cleanupKnown&&!((Boolean)alive)&&!((Boolean)timedOut);
+        result.put("worker_cleanup_confirmed",cleanup?1:0);
+        Object queueValue=report.opt("video_input_queue");
+        if(!(queueValue instanceof JSONObject))return result;
+        JSONObject queue=(JSONObject)queueValue;
+        // Older APK reports lack the enabled/retained contract. They remain
+        // explicitly unavailable rather than being inferred from an empty array.
+        if(!queue.has("epoch_events_enabled")||!queue.has("epoch_events_retained"))return result;
+        Object enabledValue=queue.opt("epoch_events_enabled");
+        if(!(enabledValue instanceof Boolean))throw new IOException("inbox_event_enabled_boolean_required");
+        boolean enabled=(Boolean)enabledValue;
+        long capacity=inboxEventLong(queue,"epoch_event_capacity"),retained=inboxEventLong(queue,"epoch_events_retained"),
+            evicted=inboxEventLong(queue,"epoch_events_evicted");
+        if(capacity!=MAX_INBOX_EVENTS||retained<0||retained>capacity||evicted<0||evicted>Long.MAX_VALUE-retained
+                ||(!enabled&&(retained!=0||evicted!=0)))throw new IOException("inbox_event_ring_contract_invalid");
+        result.put("available",1).put("enabled",enabled?1:0).put("retained_count",retained)
+            .put("evicted_count",evicted).put("observed_count",evicted+retained);
+        if(!enabled){result.put("availability_code",1);return result;}
+        if(!cleanupKnown){result.put("availability_code",2);return result;}
+        if(!cleanup){result.put("availability_code",3);return result;}
+        Object raw=report.opt("inbox_epoch_events");
+        if(!(raw instanceof JSONArray)){result.put("availability_code",4);return result;}
+        JSONArray events=(JSONArray)raw;
+        if(events.length()!=retained||events.length()>MAX_INBOX_EVENTS)throw new IOException("inbox_event_ring_count_mismatch");
+        long unknownEvents=0,unknownReasons=0;
+        for(int row=0;row<events.length();row++){
+            Object item=events.get(row);
+            if(!(item instanceof JSONObject))throw new IOException("inbox_event_record_required");
+            JSONObject event=(JSONObject)item;int eventCode=inboxEventCode(event.opt("event")),reasonCode=inboxReasonCode(event.opt("reason"));
+            if(eventCode==0)unknownEvents++;if(reasonCode==0)unknownReasons++;
+            eventCodes.put(eventCode);reasonCodes.put(reasonCode);
+            for(int column=0;column<fields.length;column++){
+                long value=inboxEventLong(event,fields[column]);
+                if(((column==0||column==1)&&value<0)||(column==3&&value< -1)
+                        ||(column==5&&(value<0||value>VideoInbox.MAX_FRAMES))
+                        ||(column==6&&(value<0||value>VideoInbox.MAX_BYTES)))throw new IOException("inbox_event_field_bounds_invalid");
+                columns[column].put(value);
+            }
+        }
+        return result.put("availability_code",5).put("exported_count",events.length()).put("snapshot_complete",1)
+            .put("unknown_event_count",unknownEvents).put("unknown_reason_count",unknownReasons)
+            .put("all_recorded_events_retained",evicted==0?1:0).put("known_codes_complete",unknownEvents==0&&unknownReasons==0?1:0);
     }
     private static JSONObject numericTree(JSONObject input)throws Exception{
         JSONObject out=new JSONObject();java.util.Iterator<String> keys=input.keys();

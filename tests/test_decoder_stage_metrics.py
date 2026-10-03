@@ -46,16 +46,22 @@ class DecoderStageMetricsCheck(unittest.TestCase):
         # not Android JSONObject/ART runtime verification or a phone measurement.
         source = (ROOT/'experiments/nps-transport/phone/UdpVideoProbe.java').read_text()
         methods = source.split('    static JSONObject stageSummary', 1)[1].split('    private static final class Session', 1)[0]
+        # The real summary now validates Inbox events using these actual source
+        # bounds. This fixture has no Inbox instance or event observations.
+        event_bound = source.split('MAX_NATIVE_EVENTS=8192,', 1)[1].split(';', 1)[0]
+        inbox_bounds = source.split('    static final class VideoInbox {', 1)[1].split('final ArrayDeque', 1)[0].strip()
         wrapper = '''package local.remoteandroid.direct;
 import org.json.*;import java.io.IOException;import java.nio.charset.StandardCharsets;
-final class NumericStageSource { static JSONObject stageSummary'''+methods+'}\n'
+final class NumericStageSource { static final int '''+event_bound+''';
+static final class VideoInbox {'''+inbox_bounds+'''}
+static JSONObject stageSummary'''+methods+'}\n'
         stubs = {
             'org/json/JSONObject.java': '''package org.json;import java.util.*;
 public final class JSONObject {
  final Map<String,Object> values=new LinkedHashMap<>();
  public JSONObject put(String k,Object v){values.put(k,v);return this;}
  public Object get(String k){if(!values.containsKey(k))throw new IllegalArgumentException(k);return values.get(k);}
- public Object opt(String k){return values.get(k);}public Iterator<String> keys(){return values.keySet().iterator();}
+ public Object opt(String k){return values.get(k);}public boolean has(String k){return values.containsKey(k);}public Iterator<String> keys(){return values.keySet().iterator();}
  public String optString(String k,String d){Object v=values.get(k);return v instanceof String?(String)v:d;}
  public boolean optBoolean(String k,boolean d){Object v=values.get(k);return v instanceof Boolean?(Boolean)v:d;}
  public String toString(){StringBuilder b=new StringBuilder("{");for(Map.Entry<String,Object> e:values.entrySet()){
