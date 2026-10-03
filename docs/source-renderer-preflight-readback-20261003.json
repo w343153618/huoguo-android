@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "utc": "2026-10-03T10:43:11.922004+00:00",
+  "scope": "source_metadata_only_not_media_performance_or_visual_acceptance",
+  "device_mutated": false,
+  "media_started": false,
+  "source_app_restarted": false,
+  "serial": "emulator-5556",
+  "source_package": "app.morphe.android.youtube",
+  "sample_status": "complete",
+  "device_ready": true,
+  "same_boot_verified": true,
+  "expected_hwui_policy": "skiavk",
+  "hwui_property": "skiagl",
+  "renderengine_property": "skiaglthreaded",
+  "process_status": "single_pid_stable",
+  "source_pid": 3391,
+  "source_pipeline": "opengl",
+  "flags": {
+    "renderer_property_target_drift": true,
+    "target_vs_process_pipeline_mismatch": true,
+    "property_vs_process_pipeline_mismatch": false
+  },
+  "size": {
+    "physical": {
+      "width": 1080,
+      "height": 1920
+    }
+  },
+  "density": {
+    "physical": 480
+  },
+  "active_mode_display0": {
+    "id": 1,
+    "width": 1080,
+    "height": 1920,
+    "refresh_hz": 30.0
+  },
+  "display_rotation": 0,
+  "query_status": {
+    "device_state": "ok",
+    "boot_completed": "ok",
+    "boot_id_before": "ok",
+    "hwui": "ok",
+    "renderengine": "ok",
+    "pid_before": "ok",
+    "gfxinfo": "ok",
+    "pid_after": "ok",
+    "size": "ok",
+    "density": "ok",
+    "active_mode": "ok",
+    "rotation": "ok",
+    "boot_id_after": "ok"
+  },
+  "probe_source_sha256": "0d27574b23e655f586412fa485aa4469c35307cbe81dba40f3d6cc29e82510b9",
+  "boundaries": {
+    "visual_capture_independent": false,
+    "media_performance_test": false,
+    "physical_display_validation": false,
+    "hypothesis_proved": false
+  }
+}

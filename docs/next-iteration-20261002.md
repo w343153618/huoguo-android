@@ -1,4 +1,12 @@
-## 2026-10-03 最新：UDP 唯一性能研发方向，V50 客户端候选完成
+## 2026-10-03 当前 checkpoint：alpha8 已发布，先校正源环境读回
+
+公开测试版已经是 alpha8/code39，精确 artifact/source `73d196a`、APK `a663c4d0`，不能再把它当未发布候选。两台 owner gateway 已为冻结 `dd43a39`，公网单会话3600秒、进程上限0；App 媒体为认证 UDP。交付、更新 UI 以及物理30Hz记录见 [alpha8发布记录](experimental-alpha8-30fps-onehour-release-20261003.md)。下面早期 alpha7/alpha8候选段落是历史 checkpoint，不替代本段或末尾的新读回。
+
+新只读检查发现 M1 冷启动后的 App HWUI 目标已经从历史 `skiavk` 回到 `skiagl`，实际 YouTube PID3391 的 Pipeline 为 `Skia (OpenGL)`。两份 guest ADB 图片和一份认证宿主 gRPC RGBA 单帧都显示 App 内容局部上下翻转/压缩，系统栏正常；这不经过 encoder 或 UDP，但仍不是物理窗口独立验证。当前播放的是 LIVE 动画页面，不能假定本轮仍是 BBB。保留官方 RenderEngine `skiaglthreaded`，不做全图翻转补偿、不混刷新率改动；见 [源方向只读鉴别](source-ui-capture-orientation-readonly-20261003.md)。手机当前稳定版在前台，本次没有抢用、重开源 App 或改属性。
+
+alpha8既有135秒公网 M1 轮的离线分析见 [接收供给与长空档](alpha8-m1-public-gap-analysis-20261003.md)：接收45个区间平均27.608/s，独立SF最大265.225ms、78个>100ms空档；单次Inbox溢出等累计计数无法对应这些空档。下一安全机主窗口先固定并读回真实内容、Pipeline与CPU限制，再做45秒同参数源SF/host AU/手机接收与SF分层诊断；必要的事件列导出单独验证开销。不得以新的只读图像给历史135秒实验追认内容或根因，也不重复宽矩阵。
+
+## 2026-10-03 早期：UDP 唯一性能研发方向，V50 客户端候选完成
 
 用户实际体验认为 UDP 显著优于旧 TCP，明确停止 TCP 媒体性能优化。后续只沿认证 UDP 收发、解码／Surface 队列、控制和音画时钟降低延时；正式兼容入口与无关 NPC 运维仍保护，不做 TCP 比较矩阵。用户主观改善是反馈，不能改写成量化一程延时。
 

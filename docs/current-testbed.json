@@ -94,8 +94,8 @@
   "emulator_experimental_process_type": "Interactive",
   "emulator_process_type_evidence": "evidence/latency-refinement-20261001/final-retained-state.json",
   "source_qos_boundary": "Interactive remains experimental. Multiple real phone windows near60 now observed; this does not isolate ProcessType effect or establish WAN/V50/continuous stability.",
-  "renderer": "skiavk",
-  "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
+  "renderer": "skiagl",
+  "renderer_persistence": "Historical skiavk target was explicitly reapplied after cold boots, not automatically persistent. Fresh alpha8 post-cold-boot readback is skiagl with running source Skia (OpenGL); not restored in this read-only checkpoint.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
   "independent_experimental_app_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
   "latest_campaign": {
@@ -1300,5 +1300,29 @@
     "evidence": "docs/experimental-alpha7-ux-release-20261003.md",
     "phone_ui_password_and_exit_acceptance": true,
     "VPN_on_packet_route_acceptance": false
+  },
+  "renderer_expected_profile": "skiavk",
+  "source_renderer_readback_20261003": {
+    "observed_utc": "2026-10-03T10:43:11.922004+00:00",
+    "observation_time_scope": "Read-only metadata sample time; not screenshot or media frame timestamp",
+    "hwui_property": "skiagl",
+    "source_pipeline": "Skia (OpenGL)",
+    "source_pid": 3391,
+    "renderengine_property": "skiaglthreaded",
+    "physical_size": [
+      1080,
+      1920
+    ],
+    "physical_hz": 30,
+    "display_rotation": 0,
+    "current_content_is_BBB": false,
+    "current_content_category": "public LIVE animation",
+    "adb_and_emulator_grpc_partial_layout_anomaly": true,
+    "host_physical_layout_verified": false,
+    "cause_known": false,
+    "historical_skiavk_association_is_current_causality": false,
+    "device_or_service_mutation": false,
+    "evidence": "docs/source-ui-capture-orientation-readonly-20261003.md",
+    "metadata_evidence": "docs/source-renderer-preflight-readback-20261003.json"
   }
 }

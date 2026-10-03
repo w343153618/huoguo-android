@@ -40,3 +40,5 @@ RenderEngine 的属性单独读取，不与 App HWUI Pipeline 混在一起。脚
 [`test_source_renderer_preflight.py`](../tests/test_source_renderer_preflight.py) 的 16 项离线检查通过，覆盖冷启动属性漂移、属性已经更改但进程未变、PID/boot 变化、gfxinfo 错 PID/package、不可识别值、尺寸/刷新率界限、实际 display0 与其他显示器/overrideConfig 区分、隐私输出、超时/超限客户端收尾。测试使用离线文本和临时本地假客户端，没有连接设备，也不是图片正确性或性能验收。
 
 下一次真正的机主源内容实验应先用此预检固定 actual/expected。若需要恢复 `skiavk`，应由受控的机主实验另行安排，只在确认不影响正式会话后改变这一项，并对已知源播放器单独重开、再次读取实际 Pipeline 和布局。该动作不在此脚本里，更不能在用户远程播放时静默 force-stop 任意 App。随后仍需重新确认真实视频格式、源/手机节拍和长尾，不能把源端元数据当作 UDP 流畅度、音画同步、真我 V50 或公网蜂窝验收。
+
+主任务已对既有 M1 执行一次实际只读预检，见 [固定字段读回](source-renderer-preflight-readback-20261003.json)。sample complete、各查询ok、前后同boot/同PID3391；HWUI为skiagl、实际pipeline opengl，期望skiavk的两项漂移标志为true，属性与进程管线一致，对应 mismatch 为false。物理1080×1920/density480、实际30.00Hz、rotation0。退出0表示元数据完整，**不表示渲染策略正确或布局已经修复**。本次没有属性写入、播放器重开或媒体性能采样；脚本16项离线检查也由主任务独立复验通过。

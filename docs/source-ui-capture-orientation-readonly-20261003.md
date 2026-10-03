@@ -75,4 +75,14 @@ RenderEngine 是 SurfaceFlinger 合成管线。上游 `chooseRenderEngineType()`
 
 只有捕获路径/源 layer 证据明确指向 SurfaceFlinger RenderEngine 才值得设计后端候选；那涉及启动期选择与 guest/SF 生命周期，必须另行空闲保护、备份、回滚和实际镜像能力检查。当前没有支持显式覆盖 `debug.renderengine.backend` 的因果证据，保留官方默认值是范围最小的选择。
 
-本 checkpoint 仅完成 source/evidence/doc 层，不包含新截图 API 实测、播放器重开、硬件呈现、手机真实远程、物理/声学延时或性能验收。
+本子任务原 checkpoint 仅完成 source/evidence/doc 层，没有执行设备动作。以下主任务追加结果是独立实际读回；依然不包含播放器重开、硬件呈现、手机真实远程、物理/声学延时或性能验收。
+
+## 主任务追加：一帧宿主 gRPC 真实读回
+
+主任务使用既有 runtime/proto、唯一受信 AVD discovery，调用一次本地 `getScreenshot(RGBA8888, display=0, width=0, height=0)`，deadline4秒，返回1080×1920、8294400字节。没有调用 stream、媒体、输入或设置 API。第一次导出尝试在导入 Pillow 时失败，尚未发出截图 RPC；随后用标准库无损 PNG 包装完成一次有效捕获，没有安装依赖或修改原像素。
+
+本帧 PNG SHA256 `02913c617b8449d8741af039c27271e732057db4e47c227f7f275906f0d8e68c`；原始 RGBA 的 SHA 与实际文件时间保存在受限、忽略的 `docs/evidence/alpha8-source-preflight-20261003/grpc-capture-readback.json`。PNG 各行 filter0，无翻转、缩放、剪裁。SDK返回 sensor axes x=-4.750000476837158/y=0/z=0，不能拿它替代 display rotation0。
+
+查看结果仍为系统栏正常、App静态标题/控件局部上下翻转和压缩。运动视频取帧时刻不同，不比较逐像素差。它使“只有 ADB PNG 包装异常”不能成为充分解释，但两条捕获可能共享源 buffer/合成/驱动，尚不能把问题定位为 HWUI、30Hz 或某个驱动调用。没有读取宿主实体窗口，也没有验证远端本轮截图。
+
+独立不 reset 的 `gfxinfo` 读回当前源 PID3391 为 `Pipeline=Skia (OpenGL)`。`current-testbed.json` 的 renderer 已更新为本次实际 `skiagl`，同时单独保留历史期待 `skiavk`；没有抹去旧 Vulkan 的已测记录。手机 focus仍为正式稳定版 MainActivity；本轮保留其状态，没有启动新媒体会话、force-stop source、写属性或调整 RenderEngine。
