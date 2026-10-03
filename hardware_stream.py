@@ -22,6 +22,7 @@ import subprocess
 import sys
 import threading
 import time
+from stream_settings import RESOLUTION_MAX_SIZES
 
 CONFIG_FLAG = 1 << 62
 PTS_MASK = (1 << 61) - 1
@@ -870,7 +871,7 @@ if __name__ == '__main__':
     parser.add_argument('--serial', required=True)
     parser.add_argument('--avd', required=True)
     parser.add_argument('--directory', required=True, type=pathlib.Path)
-    parser.add_argument('--max-size', required=True, type=int, choices=(960, 1200, 1280, 1600, 1920, 2400))
+    parser.add_argument('--max-size', required=True, type=int, choices=RESOLUTION_MAX_SIZES)
     parser.add_argument('--bitrate', required=True, type=int)
     parser.add_argument('--fps', required=True, type=int, choices=(30, 60, 120))
     parser.add_argument('--raw-submit-fps', type=int, choices=(30, 60, 120), default=None,

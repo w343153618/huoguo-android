@@ -2,14 +2,16 @@
 MIN_BIT_RATE = 500_000
 MAX_BIT_RATE = 40_000_000  # VideoToolbox path; the legacy Android encoder remains limited to 12 Mbps.
 DEFAULT_BIT_RATE = 2_500_000
+# Standard 16:9 presets plus accepted historical long-edge settings. The
+# hardware worker CLI shares these values so authentication and launch agree.
+RESOLUTION_MAX_SIZES = (768, 960, 1200, 1280, 1600, 1920, 2400)
 
 def parse_settings(settings, default_size):
     if not isinstance(settings, dict):
         raise ValueError('Invalid settings object')
     size = settings.get('max_size', default_size)
     bitrate = settings.get('video_bit_rate', DEFAULT_BIT_RATE)
-    # Standard 16:9 presets plus legacy saved long-edge values.
-    if type(size) is not int or size not in (768, 960, 1200, 1280, 1600, 1920, 2400):
+    if type(size) is not int or size not in RESOLUTION_MAX_SIZES:
         raise ValueError('Invalid resolution')
     if type(bitrate) is not int or not MIN_BIT_RATE <= bitrate <= MAX_BIT_RATE:
         raise ValueError('Video bitrate must be 500000 to 40000000 bits/s')
