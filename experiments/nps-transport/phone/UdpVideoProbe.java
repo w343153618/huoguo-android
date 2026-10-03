@@ -530,7 +530,7 @@ public final class UdpVideoProbe extends Instrumentation {
     private static void requestDisplayMode(MainActivity activity,int requestedHz,int legacyFps,JSONObject report)throws Exception{
         WindowManager.LayoutParams window=activity.getWindow().getAttributes();
         if(requestedHz==0){
-            window.preferredRefreshRate=legacyFps;activity.getWindow().setAttributes(window);
+            window.preferredRefreshRate=Math.max(60,legacyFps);activity.getWindow().setAttributes(window);
             report.put("display_mode_selection","legacy_fps_hint").put("selected_mode_id",0).put("selected_mode_hz",0);
             return;
         }
@@ -1031,7 +1031,7 @@ public final class UdpVideoProbe extends Instrumentation {
         // App NPS profiles are exact node/scope/public UDP tuples. Standalone
         // component probes retain their separately frozen 15961/15960 contract.
         if(appMode)LanUdpContract.validateAppMediaPeer(host,result.peerPort,json.getString("network_scope"),json.optString("node",""));
-        if(!appMode&&result.peerPort!=15961||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=60&&result.fps!=120
+        if(!appMode&&result.peerPort!=15961||result.bindPort!=(appMode?0:15960)||result.seconds<1||result.seconds>120||result.fps!=30&&result.fps!=60&&result.fps!=120
                 ||result.buffer<30||result.buffer>100||!result.release.equals("scheduled")&&!result.release.equals("immediate")||result.profile.length()>160
                 ||result.displayHz!=0&&result.displayHz!=60&&result.displayHz!=90&&result.displayHz!=120)
             throw new IOException("session_options_invalid");

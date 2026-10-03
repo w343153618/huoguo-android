@@ -24,7 +24,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private final MainActivity activity;
     private final PasswordStore passwordStore;
     private final Object lock=new Object();
-    private long generation;
+    private long generation,loginRevision;
     private Attempt current,retiring;
     private final UdpExitConfirmationGate exitGate=new UdpExitConfirmationGate();
     private AlertDialog exitDialog;
@@ -58,9 +58,11 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         if(Looper.myLooper()!=Looper.getMainLooper()){activity.ui.post(this::showLogin);return;}
         if(active())return;
         dismissExitConfirmation();
+        final long pageRevision=++loginRevision;
         ownerSurfaceSubmitLeadMs=0;
-        ownerStageDiagnosticsEnabled=true;
         SharedPreferences saved=activity.getSharedPreferences(SETTINGS,0);
+        boolean lowLoad=UdpDeviceCapabilities.lowLoadDefault();
+        ownerStageDiagnosticsEnabled=!savedLowLoad(saved,lowLoad);
         // Existing 0/1 selections retain their meaning. A fresh alpha6 install
         // defaults to the user's explicitly requested M5 public owner trial.
         final int savedScope=savedSelection(saved,"scope",3,3);
@@ -77,10 +79,12 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         password=field(box,"现有账号密码（可在本机加密保存）","");password.setInputType(129);
         LinearLayout passwordActions=new LinearLayout(activity);Button remember=new Button(activity);remember.setText("保存密码");passwordActions.addView(remember,new LinearLayout.LayoutParams(0,-2,1));Button forget=new Button(activity);forget.setText("清除已保存密码");passwordActions.addView(forget,new LinearLayout.LayoutParams(0,-2,1));box.addView(passwordActions);
         remember.setOnClickListener(v->savePassword());forget.setOnClickListener(v->{try{passwordStore.clear();password.setText("");status.setText("已清除本机保存的密码。");}catch(Exception failure){status.setText("清除失败，请重试。");}});
-        quality=choice(box,"串流清晰度",new String[]{"540P · 960","720P · 1280","1080P · 1920"},savedSelection(saved,"quality",2,2));
-        rate=choice(box,"视频 VBR 目标码率",new String[]{"4 Mbps","8 Mbps","12 Mbps","16 Mbps","24 Mbps"},savedSelection(saved,"rate",4,2));
-        fps=choice(box,"串流上限（不代表实际内容帧率）",new String[]{"60 FPS","120 FPS"},savedSelection(saved,"fps",1,0));
+        quality=choice(box,"串流清晰度",new String[]{"540P · 540×960 · 流畅","720P · 720×1280 · 高清","1080P · 1080×1920 · 清晰"},savedSelection(saved,"quality",2,lowLoad?0:2));
+        rate=choice(box,"视频 VBR 目标码率",new String[]{"4 Mbps","8 Mbps","12 Mbps","16 Mbps","24 Mbps"},savedSelection(saved,"rate",4,lowLoad?0:2));
+        fps=choice(box,"串流上限（不代表实际内容帧率）",new String[]{"60 FPS","120 FPS","30 FPS · V50 均衡"},savedSelection(saved,"fps",2,lowLoad?2:0));
         buffer=choice(box,"播放缓冲",new String[]{"30 ms","50 ms","80 ms · 推荐","100 ms"},savedSelection(saved,"buffer",3,2));
+        Button optimize=new Button(activity);optimize.setText("真我 V50 · 一键均衡优化");box.addView(optimize);
+        Button capabilities=new Button(activity);capabilities.setText("查看本机硬解能力");box.addView(capabilities);
         sound=new CheckBox(activity);sound.setText("UDP 音频");sound.setChecked(savedSound(saved));box.addView(sound);
         pcmQueue=new CheckBox(activity);pcmQueue.setText("实验：有界 PCM 输出队列（默认关闭）");pcmQueue.setChecked(false);box.addView(pcmQueue);
         codecStartup=new CheckBox(activity);codecStartup.setText("实验：解码器准备后接收新关键帧（默认关闭）");codecStartup.setChecked(false);box.addView(codecStartup);
@@ -113,6 +117,20 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         };
         address.addTextChangedListener(watcher);user.addTextChangedListener(watcher);
         sound.setOnCheckedChangeListener((button,checked)->saveSettings());
+        optimize.setOnClickListener(v->{
+            restoringFields=true;
+            try{quality.setSelection(0);rate.setSelection(0);fps.setSelection(2);buffer.setSelection(2);
+                pcmQueue.setChecked(false);codecStartup.setChecked(false);ownerStageDiagnosticsEnabled=false;
+            }finally{restoringFields=false;}
+            activity.getSharedPreferences(SETTINGS,0).edit().putBoolean("low_load_profile",true).apply();saveSettings();
+            status.setText("已应用 V50 均衡起点：540P · 4 Mbps VBR · 30 FPS 上限 · 80 ms。硬解优先；参数可修改并保留。实际效果需火锅真机验证。");
+        });
+        capabilities.setOnClickListener(v->{capabilities.setEnabled(false);new Thread(()->{
+            String result=UdpDeviceCapabilities.summary();activity.ui.post(()->{
+                if(activity.isFinishing()||activity.isDestroyed()||active()||loginRevision!=pageRevision)return;
+                capabilities.setEnabled(true);
+                new AlertDialog.Builder(activity).setTitle("本机解码能力").setMessage(result).setPositiveButton("知道了",null).show();});
+        },"udp-codec-capabilities").start();});
         start.setOnClickListener(v->start());
         restorePassword();ScrollView scroll=new ScrollView(activity);scroll.addView(box);
         // API37 edge-to-edge: reserve system bars only on the login scroll root.
@@ -128,6 +146,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private static int savedSelection(SharedPreferences saved,String key,int max,int fallback){try{int value=saved.getInt(key,fallback);return value>=0&&value<=max?value:fallback;}catch(ClassCastException invalid){return fallback;}}
     private static String savedText(SharedPreferences saved,String key,String fallback,int max){try{String value=saved.getString(key,fallback);return value!=null&&!value.isEmpty()&&value.length()<=max?value:fallback;}catch(ClassCastException invalid){return fallback;}}
     private static boolean savedSound(SharedPreferences saved){try{return saved.getBoolean("sound",true);}catch(ClassCastException invalid){return true;}}
+    private static boolean savedLowLoad(SharedPreferences saved,boolean fallback){try{return saved.getBoolean("low_load_profile",fallback);}catch(ClassCastException invalid){return fallback;}}
     private static String selectedScope(int selection){return selection>=2?LanUdpContract.NPS_SCOPE:selection==1?LanUdpContract.TAILNET_SCOPE:LanUdpContract.LAN_SCOPE;}
     private static String selectedNode(int selection){return selection==2?LanUdpContract.M1_NODE:selection==3?LanUdpContract.M5_NODE:"";}
     private static String usernamePreference(int selection){return selection>=2?"nps_username":"username";}
@@ -182,7 +201,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             credential="Basic "+android.util.Base64.encodeToString((name+":"+secret).getBytes(StandardCharsets.UTF_8),android.util.Base64.NO_WRAP);
             request.put("max_size",new int[]{960,1280,1920}[quality.getSelectedItemPosition()]);
             request.put("video_bit_rate",new int[]{4000000,8000000,12000000,16000000,24000000}[rate.getSelectedItemPosition()]);
-            request.put("max_fps",fps.getSelectedItemPosition()==0?60:120).put("buffer_ms",new int[]{30,50,80,100}[buffer.getSelectedItemPosition()]);
+            request.put("max_fps",UdpLowLoadProfile.fpsForIndex(fps.getSelectedItemPosition())).put("buffer_ms",new int[]{30,50,80,100}[buffer.getSelectedItemPosition()]);
             request.put("seconds",120).put("audio_enabled",sound.isChecked()).put("touch_enabled",true).put("network_scope",networkScope);
             if(LanUdpContract.NPS_SCOPE.equals(networkScope))request.put("node",node);
             requestedSurfaceLeadMs=ownerSurfaceSubmitLeadMs;LanUdpContract.validateOwnerSurfaceLead(requestedSurfaceLeadMs);

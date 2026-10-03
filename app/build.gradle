@@ -15,8 +15,8 @@ def experimentalVersionCode = project.findProperty('experimentalVersionCode')
 // Only the isolated UDP variant has a candidate default. The formal package
 // and explicitly pinned historical UDP versions retain separate identities.
 if (authenticatedLanUdp && experimentalVersionName == null && experimentalVersionCode == null) {
-    experimentalVersionName = '1.31-alpha.7'
-    experimentalVersionCode = '38'
+    experimentalVersionName = '1.31-alpha.8'
+    experimentalVersionCode = '39'
 }
 if ((experimentalVersionName == null) != (experimentalVersionCode == null)) {
     throw new GradleException('Experimental version name and code must be provided together')

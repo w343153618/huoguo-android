@@ -33,8 +33,10 @@ public final class LanUdpContractCheck {
         reject("peer_host","192.168.9.125");reject("protocol","TCP");reject("peer_port",15556);reject("bind_port",15960);
         reject("session","../session");reject("session_tag_hex","x");reject("key_b64",Base64.getEncoder().encodeToString(new byte[31]));
         for(Object value:new Object[]{"80",true,80.5,Double.NaN,Double.POSITIVE_INFINITY,Long.MAX_VALUE,-1,120})reject("buffer_ms",value);
-        reject("seconds",121);reject("seconds",0);reject("fps",30);reject("display_hz",60);reject("surface_submit_lead_ms",8);reject("video_release","immediate");
+        reject("seconds",121);reject("seconds",0);reject("fps",24);reject("display_hz",60);reject("surface_submit_lead_ms",8);reject("video_release","immediate");
         reject("surface_submit_lead_ms",16);
+        Map<String,Object> low=valid();low.put("fps",30);low.put("display_hz",0);LanUdpContract.validate(low,"192.168.9.128");checks++;
+        low.put("display_hz",120);rejectScopedDescriptor(low,"192.168.9.128","lan");
         Map<String,Object> opted=valid();opted.put("surface_submit_lead_ms",16);LanUdpContract.validate(opted,"192.168.9.128","lan",16);checks++;
         rejectLeadDescriptor(opted,0);rejectLeadDescriptor(valid(),16);
         for(int expected:new int[]{-1,8,17,80})rejectLeadDescriptor(opted,expected);

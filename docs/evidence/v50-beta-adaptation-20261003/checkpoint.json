@@ -1,0 +1,51 @@
+{
+  "stage": "candidate_ui_and_source_verified_not_published",
+  "updated_utc": "2026-10-03T08:58:09.052921+00:00",
+  "candidate_version": "1.31-alpha.8",
+  "version_code": 39,
+  "apk_sha256": "c9dd06294e48855caf6a81c7d13190cfe37c76c071cd8e9c5d8045e3987a0de1",
+  "apk_bytes": 8369953,
+  "original_signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "phone": "CPU-limited OnePlus12 PJD110, not realme V50",
+  "ui_checks": {
+    "V50_physical_device_tested": false,
+    "actual_V50_button_preset_readback": true,
+    "credentials_read": false,
+    "manual_60fps_preserved_after_reopen": true,
+    "media_started": false,
+    "prior_connection_preferences_restored": true
+  },
+  "instrumentation_exit_code": -1,
+  "stream_parameters": {
+    "max_size": 960,
+    "expected_portrait_dimensions": [
+      540,
+      960
+    ],
+    "bitrate_bps": 4000000,
+    "rate_control": "VBR",
+    "fps_limit": 30,
+    "buffer_ms": 80,
+    "display_hz_descriptor": 0,
+    "window_refresh_hint_hz": 60
+  },
+  "profile_stage_diagnostics": false,
+  "actual_render_fps_measured": false,
+  "audio_video_timing_measured": false,
+  "V50_hardware_decode_measured": false,
+  "live_gateway_30fps_deployed": false,
+  "friend_host_and_lan_isolation_accepted": false,
+  "published": false,
+  "helper_uninstalled": true,
+  "temporary_phone_apks_removed": true,
+  "formal_services_changed": false,
+  "NPS_changed": false,
+  "actual_caps_phone": "c2.qti AVC/HEVC vendor declaration,540x960 at30/60; not MTK evidence",
+  "source_checks": {
+    "unittest_count": 1252,
+    "all_passed": true,
+    "gradle_assemble_and_lint": true,
+    "final_build_matches_actual_phone_test_apk": true
+  },
+  "latest_user_direction": "UDP-only media performance research; no new TCP optimization or comparison matrices"
+}

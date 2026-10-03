@@ -25,6 +25,8 @@ def main():
     definitions = [
         ('ui', 'LanUiAcceptance.java', 'local.huoguo.lanuitest',
          '<instrumentation android:name="local.remoteandroid.direct.LanUiAcceptance" android:targetPackage="local.remoteandroid.direct.experiment"/>'),
+        ('v50ui', 'UdpV50UiAcceptance.java', 'local.huoguo.v50uitest',
+         '<instrumentation android:name="local.remoteandroid.direct.UdpV50UiAcceptance" android:targetPackage="local.remoteandroid.direct.experiment"/>'),
         ('receipt', 'TouchReceiptActivity.java', 'local.huoguo.touchreceipt',
          '<application android:debuggable="true" android:theme="@android:style/Theme.Material.Light.NoActionBar"><activity android:name=".TouchReceiptActivity" android:exported="true"/></application>')]
     results = []

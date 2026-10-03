@@ -69,6 +69,8 @@ public final class UiSelectionsCheck {
     public static void main(String[] args)throws Exception{
         SharedPreferences saved=new SharedPreferences();
         if(savedSelection(saved,"scope",3,3)!=3)throw new AssertionError("fresh alpha6 not public M5");
+        if(savedSelection(saved,"fps",2,2)!=2||savedSelection(saved,"fps",2,0)!=0)throw new AssertionError("fresh FPS fallback lost");
+        for(int i=0;i<3;i++){saved.values.put("fps",i);if(savedSelection(saved,"fps",2,2)!=i||savedSelection(saved,"fps",2,0)!=i)throw new AssertionError("existing FPS selection reset");}
         for(int i=0;i<4;i++){saved.values.put("scope",i);if(savedSelection(saved,"scope",3,3)!=i)throw new AssertionError("legacy valid preference reset");}
         for(Object bad:new Object[]{-1,4,true,"3",3.0}){saved.values.put("scope",bad);if(savedSelection(saved,"scope",3,3)!=3)throw new AssertionError("invalid selection accepted");}
         if(!selectedScope(0).equals("lan")||!selectedScope(1).equals("tailnet")||!selectedScope(2).equals("nps_owner")||!selectedScope(3).equals("nps_owner"))throw new AssertionError("scope positions drift");
@@ -111,8 +113,8 @@ public final class UiSelectionsCheck {
     def test_alpha6_defaults_only_apply_to_isolated_udp_variant(self):
         source = (ROOT / 'app/build.gradle').read_text()
         self.assertIn('if (authenticatedLanUdp && experimentalVersionName == null && experimentalVersionCode == null)', source)
-        self.assertIn("experimentalVersionName = '1.31-alpha.7'", source)
-        self.assertIn("experimentalVersionCode = '38'", source)
+        self.assertIn("experimentalVersionName = '1.31-alpha.8'", source)
+        self.assertIn("experimentalVersionCode = '39'", source)
         self.assertIn("versionCode 32", source)
         self.assertIn("versionName '1.31'", source)
         self.assertIn('authenticatedLanUdp requires isolated probeApplicationId', source)

@@ -29,10 +29,11 @@ class StageOptinCheck(unittest.TestCase):
             self.assertFalse(DRIVER.verify_stage_diagnostics_readback(changed,enabled))
         self.assertFalse(DRIVER.verify_stage_diagnostics_readback(self.valid(True),1))
 
-    def test_local_only_switch_frozen_reset_and_not_persisted(self):
+    def test_local_only_switch_uses_low_load_default_without_remote_control(self):
         ui=(ROOT/'app/src/udp/java/local/remoteandroid/direct/AuthenticatedLanUdpUi.java').read_text()
         self.assertIn('private boolean ownerStageDiagnosticsEnabled=true',ui)
-        self.assertIn('ownerStageDiagnosticsEnabled=true;',ui.split('@Override public void showLogin()',1)[1])
+        self.assertIn('ownerStageDiagnosticsEnabled=!savedLowLoad(saved,lowLoad);',ui.split('@Override public void showLogin()',1)[1])
+        self.assertIn('ownerStageDiagnosticsEnabled=false;',ui)
         self.assertIn('stageDiagnosticsEnabled=stages',ui)
         self.assertIn('attempt.stageDiagnosticsEnabled',ui)
         self.assertNotIn('putBoolean("stage_diagnostics',ui)

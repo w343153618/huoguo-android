@@ -49,6 +49,9 @@ HARNESS = r'''
         Session app=parseSession(descriptor(LanUdpContract.UDP_PORT,0),true);
         if(app.peerPort!=LanUdpContract.UDP_PORT||app.bindPort!=0)throw new AssertionError("App contract/parser drift");
         reject(15963,0,true);reject(15961,0,true);reject(45963,15960,true);
+        Session low=parseSession(descriptor(LanUdpContract.UDP_PORT,0).put("fps",30).put("display_hz",0),true);
+        if(low.fps!=30||low.displayHz!=0)throw new AssertionError("30FPS parser drift");
+        for(int bad:new int[]{0,24,90,121}){try{parseSession(descriptor(LanUdpContract.UDP_PORT,0).put("fps",bad),true);throw new AssertionError("unknown FPS accepted");}catch(IOException expected){}}
         Session legacy=parseSession(descriptor(15961,15960),false);
         if(legacy.peerPort!=15961||legacy.bindPort!=15960)throw new AssertionError("legacy probe changed");
         reject(45963,15960,false);reject(15961,0,false);
