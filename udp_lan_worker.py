@@ -18,7 +18,8 @@ import sys
 import threading
 import time
 
-from hardware_stream import HostHardwareSession, read_exact, read_control
+from hardware_stream import BoundedCaptureTrace, HostHardwareSession, read_exact, read_control
+from host_timing_trace import HostTimingTrace, private_trace_attempt, FIELDS
 
 UDP_SOURCE = Path(__file__).resolve().parent / 'experiments/moonlight-v2/transport/android-udp'
 if str(UDP_SOURCE) not in sys.path:
@@ -48,7 +49,8 @@ class LanMediaWorker:
 
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False,
-                 *, guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare'):
+                 *, guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare',
+                 capture_trace_dir=None):
         if type(enobufs_retry_enabled) is not bool:
             raise ValueError('owner_enobufs_retry_boolean_required')
         if (type(guest_serial) is not str
@@ -100,6 +102,7 @@ class LanMediaWorker:
                                reader_timeout_ms=100, writer_timeout_ms=0)
         self.native_shutdown = self._native_shutdown_state()
         self.feed_state = self._feed_state()
+        self.capture_trace_path = self.feed_trace_sink = self.feed_trace = None
         self.formal_monitor = dict(interval_ms=2000, checks=0, busy_seen=0,
                                    check_failures=0, max_check_duration_ms=0.0)
         self.counts = dict(authenticated_ready=0, authenticated_alive=0, invalid_packets=0,
@@ -111,8 +114,14 @@ class LanMediaWorker:
         if (capability.get('touch_cancel_clears_pointer_state') is not True or
                 capability.get('guest_jar_sha256') != hashlib.sha256(jar.read_bytes()).hexdigest()):
             raise ValueError('cancel_capable_candidate_guest_required')
-        self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        if capture_trace_dir is not None:
+            attempt_dir = private_trace_attempt(capture_trace_dir)
+            self.capture_trace_path = attempt_dir / 'capture.jsonl'
+            self.feed_trace_sink = BoundedCaptureTrace(attempt_dir / 'feed.jsonl')
+            self.feed_trace = HostTimingTrace(self.feed_trace_sink)
+        self.udp = None
         try:
+            self.udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             ifindex = socket.if_nametoindex(interface)
             self.udp.setsockopt(socket.IPPROTO_IP, 25, ifindex)
             if self.udp.getsockopt(socket.IPPROTO_IP, 25) != ifindex:
@@ -122,7 +131,13 @@ class LanMediaWorker:
             self.udp.settimeout(.1)
             self._background('authenticated_udp_ingress', self._receive)
         except Exception:
-            self.udp.close()
+            if self.udp is not None:
+                self.udp.close()
+            if self.feed_trace_sink is not None:
+                try:
+                    self.feed_trace_sink.close()
+                except Exception:
+                    self.feed_trace.emit_errors += 1
             raise
 
     def _background(self, name, operation):
@@ -289,10 +304,15 @@ class LanMediaWorker:
         self.recovery = RecoveryController(self.target_bps, 32_000_000)
         self.network = NetworkFeedbackController(self.target_bps, 32_000_000)
         # Hardware owns only this candidate worker's process group and channels.
+        diagnostic_options = {}
+        if getattr(self, 'capture_trace_path', None) is not None:
+            diagnostic_options = dict(capture_trace=self.capture_trace_path,
+                                      raw_writer_diagnostics=True)
         hardware = HostHardwareSession(self.runtime, self.guest_serial, self.guest_avd,
             config['max_size'], self.target_bps, config['fps'], config['bitrate_mode'],
             raw_queue_policy='fifo', native_encoder=self.native_encoder, sps_low_delay=True,
-            raw_submit_fps=config['fps'], matched_experimental_client=True)
+            raw_submit_fps=config['fps'], matched_experimental_client=True,
+            **diagnostic_options)
         with self.lifecycle_lock:
             if self.closed:
                 hardware.close()
@@ -383,8 +403,31 @@ class LanMediaWorker:
         self.feed_state['cancelled_partial_records'] += bool(record) and partial
         self.feed_state['cancelled_unpublished_bytes'] += len(record)
         self.feed_state['exit_reason'] = 'cancelled_partial' if record and partial else 'cancelled_before_publish'
+        diagnostic = getattr(self, 'feed_trace', None)
+        if diagnostic is not None:
+            diagnostic.emit('feed_cancel', at_ns=diagnostic.stamp(), record_bytes=len(record), partial=partial,
+                **{key: self.feed_state[key] for key in ('cancelled_unpublished_records',
+                    'cancelled_partial_records', 'cancelled_unpublished_bytes')})
 
     def _feed_fill(self, record, target, deadline=None):
+        diagnostic = getattr(self, 'feed_trace', None)
+        if diagnostic is None:
+            return self._feed_fill_impl(record, target, deadline)
+        diagnostic.read_seq += 1
+        observed = {key: 0 for key in FIELDS['feed_read']}
+        observed.update(read_seq=diagnostic.read_seq, begin_ns=diagnostic.stamp(),
+                        record_bytes_before=len(record), target_bytes=target, outcome=3)
+        try:
+            result = self._feed_fill_impl(record, target, deadline, observed)
+            observed['outcome'] = 1 if result[0] else 2
+            return result
+        finally:
+            observed.update(end_ns=diagnostic.stamp(), record_bytes_after=len(record),
+                cancelled=self.stop_event.is_set(), media_records=self.feed_state['media_records'],
+                published_bytes=self.feed_state['published_bytes'])
+            diagnostic.emit('feed_read', **observed)
+
+    def _feed_fill_impl(self, record, target, deadline=None, observed=None):
         """One record deadline starts with its first byte, not each recv.
 
         Idle record boundaries remain cancelable without a media-idle timeout.
@@ -400,8 +443,12 @@ class LanMediaWorker:
                 raise TimeoutError('owned_video_partial_record_deadline')
             try:
                 request = min(65536, target-len(record))
+                if observed is not None:
+                    observed['recv_calls'] += 1
                 part = self.channels['video'].recv(request)
             except socket.timeout:
+                if observed is not None:
+                    observed['recv_timeouts'] += 1
                 continue
             except OSError:
                 if self.stop_event.is_set():
@@ -429,6 +476,28 @@ class LanMediaWorker:
         return True, deadline
 
     def _feed_publish(self, record, kind):
+        diagnostic = getattr(self, 'feed_trace', None)
+        if diagnostic is None:
+            return self._feed_publish_impl(record, kind)
+        diagnostic.publish_seq += 1
+        observed = {key: 0 for key in FIELDS['feed_publish']}
+        has_pts = kind in ('config', 'media') and len(record) >= 12
+        observed.update(publish_seq=diagnostic.publish_seq, begin_ns=diagnostic.stamp(),
+            kind={'codec': 1, 'geometry': 2, 'config': 3, 'media': 4}[kind],
+            has_source_pts=has_pts, source_pts_us=(struct.unpack_from('>Q', record)[0] & ((1 << 61)-1)
+                if has_pts else 0), record_bytes=len(record), cancel_before=self.stop_event.is_set())
+        try:
+            result = self._feed_publish_impl(record, kind, observed)
+            observed['published'] = result
+            return result
+        finally:
+            observed.update(end_ns=diagnostic.stamp(), cancel_after=self.stop_event.is_set())
+            for key in ('codec_records', 'geometry_records', 'config_records', 'media_records',
+                        'published_bytes', 'publish_failures'):
+                observed[key] = self.feed_state[key]
+            diagnostic.emit('feed_publish', **observed)
+
+    def _feed_publish_impl(self, record, kind, observed=None):
         if self.stop_event.is_set():
             self._feed_discard(record, False)
             return False
@@ -442,17 +511,31 @@ class LanMediaWorker:
         try:
             offset = 0
             while offset < len(view):
+                if observed is not None:
+                    observed['write_calls'] += 1
                 count = self.native.stdin.write(view[offset:])
                 if type(count) is not int or not 0 < count <= len(view)-offset:
                     raise OSError('owned_packetizer_write_closed')
                 offset += count
                 self.feed_state['publish_written_bytes'] = offset
+                if observed is not None:
+                    observed['written_bytes'] = offset
+            if observed is not None:
+                observed['write_end_ns'] = self.feed_trace.stamp()
+                observed['flush_begin_ns'] = self.feed_trace.stamp()
             self.native.stdin.flush()
+            if observed is not None:
+                observed['flush_complete'] = True
         except Exception:
             self.feed_state['publish_failures'] += 1
             self.feed_state['exit_reason'] = 'publish_failure'
             raise
         finally:
+            if observed is not None:
+                if not observed['write_end_ns']:
+                    observed['write_end_ns'] = self.feed_trace.stamp()
+                if observed['flush_begin_ns']:
+                    observed['flush_end_ns'] = self.feed_trace.stamp()
             view.release()
         self.feed_state[kind+'_records'] += 1
         self.feed_state['published_bytes'] += len(record)
@@ -725,6 +808,17 @@ class LanMediaWorker:
                 for pipe in (self.native.stdin, self.native.stdout, self.native.stderr):
                     if pipe is not None:
                         attempt('native_pipe_close', pipe.close)
+        if getattr(self, 'feed_trace_sink', None) is not None:
+            # Trace clean-close is a sink property. Separately report whether
+            # the sole feed producer actually exited; never wait for media here.
+            self.feed_trace.summary(not any(thread.name == 'udp_feed' and thread.is_alive()
+                                           for thread in self.threads))
+            try:
+                self.feed_trace_sink.close()
+            except Exception:
+                # Metadata close failure is coverage loss, not a media cleanup
+                # failure and never a replacement for the original exception.
+                self.feed_trace.emit_errors += 1
         final_status = ('not_started' if self.native is None else
             'confirmed' if self.native_shutdown['final_summary_observed'] else
             'missing_after_forced_exit' if self.native_shutdown['terminate_used'] else
@@ -754,6 +848,14 @@ class LanMediaWorker:
                   'native_clock': 'CLOCK_UPTIME_RAW', 'tcp_media_used': False,
                   'requested': {key: self.config[key] for key in ('max_size','fps','video_bit_rate','buffer_ms','seconds')},
                   'socket_pacer_wait_enabled': True, 'assembly_lifetime_ms': 80}
+        if getattr(self, 'feed_trace_sink', None) is not None:
+            sink = self.feed_trace_sink
+            report['host_timing_diagnostics'] = dict(enabled=True,
+                clock_errors=self.feed_trace.clock_errors, emit_errors=self.feed_trace.emit_errors,
+                schema_errors=self.feed_trace.schema_errors, emit_attempts=self.feed_trace.emit_attempts,
+                accepted_records=sink.accepted, written_records=sink.written,
+                dropped_records=sink.dropped, byte_capped=sink.byte_capped, failed=sink.failed,
+                sink_clock_errors=sink.clock_errors, sink_writer_alive=sink.writer.is_alive())
         if self.sender:
             report['udp_lanes'] = self.sender.snapshot()
             report['udp_send_policy'] = self.sender.policy_snapshot()

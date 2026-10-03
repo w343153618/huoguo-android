@@ -23,6 +23,7 @@ import sys
 import threading
 import time
 from stream_settings import RESOLUTION_MAX_SIZES
+from host_timing_trace import HostTimingTrace
 
 CONFIG_FLAG = 1 << 62
 PTS_MASK = (1 << 61) - 1
@@ -31,6 +32,16 @@ PTS_MASK = (1 << 61) - 1
 def capture_trace_clock_ns():
     """Same explicitly named host clock as the opt-in native trace."""
     return time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+
+
+def raw_writer_trace_arguments(enabled, capture_trace, native_encoder):
+    if type(enabled) is not bool:
+        raise ValueError('Raw writer diagnostics selection must be boolean')
+    if not enabled:
+        return []
+    if capture_trace is None or native_encoder is None:
+        raise ValueError('Raw writer diagnostics require capture trace and explicit encoder')
+    return ['--raw-writer-diagnostics']
 
 
 class BoundedCaptureTrace:
@@ -46,10 +57,15 @@ class BoundedCaptureTrace:
         self.pending = queue.Queue(maxsize=pending_limit)
         self.lock = threading.Lock()
         self.accepted = self.written = self.bytes = self.dropped = 0
+        self.clock_errors = 0
         self.closed = self.failed = self.byte_capped = False
         self.writer = threading.Thread(target=self._write, name='capture-trace', daemon=True)
-        self.writer.start()
-        self.emit('trace_clock', **self.clock_sample(), phase='start')
+        try:
+            self.writer.start()
+        except Exception:
+            os.close(self.fd)
+            raise
+        self._emit_clock('start')
 
     @staticmethod
     def clock_sample():
@@ -59,6 +75,13 @@ class BoundedCaptureTrace:
         return {'clock_domain': 'host_clock_gettime_CLOCK_MONOTONIC_ns',
                 'clock_before_ns': before, 'clock_after_ns': after, 'unix_ns': unix_ns,
                 'source_pts_scope': 'emulator_estimated_screenshot_generation_unix_us_not_guest_media_pts'}
+
+    def _emit_clock(self, phase):
+        try:
+            self.emit('trace_clock', **self.clock_sample(), phase=phase)
+        except Exception:
+            # A diagnostic clock fault is lost coverage, never a media failure.
+            self.clock_errors += 1
 
     def emit(self, event, **fields):
         if (not isinstance(event, str) or len(event) > 64 or len(fields) > 32 or
@@ -107,6 +130,7 @@ class BoundedCaptureTrace:
             summary = {'schema': 'capture-vt-trace-v1', 'process': 'python', 'event': 'trace_summary',
                        'accepted_records': self.accepted, 'written_records': self.written,
                        'dropped_records': self.dropped, 'byte_capped': self.byte_capped,
+                       'clock_errors': self.clock_errors,
                        'record_limit': self.max_records, 'byte_limit': self.max_bytes,
                        'clean_close': True}
             encoded = json.dumps(summary, separators=(',', ':')).encode() + b'\n'
@@ -122,7 +146,7 @@ class BoundedCaptureTrace:
             os.close(self.fd)
 
     def close(self):
-        self.emit('trace_clock', **self.clock_sample(), phase='end')
+        self._emit_clock('end')
         with self.lock:
             if self.closed:
                 return
@@ -320,7 +344,10 @@ class HostHardwareSession:
     def __init__(self, base, serial, avd, max_size, bit_rate, max_fps, mode, raw_queue_policy=None,
                  native_encoder=None, low_latency_mode=None, sps_low_delay=None,
                  burst_bytes=None, burst_seconds=None, worker_log=None, capture_trace=None,
-                 prioritize_speed=None, raw_submit_fps=None, matched_experimental_client=False):
+                 prioritize_speed=None, raw_submit_fps=None, matched_experimental_client=False,
+                 raw_writer_diagnostics=False):
+        diagnostic_arguments = raw_writer_trace_arguments(
+            raw_writer_diagnostics, capture_trace, native_encoder)
         speed_arguments = experimental_prioritize_speed_arguments(native_encoder, prioritize_speed)
         raw_submit_arguments = experimental_raw_submit_arguments(
             native_encoder, raw_submit_fps, matched_experimental_client)
@@ -358,6 +385,7 @@ class HostHardwareSession:
                 if native_encoder is None:
                     raise ValueError('Capture trace requires an explicit experimental encoder')
                 arguments += ['--capture-trace', str(pathlib.Path(capture_trace).resolve())]
+            arguments += diagnostic_arguments
             if low_latency_mode is not None:
                 if native_encoder is None or not isinstance(low_latency_mode, bool):
                     raise ValueError('Explicit low latency flag requires an experimental encoder')
@@ -452,9 +480,12 @@ def worker(args):
     condition = threading.Condition()
     native_ready = threading.Event()
     trace_path = getattr(args, 'capture_trace', None)
+    raw_diagnostics_enabled = getattr(args, 'raw_writer_diagnostics', False)
+    raw_writer_trace_arguments(raw_diagnostics_enabled, trace_path, args.native_encoder)
     if trace_path is not None and args.native_encoder is None:
         raise ValueError('Capture trace requires an explicit experimental encoder')
     trace = BoundedCaptureTrace(trace_path) if trace_path is not None else None
+    raw_diagnostics = HostTimingTrace(trace) if raw_diagnostics_enabled else None
     # Raw RGBA frames may be superseded safely before H.264 encoding. Preserve
     # a small delivery burst without queuing four stale frames behind a gesture.
     latest_frames = collections.deque(maxlen=2)
@@ -697,54 +728,132 @@ def worker(args):
             last_submit = 0.
             budget = FrameRateBudget(raw_submit_budget['effective_raw_submit_fps'])
             while not stop.is_set():
-                with condition:
-                    if not latest_frames and not (controls and native_ready.is_set()):
-                        condition.wait(timeout=.25)
-                    # Initial adaptive requests can precede the first frame.
-                    # Retain them until VT has created its required HW session.
-                    commands = list(controls) if native_ready.is_set() else []
-                    if commands:
-                        controls.clear()
-                for sequence, kind, value in commands:
-                    native.stdin.write(struct.pack('>IIQIII', 0, 0, sequence, 8, kind, value))
-                # Apply the budget to every submitted frame, including a backlog.
-                # Waiting first lets the collector replace stale raw frames.
-                delay = budget.delay()
-                if delay > 0:
-                    stop.wait(delay)
-                if stop.is_set():
-                    break
-                with condition:
-                    frame, skipped = take_raw_frame(latest_frames, args.raw_queue_policy)
-                    dequeue_ns = capture_trace_clock_ns() if trace is not None else 0
-                    counters['pending_frames_replaced'] += skipped
-                if frame is None:
-                    if last is None or time.monotonic() - last_submit < 1:
-                        native.stdin.flush()
+                observed = raw_diagnostics.begin_raw() if raw_diagnostics is not None else None
+                if observed is not None:
+                    loop_trace, budget_trace, write_trace = observed
+                try:
+                    with condition:
+                        if observed is not None:
+                            loop_trace['condition_begin_ns'] = raw_diagnostics.stamp()
+                            loop_trace['queued_before'] = len(latest_frames)
+                        if not latest_frames and not (controls and native_ready.is_set()):
+                            if observed is not None:
+                                loop_trace['condition_waited'] = True
+                                loop_trace['condition_wait_begin_ns'] = raw_diagnostics.stamp()
+                            condition.wait(timeout=.25)
+                            if observed is not None:
+                                loop_trace['condition_wait_end_ns'] = raw_diagnostics.stamp()
+                        # Initial adaptive requests can precede the first frame.
+                        # Retain them until VT has created its required HW session.
+                        commands = list(controls) if native_ready.is_set() else []
+                        if commands:
+                            controls.clear()
+                        if observed is not None:
+                            loop_trace['condition_end_ns'] = raw_diagnostics.stamp()
+                            loop_trace['queued_after'] = len(latest_frames)
+                            loop_trace['native_ready'] = native_ready.is_set()
+                    if observed is not None:
+                        loop_trace['control_count'] = len(commands)
+                        loop_trace['control_begin_ns'] = raw_diagnostics.stamp()
+                    try:
+                        for sequence, kind, value in commands:
+                            native.stdin.write(struct.pack('>IIQIII', 0, 0, sequence, 8, kind, value))
+                    finally:
+                        if observed is not None:
+                            loop_trace['control_end_ns'] = raw_diagnostics.stamp()
+                    # Apply the budget to every submitted frame, including a backlog.
+                    # Waiting first lets the collector replace stale raw frames.
+                    if observed is not None:
+                        budget_trace['check_begin_ns'] = raw_diagnostics.stamp()
+                        budget_trace['tokens_before_milli'] = round(budget.tokens * 1000)
+                    delay = budget.delay()
+                    if observed is not None:
+                        budget_trace['check_end_ns'] = raw_diagnostics.stamp()
+                        budget_trace['tokens_after_delay_milli'] = round(budget.tokens * 1000)
+                        budget_trace['updated_python_monotonic_ns'] = round(budget.updated * 1e9)
+                        budget_trace['requested_wait_ns'] = round(delay * 1e9)
+                    if delay > 0:
+                        if observed is not None:
+                            budget_trace['wait_begin_ns'] = raw_diagnostics.stamp()
+                        stop.wait(delay)
+                        if observed is not None:
+                            budget_trace['wait_end_ns'] = raw_diagnostics.stamp()
+                    if stop.is_set():
+                        if observed is not None:
+                            loop_trace['outcome'] = 4
+                        break
+                    with condition:
+                        frame, skipped = take_raw_frame(latest_frames, args.raw_queue_policy)
+                        dequeue_ns = capture_trace_clock_ns() if trace is not None else 0
+                        counters['pending_frames_replaced'] += skipped
+                    if observed is not None:
+                        loop_trace['dequeue_ns'] = dequeue_ns
+                        loop_trace['skipped'] = skipped
+                    if frame is None:
+                        if last is None or time.monotonic() - last_submit < 1:
+                            if observed is not None:
+                                write_trace['idle_flush_begin_ns'] = raw_diagnostics.stamp()
+                            try:
+                                native.stdin.flush()
+                            finally:
+                                if observed is not None:
+                                    write_trace['idle_flush_end_ns'] = raw_diagnostics.stamp()
+                            if observed is not None:
+                                loop_trace['outcome'] = 2
+                            continue
+                        frame = (last[0], last[1], time.time_ns() // 1000, last[3], time.monotonic_ns(), 0)
+                        counters['idle_repeats'] += 1
+                    width, height, pts, pixels, received_ns, capture_seq = frame
+                    if observed is not None:
+                        for row in (loop_trace, write_trace):
+                            row['capture_seq'], row['source_pts_us'] = capture_seq, pts
+                        write_trace['raw_bytes'] = len(pixels)
+                        write_trace['idle_repeat'] = capture_seq == 0
+                    if pts <= previous_pts:
+                        if trace is not None:
+                            trace.emit('raw_drop', capture_seq=capture_seq, source_pts_us=pts,
+                                       dequeue_ns=dequeue_ns, reason='nonincreasing_source_pts')
+                        if observed is not None:
+                            loop_trace['outcome'] = 3
                         continue
-                    frame = (last[0], last[1], time.time_ns() // 1000, last[3], time.monotonic_ns(), 0)
-                    counters['idle_repeats'] += 1
-                width, height, pts, pixels, received_ns, capture_seq = frame
-                if pts <= previous_pts:
+                    if observed is not None:
+                        budget_trace['consume_begin_ns'] = raw_diagnostics.stamp()
+                    budget.consume()
+                    if observed is not None:
+                        budget_trace['consume_end_ns'] = raw_diagnostics.stamp()
+                        budget_trace['consumed'] = True
+                        budget_trace['tokens_after_consume_milli'] = round(budget.tokens * 1000)
+                    pipe_begin_ns = time.monotonic_ns()
+                    trace_pipe_begin_ns = capture_trace_clock_ns() if trace is not None else 0
+                    timing('raw_queue', (pipe_begin_ns-received_ns) / 1e6)
+                    if observed is not None:
+                        write_trace['write_begin_ns'] = raw_diagnostics.stamp()
+                    try:
+                        native.stdin.write(struct.pack('>IIQI', width, height, pts, len(pixels)))
+                        native.stdin.write(pixels)
+                        native.stdin.flush()
+                        if observed is not None:
+                            write_trace['flush_complete'] = True
+                    finally:
+                        if observed is not None:
+                            write_trace['write_end_ns'] = raw_diagnostics.stamp()
                     if trace is not None:
-                        trace.emit('raw_drop', capture_seq=capture_seq, source_pts_us=pts,
-                                   dequeue_ns=dequeue_ns, reason='nonincreasing_source_pts')
-                    continue
-                budget.consume()
-                pipe_begin_ns = time.monotonic_ns()
-                trace_pipe_begin_ns = capture_trace_clock_ns() if trace is not None else 0
-                timing('raw_queue', (pipe_begin_ns-received_ns) / 1e6)
-                native.stdin.write(struct.pack('>IIQI', width, height, pts, len(pixels)))
-                native.stdin.write(pixels)
-                native.stdin.flush()
-                if trace is not None:
-                    trace.emit('raw_submit', capture_seq=capture_seq, source_pts_us=pts,
-                               dequeue_ns=dequeue_ns, pipe_write_begin_ns=trace_pipe_begin_ns,
-                               pipe_write_end_ns=capture_trace_clock_ns(), raw_bytes=len(pixels),
-                               skipped_frames=skipped, idle_repeat=capture_seq == 0)
-                timing('raw_pipe', (time.monotonic_ns()-pipe_begin_ns) / 1e6)
-                previous_pts, last, last_submit = pts, frame, time.monotonic()
-                counters['frames_submitted'] += 1
+                        trace.emit('raw_submit', capture_seq=capture_seq, source_pts_us=pts,
+                                   dequeue_ns=dequeue_ns, pipe_write_begin_ns=trace_pipe_begin_ns,
+                                   pipe_write_end_ns=capture_trace_clock_ns(), raw_bytes=len(pixels),
+                                   skipped_frames=skipped, idle_repeat=capture_seq == 0)
+                    timing('raw_pipe', (time.monotonic_ns()-pipe_begin_ns) / 1e6)
+                    previous_pts, last, last_submit = pts, frame, time.monotonic()
+                    counters['frames_submitted'] += 1
+                    if observed is not None:
+                        loop_trace['outcome'] = 1
+                except Exception:
+                    if observed is not None:
+                        loop_trace['outcome'] = 6
+                    raise
+                finally:
+                    if observed is not None:
+                        raw_diagnostics.end_raw(observed, counters)
 
         def audio_output():
             codec = read_exact(guest_audio, 4)
@@ -863,7 +972,15 @@ def worker(args):
                 pass
         log({'event': 'session_closed', **counters})
         if trace is not None:
-            trace.close()
+            if raw_diagnostics is not None:
+                # Existing teardown does not join all worker threads. Report
+                # producer coverage honestly without adding a new media wait.
+                raw_diagnostics.summary(not any(thread.is_alive() for thread in threads))
+            try:
+                trace.close()
+            except Exception:
+                if raw_diagnostics is not None:
+                    raw_diagnostics.emit_errors += 1
 
 
 if __name__ == '__main__':
@@ -885,6 +1002,8 @@ if __name__ == '__main__':
                         help='Explicit speed/quality hint for an independent experimental encoder')
     parser.add_argument('--capture-trace', type=pathlib.Path,
                         help='Opt-in bounded private JSONL, plus PATH.native.jsonl; requires experimental encoder')
+    parser.add_argument('--raw-writer-diagnostics', action='store_true',
+                        help='Local opt-in fixed numeric timing; requires capture trace and explicit encoder')
     parser.add_argument('--burst-bytes', type=int)
     parser.add_argument('--burst-seconds', type=float)
     parser.add_argument('--low-latency-mode', choices=('true', 'false'))
@@ -895,6 +1014,7 @@ if __name__ == '__main__':
     try:
         experimental_raw_submit_arguments(options.native_encoder, options.raw_submit_fps,
                                          options.matched_experimental_client)
+        raw_writer_trace_arguments(options.raw_writer_diagnostics, options.capture_trace, options.native_encoder)
     except ValueError as error:
         parser.error(str(error))
     if options.encoder_prioritize_speed is not None and options.native_encoder is None:

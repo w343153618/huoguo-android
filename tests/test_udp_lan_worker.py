@@ -24,6 +24,7 @@ from unittest.mock import Mock, patch
 import udp_lan_worker
 from udp_lan_worker import LanMediaWorker
 from udp_probe_protocol import CLIENT_NONCE, seal
+from host_timing_trace import FIELDS, HostTimingTrace
 
 
 KEY = bytes(range(32))  # Public fake fixture, never a deployment credential.
@@ -164,6 +165,45 @@ class ConstructorChecks(unittest.TestCase):
             self.assertEqual(udp.closed, 1)
             self.assertEqual(udp.binds, [])
             background.assert_not_called()
+
+    def test_local_trace_optin_private_attempt_and_clean_sink_close_without_listener(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            self.fixture(root)
+            udp = FakeSocket()
+            with patch('udp_lan_worker.socket.socket', return_value=udp), \
+                 patch('udp_lan_worker.socket.if_nametoindex', return_value=7), \
+                 patch.object(LanMediaWorker, '_background'):
+                worker = LanMediaWorker(config(), '192.168.9.149', '192.168.9.128', 'en7',
+                    root, '/fake/packetizer', '/fake/encoder', Mock(), root, Mock(), capture_trace_dir=root)
+            attempt = worker.capture_trace_path.parent
+            self.assertEqual(stat.S_IMODE(attempt.stat().st_mode), 0o700)
+            self.assertEqual(worker.capture_trace_path.name, 'capture.jsonl')
+            worker.stop(); worker.stop()
+            rows = [json.loads(line) for line in (attempt/'feed.jsonl').read_text().splitlines()]
+            self.assertTrue(next(row for row in rows if row['event']=='host_timing_summary')['producer_quiescent'])
+            self.assertTrue(rows[-1]['clean_close'])
+            report = json.loads(next(root.glob('host-session-*.json')).read_text())
+            self.assertTrue(report['host_timing_diagnostics']['enabled'])
+            self.assertFalse(report['host_timing_diagnostics']['sink_writer_alive'])
+
+    def test_invalid_requested_trace_fails_before_socket_and_trace_closed_after_socket_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            self.fixture(root)
+            root.chmod(0o755)
+            with patch('udp_lan_worker.socket.socket') as create:
+                with self.assertRaisesRegex(ValueError, 'private_owner'):
+                    LanMediaWorker(config(), '192.168.9.149', '192.168.9.128', 'en7',
+                        root, '/fake/packetizer', '/fake/encoder', Mock(), root, Mock(), capture_trace_dir=root)
+                create.assert_not_called()
+            root.chmod(0o700)
+            with patch('udp_lan_worker.socket.socket', side_effect=OSError('owned fake socket failure')):
+                with self.assertRaisesRegex(OSError, 'owned fake socket'):
+                    LanMediaWorker(config(), '192.168.9.149', '192.168.9.128', 'en7',
+                        root, '/fake/packetizer', '/fake/encoder', Mock(), root, Mock(), capture_trace_dir=root)
+            trace = next(root.glob('attempt-*/feed.jsonl'))
+            self.assertEqual(json.loads(trace.read_text().splitlines()[-1])['event'], 'trace_summary')
 
 
 class IngressChecks(unittest.TestCase):
@@ -682,6 +722,163 @@ class CompleteHostFeedChecks(unittest.TestCase):
         self.assertEqual(sent,[True])
         self.assertFalse(thread.is_alive())
 
+
+
+class FeedTimingChecks(unittest.TestCase):
+    class Sink:
+        def __init__(self): self.rows = []
+        def emit(self, event, **values): self.rows.append(dict(event=event, **values))
+
+    def fixture(self, data, **options):
+        worker, output = CompleteHostFeedChecks().fixture(data, **options)
+        sink = self.Sink()
+        ticks = iter(range(100, 10000))
+        worker.feed_trace = HostTimingTrace(sink, lambda: next(ticks))
+        return worker, output, sink
+
+    @staticmethod
+    def rows(sink, event): return [row for row in sink.rows if row['event'] == event]
+
+    def test_off_does_not_construct_clock_sink_or_file_and_preserves_host_options(self):
+        worker, output = CompleteHostFeedChecks().fixture(b'h264'+CompleteHostFeedChecks.au(b'fixture'))
+        with patch('udp_lan_worker.HostTimingTrace') as diagnostic, \
+             patch('udp_lan_worker.BoundedCaptureTrace') as trace:
+            worker._feed()
+            diagnostic.assert_not_called(); trace.assert_not_called()
+        self.assertEqual(output.value, b'h264'+CompleteHostFeedChecks.au(b'fixture'))
+        worker = bare_worker()
+        worker.config['capture_trace_dir'] = '/must/not/read/client/path'
+        worker._background, worker.sender = Mock(), Mock()
+        with patch('udp_lan_worker.HostHardwareSession') as hardware, patch('udp_lan_worker.subprocess.Popen'):
+            worker._start_media()
+        self.assertNotIn('capture_trace', hardware.call_args.kwargs)
+        self.assertNotIn('raw_writer_diagnostics', hardware.call_args.kwargs)
+
+    def test_explicit_local_optin_forwards_only_owner_path_and_raw_flag(self):
+        worker = bare_worker()
+        worker.capture_trace_path = Path('/private/tmp/owned-trace-fixture/capture.jsonl')
+        worker._background, worker.sender = Mock(), Mock()
+        with patch('udp_lan_worker.HostHardwareSession') as hardware, patch('udp_lan_worker.subprocess.Popen'):
+            worker._start_media()
+        self.assertEqual(hardware.call_args.kwargs['capture_trace'], worker.capture_trace_path)
+        self.assertIs(hardware.call_args.kwargs['raw_writer_diagnostics'], True)
+        self.assertEqual(hardware.call_args.kwargs['raw_submit_fps'], 60)
+        self.assertEqual(hardware.call_args.kwargs['raw_queue_policy'], 'fifo')
+
+    def test_feed_fragmentation_preserves_pts_flags_bytes_and_cumulative_anchors(self):
+        data = b'h264'+CompleteHostFeedChecks.GEOMETRY+CompleteHostFeedChecks.au(b'config', (1 << 62)|789)
+        data += CompleteHostFeedChecks.au(b'fixture', (1 << 61)|123456)
+        worker, output, sink = self.fixture(data, fragment=1)
+        worker._feed()
+        self.assertEqual(output.value, data)
+        records = self.rows(sink, 'feed_publish')
+        self.assertEqual([row['kind'] for row in records], [1,2,3,4])
+        self.assertEqual([row['source_pts_us'] for row in records], [0,0,789,123456])
+        self.assertEqual([row['has_source_pts'] for row in records], [False,False,True,True])
+        self.assertTrue(all(row['published'] and row['flush_complete'] for row in records))
+        self.assertEqual(records[-1]['published_bytes'], len(data))
+        self.assertEqual(records[-1]['media_records'], 1)
+        self.assertEqual(self.rows(sink, 'feed_read')[0]['recv_calls'], 4)
+        self.assertTrue(all(row['end_ns'] >= row['begin_ns'] for row in records))
+        for row in sink.rows:
+            if row['event'] in FIELDS:
+                self.assertTrue(all(type(value) in (int,float,bool) for key,value in row.items() if key!='event'))
+        self.assertNotIn('fixture', json.dumps(sink.rows))
+        self.assertEqual(worker.feed_trace.schema_errors, 0)
+
+    def test_before_publish_cancel_records_discard_and_never_writes(self):
+        record = CompleteHostFeedChecks.au(b'fixture')
+        worker, output, sink = self.fixture(b'')
+        worker.stop_event.set()
+        self.assertFalse(worker._feed_publish(record, 'media'))
+        self.assertEqual(output.getvalue(), b'')
+        row = self.rows(sink, 'feed_publish')[0]
+        self.assertTrue(row['cancel_before'])
+        self.assertFalse(row['published'])
+        self.assertEqual(row['written_bytes'], 0)
+        self.assertEqual(self.rows(sink, 'feed_cancel')[0]['record_bytes'], len(record))
+
+    def test_partial_read_cancel_reports_read_boundary_without_publishing_partial_au(self):
+        data = b'h264'+CompleteHostFeedChecks.au(b'fixture')
+        worker, output, sink = self.fixture(data, fragment=4, stop_at=8)
+        worker._feed()
+        self.assertEqual(output.value, b'h264')
+        self.assertEqual(len(self.rows(sink, 'feed_publish')), 1)
+        self.assertEqual(self.rows(sink, 'feed_read')[-1]['outcome'], 2)
+        self.assertTrue(self.rows(sink, 'feed_cancel')[-1]['partial'])
+        self.assertEqual(worker.feed_state['cancelled_partial_records'], 1)
+
+    def test_short_writes_finish_complete_record_even_if_cancelled_during_first_write(self):
+        record = CompleteHostFeedChecks.au(b'fixture')
+        worker, output, sink = self.fixture(b'')
+        class ShortWriter(io.BytesIO):
+            def write(self, data):
+                worker.stop_event.set()
+                return super().write(data[:3])
+        writer = ShortWriter(); worker.native.stdin = writer
+        self.assertTrue(worker._feed_publish(record, 'media'))
+        self.assertEqual(writer.getvalue(), record)
+        row = self.rows(sink, 'feed_publish')[0]
+        self.assertGreater(row['write_calls'], 1)
+        self.assertEqual(row['written_bytes'], len(record))
+        self.assertTrue(row['flush_complete'] and row['published'] and row['cancel_after'])
+        self.assertFalse(row['cancel_before'])
+        self.assertEqual(row['media_records'], 1)
+
+    def test_partial_write_or_flush_failure_preserves_original_failure_and_count_boundary(self):
+        record = CompleteHostFeedChecks.au(b'fixture')
+        for failure in ('partial', 'invalid', 'flush'):
+            with self.subTest(failure=failure):
+                worker, output, sink = self.fixture(b'')
+                class FailedWriter(io.BytesIO):
+                    calls = 0
+                    def write(self, data):
+                        self.calls += 1
+                        if failure == 'invalid': return None
+                        if failure == 'partial' and self.calls > 1: raise OSError('owned publish error')
+                        return super().write(data[:3] if failure=='partial' else data)
+                    def flush(self):
+                        if failure == 'flush': raise OSError('owned flush error')
+                worker.native.stdin = FailedWriter()
+                with self.assertRaises(OSError): worker._feed_publish(record, 'media')
+                row = self.rows(sink, 'feed_publish')[0]
+                self.assertFalse(row['published'] or row['flush_complete'])
+                self.assertEqual(row['media_records'], 0)
+                self.assertEqual(row['published_bytes'], 0)
+                self.assertEqual(row['publish_failures'], 1)
+                self.assertEqual(row['written_bytes'], {'partial':3,'invalid':0,'flush':len(record)}[failure])
+                self.assertGreater(row['write_end_ns'], 0)
+                self.assertEqual(bool(row['flush_end_ns']), failure=='flush')
+                self.assertNotIn('owned publish error', json.dumps(sink.rows))
+
+    def test_clock_and_sink_exceptions_do_not_mask_feed_pipe_exception(self):
+        worker, output, sink = self.fixture(b'')
+        worker.feed_trace.clock = Mock(side_effect=OSError('private clock detail'))
+        sink.emit = Mock(side_effect=OSError('private sink detail'))
+        worker.native.stdin = Mock()
+        worker.native.stdin.write.side_effect = OSError('original owned media error')
+        with self.assertRaisesRegex(OSError, 'original owned media error'):
+            worker._feed_publish(CompleteHostFeedChecks.au(b'fixture'), 'media')
+        self.assertGreater(worker.feed_trace.clock_errors, 0)
+        self.assertGreater(worker.feed_trace.emit_errors, 0)
+        self.assertEqual(worker.feed_state['publish_failures'], 1)
+
+    def test_live_eof_read_failure_and_timeout_reads_have_bounded_numeric_terminal_row(self):
+        worker, output, sink = self.fixture(b'h264'+b'\x00', cancel_on_eof=False, fragment=1)
+        with self.assertRaises(EOFError): worker._feed()
+        self.assertEqual(self.rows(sink, 'feed_read')[-1]['outcome'], 3)
+        self.assertFalse(self.rows(sink, 'feed_read')[-1]['cancelled'])
+        worker, output, sink = self.fixture(b'h264')
+        channel = worker.channels['video']; original = channel.recv
+        calls = [0]
+        def timed_read(size):
+            calls[0] += 1
+            if calls[0] == 1: raise socket.timeout()
+            return original(size)
+        channel.recv = timed_read
+        worker._feed()
+        self.assertEqual(self.rows(sink, 'feed_read')[0]['recv_timeouts'], 1)
+        self.assertEqual(worker.feed_state['codec_records'], 1)
 
 
 class NativeEofChecks(unittest.TestCase):
