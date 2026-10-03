@@ -1,0 +1,358 @@
+{
+  "scope": "M1 UID501 nonisolated owner; same-home WiFi registered Tailnet inner authenticated UDP, OnePlus12 limited CPU surrogate; not public cellular or remote V50",
+  "public_media_tested": false,
+  "physical_latency_measured": false,
+  "audio_sync_acoustically_measured": false,
+  "controlled_performance_improvement_claimed": false,
+  "native_diagnostics_default_enabled": false,
+  "actual_probe_opt_in_verified": true,
+  "source": {
+    "video_id": "aqz-KE-bpKQ",
+    "actual_itag": 299,
+    "actual_codec": "avc1",
+    "actual_source_dimensions": [
+      1920,
+      1080
+    ],
+    "actual_source_fps": 60
+  },
+  "source_player_before_after": {
+    "position_before": "1:34",
+    "position_after": "2:25",
+    "dropped_frames_before": 0,
+    "dropped_frames_after": 0,
+    "total_frames_before": 262,
+    "total_frames_after": 3286
+  },
+  "requested": {
+    "max_size": 1920,
+    "fps_cap": 60,
+    "video_bit_rate": 4000000,
+    "buffer_ms": 80,
+    "surface_submit_lead_ms": 0,
+    "pcm_queue_enabled": false,
+    "socket_pacer_wait_enabled": true,
+    "assembly_lifetime_ms": 80,
+    "mapping_capacity_frames": 8,
+    "java_inbox_capacity_frames": 4,
+    "java_inbox_capacity_bytes": 2097152
+  },
+  "artifact_sha256": {
+    "apk": "8c00a1660ccef0e84b11c98c16091fd630c5980d29704e069562b92a04c94351",
+    "packaged_jni": "578347ca24008ce7b987c77f2f1356c56761ac3d9ee4e7be89b8e9130476e402",
+    "helper": "35c92b41c9da9069591b70fb34ca583ae453abc2457b4e06ef1f55e47c88b220",
+    "packetizer": "567231ae8165bd09c46e343f436db647210e70d7f60d74a144950c8ca84c8142",
+    "encoder": "59264ab7cd9d6e76ed3328a117bbf3c866513bc505244203c2328d6808879ecf"
+  },
+  "cpu_policy_max_before_after_khz": {
+    "before": [
+      1689600,
+      1612800,
+      960000,
+      1017600
+    ],
+    "after": [
+      672000,
+      960000,
+      960000,
+      902400
+    ],
+    "fixed": false,
+    "limits_written_by_campaign": false
+  },
+  "sessions": [
+    {
+      "label": "first_media_session",
+      "source_width": 1080,
+      "source_height": 1920,
+      "fps_cap": 60,
+      "buffer_ms": 80,
+      "native_mapping": {
+        "status_code": 1,
+        "requested_enabled": 1,
+        "enabled": 1,
+        "read_attempts": 366,
+        "read_failures": 0,
+        "jni_values_expected": 292,
+        "coverage_mask": 15,
+        "mapping_rejected_observed": 0,
+        "rejected_old_frame": 0,
+        "rejected_capacity": 0,
+        "rejected_header_mismatch": 0,
+        "rejections_unobserved": 0,
+        "legacy_mapping_rejected": 0,
+        "adapter_active_max_observed": 1,
+        "new_mappings_observed": 2159,
+        "admissions_after_capacity_reject": 0,
+        "events_total": 0,
+        "events_retained": 0,
+        "events_evicted": 0,
+        "events_cleared": 0,
+        "event_capacity": 32,
+        "jni_validation_total_ms": 74.392343,
+        "jni_validation_max_ms": 2.30901,
+        "jni_validation_mean_ms": 0.20325776775956284
+      },
+      "received_media_frames": 2158,
+      "queued_media_frames": 2114,
+      "callback_records": 2111,
+      "callback_exact_requested_target_echoes": 2111,
+      "callback_presentation_usable": 0,
+      "video_inbox": {
+        "capacity_frames": 4,
+        "capacity_bytes": 2097152,
+        "maximum_depth": 4,
+        "maximum_bytes": 202404,
+        "admitted_frames": 2123,
+        "overflow_events": 2,
+        "overflow_rejected_frames": 2,
+        "queue_cleared_frames": 8,
+        "waiting_idr_admission_drops": 33,
+        "oversize_admission_drops": 0,
+        "closing_drops": 0,
+        "recovery_epochs": 2,
+        "recovery_idrs_completed": 1,
+        "needs_idr": 0,
+        "pending_frames": 0,
+        "pending_bytes": 0,
+        "epoch_event_capacity": 256,
+        "epoch_events_evicted": 0
+      },
+      "video_native_fec": {
+        "invalid": 0,
+        "frames_expired": 0,
+        "recovered_shards": 0,
+        "reference_lost": 0,
+        "dependency_dropped": 0,
+        "memory_rejected": 0,
+        "clock_mapping_rejected": 0,
+        "logical_body_rejected": 0,
+        "max_assembly_latency_us": 76743
+      },
+      "startup": {
+        "configuration_wall_ms": 220.588906,
+        "overflow_events_before_configuration_finished": 2,
+        "all_overflows_in_first_one_second_segment": true,
+        "codec_timeouts": 1,
+        "timeout_polls": [
+          0
+        ],
+        "reserve_guard_flags_on_initial_config": [
+          11
+        ],
+        "maximum_take_interval_ms": 704.183385
+      },
+      "codec_reserve_wait_max_ms": 8.354375,
+      "target_minus_release_max_ms": 272.960904,
+      "audio": {
+        "worker_late_drop_reasons": {
+          "arrival_age_expired": 5,
+          "nonmonotonic_pts": 0,
+          "codec_input_unavailable": 8
+        },
+        "worker_queue_drops": 1,
+        "pcm_late_drop_reasons": {
+          "target_late": 1,
+          "write_timeout": 0
+        },
+        "audio_cleanup_confirmed": 1
+      },
+      "late_video_discarded": 2,
+      "video_worker_expired_frames": 0,
+      "video_worker_stale_epoch_drops": 0
+    },
+    {
+      "label": "short_reconnect_session",
+      "source_width": 1080,
+      "source_height": 1920,
+      "fps_cap": 60,
+      "buffer_ms": 80,
+      "native_mapping": {
+        "status_code": 1,
+        "requested_enabled": 1,
+        "enabled": 1,
+        "read_attempts": 64,
+        "read_failures": 0,
+        "jni_values_expected": 292,
+        "coverage_mask": 15,
+        "mapping_rejected_observed": 0,
+        "rejected_old_frame": 0,
+        "rejected_capacity": 0,
+        "rejected_header_mismatch": 0,
+        "rejections_unobserved": 0,
+        "legacy_mapping_rejected": 0,
+        "adapter_active_max_observed": 1,
+        "new_mappings_observed": 270,
+        "admissions_after_capacity_reject": 0,
+        "events_total": 0,
+        "events_retained": 0,
+        "events_evicted": 0,
+        "events_cleared": 0,
+        "event_capacity": 32,
+        "jni_validation_total_ms": 3.579324,
+        "jni_validation_max_ms": 0.336875,
+        "jni_validation_mean_ms": 0.0559269375
+      },
+      "received_media_frames": 269,
+      "queued_media_frames": 166,
+      "callback_records": 165,
+      "callback_exact_requested_target_echoes": 165,
+      "callback_presentation_usable": 0,
+      "video_inbox": {
+        "capacity_frames": 4,
+        "capacity_bytes": 2097152,
+        "maximum_depth": 4,
+        "maximum_bytes": 137595,
+        "admitted_frames": 175,
+        "overflow_events": 2,
+        "overflow_rejected_frames": 2,
+        "queue_cleared_frames": 8,
+        "waiting_idr_admission_drops": 92,
+        "oversize_admission_drops": 0,
+        "closing_drops": 0,
+        "recovery_epochs": 2,
+        "recovery_idrs_completed": 1,
+        "needs_idr": 0,
+        "pending_frames": 0,
+        "pending_bytes": 0,
+        "epoch_event_capacity": 256,
+        "epoch_events_evicted": 0
+      },
+      "video_native_fec": {
+        "invalid": 0,
+        "frames_expired": 0,
+        "recovered_shards": 0,
+        "reference_lost": 0,
+        "dependency_dropped": 0,
+        "memory_rejected": 0,
+        "clock_mapping_rejected": 0,
+        "logical_body_rejected": 0,
+        "max_assembly_latency_us": 51029
+      },
+      "startup": {
+        "configuration_wall_ms": 112.729323,
+        "overflow_events_before_configuration_finished": 2,
+        "all_overflows_in_first_one_second_segment": true,
+        "codec_timeouts": 1,
+        "timeout_polls": [
+          0
+        ],
+        "reserve_guard_flags_on_initial_config": [
+          11
+        ],
+        "maximum_take_interval_ms": 1645.908958
+      },
+      "codec_reserve_wait_max_ms": 6.010885,
+      "target_minus_release_max_ms": 244.223458,
+      "audio": {
+        "worker_late_drop_reasons": {
+          "arrival_age_expired": 6,
+          "nonmonotonic_pts": 0,
+          "codec_input_unavailable": 16
+        },
+        "worker_queue_drops": 0,
+        "pcm_late_drop_reasons": {
+          "target_late": 0,
+          "write_timeout": 0
+        },
+        "audio_cleanup_confirmed": 1
+      },
+      "late_video_discarded": 0,
+      "video_worker_expired_frames": 0,
+      "video_worker_stale_epoch_drops": 0
+    }
+  ],
+  "independent_surfaceflinger": {
+    "phone_first_session_steady_window": {
+      "seconds": 30.004,
+      "presented_frames": 1766,
+      "fps": 58.859,
+      "cadence_fps": 59.899,
+      "display_vsync_ns": 8333333,
+      "gaps_ms": {
+        "p50": 16.578,
+        "p95": 24.864,
+        "p99": 24.868,
+        "max": 66.314167,
+        "over_50": 1,
+        "over_100": 0
+      },
+      "coverage": {
+        "poll_count": 45,
+        "continuity_complete_observed": 1,
+        "sampling_invalid_observed": 0,
+        "trailing_unobserved_host_ms": 354.107,
+        "tail_coverage_unknown": 1
+      }
+    },
+    "source_window": {
+      "seconds": 30.007,
+      "presented_frames": 1757,
+      "fps": 58.553,
+      "cadence_fps": 59.932,
+      "display_vsync_ns": 16666666,
+      "gaps_ms": {
+        "p50": 16.624,
+        "p95": 19.036,
+        "p99": 20.429,
+        "max": 56.399083,
+        "over_50": 1,
+        "over_100": 0
+      },
+      "coverage": {
+        "poll_count": 50,
+        "continuity_complete_observed": 1,
+        "sampling_invalid_observed": 0,
+        "trailing_unobserved_host_ms": 598.876,
+        "tail_coverage_unknown": 1
+      }
+    },
+    "cross_clock_domain_with_app_verified": false,
+    "unique_video_content_frames_verified": false
+  },
+  "cleanup": {
+    "gateway_exit": 0,
+    "helper_removed": true,
+    "candidate_ports_closed": {
+      "15560": true,
+      "15963": true
+    },
+    "one_time_input_removed": true,
+    "formal_busy_after": false
+  },
+  "host_sessions": [
+    {
+      "host_feed_media_records": 2161,
+      "source_frames": 2161,
+      "output_frames": 2161,
+      "frame_budget_drops": 0,
+      "output_deadline_drops": 0,
+      "dependent_source_drops": 0,
+      "max_au_bytes": 202353,
+      "max_wire_frame_bytes": 272794,
+      "wire_pacing_bit_rate": 32000000,
+      "clock_domain_uptime_raw": true,
+      "native_returncode": 0,
+      "terminate_used": false,
+      "kill_used": false,
+      "host_cleanup_confirmed": true
+    },
+    {
+      "host_feed_media_records": 272,
+      "source_frames": 272,
+      "output_frames": 272,
+      "frame_budget_drops": 0,
+      "output_deadline_drops": 0,
+      "dependent_source_drops": 0,
+      "max_au_bytes": 137544,
+      "max_wire_frame_bytes": 186221,
+      "wire_pacing_bit_rate": 32000000,
+      "clock_domain_uptime_raw": true,
+      "native_returncode": 0,
+      "terminate_used": false,
+      "kill_used": false,
+      "host_cleanup_confirmed": true
+    }
+  ],
+  "initial_owner_account_attempt_reached_media": false
+}

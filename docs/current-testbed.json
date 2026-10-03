@@ -97,7 +97,7 @@
   "renderer": "skiavk",
   "renderer_persistence": "Verified in retained running guest; explicitly reapplied after cold boots in this experiment, not automatically persistent.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
-  "independent_experimental_app_sha256": "d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf",
+  "independent_experimental_app_sha256": "8c00a1660ccef0e84b11c98c16091fd630c5980d29704e069562b92a04c94351",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
     "real_video_sessions": 33,
@@ -124,7 +124,7 @@
     "new_public_udp_path_tested": false,
     "audio_visual_optical_sync_tested": false
   },
-  "instrumentation_package_sha256": "2395f75a97b2850b514a2bf488083e2ee4623fee0d989f41f936c471d291d38f",
+  "instrumentation_package_sha256": "35c92b41c9da9069591b70fb34ca583ae453abc2457b4e06ef1f55e47c88b220",
   "latest_network_readback": {
     "readback_date": "2026-10-03",
     "headscale_control_url": "https://hs.yilufa.site",
@@ -526,7 +526,7 @@
       "no_runtime_security_checks_disabled": true
     }
   },
-  "independent_experimental_app_sha_scope": "Current installed1.31-alpha.1/code32 Tailnet+PCM candidate, verified actual base.apk SHA on OnePlus12. Older2dc/9108 results retain separate historical boundaries.",
+  "independent_experimental_app_sha_scope": "Current alpha4/code35 actual base.apk SHA verified on OnePlus12 in single mapping observation; older alpha1/alpha3 reports retain their own history",
   "latest_owner_tailnet_media": {
     "report": "tailnet-owner-media-20261003.md",
     "evidence": "evidence/tailnet-owner-media-20261003-attempt7",
@@ -631,8 +631,8 @@
       "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
     }
   },
-  "updated_evidence_utc": "2026-10-03T01:04:52.399064+00:00",
-  "independent_experimental_app_version": "1.31-alpha.3",
+  "updated_evidence_utc": "2026-10-03T03:27:35.685098+00:00",
+  "independent_experimental_app_version": "1.31-alpha.4",
   "latest_surface_submit_experiment": {
     "evidence": "docs/evidence/surface-submit-20261003",
     "summary": "docs/surface-submit-real-video-20261003.json",
@@ -798,14 +798,16 @@
     "jni_sha256": "578347ca24008ce7b987c77f2f1356c56761ac3d9ee4e7be89b8e9130476e402",
     "build_lint_passed": true,
     "full_unittest_checks": 954,
-    "phone_installed": false,
-    "phone_retains_version": "1.31-alpha.3",
-    "classification": "offline_diagnostics_candidate_not_performance_acceptance",
-    "next_action": "Matching helper built; recheck M1 formalidle/phone before bounded same-source alpha4 mapping observation with existing owner wyw account; no tempaccounts/no M5 change",
+    "phone_installed": true,
+    "phone_retains_version": "1.31-alpha.4",
+    "classification": "actual_single_mapping_observation_completed_no_performance_or_WAN_acceptance",
+    "next_action": "Design bounded experimental codec-ready startup admission singlefactor; preserve stable80ms/four-frame policy and M5 daily session; no cap8 expansion based on zero-rejection single round",
     "contract_doc": "docs/native-mapping-details-contract-20261003.md",
     "helper_sha256": "35c92b41c9da9069591b70fb34ca583ae453abc2457b4e06ef1f55e47c88b220",
     "helper_build_verified": true,
-    "preflight_evidence": "docs/evidence/native-mapping-observation-20261003/preflight-readonly-20261003.json"
+    "preflight_evidence": "docs/evidence/native-mapping-observation-20261003/preflight-readonly-20261003.json",
+    "real_observation_doc": "docs/native-mapping-observation-real-video-20261003.md",
+    "real_observation_summary": "docs/native-mapping-observation-real-video-20261003.json"
   },
   "m5_daily_display_20261003": {
     "physical_size": [
@@ -841,6 +843,112 @@
     "M1_physical_size_unchanged": [
       1080,
       1920
-    ]
+    ],
+    "always_on_runtime_acceptance": "Reloaded after formal idle; idle_power source zero-disable contract loaded, Awake immediately and after10s without keepalive; no VM restart. Not an indefinite soak or Mac sleep/off availability guarantee.",
+    "always_on_reload_receipt_status": "reloaded_after_formal_idle",
+    "always_on_idle_power_source_sha256": "ae7ed8232a012b7c3b22c2d3f073d4980f4673a77b629edda1052b287fe9b5a3",
+    "always_on_no_vm_restart": true,
+    "always_on_awake_after_load": true,
+    "always_on_awake_after_10s_no_keepalive": true,
+    "always_on_reload_receipt": "M5 AndroidRemote/direct/backups/m5-zero-idle-contract-20261003-105848/reload-receipt.json",
+    "always_on_readonly_reverified_utc": "2026-10-03T03:27:35.685098+00:00",
+    "always_on_loaded_gateway_pid_at_readback": 75248,
+    "formal_session_active_at_last_readonly_check": true
+  },
+  "m1_owner_experiment_account_readback_20261003": {
+    "existing_gateway_account": "huoguo",
+    "wyw_gateway_record_present": false,
+    "existing_accounts_modified": false,
+    "temporary_accounts_created": false,
+    "scope": "M1ownerUID501 environment existing authorized test account; notfriendorhostisolationacceptance"
+  },
+  "instrumentation_package_scope": "Matching alpha4 UI helper verified/used, then removed after single mapping observation",
+  "m1_mapping_real_observation_20261003": {
+    "version_name": "1.31-alpha.4",
+    "case_count": 1,
+    "sessions_with_reconnect": 2,
+    "scope": "M1 UID501 nonisolated owner, same-home WiFi registered Tailnet inner authenticatedUDP; notpublic cellular/V50/optical/acoustic acceptance",
+    "requested": {
+      "max_size": 1920,
+      "fps_cap": 60,
+      "video_bit_rate": 4000000,
+      "buffer_ms": 80,
+      "surface_submit_lead_ms": 0,
+      "pcm_queue_enabled": false
+    },
+    "actual_source_video": {
+      "public_video_id": "aqz-KE-bpKQ",
+      "itag": 299,
+      "codec": "avc1",
+      "dimensions": [
+        1920,
+        1080
+      ],
+      "fps": 60
+    },
+    "native_mapping_diagnostics_enabled_readback": true,
+    "native_mapping_read_attempts": [
+      366,
+      64
+    ],
+    "native_mapping_read_failures": [
+      0,
+      0
+    ],
+    "native_mapping_rejections": [
+      0,
+      0
+    ],
+    "native_mapping_unobserved_rejections": [
+      0,
+      0
+    ],
+    "native_mapping_active_max": [
+      1,
+      1
+    ],
+    "native_mapping_events_total": [
+      0,
+      0
+    ],
+    "independent_phone_sf_cadence_fps": 59.899,
+    "independent_phone_sf_requested_window_fps": 58.859,
+    "independent_phone_sf_max_gap_ms": 66.314167,
+    "independent_phone_sf_over100ms": 0,
+    "phone_sf_tail_unobserved_ms": 354.107,
+    "source_sf_cadence_fps": 59.932,
+    "source_sf_max_gap_ms": 56.399083,
+    "source_sf_tail_unobserved_ms": 598.876,
+    "callback_timestamps_all_requested_target_echoes": true,
+    "callback_presentation_usable": false,
+    "startup_codec_configure_ms": [
+      220.588906,
+      112.729323
+    ],
+    "startup_inbox_overflow_events": [
+      2,
+      2
+    ],
+    "startup_cleared_frames": [
+      8,
+      8
+    ],
+    "startup_waiting_idr_drops": [
+      33,
+      92
+    ],
+    "all_overflows_before_first_configure_finished": true,
+    "codec_input_timeout_polls": [
+      0,
+      0
+    ],
+    "dynamic_cpu_limits_not_locked": true,
+    "controlled_improvement_claimed": false,
+    "public_WAN_or_V50_tested": false,
+    "optical_or_acoustic_latency_measured": false,
+    "stable60fps_accepted": false,
+    "report": "docs/native-mapping-observation-real-video-20261003.md",
+    "summary": "docs/native-mapping-observation-real-video-20261003.json",
+    "next_factor": "Experimental codec-ready startup admission; retain current steady-state policy and authentication/cancel/reference integrity"
   }
 }

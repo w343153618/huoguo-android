@@ -1,18 +1,24 @@
+## 2026-10-03 NPS KCP／QUIC 缺项已定位，修改前备份完成
+
+用户要求核对腾讯2号的NPS来源、KCP/QUIC缺项，并在修改前备份。新检查确认正式v0.34.7实际程序与重新下载的官方发布包一致，55个网页文件无差异；正式`bridge_type=tcp`分别关闭两协议的运行入口和默认展开命令。9月11日备份已tcp，不能归因是谁修改。实验NPS占UDP8024/8025是恢复时需要处理的冲突，不是正式菜单缺项的直接原因。读[本轮诊断与备份记录](nps-quic-visibility-20261003.md)。
+
+云端受限备份`/root/nps-backups/before-kcp-quic-20261003-112543/`已完整校验（82个归档文件，15个配置副本核对），最小`bridge_type=both`候选仅保存于该备份的staged目录，正式配置未改、两个服务未重启。Android公网线路空闲不代表整台NPS空闲：后续仍有其他任务90个已建立前端socket、36个端口，因此本轮没有打断它们。新增监听不能靠配置reload；不得用v0.34.7的`nps reload`硬编码信号30。恢复时必须重新核对会话、备份后的配置变化、实验UDP占用以及官方监听/网页/旧NPC/实际客户端验证，不只打开网页显示开关。不改变国内过滤，正式App仍TLS/TCP；UDP隧道类型、NPC QUIC stream和端到端媒体Datagram分别记录。
+
 ## 2026-10-03 M5尺寸维护已实测对齐
 
-按用户要求，M5日常源固定物理720×1280/density320；实际部署worker三个host-only编码轮确认540P→540×960、720P→720×1280、1080请求→720×1280，均苹果硬件ready，不当作手机FPS验收。旧5分钟计时已在正式空闲时改为环境参数并设0，保持常亮。公网/局域网受信ping正常，M1物理1080×1920未改。见[维护记录](m5-standard720-tiktok-20261003.md)。TikTok原版47.0.3验签/安装/启动通过，但当前首启要求登录，没有找到游客入口；已询问现成账号自行登录，未验收真实视频。用户登录前不重复安装或替他注册；在M1继续现有下一轮准备，不改NPS/Clash全局或抢占M5。
+按用户要求，M5日常源固定物理720×1280/density320；实际部署worker三个host-only编码轮确认540P→540×960、720P→720×1280、1080请求→720×1280，均苹果硬件ready，不当作手机FPS验收。旧5分钟计时已改环境0，旧idle模块误把0当立即执行也已补正式契约和8项检查。单次有锁维护已在正式会话自然结束后完成重载，受限receipt状态reloaded_after_formal_idle、sourceSHA ae7ed823、no_vm_restart true，加载后及无keepalive10秒均Awake；再次只读确认模块SHA匹配、gateway运行和受信ping200，不能重复建watcher。10秒读回不是无限期常亮压力验收。公网/局域网受信ping正常，M1物理1080×1920未改。见[维护记录](m5-standard720-tiktok-20261003.md)。TikTok原版47.0.3验签/安装/启动通过，但当前首启要求登录，没有找到游客入口；已询问现成账号自行登录，未验收真实视频。用户登录前不重复安装或替他注册；在M1继续现有下一轮准备，不改NPS/Clash全局或抢占M5。
 
-M1并行只读preflight和matching helper编译也完成：helperSHA35c92b41匹配alpha4/code35，原签名；M1源仍1080×1920，原手机alpha3/正式1.30和CPU限制均未改。私有build-pins已补helperSHA，单case完成标签已修；campaign为已有机主wyw账号，非回显认证，不新增账号。尚未安装alpha4或启动下一轮媒体，执行前重新核对手机与正式idle，不把preflight当呈现/性能结果。
+M1并行只读preflight和matching helper编译也完成：helperSHA35c92b41匹配alpha4/code35，原签名；M1源仍1080×1920，正式1.30和CPU限制未改。私有build-pins已补helperSHA，单case完成标签已修；实际M1auth仅有huoguo，wyw验证在安装前拒绝，未修改账号；随后使用此前明确授权的已有huoguo账号完成alpha4安装及单轮真实映射观察（driver0、gateway0、helper已卸载、端口关闭），不是朋友会话，也未新建临时账号。实际结果已分析并保存[报告](native-mapping-observation-real-video-20261003.md)与[公开数值](native-mapping-observation-real-video-20261003.json)：新mapping读回366/64次均status1/enabled1，拒绝全0、未观测0、活跃最大1，没有异常事件；不能解释历史106或扩大cap8。首会话独立phoneSF cadence59.899、max66.314ms、>100ms0，观察尾约354ms未知；不是受控改善或公网/V50。两会话初始化各2次Inbox溢出都早于configure220.589/112.729ms完成，timeout polls0、guard11、waitingIDR33/92。下一轮优先鉴别codec-ready启动准入，保持稳态4帧/2MiB/80ms及认证、取消和参考依赖，不先扩大容量。
 
-## 2026-10-03 当前续接点：M5维护完成，M1 Mapping候选已构建
+## 2026-10-03 当前续接点：M5维护完成，M1 Mapping真机观察已完成
 
 火锅日常线路改用M5正式15558，M1继续机主实验；两个VM/NPC/Headscale身份保留。M5已修复旧worker拒绝标准尺寸和本地scrcpy镜像冲突，实际正式NPC三通道及硬件编码启动已观察，见[m5修复记录](m5-session-startup-fix-20261003.md)。M5在线时禁止抢占或重启；不影响它的独立M1工作可继续。
 
-新Mapping诊断1.31-alpha.4/code35已经构建和lint，APK8c00a166、JNI578347ca，954个全仓unittest通过。独立292-long读回拆分三类mapping拒绝，旧stats和媒体策略未改；[契约](native-mapping-details-contract-20261003.md)记录覆盖/淘汰/关停及本轮SHA。未安装/发布新APK，手机仍alpha3。下一轮先用alpha4 classpath构建匹配UI helper并把helper SHA补入私有build-pins；核对M1正式idle及实际Source/UPTIME packetizer/encoder，修正预置单case campaign旧switch-sequence标签，再进行有界真实媒体采样。不能把新增源码或离线fixture当作之前真机长空档已解释，也不先扩大mapping/Inbox容量。
+新Mapping诊断1.31-alpha.4/code35已构建、lint、装机并完成上述真实媒体轮，APK8c00a166、JNI578347ca，954个全仓unittest通过。独立292-long读回拆分三类mapping拒绝，旧stats和媒体策略未改；[契约](native-mapping-details-contract-20261003.md)记录覆盖/淘汰/关停及本轮SHA。匹配helper SHA35c92b41已验证和用后卸载，手机保留alpha4，候选端口已关；尚未作为正式UDP版本发布。下一轮先审查codec-ready前的准入顺序及有界初始化策略，再进行单因素候选验收；不得把本轮零mapping拒绝解释为之前长空档已解决，仍保留动态CPU/源位置混杂和SF/callback测量边界。
 
-## 2026-10-03 最新：发送背压修复与阶段诊断
+## 2026-10-03 较早：发送背压修复与阶段诊断
 
-当前机主一加12候选为1.31-alpha.3，实际APK SHA `d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf`。新增有界configure/offer/take/consumer CPU/input API/FEC poll/实际PlaybackClock observer，实际源码与产物见[四轮基线](decoder-queue-real-video-20261003.md)及[主机发送候选复测](udp-send-backpressure-real-video-20261003.md)。四轮off/on/on/off不是严格ABBA，case1发送超时终止媒体，必须排除开关开销比较；CPU动态限制/位置/热状态也未固定，不据此宣称诊断零开销。
+当轮机主一加12候选为1.31-alpha.3，实际APK SHA `d87bcfd8040db3440ce7b37faa96b0b2c3c00a687c7cbef80d8d47e0f668ccbf`。新增有界configure/offer/take/consumer CPU/input API/FEC poll/实际PlaybackClock observer，实际源码与产物见[四轮基线](decoder-queue-real-video-20261003.md)及[主机发送候选复测](udp-send-backpressure-real-video-20261003.md)。四轮off/on/on/off不是严格ABBA，case1发送超时终止媒体，必须排除开关开销比较；CPU动态限制/位置/热状态也未固定，不据此宣称诊断零开销。
 
 机主UDP worker原来用同一Python100ms timeout socket收发，baseline一次send调用约101ms后TimeoutError造成整个worker撤销。新候选仅独立owned writer wrapper非阻塞；video仍守原frame期限和reference guard，priority10ms晚包明确丢弃，不扩大buffer，不改正式/NPS。同一alpha3两轮复测均持续收到媒体、退出与新认证，手机SF cadence59.430/59.437、max gap232.056/174.035ms。四session没有实际wouldblock，retry仅由离线owned fixture验收，不称公网恢复成功；实际依赖的sender SHA7f90a12与之后只补closed-FD诊断分类的36fbebc须区分。
 
@@ -22,7 +28,7 @@ M1并行只读preflight和matching helper编译也完成：helperSHA35c92b41匹�
 
 2026-10-03较早媒体进展见[机主Tailnet真机记录](tailnet-owner-media-20261003.md)：当时安装ba84客户端已正常UI认证、Tailnet内层音视频UDP、退出与重新认证；同家Wi-Fi，机主非隔离环境。gateway退出barrier及完整记录feed已完成源码/fixture和真实收尾验证：当时两会话1551/269个media记录均完整发布，撤销各丢未发布4字节，native均退出0，无TERM/KILL，两host final齐全。全仓896项unittest通过。
 
-## 2026-10-03 最新：解码阶段诊断与Surface候选
+## 2026-10-03 较早：解码阶段诊断与Surface候选
 
 新独立APK1.31-alpha.2 SHA `792c6da7ac92e3c0538351940b15e632367a762552c2b7cd3dd17f60b1a8bf09` 已装机主一加12。真实Tailnet内层认证UDP完成90秒位置的A/B/B及独立95秒位置的A4续轮，见[本轮报告](surface-submit-real-video-20261003.md)和[安全数值摘要](surface-submit-real-video-20261003.json)。这不是严格ABBA：A4源门槛曾N/A后另起，实际95秒，CPU上限动态改变；B3/A4的SF末次deadline超时，只保留有效前缀。16ms没有重复改善，不推广；保持lead0、1080/4M/60/80ms、PCMoff及wait/guard。
 
