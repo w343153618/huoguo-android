@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "scope": "offline_frozen_gold39_classpath_with_new_saved_ui_helper_no_device",
+  "frozen_app_source_commit": "73d196a8193394c9362250aa0e8be92fae15e125",
+  "helper_source_commit": "a83b6685dedb98a3248e0503091ea0ba94c7b1ff",
+  "helper_source_sha256": "2e652e78c9f65c5b2f70cb170e070c5534f89b4e46abc434a7908c0f7d8a6ee2",
+  "helper_builder_sha256": "683d03f34e3ea96abb5f39fc2e026e6cbebfc5e2d240bd40f6ae0661ff280fc4",
+  "target_classpath_directory": "/private/tmp/huoguo-gold39-saved-ui-i2pjvea3/source/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes",
+  "target_classpath_role": "gold39_debug_compile_ABI_not_deployed_release_APK_byte_identity",
+  "target_class_count": 104,
+  "target_classpath_sha256": "2861eca18868958adaa1a1c20b3c07bd1d8c4023d4adc5f1b45ca2d5bfa64697",
+  "target_classpath_hash_contract": "SHA256 sorted relative UTF8 path plus NUL plus binary file SHA256 digest",
+  "target_class_hashes": {
+    "local/remoteandroid/direct/AuthenticatedLanUdpUi.class": "b714e875b6122c8eb28153c142511680d76c28b8aede4888e6d95d441bd2a4bb",
+    "local/remoteandroid/direct/BuildConfig.class": "0042aa33fed09ab3cf005a84ae92b319705b97dc9afaaa48571613f6007f15df",
+    "local/remoteandroid/direct/MainActivity.class": "71f15c255417ec4265c7ac93a5f99d95f8855d756afd35ec9d44f69c86840ea4",
+    "local/remoteandroid/direct/UdpAudioReceiver.class": "5b02e034edfc17212c39bbd91fe9a830bb3766fa32364eefa54b6a2e504d27d6",
+    "local/remoteandroid/direct/UdpVideoProbe.class": "3901a1d5f57d79ac4e03d2e6d5ccbe6936ecd314a5a8282e5f580e336534470d"
+  },
+  "target_build_config_source_sha256": "e55edece34d1ffbd2f0cb01f93a4ceb24cb0c800ca44718763a7735150904444",
+  "target_application_id": "local.remoteandroid.direct.experiment",
+  "target_version_name": "1.31-alpha.8",
+  "target_version_code": 39,
+  "target_build_type": "debug",
+  "target_authenticated_udp": true,
+  "helper_apk": "/private/tmp/huoguo-gold39-saved-ui-i2pjvea3/helpers/ui/helper.apk",
+  "helper_apk_sha256": "83722157753e50fc22c41099ea705521c43e4505d65a666af064097254f55b2a",
+  "helper_apk_bytes": 61843,
+  "helper_signer_certificate_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "helper_signature_verified": true,
+  "helper_original_signer_verified": true,
+  "helper_saved_contract_in_Dex": true,
+  "compiled_for_alpha9": false,
+  "installed": false,
+  "published": false,
+  "new_network_tools_installed": false,
+  "credentials_copied_to_clone": false,
+  "class_build": {
+    "argv": [
+      "./gradlew",
+      "--offline",
+      "--no-daemon",
+      "--max-workers=2",
+      ":app:compileDebugJavaWithJavac",
+      "-PauthenticatedLanUdp=true",
+      "-PprobeApplicationId=local.remoteandroid.direct.experiment",
+      "-PexperimentalVersionName=1.31-alpha.8",
+      "-PexperimentalVersionCode=39"
+    ],
+    "working_directory": "/private/tmp/huoguo-gold39-saved-ui-i2pjvea3/source",
+    "JAVA_HOME": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
+    "ANDROID_HOME": "/Users/wyw/Library/Android/sdk",
+    "offline": true,
+    "install_or_publish": false,
+    "returncode": 0,
+    "elapsed_seconds": 12.518
+  },
+  "helper_build": {
+    "argv": [
+      "python3",
+      "scripts/probes/build_authenticated_lan_helpers.py",
+      "--output",
+      "/private/tmp/huoguo-gold39-saved-ui-i2pjvea3/helpers"
+    ],
+    "working_directory": "/private/tmp/huoguo-gold39-saved-ui-i2pjvea3/source",
+    "returncode": 0,
+    "elapsed_seconds": 5.54,
+    "install_or_publish": false
+  },
+  "signature_validation": {
+    "argv": [
+      "/Users/wyw/Library/Android/sdk/build-tools/36.0.0/apksigner",
+      "verify",
+      "--verbose",
+      "--print-certs",
+      "/private/tmp/huoguo-gold39-saved-ui-i2pjvea3/helpers/ui/helper.apk"
+    ],
+    "JAVA_HOME": "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
+    "returncode": 0,
+    "initial_environment_failure_retained": true
+  },
+  "evidence_boundary": "offline compilation and signature verification only; not installed target artifact or Android UI/media acceptance",
+  "published_gold39_expected_APK_sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+  "published_gold39_APK_reverified_this_build": false
+}
