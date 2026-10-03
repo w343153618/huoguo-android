@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-03",
+  "formal_app": "v1.30 TLS/TCP unchanged",
+  "deployment": {
+    "backup_checksums_verified": true,
+    "backup_path": "/root/nps-backups/dual-udp-20261003T061535Z-922128a4",
+    "backup_regular_files": 9,
+    "created_task_ids": [
+      1412,
+      1413
+    ],
+    "formal_nps_pid": 3412973,
+    "online_count": 38,
+    "preservation_verified": true,
+    "read_only": false,
+    "status": "verified",
+    "tasks": [
+      {
+        "client_id": 1466,
+        "port": 15556,
+        "target": "127.0.0.1:45965",
+        "tcp_task_id": 1409,
+        "udp_present": true,
+        "udp_task_id": 1412
+      },
+      {
+        "client_id": 1468,
+        "port": 15558,
+        "target": "127.0.0.1:45965",
+        "tcp_task_id": 1411,
+        "udp_present": true,
+        "udp_task_id": 1413
+      }
+    ]
+  },
+  "probe_source_sha256": "1036402258c6f14fd414008daa4d001810ef2615ed0c257c5f5a6c4578ee2399",
+  "admin_source_sha256": "9605576b511443db7259dc298e4e4edc7e1b368ee4aef3e85a07d16d28555901",
+  "source_fixture_checks": 68,
+  "clients": [
+    {
+      "attempted": 10,
+      "destination_port": 15556,
+      "foreign": 0,
+      "interface_index": 30,
+      "invalid": 0,
+      "media_acceptance": 0,
+      "packet_bytes": 64,
+      "physical_bind_verified": 1,
+      "requested": 10,
+      "responses": 10,
+      "rtt_ms": [
+        28.335,
+        22.256,
+        30.012,
+        20.364,
+        27.347,
+        19.77,
+        20.79,
+        40.671,
+        24.863,
+        21.62
+      ],
+      "runtime_ms": 265.166,
+      "scope": "UDP_TASK_DIAGNOSTIC_NOT_MEDIA",
+      "socket_errors": 0,
+      "status": "PASS",
+      "unmatched": 0
+    },
+    {
+      "attempted": 10,
+      "destination_port": 15558,
+      "foreign": 0,
+      "interface_index": 30,
+      "invalid": 0,
+      "media_acceptance": 0,
+      "packet_bytes": 64,
+      "physical_bind_verified": 1,
+      "requested": 10,
+      "responses": 10,
+      "rtt_ms": [
+        27.212,
+        26.048,
+        25.328,
+        26,
+        24.287,
+        26.71,
+        27.089,
+        26.267,
+        29.657,
+        24.913
+      ],
+      "runtime_ms": 273.248,
+      "scope": "UDP_TASK_DIAGNOSTIC_NOT_MEDIA",
+      "socket_errors": 0,
+      "status": "PASS",
+      "unmatched": 0
+    }
+  ],
+  "servers": [
+    {
+      "accepted": 10,
+      "capacity": 0,
+      "foreign": 0,
+      "invalid": 0,
+      "media_acceptance": 0,
+      "packet_bytes": 64,
+      "replay": 0,
+      "requests": 10,
+      "responses": 10,
+      "runtime_ms": 25001.764,
+      "scope": "UDP_TASK_DIAGNOSTIC_NOT_MEDIA",
+      "send_errors": 0,
+      "server_port": 45965,
+      "status": "SERVER_FINISHED"
+    },
+    {
+      "accepted": 10,
+      "capacity": 0,
+      "foreign": 0,
+      "invalid": 0,
+      "media_acceptance": 0,
+      "packet_bytes": 64,
+      "replay": 0,
+      "requests": 10,
+      "responses": 10,
+      "runtime_ms": 25001.813,
+      "scope": "UDP_TASK_DIAGNOSTIC_NOT_MEDIA",
+      "send_errors": 0,
+      "server_port": 45965,
+      "status": "SERVER_FINISHED"
+    }
+  ],
+  "account_created": false,
+  "probe_secrets_deleted": true,
+  "phone_media_tested": false,
+  "mac_udp_target_listener_closed": true,
+  "udp_tasks_enabled": true,
+  "app_udp_public_entry_ready": false,
+  "existing_public_https_200": [
+    15556,
+    15558
+  ],
+  "formal_NPS_restart": false,
+  "original_clients_missing": 0,
+  "original_clients_count": 38,
+  "notes": [
+    "NPS UDP edges via reliable QUIC stream; not Datagram transport acceptance",
+    "A post-probe read-only preservation comparison once returned original_runtime_config_changed; independent adjacent captures showed no stable differences; subsequent full read-only guard passed; no mutation or restart followed failure"
+  ]
+}

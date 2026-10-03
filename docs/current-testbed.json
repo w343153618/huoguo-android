@@ -631,7 +631,7 @@
       "new_next_discriminating_candidate": "Future Surface submission ownership; instrument bounded ready/input/release timing and steady phase, then experiment-only opt-in lead0/16 ABBA. No causal claim yet."
     }
   },
-  "updated_evidence_utc": "2026-10-03T04:57:57.751314+00:00",
+  "updated_evidence_utc": "2026-10-03T06:37:27.338704+00:00",
   "independent_experimental_app_version": "1.31-alpha.5",
   "latest_surface_submit_experiment": {
     "evidence": "docs/evidence/surface-submit-20261003",
@@ -1070,9 +1070,97 @@
   "next_source_task": {
     "checkpoint": "docs/evidence/mapping-lifecycle-diagnostics-20261003/source-task-state.json",
     "design": "docs/native-mapping-lifecycle-diagnostics-design-20261003.md",
-    "scope": "native diagnostics and owned fixtures only; no JNI/Java/APK/phone execution yet",
+    "scope": "Native diagnostics and owned fixtures only; no JNI/Java/APK/helper/phone lifecycle execution yet; formal NPS UDP task preparation is the latest user-directed action",
     "source_task_started": true,
     "independent_liveness_design": "docs/udp-media-revocation-liveness-design-20261003.md",
-    "liveness_candidate_implemented": false
+    "liveness_candidate_implemented": false,
+    "source_task_status": "native_source_and_fixtures_complete",
+    "source_commit": "6f978b0",
+    "checks_passed": 1010
+  },
+  "formal_nps_udp_task_preparation": {
+    "date": "2026-10-03",
+    "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
+    "evidence": "docs/nps-dual-udp-tasks-20261003.json",
+    "m1": {
+      "client_id": 1466,
+      "bridge_mode": "quic,quic",
+      "udp_task_id": 1412,
+      "public_udp_port": 15556,
+      "local_udp_target": "127.0.0.1:45965",
+      "bounded_probe_responses": 10,
+      "bounded_probe_requested": 10
+    },
+    "m5": {
+      "client_id": 1468,
+      "bridge_mode": "quic,quic",
+      "udp_task_id": 1413,
+      "public_udp_port": 15558,
+      "local_udp_target": "127.0.0.1:45965",
+      "bounded_probe_responses": 10,
+      "bounded_probe_requested": 10
+    },
+    "formal_nps_pid": 3412973,
+    "restarted": false,
+    "original_online_count": 38,
+    "missing_original_clients": 0,
+    "existing_tcp_tasks_preserved": [
+      1409,
+      1411
+    ],
+    "udp_tasks_enabled": true,
+    "targets_closed_after_probe": true,
+    "permanent_authenticated_public_media_gateway_deployed": false,
+    "formal_app_still_TLS_TCP": true,
+    "inside_NPS_transport": "reliable quic.Stream carrying framed datagrams",
+    "native_datagram_relay_or_P2P_tested": false,
+    "real_phone_public_UDP_media_tested": false,
+    "source_fixture_checks": 68,
+    "next_action": "owner endpoint/profile contract, then matching gateway and experimental Android contract; friend isolation gates retained",
+    "endpoint_profile_source": {
+      "state": "completed_not_integrated",
+      "source": "udp_nps_profile.py",
+      "owned_fixture_checks": 21,
+      "network_or_device_actions": false
+    }
+  },
+  "experimental_release_delivery_20261003": {
+    "version_name": "1.31-alpha.5",
+    "version_code": 36,
+    "package": "local.remoteandroid.direct.experiment",
+    "release_tag": "experimental-v1.31-alpha.5",
+    "release_url": "https://github.com/w343153618/huoguo-android/releases/tag/experimental-v1.31-alpha.5",
+    "artifact_url": "https://github.com/w343153618/huoguo-android/releases/download/experimental-v1.31-alpha.5/HuoguoAndroidExperimental.apk",
+    "apk_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
+    "source_commit": "d86330293834a6c107eb5eed6bb6672611013a6a",
+    "jni_sha256": "578347ca24008ce7b987c77f2f1356c56761ac3d9ee4e7be89b8e9130476e402",
+    "recorded_source_pins_count": 18,
+    "debuggable": true,
+    "original_signer_verified": true,
+    "published_prerelease": true,
+    "download_hash_verified": true,
+    "formal_update_channel_changed": false,
+    "public_NPS_UDP_media_supported": false,
+    "source_doc": "docs/experimental-alpha5-release-20261003.md"
+  },
+  "owner_udp_user_trial_20261003": {
+    "stage": "active_user_trial",
+    "pid": 45354,
+    "started_utc": "2026-10-03T06:35:18.325220+00:00",
+    "accepting_until_utc": "2026-10-03T07:35:18.325220+00:00",
+    "max_runtime_seconds": 3600,
+    "single_session_max_seconds": 120,
+    "environment": "owner UID501 M1 nonisolated",
+    "scope": "lan",
+    "host": "192.168.9.128",
+    "interface": "en7",
+    "https_port": 45560,
+    "udp_port": 45963,
+    "source_commit": "d86330293834a6c107eb5eed6bb6672611013a6a",
+    "formal_service_changed": false,
+    "phone_changed": false,
+    "other_tailnet_gateway_allowed": false,
+    "checkpoint": "docs/evidence/alpha5-owner-trial-20261003/runtime-state.json",
+    "preserve_until_natural_shutdown": true
   }
 }

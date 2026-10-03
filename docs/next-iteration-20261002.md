@@ -168,3 +168,21 @@ App连接页展示当前实际路径和失败原因，不把“Tailscale”自�
 下一因素先读[adapter/core生命周期](native-mapping-capacity-lifecycle-20261003.md)：历史8次仅两帧数据报，adapter8/core0/56～76ms；本轮再出现10/82容量拒绝，但未知八occupantID/settle原因。先定长settle(ID,reason,phone_us)及capacity occupant快照，不改变292 schema、cap8/80ms/参考链、不凭pending0全清、不直接扩容。独立duringprepare取消helper已javac源码编译，未构建安装/真机，不能当取消覆盖。新的真实campaign已结束，checkpoint在docs/evidence/udp-enobufs-retry-20261003/iteration-state.json；先接续生命周期诊断源码/owned fixture准备，再冻结新JNI/Java/APK/SHA。NPS一次正式重启和两Mac QUIC维护早已完成，不重复。
 
 下一原生源码子任务已开始，checkpoint为docs/evidence/mapping-lifecycle-diagnostics-20261003/source-task-state.json；running时不重派、不并发改其两header和两fixture。读[240-long独立契约设计](native-mapping-lifecycle-diagnostics-design-20261003.md)，目前未接JNI/Java/未打新APK，alpha5不含新字段。现core framesDelivered在output回调之前增加，不能据其推导settle通知；用实际settle固定总计保留输出异常语义。另完成[认证入站存活与结束提示审查](udp-media-revocation-liveness-design-20261003.md)：20ms socket timeout只是轮询，ALIVE单向；既有HGPQ可供已建立会话的独立实验看门狗，静态画面不能以无新帧判失败。finished中的同步DELETE可能延迟UI但未定位历史13s全部原因；看门狗/attempt-scoped快速提示仍只是设计，未执行。保持后续单因素，别同时改变mapping、心跳和码率解释收益。
+
+## 2026-10-03续接：native观察源码完成，用户要求双Mac公网UDP任务
+
+Native生命周期四文件与文档已经6f978b0提交，29项owned/兼容fixture及全仓1010通过，独立review无阻断；新240字段尚未接JNI/Java/App/helper或真机。原cap8、期限、retire、参考链和默认OFF均保留，不能追认alpha5数据。
+
+用户最新要求M1/M5既有NPC用QUIC且NPS任务用UDP。新鲜管理员API读回1466/1468均`quic,quic`，38在线；持久化clients.json的历史tcp值不能替代runtime。原TCP任务1409/1411均runtime RunStatus true。下一步在完整私有配置备份后，仅通过管理API新增同数字UDP15556/15558 companion到各Mac loopback45965；现任务保留兼容已装SSLSocket App。没有重启正式NPS或改变身份/国内过滤的必要。独立有界认证packet往返仅验任务，不当真实媒体。旧App不会因任务变UDP而自动变协议，需匹配的公网认证会话、网关和实验App适配；失败不静默TCP媒体。
+
+## 2026-10-03最新：公网UDP任务真实部署与往返完成，App仍需迁移
+
+[部署记录](nps-dual-udp-tasks-20261003.md)与[JSON](nps-dual-udp-tasks-20261003.json)：完整9文件私有备份后，只新增UDP task1412/M1/15556、1413/M5/15558到各Mac127.0.0.1:45965。38原NPC在线/身份/原任务/geo保持，正式PID3412973不变；runtime Mode两台quic,quic。各Mac有界HMAC64B往返10/10，M1 physical en7客户端，没有手机媒体。probe25秒自然退出且两边secret删除，目标45965关闭，新UDP任务启用等待认证媒体gateway。原TCP1409/1411保留；受信公网ping各200。42+9+17=68组件checks，初始API type遗漏无任何创建，postprobe一次未知静态比较失败后独立相邻snapshots无差异与完整readonlyguard通过，保留失败，不放宽比较规则或重启。
+
+用户明确理解正式v1.30公网仍TCP，要求App也升级。下一源因素现在开始独立`udp_nps_profile.py`/owned fixture合同，checkpoint docs/evidence/nps-public-udp-contract-20261003/source-state.json；running时接续不重派。M1候选HTTPS控制公网49556到loopback45561（只信令）、UDP媒体15556到loopback45965/lo0；M549558规划但朋友隔离gate保留，不能据源合同宣称已部署。逐文件合同见[nps公共入口计划](nps-public-udp-app-integration-plan-20261003.md)。随后接registry本地bind/公开描述分离、GCM peer pin/cancel、App双重端口/节点scope校验与真实手机；不静默TCP媒体。NPS内部仍可靠quic.Stream，这一步不是纯Datagram最终链路或P2P产品。
+
+## 2026-10-03最新：UDP alpha5已发布，M1 LAN机主试用运行中
+
+[发布与试用记录](experimental-alpha5-release-20261003.md)：GitHub prerelease `experimental-v1.31-alpha.5` 已实际上传及下载hash校验，独立原签名包/code36/精确source d863302，native新240诊断不在包内。M1 LAN `192.168.9.128:45560`信令、UDP45963媒体试用，精确源snapshot、原UPTIME packetizer/encoder/JAR已核对。启动UTC06:35:18，max3600s/session120s，受信ping200；UID501非隔离机主，正式M5与正式更新不变，不称公网NPS/朋友UDP。读private `docs/evidence/alpha5-owner-trial-20261003/runtime-state.json`，试用活着时不要并开另一个gateway或抢guest/手机；自然shutdown quiescence后才复用。
+
+`udp_nps_profile.py`独立纯合同已done，21checks与独立review通过，root新增任务/probe/profile共80checks通过。仍未接gateway/registry/worker/App，不当公网媒体验收。试用期间继续不抢资源的离线合同集成；正式NPS和其他NPC不重启。
