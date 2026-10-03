@@ -1982,5 +1982,22 @@
     "owned_quiescence": true,
     "M5_NPS_or_phone_settings_changed": false,
     "next": "bounded enqueue/pacing age analysis; distinct protected public-path plan; no default or APK promotion"
+  },
+  "owner_raw_fifo2_reconstruction_20261004": {
+    "evidence": "docs/raw-fifo2-reconstruction-20261004.json",
+    "window_decisions": 917,
+    "pending_at_dequeue": {
+      "1": 744,
+      "2": 173
+    },
+    "queue_age_median_ms": 28.358,
+    "matched_budget_wait_overlap_median_ms": 27.407,
+    "decision_local_age_difference_mean_ms": 6.2033,
+    "decision_local_age_difference_median_ms": 0,
+    "not_a_dynamic_replay_or_performance_prediction": true,
+    "new_phone_run": false,
+    "new_APK": false,
+    "latest_candidate_only": "LAN explicit local CLI with private trace; FIFO default remains; not deployed",
+    "targeted_tests_passed": 150
   }
 }

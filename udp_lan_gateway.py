@@ -21,7 +21,7 @@ from http.server import ThreadingHTTPServer
 
 from gateway import Handler as ExistingHandler, CERT, KEY
 from udp_lan_sessions import UdpLanSessions, SessionError
-from udp_lan_worker import LanMediaWorker
+from udp_lan_worker import LanMediaWorker, owner_raw_queue_policy
 from udp_network_scope import LanScope, TailnetScope, ScopeUnavailable, same_private_lan
 
 
@@ -216,10 +216,16 @@ def main():
     parser.add_argument('--evidence-dir', type=Path, required=True)
     parser.add_argument('--capture-trace-dir', type=Path,
                         help='Owner diagnostic opt-in: existing private trace parent; default off; never accepted from HTTP')
+    parser.add_argument('--owner-raw-queue-policy', choices=('fifo', 'latest'), default='fifo',
+                        help='LAN trace experiment only: choose complete pre-encode raw frames; default FIFO remains')
     parser.add_argument('--max-runtime', type=int, default=600)
     args = parser.parse_args()
     if args.https_port != 45560 or args.udp_port != 45963 or not 30 <= args.max_runtime <= 3600:
         parser.error('fixed isolated ports and bounded lifetime required')
+    try:
+        owner_raw_queue_policy(args.owner_raw_queue_policy, args.network_scope, args.capture_trace_dir)
+    except ValueError as error:
+        parser.error(str(error))
     if not os.environ.get('DIRECT_AUTH_FILE'):
         parser.error('use the existing restricted account file; do not create an account')
     try:
@@ -239,7 +245,8 @@ def main():
                               args.packetizer, args.native_encoder, registry,
                               args.evidence_dir, busy=formal_busy,
                               enobufs_retry_enabled=args.allow_owner_enobufs_retry,
-                              capture_trace_dir=args.capture_trace_dir)
+                              capture_trace_dir=args.capture_trace_dir,
+                              raw_queue_policy=args.owner_raw_queue_policy)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(CERT, KEY)
@@ -276,6 +283,7 @@ def main():
                       'udp_port': args.udp_port, 'scope': scope.ping_scope,
                       'network_scope': scope.name, 'inner_interface': args.interface,
                       'capture_trace_enabled': args.capture_trace_dir is not None,
+                      'owner_raw_queue_policy_requested': args.owner_raw_queue_policy,
                       'owner_enobufs_retry_enabled': args.allow_owner_enobufs_retry}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)

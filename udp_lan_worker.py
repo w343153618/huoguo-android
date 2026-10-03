@@ -32,6 +32,19 @@ from feedback_controller import NetworkFeedbackController
 from recovery_controller import RecoveryController
 
 
+def owner_raw_queue_policy(policy, network_scope, trace_dir):
+    """Only an explicit local LAN diagnostic may select complete raw frames.
+
+    This is not an HTTP/session setting or a change to encoded dependencies.
+    Default FIFO remains independent of inherited environment variables.
+    """
+    if type(policy) is not str or policy not in ('fifo', 'latest'):
+        raise ValueError('owner_raw_queue_policy_invalid')
+    if policy == 'latest' and (network_scope != 'lan' or trace_dir is None):
+        raise ValueError('owner_latest_requires_LAN_trace')
+    return policy
+
+
 class LanMediaWorker:
     FORMAL_CHECK_SECONDS = 2.0
     NATIVE_GRACE_SECONDS = 2.0
@@ -50,9 +63,11 @@ class LanMediaWorker:
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False,
                  *, guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare',
-                 capture_trace_dir=None):
+                 capture_trace_dir=None, raw_queue_policy='fifo'):
         if type(enobufs_retry_enabled) is not bool:
             raise ValueError('owner_enobufs_retry_boolean_required')
+        self.raw_queue_policy = owner_raw_queue_policy(raw_queue_policy,
+            config.get('network_scope', 'lan'), capture_trace_dir)
         if (type(guest_serial) is not str
                 or re.fullmatch(r'emulator-[1-9][0-9]{0,4}', guest_serial) is None
                 or int(guest_serial[len('emulator-'):]) > 65535
@@ -310,7 +325,8 @@ class LanMediaWorker:
                                       raw_writer_diagnostics=True)
         hardware = HostHardwareSession(self.runtime, self.guest_serial, self.guest_avd,
             config['max_size'], self.target_bps, config['fps'], config['bitrate_mode'],
-            raw_queue_policy='fifo', native_encoder=self.native_encoder, sps_low_delay=True,
+            raw_queue_policy=getattr(self, 'raw_queue_policy', 'fifo'),
+            native_encoder=self.native_encoder, sps_low_delay=True,
             raw_submit_fps=config['fps'], matched_experimental_client=True,
             **diagnostic_options)
         with self.lifecycle_lock:
@@ -848,6 +864,7 @@ class LanMediaWorker:
                   'native_clock': 'CLOCK_UPTIME_RAW', 'tcp_media_used': False,
                   'requested': {key: self.config[key] for key in ('max_size','fps','video_bit_rate','buffer_ms','seconds')},
                   'socket_pacer_wait_enabled': True, 'assembly_lifetime_ms': 80}
+        report['owner_raw_queue_policy_requested'] = getattr(self, 'raw_queue_policy', 'fifo')
         if getattr(self, 'feed_trace_sink', None) is not None:
             sink = self.feed_trace_sink
             report['host_timing_diagnostics'] = dict(enabled=True,

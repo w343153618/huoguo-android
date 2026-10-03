@@ -1,0 +1,182 @@
+{
+  "schema": "owner-raw-fifo2-observation-v1",
+  "evidence_layer": "offline_reconstruction_of_existing_real_LAN_capture_trace",
+  "new_phone_or_media_run": false,
+  "runtime_or_default_changed": false,
+  "new_APK_released": false,
+  "capture_trace_sha256": "dba81f486500cf7969584af97b0e2f6268f5fdd09d9e0461d68d86331bbe412a",
+  "analyzer_sha256": "6695fda9f0f7b950eeacc9ea943d27b43537e942f0539dc56b1fda38923401a2",
+  "source_evidence": "source-paused-endpoints-real-LAN-20261004.json",
+  "source": "BBB public video aqz-KE-bpKQ; paused endpoints match; full-window continuity and overlay overhead unverified",
+  "transport": "same-home-WiFi physical LAN authenticated UDP; nonisolated M1 owner",
+  "requested": {
+    "size": [
+      540,
+      960
+    ],
+    "fps": 30,
+    "bitrate_bps": 4000000,
+    "mode": "VBR",
+    "buffer_ms": 80,
+    "lead_ms": 0,
+    "raw_policy": "fifo",
+    "raw_capacity": 2
+  },
+  "CPU_limits_drifted_during_original_window": true,
+  "native_encoder_complete_coverage": false,
+  "counterfactual_is_not_latency_or_FPS_forecast": true,
+  "checks": {
+    "new_inert_tests": 20,
+    "existing_host_tests": 24,
+    "combined_passed": 44,
+    "elapsed_s": 0.14
+  },
+  "reconstruction": {
+    "alternative_is_dynamic_replay": false,
+    "alternative_is_performance_prediction": false,
+    "budget_matches": 917,
+    "by_pending_age_ms": {
+      "1": {
+        "count": 744,
+        "max": 37.47,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 26.66,
+        "p95": 33.4192,
+        "p99": 35.3823
+      },
+      "2": {
+        "count": 173,
+        "max": 39.558,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 35.201,
+        "p95": 38.3828,
+        "p99": 38.5824
+      }
+    },
+    "clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "decision_local_age_difference_ms": {
+      "count": 917,
+      "max": 37.165,
+      "mean": 6.2033,
+      "over_100_ms": 0,
+      "over_50_ms": 0,
+      "p50": 0.0,
+      "p95": 33.9298,
+      "p99": 35.5277
+    },
+    "decision_local_newest_differs": 173,
+    "distributions_ms": {
+      "age_budget_wait_overlap_ms": {
+        "count": 917,
+        "max": 39.503,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 27.407,
+        "p95": 35.7644,
+        "p99": 37.8002
+      },
+      "age_outside_matched_budget_wait_ms": {
+        "count": 917,
+        "max": 8.007,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 0.102,
+        "p95": 4.7548,
+        "p99": 5.9028
+      },
+      "different_newest_age_difference_ms": {
+        "count": 173,
+        "max": 37.165,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 33.028,
+        "p95": 35.5406,
+        "p99": 36.7313
+      },
+      "different_newest_age_ms": {
+        "count": 173,
+        "max": 5.333,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 2.378,
+        "p95": 4.9028,
+        "p99": 5.098
+      },
+      "newest_age_at_same_dequeue_ms": {
+        "count": 917,
+        "max": 37.47,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 3.591,
+        "p95": 33.1846,
+        "p99": 35.1656
+      },
+      "observed_age_ms": {
+        "count": 917,
+        "max": 39.558,
+        "over_100_ms": 0,
+        "over_50_ms": 0,
+        "p50": 28.358,
+        "p95": 36.8774,
+        "p99": 38.3738
+      }
+    },
+    "final_pending_depth": 0,
+    "native_phone_or_network_latency_measured": false,
+    "observed_policy": "fifo",
+    "pending_at_dequeue": {
+      "1": 744,
+      "2": 173
+    },
+    "queue_capacity": 2,
+    "reconstructed": true,
+    "regions_are_not_additive": true,
+    "rejections": {},
+    "schema": "raw-fifo2-reconstruction-v1",
+    "scope": "capture_only_fixed_historical_dequeue_decisions",
+    "source_pts_identity_only": true,
+    "stream": {
+      "accepted_rows": 6387,
+      "available": true,
+      "byte_bound_exceeded": false,
+      "byte_capped": false,
+      "changed_during_read": false,
+      "clock_contract_accepted": true,
+      "clock_contract_rejected_rows": 0,
+      "clock_end_after_ns": 310775263461000,
+      "clock_errors": 0,
+      "clock_start_before_ns": 310734937222000,
+      "clock_start_end_bracketed": true,
+      "dropped_records": 0,
+      "emit_errors": 0,
+      "line_bound_exceeded": false,
+      "lines_read": 6387,
+      "malformed_rows": 0,
+      "observation_summary_count": 1,
+      "producer_coverage_complete": true,
+      "producer_quiescence_known": true,
+      "producer_quiescent": true,
+      "read_error": false,
+      "record_bound_exceeded": false,
+      "regular_file": true,
+      "role": "capture",
+      "schema_errors": 0,
+      "schema_rejected_rows": 0,
+      "sink_counts_consistent": true,
+      "sink_coverage_complete": true,
+      "sink_summary_count": 1,
+      "truncated_final_line": false
+    },
+    "total_enqueues": 1057,
+    "total_recorded_dequeues": 1056,
+    "total_replaced_enqueues": 1,
+    "whole_pipeline_coverage": false,
+    "window_decisions": 917,
+    "window_dequeues_excluded": 139,
+    "window_dropped_before_encode": 0,
+    "window_end_ns": 310771142754000,
+    "window_start_ns": 310740555417000
+  }
+}
