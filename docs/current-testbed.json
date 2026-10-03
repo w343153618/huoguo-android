@@ -2038,5 +2038,47 @@
     "default_changed": false,
     "APK_changed": false,
     "next_action": "single latest replication under same frozen dependencies; compare tails and startup phase, no causal claim"
+  },
+  "owner_raw_latest_replication_real_LAN_20261004": {
+    "evidence": "docs/owner-raw-latest-replication-real-LAN-20261004.json",
+    "source_final_paused_position_ms": 557283,
+    "source_endpoint_drop_delta": 103,
+    "host_queue_age_median_ms": 0.082,
+    "host_queue_age_p99_ms": 0.2389,
+    "host_queue_age_max_ms": 0.507,
+    "observed_budget_wait_count": 0,
+    "phone_SF_cadence": 29.883,
+    "phone_max_gap_ms": 107.71151,
+    "phone_trailing_unknown_ms": 733.73,
+    "source_SF_cadence": 29.898,
+    "source_max_gap_ms": 102.188584,
+    "whole_pipeline_coverage": false,
+    "replacement_counter_combines_capacity_and_explicit_selection": true,
+    "default_changed": false,
+    "APK_changed": false,
+    "next_action": "trace-only startup credit/queue phase audit; no blind repeat near source end or causal promotion"
+  },
+  "owner_raw_submit_budget_candidate_20261004": {
+    "evidence": "docs/owner-raw-submit-budget-candidate-20261004.md",
+    "CLI": "--owner-raw-submit-fps",
+    "default": null,
+    "allowed": [
+      30,
+      60
+    ],
+    "scope": "explicit bounded LAN with private capture trace only",
+    "HTTP_environment_Tailnet_NPS_override": false,
+    "proposed_only_factor": "raw token budget60 with authenticated/native/guest30, FIFO otherwise unchanged",
+    "actual_media_tested": false,
+    "production_deployed": false,
+    "App_changed": false,
+    "targeted_checks": 128,
+    "targeted_elapsed_seconds": 0.169,
+    "source_sha256": {
+      "udp_lan_worker.py": "0bf4d410d77ef6abbaf241fcfe343db2854cc12483f465b73f69d1809981f49a",
+      "udp_lan_gateway.py": "9f4110da2d3edc2f3a1640237ea61fe6d4b7acc9d6423e8b2ad80020358bd6cb",
+      "tests/test_owner_raw_submit_budget.py": "57d9cff112df8aeaff8cfaa5dbf424108563001a94a1b33d0cd376522d657323"
+    },
+    "next_action": "trace-only credit/first-ready audit and qualified playback-position preparation, then NEW frozen one-factor LAN trial; do not blindly resume near end"
   }
 }

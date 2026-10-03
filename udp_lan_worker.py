@@ -18,7 +18,8 @@ import sys
 import threading
 import time
 
-from hardware_stream import BoundedCaptureTrace, HostHardwareSession, read_exact, read_control
+from hardware_stream import (BoundedCaptureTrace, HostHardwareSession, read_exact, read_control,
+                             verify_raw_submit_budget_readback)
 from host_timing_trace import HostTimingTrace, private_trace_attempt, FIELDS
 
 UDP_SOURCE = Path(__file__).resolve().parent / 'experiments/moonlight-v2/transport/android-udp'
@@ -45,6 +46,21 @@ def owner_raw_queue_policy(policy, network_scope, trace_dir):
     return policy
 
 
+def owner_raw_submit_fps(value, network_scope, trace_dir):
+    """Explicit LAN trace opt-in; never an HTTP or inherited-env setting.
+
+    This selects only the existing raw-input token budget. Native encoder,
+    guest refresh and authenticated phone FPS retain their original values.
+    """
+    if value is None:
+        return None
+    if type(value) is not int or value not in (30, 60):
+        raise ValueError('owner_raw_submit_fps_invalid')
+    if network_scope != 'lan' or trace_dir is None:
+        raise ValueError('owner_raw_submit_requires_LAN_trace')
+    return value
+
+
 class LanMediaWorker:
     FORMAL_CHECK_SECONDS = 2.0
     NATIVE_GRACE_SECONDS = 2.0
@@ -63,11 +79,14 @@ class LanMediaWorker:
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False,
                  *, guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare',
-                 capture_trace_dir=None, raw_queue_policy='fifo'):
+                 capture_trace_dir=None, raw_queue_policy='fifo', raw_submit_fps=None):
         if type(enobufs_retry_enabled) is not bool:
             raise ValueError('owner_enobufs_retry_boolean_required')
         self.raw_queue_policy = owner_raw_queue_policy(raw_queue_policy,
             config.get('network_scope', 'lan'), capture_trace_dir)
+        self.owner_raw_submit_fps_requested = owner_raw_submit_fps(raw_submit_fps,
+            config.get('network_scope', 'lan'), capture_trace_dir)
+        self.owner_raw_submit_budget_readback = None
         if (type(guest_serial) is not str
                 or re.fullmatch(r'emulator-[1-9][0-9]{0,4}', guest_serial) is None
                 or int(guest_serial[len('emulator-'):]) > 65535
@@ -323,17 +342,26 @@ class LanMediaWorker:
         if getattr(self, 'capture_trace_path', None) is not None:
             diagnostic_options = dict(capture_trace=self.capture_trace_path,
                                       raw_writer_diagnostics=True)
+        raw_override = getattr(self, 'owner_raw_submit_fps_requested', None)
+        raw_fps = config['fps'] if raw_override is None else raw_override
         hardware = HostHardwareSession(self.runtime, self.guest_serial, self.guest_avd,
             config['max_size'], self.target_bps, config['fps'], config['bitrate_mode'],
             raw_queue_policy=getattr(self, 'raw_queue_policy', 'fifo'),
             native_encoder=self.native_encoder, sps_low_delay=True,
-            raw_submit_fps=config['fps'], matched_experimental_client=True,
+            raw_submit_fps=raw_fps, matched_experimental_client=True,
             **diagnostic_options)
         with self.lifecycle_lock:
             if self.closed:
                 hardware.close()
                 return
             self.hardware = hardware
+            # Bind ownership before projecting the initialization reply, so an
+            # uncertain readback still retires this exact hardware session.
+            # A requested value never substitutes for the actual host reply.
+            reply = getattr(hardware, 'raw_submit_budget_readback', None)
+            if type(reply) is dict:
+                self.owner_raw_submit_budget_readback = verify_raw_submit_budget_readback(
+                    reply, config['fps'], raw_fps)
             self.channels = {role: hardware.channel(role) for role in ('video', 'audio', 'control')}
             self.native = subprocess.Popen([str(self.packetizer), '32000000', '500000', '0', '2048'],
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -865,6 +893,8 @@ class LanMediaWorker:
                   'requested': {key: self.config[key] for key in ('max_size','fps','video_bit_rate','buffer_ms','seconds')},
                   'socket_pacer_wait_enabled': True, 'assembly_lifetime_ms': 80}
         report['owner_raw_queue_policy_requested'] = getattr(self, 'raw_queue_policy', 'fifo')
+        report['owner_raw_submit_fps_requested'] = getattr(self, 'owner_raw_submit_fps_requested', None)
+        report['owner_raw_submit_budget_readback'] = getattr(self, 'owner_raw_submit_budget_readback', None)
         if getattr(self, 'feed_trace_sink', None) is not None:
             sink = self.feed_trace_sink
             report['host_timing_diagnostics'] = dict(enabled=True,
