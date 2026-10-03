@@ -32,6 +32,122 @@ class ExperimentalDeliveryCheck(unittest.TestCase):
         return publisher.manifest(self.identity(), self.REPOSITORY, 'codex/experimental-udp',
                                   'a' * 40, name, code, '仅 LAN UDP 实验，公网媒体尚未验收。')
 
+    def public_metadata(self, *, name='1.31-alpha.6', code=37, mirror=False):
+        metadata = self.metadata(name, code)
+        if mirror:
+            metadata['github_asset_url'] = metadata['apk_url']
+            metadata['apk_url'] = delivery.PUBLIC_BASE + '/' + delivery.public_name(name)
+            metadata['installation'] = 'standalone_signed_apk_or_manual_channel_picker'
+        return metadata
+
+    def test_original_lan_schema_and_new_explicit_empty_capabilities_remain_compatible(self):
+        current = self.metadata()
+        legacy = {key: value for key, value in current.items() if key in delivery.FIELDS}
+        for metadata in (legacy, current):
+            with self.subTest(fields=set(metadata)):
+                self.assertEqual(delivery.validate_metadata(metadata, self.REPOSITORY, self.TAG),
+                                 delivery.public_name(self.NAME))
+                exposed = dict(metadata, apk_url=delivery.PUBLIC_BASE + '/' + delivery.public_name(self.NAME))
+                self.assertEqual(delivery.validate_metadata(exposed, self.REPOSITORY, self.TAG, published=True),
+                                 delivery.public_name(self.NAME))
+
+    def test_only_reviewed_public_owner_version_code_pairs_have_public_capabilities(self):
+        for version, code in (('1.31-alpha.6', 37), ('1.31-alpha.7', 38)):
+            for mirror in (False, True):
+                metadata = self.public_metadata(name=version, code=code, mirror=mirror)
+                with self.subTest(version=version, mirror=mirror):
+                    self.assertEqual(delivery.validate_metadata(metadata, self.REPOSITORY, metadata['release_tag']),
+                                     delivery.public_name(version))
+                    self.assertEqual(metadata['public_owner_profiles'], ['m1', 'm5'])
+                    self.assertIs(metadata['public_udp_acceptance'], False)
+                    self.assertIs(metadata['public_cellular_acceptance'], False)
+                    self.assertIs(metadata['friend_isolation_acceptance'], False)
+        reference = self.public_metadata()
+        for version, code in (('1.31-alpha.5', 37), ('1.31-alpha.6', 38), ('1.31-alpha.7', 37),
+                              ('1.31-alpha.8', 39), ('1.32-alpha.6', 37)):
+            metadata = dict(reference, version_name=version, version_code=code,
+                            release_tag='experimental-v' + version)
+            metadata['apk_url'] = ('https://github.com/' + self.REPOSITORY + '/releases/download/'
+                                   + metadata['release_tag'] + '/' + publisher.APK_ASSET)
+            with self.subTest(version=version, code=code), self.assertRaises(RuntimeError):
+                delivery.validate_metadata(metadata, self.REPOSITORY, metadata['release_tag'])
+
+    def test_public_owner_profiles_and_acceptance_flags_cannot_be_broadened_or_omitted(self):
+        metadata = self.public_metadata()
+        for key, value in (('public_owner_profiles', []), ('public_owner_profiles', ['m1']),
+                           ('public_owner_profiles', ['m1', 'm5', 'other']), ('public_owner_profiles', 'm1,m5'),
+                           ('public_owner_profiles', ['m5', 'm1']), ('public_cellular_acceptance', True),
+                           ('public_cellular_acceptance', 0), ('friend_isolation_acceptance', True),
+                           ('friend_isolation_acceptance', 0), ('public_udp_acceptance', True)):
+            with self.subTest(field=key, value=value), self.assertRaises(RuntimeError):
+                delivery.validate_metadata(dict(metadata, **{key: value}), self.REPOSITORY, metadata['release_tag'])
+        for key in ('public_owner_profiles', 'public_cellular_acceptance', 'friend_isolation_acceptance'):
+            omitted = dict(metadata); omitted.pop(key)
+            with self.subTest(omitted=key), self.assertRaises(RuntimeError):
+                delivery.validate_metadata(omitted, self.REPOSITORY, metadata['release_tag'])
+        legacy = {key: value for key, value in metadata.items() if key in delivery.FIELDS}
+        with self.assertRaises(RuntimeError):
+            delivery.validate_metadata(legacy, self.REPOSITORY, legacy['release_tag'])
+        for altered in (dict(metadata, owner_account='anyone'), dict(metadata, credentials='never served')):
+            with self.assertRaises(RuntimeError):
+                delivery.validate_metadata(altered, self.REPOSITORY, altered['release_tag'])
+
+    def test_mirror_requires_exact_nps_asset_and_immutable_github_download_url(self):
+        metadata = self.public_metadata(mirror=True)
+        for key, value in (('apk_url', metadata['apk_url'].replace('https:', 'http:')),
+                           ('apk_url', metadata['apk_url'].replace(':15556', ':15558')),
+                           ('apk_url', metadata['apk_url'] + '?redirect=other'),
+                           ('apk_url', 'https://foreign.invalid/experiment.apk'),
+                           ('github_asset_url', 'https://github.com/' + self.REPOSITORY + '/releases/tag/' + metadata['release_tag']),
+                           ('github_asset_url', metadata['github_asset_url'].replace(self.REPOSITORY, 'other/project')),
+                           ('github_asset_url', metadata['github_asset_url'].replace('alpha.6', 'alpha.7')),
+                           ('github_asset_url', metadata['github_asset_url'].replace('https:', 'http:')),
+                           ('installation', 'automatic_install'), ('installation', 'standalone_signed_apk')):
+            with self.subTest(field=key, value=value), self.assertRaises(RuntimeError):
+                delivery.validate_metadata(dict(metadata, **{key: value}), self.REPOSITORY, metadata['release_tag'])
+        missing = dict(metadata); missing.pop('github_asset_url')
+        with self.assertRaises(RuntimeError):
+            delivery.validate_metadata(missing, self.REPOSITORY, missing['release_tag'])
+        legacy_mirror = self.metadata()
+        legacy_mirror['github_asset_url'] = legacy_mirror['apk_url']
+        legacy_mirror['apk_url'] = delivery.PUBLIC_BASE + '/' + delivery.public_name(self.NAME)
+        legacy_mirror['installation'] = 'standalone_signed_apk_or_manual_channel_picker'
+        with self.assertRaises(RuntimeError):
+            delivery.validate_metadata(legacy_mirror, self.REPOSITORY, self.TAG)
+
+    def test_public_mirror_install_keeps_exact_signed_identity_and_rejects_mutation(self):
+        metadata = self.public_metadata(mirror=True)
+        with tempfile.TemporaryDirectory() as folder:
+            directory = pathlib.Path(folder)
+            exposed = delivery.install(directory, metadata, self.APK, self.REPOSITORY)
+            original = (directory / 'experiment.json').read_bytes()
+            self.assertEqual(exposed, metadata)
+            self.assertEqual(delivery.install(directory, metadata, self.APK, self.REPOSITORY), exposed)
+            for changed, apk in ((metadata, self.APK + b'x'),
+                                 (dict(metadata, changelog='mutated same version'), self.APK),
+                                 (dict(metadata, signing_certificate_sha256='0' * 64), self.APK),
+                                 (dict(metadata, application_id='local.remoteandroid.direct'), self.APK)):
+                with self.subTest(changed=changed), self.assertRaises(RuntimeError):
+                    delivery.install(directory, changed, apk, self.REPOSITORY)
+                self.assertEqual((directory / 'experiment.json').read_bytes(), original)
+            self.assertFalse((directory / 'update.json').exists())
+
+    def test_actual_apk_inspection_remains_required_for_public_mirror_delivery(self):
+        for field, value in (('application_id', 'local.remoteandroid.direct'),
+                             ('signing_certificate_sha256', '0' * 64), ('sha256', 'b' * 64),
+                             ('apk_size', len(self.APK) + 1)):
+            metadata = self.public_metadata(mirror=True)
+            def download(tag, repository, temporary):
+                (pathlib.Path(temporary) / publisher.APK_ASSET).write_bytes(self.APK)
+                return metadata, self.APK
+            with tempfile.TemporaryDirectory() as folder, self.subTest(actual_field=field), \
+                 mock.patch.object(delivery, 'download_release', side_effect=download), \
+                 mock.patch.object(delivery, 'inspect_apk', return_value=dict(self.identity(), **{field: value})), \
+                 self.assertRaises(RuntimeError):
+                delivery.main(['--tag', metadata['release_tag'], '--repository', self.REPOSITORY,
+                               '--directory', folder])
+                self.assertFalse((pathlib.Path(folder) / 'experiment.json').exists())
+
     def test_manifest_strictly_preserves_experimental_identity_and_transport_scope(self):
         metadata = self.metadata()
         self.assertEqual(delivery.validate_metadata(metadata, self.REPOSITORY, self.TAG),

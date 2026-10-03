@@ -32,6 +32,13 @@ FIELDS = frozenset((
     'application_id', 'application_label', 'apk_size', 'sha256',
     'signing_certificate_sha256',
 ))
+CAPABILITY_FIELDS = FIELDS | frozenset((
+    'public_owner_profiles', 'public_cellular_acceptance', 'friend_isolation_acceptance',
+))
+MIRROR_FIELDS = CAPABILITY_FIELDS | frozenset(('github_asset_url',))
+PUBLIC_OWNER_RELEASES = frozenset((('1.31-alpha.6', 37), ('1.31-alpha.7', 38)))
+LAN_TRANSPORT = 'authenticated_udp_lan_and_registered_tailnet_experiment'
+PUBLIC_OWNER_TRANSPORT = 'authenticated_udp_public_NPS_owner_and_LAN_tailnet_experiment'
 
 
 def checked_repository(repository):
@@ -53,16 +60,14 @@ def public_name(version):
 def validate_metadata(metadata, repository, tag, *, published=False):
     checked_repository(repository)
     checked_tag(tag)
-    if not isinstance(metadata, dict) or set(metadata) != FIELDS:
+    if not isinstance(metadata, dict) or set(metadata) not in (FIELDS, CAPABILITY_FIELDS, MIRROR_FIELDS):
         raise RuntimeError('Unexpected experimental manifest schema')
     if type(metadata['schema']) is not int or metadata['schema'] != 1:
         raise RuntimeError('Unsupported experimental manifest schema')
     if (metadata['channel'] != 'experimental' or metadata['prerelease'] is not True
             or metadata['application_id'] != APPLICATION_ID
             or metadata['signing_certificate_sha256'] != EXPECTED_SIGNER
-            or metadata['installation'] != 'standalone_signed_apk'
             or metadata['automatic_formal_update'] is not False
-            or metadata['media_transport'] != 'authenticated_udp_lan_and_registered_tailnet_experiment'
             or metadata['public_udp_acceptance'] is not False):
         raise RuntimeError('Experimental channel/package/signature/transport boundary mismatch')
     version, code = metadata['version_name'], metadata['version_code']
@@ -70,6 +75,23 @@ def validate_metadata(metadata, repository, tag, *, published=False):
         raise RuntimeError('Experimental release version/tag mismatch')
     if metadata['release_tag'] != tag or type(code) is not int or not 1 <= code <= 2100000000:
         raise RuntimeError('Invalid experimental release version code')
+    public_owner = (version, code) in PUBLIC_OWNER_RELEASES
+    capabilities = set(metadata) != FIELDS
+    mirror = set(metadata) == MIRROR_FIELDS
+    if metadata['media_transport'] != (PUBLIC_OWNER_TRANSPORT if public_owner else LAN_TRANSPORT):
+        raise RuntimeError('Experimental transport does not match its reviewed version')
+    if public_owner and not capabilities:
+        raise RuntimeError('Public owner release requires explicit capability boundaries')
+    if capabilities and (type(metadata['public_owner_profiles']) is not list
+            or metadata['public_owner_profiles'] != (['m1', 'm5'] if public_owner else [])
+            or metadata['public_cellular_acceptance'] is not False
+            or metadata['friend_isolation_acceptance'] is not False):
+        raise RuntimeError('Experimental owner profiles or acceptance boundary mismatch')
+    if mirror and not public_owner:
+        raise RuntimeError('Only reviewed public owner releases allow a mirrored asset manifest')
+    installation = ('standalone_signed_apk_or_manual_channel_picker' if mirror else 'standalone_signed_apk')
+    if metadata['installation'] != installation:
+        raise RuntimeError('Unexpected experimental installation boundary')
     if (not isinstance(metadata['application_label'], str) or '实验' not in metadata['application_label']
             or len(metadata['application_label']) > 128):
         raise RuntimeError('Invalid experimental launcher label')
@@ -85,8 +107,10 @@ def validate_metadata(metadata, repository, tag, *, published=False):
     if not isinstance(metadata['sha256'], str) or not re.fullmatch(r'[0-9a-f]{64}', metadata['sha256']):
         raise RuntimeError('Invalid experimental APK digest')
     name = public_name(version)
-    expected = (PUBLIC_BASE + '/' + name if published else
-                'https://github.com/' + repository + '/releases/download/' + tag + '/' + APK_ASSET)
+    github_asset = 'https://github.com/' + repository + '/releases/download/' + tag + '/' + APK_ASSET
+    if mirror and metadata['github_asset_url'] != github_asset:
+        raise RuntimeError('Unexpected immutable experimental GitHub asset URL')
+    expected = PUBLIC_BASE + '/' + name if published or mirror else github_asset
     if metadata['apk_url'] != expected:
         raise RuntimeError('Unexpected experimental download URL')
     return name
