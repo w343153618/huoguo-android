@@ -1,0 +1,664 @@
+{
+  "schema": 1,
+  "scope": "read_only_existing_frozen_dd43a39_M1_capture_and_raw_submit_segment_observation",
+  "source_runtime": {
+    "frozen_hardware_stream": {
+      "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/source-alpha8-dd43a39/hardware_stream.py",
+      "sha256": "6fe47b938b1db88e09175ece5a465cffdcfb71144c753be0f2a90164dce64e72"
+    },
+    "frozen_udp_worker": {
+      "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/source-alpha8-dd43a39/udp_lan_worker.py",
+      "sha256": "19d1c18e15016afde74ecc9773464047c9c72674eba13c5c3ccccbcf7a19b14f"
+    },
+    "native_encoder": {
+      "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/session-pool-encoder",
+      "sha256": "59264ab7cd9d6e76ed3328a117bbf3c866513bc505244203c2328d6808879ecf"
+    },
+    "packetizer": {
+      "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/h264_udp_packetizer",
+      "sha256": "567231ae8165bd09c46e343f436db647210e70d7f60d74a144950c8ca84c8142"
+    }
+  },
+  "bounded_log_read": {
+    "path": "/Users/wyw/Library/Application Support/AndroidRemote/udp-owner-persistent-20261003/hardware/worker.log",
+    "max_bytes": 2097152,
+    "tail_offset": 0,
+    "export": "fixed_event_numeric_whitelist_only_no_raw_log"
+  },
+  "clock_and_window_contract": {
+    "pipeline_interval_clock": "Python time.monotonic (duration); rounded integer interval_ms",
+    "pipeline_and_phase_unix_ms": "Python time.time_ns // 1000000 (wall sample label)",
+    "SF_source_result_end_unix_ms": 1791027714944,
+    "SF_phone_result_end_unix_ms": 1791027714985,
+    "SF_end_is_sampling_result_wall_time_not_last_present_timestamp": true,
+    "requested_SF_seconds": 45,
+    "requested_reference_start_unix_ms": 1791027669944,
+    "source_wall_reference_is_verified_actual_frame_cohort": false,
+    "actual_SF_poll_start_host_clock_not_available_in_this_review": true,
+    "row_selection_wall_bounds": [
+      1791027666000,
+      1791027719000
+    ],
+    "wall_step_or_cross_device_clock_calibration_verified": false,
+    "native_packetizer_clock": "host_clock_gettime_CLOCK_UPTIME_RAW_us",
+    "existing_opt_in_trace_clock": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "cross_clock_subtraction_allowed_without_calibration": false,
+    "preserved_source_pts_meaning": "emulator screenshot-generation Unix microseconds, not media decode PTS or packetizer arrival"
+  },
+  "pipeline_and_phase_rows": [
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027670747,
+      "interval_ms": 5104,
+      "fps_cap": 30,
+      "raw_fps": 29.97,
+      "submitted_fps": 22.92,
+      "replaced_fps": 7.05,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027665643,
+      "relation_to_requested_source_SF_wall_reference": "start_boundary_crossing"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027670748,
+      "timings": {
+        "capture_gap": {
+          "count": 152,
+          "p50_ms": 33.292,
+          "p95_ms": 49.737,
+          "max_ms": 67.256
+        },
+        "capture_age": {
+          "count": 153,
+          "p50_ms": 4.687,
+          "p95_ms": 18.591,
+          "max_ms": 38.256
+        },
+        "source_pts_gap": {
+          "count": 152,
+          "p50_ms": 33.292,
+          "p95_ms": 36.692,
+          "max_ms": 60.008
+        },
+        "raw_queue": {
+          "count": 117,
+          "p50_ms": 5.795,
+          "p95_ms": 51.55,
+          "max_ms": 64.719
+        },
+        "raw_pipe": {
+          "count": 117,
+          "p50_ms": 2.336,
+          "p95_ms": 18.344,
+          "max_ms": 143.708
+        },
+        "encoded_egress": {
+          "count": 118,
+          "p50_ms": 0.141,
+          "p95_ms": 2.799,
+          "max_ms": 20.706
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027675813,
+      "interval_ms": 5065,
+      "fps_cap": 30,
+      "raw_fps": 30.01,
+      "submitted_fps": 15.79,
+      "replaced_fps": 13.82,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027670748,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027675813,
+      "timings": {
+        "capture_gap": {
+          "count": 152,
+          "p50_ms": 33.285,
+          "p95_ms": 44.859,
+          "max_ms": 60.044
+        },
+        "capture_age": {
+          "count": 152,
+          "p50_ms": 4.203,
+          "p95_ms": 17.626,
+          "max_ms": 49.895
+        },
+        "source_pts_gap": {
+          "count": 152,
+          "p50_ms": 33.381,
+          "p95_ms": 36.989,
+          "max_ms": 47.555
+        },
+        "raw_queue": {
+          "count": 80,
+          "p50_ms": 27.195,
+          "p95_ms": 64.808,
+          "max_ms": 77.961
+        },
+        "raw_pipe": {
+          "count": 80,
+          "p50_ms": 3.931,
+          "p95_ms": 10.036,
+          "max_ms": 48.559
+        },
+        "encoded_egress": {
+          "count": 80,
+          "p50_ms": 0.147,
+          "p95_ms": 6.084,
+          "max_ms": 24.339
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027680957,
+      "interval_ms": 5144,
+      "fps_cap": 30,
+      "raw_fps": 30.13,
+      "submitted_fps": 20.41,
+      "replaced_fps": 10.11,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027675813,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027680957,
+      "timings": {
+        "capture_gap": {
+          "count": 155,
+          "p50_ms": 33.22,
+          "p95_ms": 51.978,
+          "max_ms": 86.126
+        },
+        "capture_age": {
+          "count": 155,
+          "p50_ms": 5.156,
+          "p95_ms": 23.011,
+          "max_ms": 54.873
+        },
+        "source_pts_gap": {
+          "count": 155,
+          "p50_ms": 33.207,
+          "p95_ms": 36.613,
+          "max_ms": 49.948
+        },
+        "raw_queue": {
+          "count": 105,
+          "p50_ms": 10.283,
+          "p95_ms": 59.322,
+          "max_ms": 108.279
+        },
+        "raw_pipe": {
+          "count": 105,
+          "p50_ms": 2.26,
+          "p95_ms": 13.766,
+          "max_ms": 55.775
+        },
+        "encoded_egress": {
+          "count": 104,
+          "p50_ms": 0.173,
+          "p95_ms": 6.894,
+          "max_ms": 14.23
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027686120,
+      "interval_ms": 5164,
+      "fps_cap": 30,
+      "raw_fps": 29.63,
+      "submitted_fps": 20.53,
+      "replaced_fps": 8.91,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027680956,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027686121,
+      "timings": {
+        "capture_gap": {
+          "count": 153,
+          "p50_ms": 32.896,
+          "p95_ms": 48.581,
+          "max_ms": 70.375
+        },
+        "capture_age": {
+          "count": 153,
+          "p50_ms": 5.111,
+          "p95_ms": 17.878,
+          "max_ms": 41.649
+        },
+        "source_pts_gap": {
+          "count": 153,
+          "p50_ms": 33.29,
+          "p95_ms": 37.212,
+          "max_ms": 39.524
+        },
+        "raw_queue": {
+          "count": 106,
+          "p50_ms": 14.559,
+          "p95_ms": 55.497,
+          "max_ms": 66.266
+        },
+        "raw_pipe": {
+          "count": 106,
+          "p50_ms": 2.151,
+          "p95_ms": 13.878,
+          "max_ms": 59.72
+        },
+        "encoded_egress": {
+          "count": 107,
+          "p50_ms": 0.078,
+          "p95_ms": 1.304,
+          "max_ms": 20.17
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027691266,
+      "interval_ms": 5146,
+      "fps_cap": 30,
+      "raw_fps": 30.32,
+      "submitted_fps": 19.43,
+      "replaced_fps": 10.88,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027686120,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027691267,
+      "timings": {
+        "capture_gap": {
+          "count": 156,
+          "p50_ms": 33.425,
+          "p95_ms": 48.924,
+          "max_ms": 75.647
+        },
+        "capture_age": {
+          "count": 156,
+          "p50_ms": 4.794,
+          "p95_ms": 20.134,
+          "max_ms": 43.431
+        },
+        "source_pts_gap": {
+          "count": 156,
+          "p50_ms": 33.282,
+          "p95_ms": 36.847,
+          "max_ms": 67.755
+        },
+        "raw_queue": {
+          "count": 100,
+          "p50_ms": 22.202,
+          "p95_ms": 61.321,
+          "max_ms": 91.125
+        },
+        "raw_pipe": {
+          "count": 100,
+          "p50_ms": 2.858,
+          "p95_ms": 13.357,
+          "max_ms": 52.992
+        },
+        "encoded_egress": {
+          "count": 100,
+          "p50_ms": 0.041,
+          "p95_ms": 1.612,
+          "max_ms": 5.791
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027696415,
+      "interval_ms": 5148,
+      "fps_cap": 30,
+      "raw_fps": 29.91,
+      "submitted_fps": 14.18,
+      "replaced_fps": 15.73,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027691267,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027696415,
+      "timings": {
+        "capture_gap": {
+          "count": 154,
+          "p50_ms": 33.372,
+          "p95_ms": 48.26,
+          "max_ms": 64.107
+        },
+        "capture_age": {
+          "count": 154,
+          "p50_ms": 4.877,
+          "p95_ms": 19.795,
+          "max_ms": 33.77
+        },
+        "source_pts_gap": {
+          "count": 154,
+          "p50_ms": 33.431,
+          "p95_ms": 36.393,
+          "max_ms": 46.92
+        },
+        "raw_queue": {
+          "count": 73,
+          "p50_ms": 34.512,
+          "p95_ms": 69.049,
+          "max_ms": 96.998
+        },
+        "raw_pipe": {
+          "count": 73,
+          "p50_ms": 3.385,
+          "p95_ms": 15.064,
+          "max_ms": 30.9
+        },
+        "encoded_egress": {
+          "count": 73,
+          "p50_ms": 0.028,
+          "p95_ms": 1.511,
+          "max_ms": 12.446
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027701561,
+      "interval_ms": 5147,
+      "fps_cap": 30,
+      "raw_fps": 29.92,
+      "submitted_fps": 20.4,
+      "replaced_fps": 9.33,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027696414,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027701605,
+      "timings": {
+        "capture_gap": {
+          "count": 154,
+          "p50_ms": 33.486,
+          "p95_ms": 45.345,
+          "max_ms": 52.91
+        },
+        "capture_age": {
+          "count": 154,
+          "p50_ms": 4.901,
+          "p95_ms": 18.608,
+          "max_ms": 27.888
+        },
+        "source_pts_gap": {
+          "count": 154,
+          "p50_ms": 33.225,
+          "p95_ms": 36.245,
+          "max_ms": 40.359
+        },
+        "raw_queue": {
+          "count": 105,
+          "p50_ms": 13.368,
+          "p95_ms": 59.594,
+          "max_ms": 73.118
+        },
+        "raw_pipe": {
+          "count": 105,
+          "p50_ms": 2.439,
+          "p95_ms": 20.297,
+          "max_ms": 44.877
+        },
+        "encoded_egress": {
+          "count": 105,
+          "p50_ms": 0.033,
+          "p95_ms": 0.873,
+          "max_ms": 6.446
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027706750,
+      "interval_ms": 5188,
+      "fps_cap": 30,
+      "raw_fps": 30.26,
+      "submitted_fps": 22.17,
+      "replaced_fps": 8.29,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027701562,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027706750,
+      "timings": {
+        "capture_gap": {
+          "count": 157,
+          "p50_ms": 33.438,
+          "p95_ms": 48.787,
+          "max_ms": 91.883
+        },
+        "capture_age": {
+          "count": 157,
+          "p50_ms": 4.683,
+          "p95_ms": 29.035,
+          "max_ms": 60.859
+        },
+        "source_pts_gap": {
+          "count": 157,
+          "p50_ms": 33.361,
+          "p95_ms": 36.719,
+          "max_ms": 38.354
+        },
+        "raw_queue": {
+          "count": 115,
+          "p50_ms": 9.096,
+          "p95_ms": 55.337,
+          "max_ms": 101.885
+        },
+        "raw_pipe": {
+          "count": 115,
+          "p50_ms": 2.467,
+          "p95_ms": 11.752,
+          "max_ms": 52.548
+        },
+        "encoded_egress": {
+          "count": 113,
+          "p50_ms": 0.051,
+          "p95_ms": 1.147,
+          "max_ms": 9.903
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027711895,
+      "interval_ms": 5142,
+      "fps_cap": 30,
+      "raw_fps": 29.95,
+      "submitted_fps": 17.7,
+      "replaced_fps": 12.25,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027706753,
+      "relation_to_requested_source_SF_wall_reference": "within_reference"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027711895,
+      "timings": {
+        "capture_gap": {
+          "count": 154,
+          "p50_ms": 32.94,
+          "p95_ms": 46.179,
+          "max_ms": 86.539
+        },
+        "capture_age": {
+          "count": 154,
+          "p50_ms": 4.543,
+          "p95_ms": 18.157,
+          "max_ms": 44.74
+        },
+        "source_pts_gap": {
+          "count": 154,
+          "p50_ms": 33.084,
+          "p95_ms": 37.319,
+          "max_ms": 45.606
+        },
+        "raw_queue": {
+          "count": 91,
+          "p50_ms": 27.705,
+          "p95_ms": 62.843,
+          "max_ms": 68.17
+        },
+        "raw_pipe": {
+          "count": 91,
+          "p50_ms": 3.086,
+          "p95_ms": 10.238,
+          "max_ms": 19.803
+        },
+        "encoded_egress": {
+          "count": 93,
+          "p50_ms": 0.17,
+          "p95_ms": 3.129,
+          "max_ms": 15.915
+        }
+      }
+    },
+    {
+      "event": "pipeline_sample",
+      "unix_ms": 1791027717041,
+      "interval_ms": 5150,
+      "fps_cap": 30,
+      "raw_fps": 29.71,
+      "submitted_fps": 15.73,
+      "replaced_fps": 13.79,
+      "idle_repeats": 0,
+      "rounded_interval_start_wall_estimate_ms": 1791027711891,
+      "relation_to_requested_source_SF_wall_reference": "end_boundary_crossing"
+    },
+    {
+      "event": "phase_sample",
+      "unix_ms": 1791027717045,
+      "timings": {
+        "capture_gap": {
+          "count": 153,
+          "p50_ms": 33.674,
+          "p95_ms": 55.412,
+          "max_ms": 86.681
+        },
+        "capture_age": {
+          "count": 153,
+          "p50_ms": 4.964,
+          "p95_ms": 26.132,
+          "max_ms": 56.62
+        },
+        "source_pts_gap": {
+          "count": 153,
+          "p50_ms": 33.371,
+          "p95_ms": 38.072,
+          "max_ms": 54.942
+        },
+        "raw_queue": {
+          "count": 81,
+          "p50_ms": 33.288,
+          "p95_ms": 66.263,
+          "max_ms": 110.84
+        },
+        "raw_pipe": {
+          "count": 81,
+          "p50_ms": 2.862,
+          "p95_ms": 18.622,
+          "max_ms": 41.131
+        },
+        "encoded_egress": {
+          "count": 81,
+          "p50_ms": 0.302,
+          "p95_ms": 7.612,
+          "max_ms": 15.816
+        }
+      }
+    }
+  ],
+  "within_requested_wall_reference_aggregate": {
+    "segment_count": 8,
+    "sum_rounded_interval_ms": 41144,
+    "weighted_fps_from_rounded_rates": {
+      "raw_fps": 30.01633555317908,
+      "submitted_fps": 18.836231042193273,
+      "replaced_fps": 11.155974868753646
+    },
+    "strict_same_frame_SF_or_phone_acceptance": false
+  },
+  "whole_worker_session_closed_last_two": [
+    {
+      "raw_frames": 1546,
+      "pending_frames_replaced": 567,
+      "frames_submitted": 979,
+      "idle_repeats": 0,
+      "audio_packets": 2410,
+      "audio_startup_discarded": 0
+    },
+    {
+      "raw_frames": 183,
+      "pending_frames_replaced": 82,
+      "frames_submitted": 99,
+      "idle_repeats": 0,
+      "audio_packets": 283,
+      "audio_startup_discarded": 0
+    }
+  ],
+  "whole_worker_rows_have_no_session_id_or_unix_timestamp": true,
+  "last_two_native_ready_rows": [
+    {
+      "width": 540,
+      "height": 960,
+      "using_hardware": true,
+      "low_latency_mode_requested": false,
+      "pixel_pool_mode": "manual"
+    },
+    {
+      "width": 540,
+      "height": 960,
+      "using_hardware": true,
+      "low_latency_mode_requested": false,
+      "pixel_pool_mode": "manual"
+    }
+  ],
+  "ready_rows_have_no_session_id_or_unix_timestamp": true,
+  "root_reported_other_windows": {
+    "native_packetizer_full_elapsed_seconds": 51.598,
+    "native_packetizer_source_frames": 976,
+    "native_packetizer_output_frames": 948,
+    "native_packetizer_budget_drops": 0,
+    "native_packetizer_output_deadline_drops": 7,
+    "native_packetizer_dependent_drops": 21,
+    "steady_phone_received_start": 90,
+    "steady_phone_received_end": 918,
+    "steady_phone_ns_start": 210069711356425,
+    "steady_phone_ns_end": 210116023234012,
+    "SF_source_cadence": 30.002,
+    "SF_source_max_gap_ms": 75.213,
+    "SF_source_gaps_above100ms": 0,
+    "SF_phone_cadence": 17.262,
+    "SF_phone_max_gap_ms": 1094,
+    "SF_phone_gaps_above100ms": 105,
+    "phone_cpu_min_max_not_fixed": true,
+    "fresh_source_itag_or_actual_rendition_not_read": true,
+    "these_values_not_remeasured_by_this_probe": true
+  },
+  "conclusion_boundary": [
+    "Complete gRPC RGBA arrivals remained near30/s in these segments while Python completed raw submissions were14.18..22.92/s",
+    "This locates an observed host pre-encoded supply gap; it does not identify a unique wait/conversion/VT/output backpressure cause",
+    "Native packetizer final spans startup and shutdown; do not treat976/51.598 as synchronized steady source FPS",
+    "No controlled before/after performance improvement, optical latency, acoustic timing, cellular or V50 claim",
+    "No runtime, phone, service, NPS, decoder queue or source mutation by this review"
+  ]
+}
