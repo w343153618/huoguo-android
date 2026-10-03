@@ -1,3 +1,11 @@
+## 2026-10-04 parent teardown只做诊断，源码验收完成；准备M1 renderer持久化
+
+新默认OFF的parent teardown候选硬件源码a62d8539、test4ad57e49，root44targeted/0.118s和1582全仓/60.204s PASS，独立20新fixture PASS；trace-off动作/timeout保持，trace-on只观察实际worker/encoder父级已有poll/wait/信号调用并异步发布两份闭集receipt。非退出操作不报告known退出码，errno getter异常不替换primary。没有EOF/drain/重试/新等待或native producer结束验收；实际媒体/异步crossprocess publication仍待测，不能追认auto5或9dac cloud。见[parent契约](parent-teardown-diagnostic-contract-20261004.md)。
+
+精确9dac0059/run37143455788已cloud success，build及udp_candidate都通过；Linux1545/90.509s/11既有skip，Android2m24s/UDP2m12s。新parent候选的下一push必须另查实际SHA，不能借该绿灯。公开/手机alpha8/code39、stable和全部持续服务仍未改。
+
+只读source/renderer审查确认Morphe VIEW分派正确却实际仍旧cartoon，BBB/itag仍unknown；RAM8冷启boot HWUI=skiagl、source SkiaOpenGL，旧skiavk运行属性没有boot持久化。唯一候选是M1 emulator argv追加-append-userspace-opt及androidboot.debug.hwui.renderer=skiavk，保留RE/RAM8/6核/1080/30/root/data；不是-prop或同时改RE的systemui选项。候选私有维护脚本default dry-run正在独立审查，尚未执行。实际维护必须fresh备份、持续reserve/live原registry witness/全role零/两formalTCPclear、只指定M1 emulator job及失败回滚；boot属性、actual新source pipeline/布局分别验收，不当FPS改善。见[renderer审查](source-renderer-boot-persistence-review-20261004.md)、[source选择](source-selection-review-20261004.md)。不重复活跃agent、unknown源宽矩阵或180秒菜单；M5/NPS/朋友和原persistent均保护。
+
 ## 2026-10-04 实际 RAM8 LAN source-supply trace 已完成，旧30→19未复现
 
 自动准入源码2ea7ef9实际GitHub run37139764770两个job success，Linux1527tests/84.159s/OK、11既有skip。新清理诊断5e5247bd与18新增fixture仅本地/独立审查，root41targeted及1562全仓/60.140sPASS；它未用在本轮d887421d冻结driver，不追认新诊断或云端验收。见[清理诊断](instrumentation-cleanup-diagnostic-20261004.md)。

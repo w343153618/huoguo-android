@@ -17,6 +17,7 @@ import secrets
 import select
 import signal
 import socket
+import stat
 import struct
 import subprocess
 import sys
@@ -27,6 +28,294 @@ from host_timing_trace import HostTimingTrace
 
 CONFIG_FLAG = 1 << 62
 PTS_MASK = (1 << 61) - 1
+
+TEARDOWN_SCHEMA = 'owned-process-teardown-parent-v1'
+TEARDOWN_ROLES = ('worker-parent', 'encoder-parent')
+TEARDOWN_MAX_BYTES = 4096
+TEARDOWN_MAX_ROWS = 24
+TEARDOWN_OPS = frozenset(range(1, 16))
+TEARDOWN_EXIT_RESULT_OPS = frozenset((3, 5, 6, 8, 11, 13, 15))
+
+
+def teardown_failure_code(failure):
+    """Closed classes only; never exception text, argv or a foreign class name."""
+    if isinstance(failure, ProcessLookupError):
+        code = 1
+    elif isinstance(failure, subprocess.TimeoutExpired):
+        code = 2
+    elif isinstance(failure, PermissionError):
+        code = 3
+    elif isinstance(failure, OSError):
+        code = 4
+    elif isinstance(failure, Exception):
+        code = 5
+    else:
+        code = 6
+    try:
+        value = getattr(failure, 'errno', None)
+    except BaseException:
+        # A diagnostic attribute getter must not replace the action's primary.
+        value = None
+    return code, value if type(value) is int and 0 <= value <= 4095 else 0
+
+
+def _teardown_integer(value, signed=False):
+    return type(value) is int and (-(1 << 31) if signed else 0) <= value < (1 << 31)
+
+
+def validate_teardown_receipt(value, role):
+    """Validate parent observations only; none is native producer acceptance."""
+    expected = {'schema', 'role', 'clock_domain', 'parent_pid', 'child_pid',
+        'identity_bound', 'pgid_known', 'observed_pgid', 'pgid_failure_code',
+        'pgid_errno', 'cleanup_entered', 'cleanup_returned', 'observer_errors',
+        'operations_dropped', 'operation_rows'}
+    if (type(value) is not dict or set(value) != expected or role not in TEARDOWN_ROLES
+            or value['schema'] != TEARDOWN_SCHEMA or value['role'] != role
+            or value['clock_domain'] != 'host_clock_gettime_CLOCK_MONOTONIC_ns'):
+        return False
+    for key in ('identity_bound', 'pgid_known', 'cleanup_entered', 'cleanup_returned'):
+        if type(value[key]) is not bool:
+            return False
+    for key in ('parent_pid', 'child_pid', 'observed_pgid', 'pgid_failure_code',
+                'pgid_errno', 'observer_errors', 'operations_dropped'):
+        if not _teardown_integer(value[key]):
+            return False
+    if (value['parent_pid'] == 0 or value['identity_bound'] != (value['child_pid'] > 0)
+            or value['pgid_known'] != (value['observed_pgid'] > 0)
+            or value['pgid_failure_code'] > 6 or value['pgid_errno'] > 4095
+            or (value['pgid_known'] and (not value['identity_bound'] or value['pgid_failure_code']))
+            or (value['pgid_errno'] and not value['pgid_failure_code'])
+            or (value['cleanup_returned'] and not value['cleanup_entered'])):
+        return False
+    rows = value['operation_rows']
+    if type(rows) is not list or len(rows) > TEARDOWN_MAX_ROWS:
+        return False
+    for row in rows:
+        if (type(row) is not list or len(row) != 9 or type(row[0]) is not int
+                or row[0] not in TEARDOWN_OPS
+                or (role == 'worker-parent' and row[0] > 10)
+                or (role == 'encoder-parent' and row[0] < 11)
+                or any(type(row[index]) is not bool for index in (3, 5))
+                or any(type(row[index]) is not int or not 0 <= row[index] < (1 << 63)
+                       for index in (1, 2))
+                or type(row[4]) is not int or row[4] not in (0, 1)
+                or not _teardown_integer(row[6], signed=True)
+                or type(row[7]) is not int or not 0 <= row[7] <= 6
+                or type(row[8]) is not int or not 0 <= row[8] <= 4095):
+            return False
+        if ((row[3] != bool(0 < row[1] <= row[2]))
+                or (row[5] and row[0] not in TEARDOWN_EXIT_RESULT_OPS)
+                or (row[4] == 0 and (row[7] or row[8]))
+                or (row[4] == 1 and (row[7] == 0 or row[5]))
+                or (not row[5] and row[6] != 0)):
+            return False
+    return not rows or value['cleanup_entered']
+
+
+def read_teardown_receipt(capture_path, role):
+    """Bounded offline read; an absent/partial sibling is never substituted."""
+    result = {'role': role, 'status': 'unknown', 'native_producer_final': False}
+    if role not in TEARDOWN_ROLES:
+        return result
+    directory = fd = None
+    try:
+        path = pathlib.Path(str(capture_path)+'.'+role+'.json')
+        directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+        info = os.fstat(directory)
+        if (info.st_uid != os.getuid() or not stat.S_ISDIR(info.st_mode)
+                or stat.S_IMODE(info.st_mode) != 0o700):
+            return result
+        fd = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+        before = os.fstat(fd)
+        if (not stat.S_ISREG(before.st_mode) or stat.S_IMODE(before.st_mode) != 0o600
+                or before.st_uid != os.getuid() or before.st_nlink != 1
+                or before.st_size > TEARDOWN_MAX_BYTES):
+            return result
+        data = os.read(fd, TEARDOWN_MAX_BYTES+1)
+        after = os.fstat(fd)
+        if (len(data) > TEARDOWN_MAX_BYTES or not data.endswith(b'\n')
+                or (before.st_size, before.st_mtime_ns, before.st_ctime_ns) !=
+                   (after.st_size, after.st_mtime_ns, after.st_ctime_ns)
+                or len(data) != after.st_size):
+            return result
+        def closed_object(pairs):
+            output = {}
+            for key, item in pairs:
+                if key in output:
+                    raise ValueError('duplicate receipt key')
+                output[key] = item
+            return output
+        def reject_constant(_):
+            raise ValueError('nonfinite receipt value')
+        value = json.loads(data, object_pairs_hook=closed_object, parse_constant=reject_constant)
+        if validate_teardown_receipt(value, role):
+            result.update(status='observed_parent_receipt', receipt=value)
+    except (OSError, ValueError, TypeError, RecursionError):
+        pass
+    finally:
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                result = {'role': role, 'status': 'unknown', 'native_producer_final': False}
+        if directory is not None:
+            try:
+                os.close(directory)
+            except OSError:
+                result = {'role': role, 'status': 'unknown', 'native_producer_final': False}
+    return result
+
+
+class ParentTeardownReceipt:
+    """Opt-in parent observations; async publication adds no teardown wait.
+
+    Only existing poll/wait return values are observed. PGID is sampled once
+    after this parent's actual Popen creation and is not an ownership credential.
+    Signal method return is not proof of an internal syscall or target delivery.
+    """
+    def __init__(self, capture_path, role):
+        if role not in TEARDOWN_ROLES:
+            raise ValueError('unknown teardown role')
+        self.path = pathlib.Path(str(capture_path)+'.'+role+'.json')
+        self.finished = False
+        self.value = dict(schema=TEARDOWN_SCHEMA, role=role,
+            clock_domain='host_clock_gettime_CLOCK_MONOTONIC_ns', parent_pid=os.getpid(),
+            child_pid=0, identity_bound=False, pgid_known=False, observed_pgid=0,
+            pgid_failure_code=0, pgid_errno=0, cleanup_entered=False,
+            cleanup_returned=False, observer_errors=0, operations_dropped=0, operation_rows=[])
+
+    def bind(self, proc):
+        if self.finished or self.value['identity_bound']:
+            return
+        try:
+            pid = proc.pid
+            if not _teardown_integer(pid) or pid == 0:
+                raise ValueError('bounded Popen pid required')
+            self.value.update(child_pid=pid, identity_bound=True)
+            try:
+                pgid = os.getpgid(pid)
+                if not _teardown_integer(pgid) or pgid == 0:
+                    raise ValueError('bounded observed pgid required')
+                self.value.update(pgid_known=True, observed_pgid=pgid)
+            except Exception as failure:
+                code, errno = teardown_failure_code(failure)
+                self.value.update(pgid_failure_code=code, pgid_errno=errno)
+        except Exception:
+            self.value['observer_errors'] += 1
+
+    def stamp(self):
+        try:
+            value = capture_trace_clock_ns()
+            if type(value) is not int or not 0 < value < (1 << 63):
+                raise ValueError('bounded diagnostic clock required')
+            return value
+        except Exception:
+            self.value['observer_errors'] += 1
+            return 0
+
+    def call(self, operation, action):
+        if self.finished:
+            return action()
+        begin = self.stamp()
+        outcome = known = code = errno = returned = 0
+        try:
+            answer = action()
+            if operation in TEARDOWN_EXIT_RESULT_OPS and _teardown_integer(answer, signed=True):
+                known, returned = True, answer
+            return answer
+        except BaseException as failure:
+            outcome = 1
+            code, errno = teardown_failure_code(failure)
+            raise
+        finally:
+            try:
+                end = self.stamp()
+                row = [operation, begin, end, bool(begin and end and end >= begin),
+                       outcome, bool(known), returned, code, errno]
+                if len(self.value['operation_rows']) < TEARDOWN_MAX_ROWS:
+                    self.value['operation_rows'].append(row)
+                else:
+                    self.value['operations_dropped'] += 1
+            except Exception:
+                # Observation never replaces the original cleanup exception.
+                pass
+
+    def finish(self, returned):
+        try:
+            if self.finished:
+                return
+            self.finished = True
+            self.value['cleanup_returned'] = returned
+            if not validate_teardown_receipt(self.value, self.value['role']):
+                return
+            encoded = json.dumps(self.value, separators=(',', ':')).encode('utf-8')+b'\n'
+            if len(encoded) > TEARDOWN_MAX_BYTES:
+                return
+            # Snapshot bytes before dispatch. No join, new deadline or retry.
+            threading.Thread(target=self._publish, args=(self.path, encoded),
+                name='owned-teardown-receipt', daemon=True).start()
+        except Exception:
+            pass
+
+    @staticmethod
+    def _publish(path, encoded):
+        directory = fd = None
+        staged = path.name+'.tmp'
+        created = False
+        try:
+            directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            info = os.fstat(directory)
+            if (info.st_uid != os.getuid() or not stat.S_ISDIR(info.st_mode)
+                    or stat.S_IMODE(info.st_mode) != 0o700):
+                return
+            fd = os.open(staged, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         0o600, dir_fd=directory)
+            created = True
+            os.fchmod(fd, 0o600)
+            view = memoryview(encoded)
+            while view:
+                count = os.write(fd, view)
+                if count <= 0:
+                    raise OSError('receipt write incomplete')
+                view = view[count:]
+            closing, fd = fd, None
+            os.close(closing)
+            # Publish only after successful close. link cannot replace a receipt.
+            os.link(staged, path.name, src_dir_fd=directory, dst_dir_fd=directory,
+                    follow_symlinks=False)
+        except Exception:
+            pass
+        finally:
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except Exception:
+                    pass
+            if created and directory is not None:
+                try:
+                    os.unlink(staged, dir_fd=directory)
+                except Exception:
+                    pass
+            if directory is not None:
+                try:
+                    os.close(directory)
+                except Exception:
+                    pass
+
+
+def parent_teardown_receipt(capture_path, role):
+    if capture_path is None:
+        return None
+    try:
+        return ParentTeardownReceipt(capture_path, role)
+    except Exception:
+        return None
+
+
+def observed_teardown(diagnostic, operation, action):
+    if diagnostic is None:
+        return action()
+    return diagnostic.call(operation, action)
 
 
 def capture_trace_clock_ns():
@@ -359,6 +648,8 @@ class HostHardwareSession:
         self.clients = {}
         self.proc = None
         self.started = False
+        self.teardown_diagnostic = (parent_teardown_receipt(capture_trace, 'worker-parent')
+                                    if capture_trace is not None else None)
         pairs = [socket.socketpair() for _ in range(3)]
         try:
             self.clients = dict(zip(('video', 'audio', 'control'), [p[0] for p in pairs]))
@@ -402,6 +693,8 @@ class HostHardwareSession:
                 self.proc = subprocess.Popen(arguments, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                              stderr=log, pass_fds=tuple(p[1].fileno() for p in pairs),
                                              start_new_session=True)
+                if self.teardown_diagnostic is not None:
+                    self.teardown_diagnostic.bind(self.proc)
             finally:
                 log.close()
             if not select.select([self.proc.stdout], [], [], 15)[0]:
@@ -432,6 +725,36 @@ class HostHardwareSession:
             self.proc.stdin.close()
 
     def close(self):
+        diagnostic = getattr(self, 'teardown_diagnostic', None)
+        if diagnostic is None:
+            return self._close_without_diagnostics()
+        diagnostic.value['cleanup_entered'] = True
+        returned = False
+        try:
+            for channel in self.clients.values():
+                try:
+                    observed_teardown(diagnostic, 1, lambda: channel.shutdown(socket.SHUT_RDWR))
+                except OSError:
+                    pass
+                observed_teardown(diagnostic, 2, channel.close)
+            if self.proc is not None and observed_teardown(diagnostic, 3, self.proc.poll) is None:
+                try:
+                    observed_teardown(diagnostic, 4, lambda: os.killpg(self.proc.pid, signal.SIGTERM))
+                    observed_teardown(diagnostic, 5, lambda: self.proc.wait(timeout=5))
+                except (ProcessLookupError, subprocess.TimeoutExpired):
+                    if observed_teardown(diagnostic, 6, self.proc.poll) is None:
+                        observed_teardown(diagnostic, 7, lambda: os.killpg(self.proc.pid, signal.SIGKILL))
+                        observed_teardown(diagnostic, 8, lambda: self.proc.wait(timeout=2))
+            if self.proc is not None:
+                for index, stream in enumerate((self.proc.stdin, self.proc.stdout)):
+                    if stream and not stream.closed:
+                        observed_teardown(diagnostic, 9+index, stream.close)
+            returned = True
+        finally:
+            diagnostic.finish(returned)
+
+    def _close_without_diagnostics(self):
+        # The trace-off path retains the pre-diagnostic cleanup verbatim.
         for channel in self.clients.values():
             try:
                 channel.shutdown(socket.SHUT_RDWR)
@@ -485,6 +808,8 @@ def worker(args):
     if trace_path is not None and args.native_encoder is None:
         raise ValueError('Capture trace requires an explicit experimental encoder')
     trace = BoundedCaptureTrace(trace_path) if trace_path is not None else None
+    encoder_teardown = (parent_teardown_receipt(trace_path, 'encoder-parent')
+                         if trace_path is not None else None)
     raw_diagnostics = HostTimingTrace(trace) if raw_diagnostics_enabled else None
     # Raw RGBA frames may be superseded safely before H.264 encoding. Preserve
     # a small delivery burst without queuing four stale frames behind a gesture.
@@ -633,6 +958,8 @@ def worker(args):
                                   stdin=subprocess.PIPE,
                                   stdout=subprocess.PIPE if args.sps_low_delay == 'true' else sockets['video'].fileno(),
                                   stderr=subprocess.PIPE)
+        if encoder_teardown is not None:
+            encoder_teardown.bind(native)
 
         def video_output():
             # Only the small config packet is parsed/changed. Media access units,
@@ -958,13 +1285,28 @@ def worker(args):
             except Exception:
                 pass
         for child in (native, audio_control):
-            if child is not None and child.poll() is None:
-                child.terminate()
+            if encoder_teardown is None or child is not native:
+                if child is not None and child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait(timeout=2)
+            else:
+                encoder_teardown.value['cleanup_entered'] = True
+                teardown_returned = False
                 try:
-                    child.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    child.kill()
-                    child.wait(timeout=2)
+                    if child is not None and observed_teardown(encoder_teardown, 11, child.poll) is None:
+                        observed_teardown(encoder_teardown, 12, child.terminate)
+                        try:
+                            observed_teardown(encoder_teardown, 13, lambda: child.wait(timeout=3))
+                        except subprocess.TimeoutExpired:
+                            observed_teardown(encoder_teardown, 14, child.kill)
+                            observed_teardown(encoder_teardown, 15, lambda: child.wait(timeout=2))
+                    teardown_returned = True
+                finally:
+                    encoder_teardown.finish(teardown_returned)
         if port:
             try:
                 adb('forward', '--remove', 'tcp:' + str(port))

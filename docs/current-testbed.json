@@ -1754,7 +1754,41 @@
     "full_local_tests": 1562,
     "full_local_seconds": 60.14,
     "real_auto5_used_this_candidate": false,
-    "cloud_acceptance_for_new_patch": false,
-    "default_runtime_or_APK_changed": false
+    "cloud_acceptance_for_new_patch": true,
+    "default_runtime_or_APK_changed": false,
+    "cloud_commit": "9dac0059fefaa19fd36753987849e14ed40fb5ff",
+    "cloud_run": 37143455788,
+    "cloud_jobs": {
+      "build": "success",
+      "udp_candidate": "success"
+    },
+    "cloud_linux_tests": 1545,
+    "cloud_linux_seconds": 90.509,
+    "cloud_existing_platform_skips": 11
+  },
+  "parent_teardown_diagnostic_20261004": {
+    "evidence": "docs/parent-teardown-diagnostic-contract-20261004.md",
+    "hardware_source_sha256": "a62d85390132804951f8fa160ea84172bcfa36bb117c6bff2b1a800cc8e7eb99",
+    "test_source_sha256": "4ad57e49935c07400722c1d0d6b3fb5c3c64705935416822f0ad6fc6bc7de447",
+    "new_inert_tests": 20,
+    "root_targeted_tests": 44,
+    "root_targeted_seconds": 0.118,
+    "root_full_local_tests": 1582,
+    "root_full_local_seconds": 60.204,
+    "native_producer_final_accepted": false,
+    "real_crossprocess_publication_accepted": false,
+    "candidate_deployed": false,
+    "default_cleanup_policy_changed": false,
+    "cloud_acceptance_for_this_candidate": false
+  },
+  "source_renderer_boot_persistence_review_20261004": {
+    "evidence": "docs/source-renderer-boot-persistence-review-20261004.md",
+    "source_selection_evidence": "docs/source-selection-review-20261004.md",
+    "actual_before_hwui": "skiagl",
+    "actual_before_source_pipeline": "Skia_OpenGL",
+    "candidate_userspace_boot_option": "androidboot.debug.hwui.renderer=skiavk",
+    "candidate_deployed": false,
+    "real_coldboot_acceptance": false,
+    "source_format_or_BBB_accepted": false
   }
 }

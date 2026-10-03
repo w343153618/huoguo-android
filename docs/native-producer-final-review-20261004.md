@@ -154,8 +154,8 @@ If later evidence requires graceful native EOF, scope that as a separate bounded
 owner candidate: first prove the sole raw writer has stopped and finished any
 partly written record, then close only its native stdin and retain owned output
 draining within a fixed deadline. Its fallback signals and uncertainty must be
-recorded for the corresponding encoder. No such behavior change is authorized
-or implemented by this document.
+recorded for the corresponding encoder. Such a behavior change is not implemented
+or validated by this review; the existing owner-experiment authorization remains.
 
 ## Discriminating fixture plan
 

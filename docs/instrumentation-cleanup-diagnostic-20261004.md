@@ -37,3 +37,15 @@ Exact reviewed candidate pins:
 - tests/test_instrumentation_cleanup_diagnostic.py:f8c10d46c16932cf27ee9cdf76fd3adab0003c5b92b813d46803d36791765e13
 
 No App, manifest, persistent runtime, NPS or device was changed by this patch.
+
+## Exact subsequent cloud acceptance
+
+Commit9dac0059fefaa19fd36753987849e14ed40fb5ff completed
+[Actions run37143455788](https://github.com/w343153618/huoguo-android/actions/runs/37143455788)
+with both build and udp_candidate success. The Linux test step executed1545
+tests in90.509s, OK with11 existing platform-specific skips. Stable Android
+compile/lint took2m24s; isolated UDP compile/lint took2m12s. The actual final
+API response matched this exact head SHA; temporary CI signing is separate
+from the phone's retained production signer. This is cloud acceptance of the
+cleanup diagnostic snapshot only, not the newer parent-teardown candidate or
+a new phone/APK/performance acceptance.
