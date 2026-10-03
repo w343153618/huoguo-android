@@ -1913,5 +1913,46 @@
     "build": "success",
     "udp_candidate": "success",
     "source_parser_commit_covered": false
+  },
+  "M1_source_fresh_Stats_collector_20261004": {
+    "scope": "owner_nonisolated_M1_paused_source_only",
+    "evidence": "docs/source-stats-fresh-collector-20261004.json",
+    "collector_sha256": "90625243270bb68a2e303173f9e0a8ad899c77f30cf96011b303bc276fa2cf2a",
+    "gate_actual_sha256": "938b0b22ccfd45bbcdf18a649bda2c2e0afc86a3b5227112adad4ade57ad2ffa",
+    "gate_final_sha256": "2a9af99b632d8dbbd89e4913c6707600bb7e9ef118aeec20efe63fc710fc5873",
+    "source_identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "video_id": "aqz-KE-bpKQ",
+    "video_format": {
+      "itag": 299,
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "descriptor_fps": 60.0
+    },
+    "audio_format": {
+      "itag": 251,
+      "codec": "opus"
+    },
+    "current_source_state": "paused",
+    "position_ui_seconds": 377,
+    "overlay_on": true,
+    "full_identity_and_session_focus_verified": true,
+    "actual_phone_or_media_started": false,
+    "performance_improvement_measured": false,
+    "next": "protected playing before/after30s phone-window integration; this retained observation is no longer fresh"
+  },
+  "CI_source_Stats_parser_verification_20261004": {
+    "commit": "41b0a7ddf67b07c61281c95fdd0f0cdfff098358",
+    "run_id": 37150866427,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "build": "success",
+      "udp_candidate": "success"
+    }
   }
 }

@@ -1,3 +1,11 @@
+## 2026-10-04 最新：完整身份与前台/会话绑定的Stats采集已实际通过
+
+新的有界collector90625243与独立Stats gate已经完成源码及M1 source-only验收，104focused/2.113s通过，旧formatunknown gate契约未改。首轮`window windows`没有current-focus行、`/proc/self/fd/1`仅返回65字节状态文本，明确拒绝；改为fullwindow和随机0700 owned device temp、XML仅内存及完整移除receipt后，实际2.314s/168334B及带native clock wrapper2.339s/168593B均资格通过。fresh3470/UID10235/start1952、active owner、paused state和focus前后关联；实际BBB aqz-KE-bpKQ/itag299/avc1/1920x1080@60、251Opus/6:17/累计drop0/11319。格式60不是实测FPS。两轮源保护actualquiescence/explicitrelease通过，原服务/资源/phone/M5/NPS无操作。详见[source collector](source-stats-fresh-collector-20261004.md)及JSON。
+
+actual gate938b0b22与final2a9af99b仅pure freshness/endpoint校验差别，实际blob保留并offline final validator通过；不追认final整文件live。collector Python与wrapper hostCLOCK_MONOTONIC各自bracket，不混减；fresh≤30s、playing须listenerready。当前源仍paused6:17/overlay ON，保存的资格已过期。没有新phone/media窗口或性能改善，公开alpha8/code39/stable1.31保持。精确旧41b/run37150866427实际overall/build/UDP success已读；本轮下一commit须另验CI。
+
+下一立即NEW frozen window衔接：专用手机/fresh CPU/实际依赖核验、continuousreserve/live503/fullroles/formalclear后，只在listener ready且helper准备完后resume并fresh playing Stats；在30s sampler结束时及时pause及post Stats，防300s自然shutdown换视频。overlay明确记录，collector开销不当已量化并发成本。保留同alpha8/540/30/4M/80/lead0/stage-startup-PCMoff/AACon/FIFO2/native3，不重复菜单/监听only/宽矩阵，不扩缓冲或Inbox。端点一致只证明端点，不证明窗内连续内容、运动或物理延时；actualphone结果后再判断missing供给。当前无活跃agent/phone/media。
+
 ## 2026-10-04 最新：当前BBB暂停后实际Stats字段已取得，下一绑定真实采样窗口
 
 Root保护下source-only Back/observed result return、MEDIA_PAUSE、paused gear→More→Stats已经实际执行，当前源PID3470/UID10235/start1952与guest48576不变，actualVulkan/1080x1920/30Hz/6核8GiB保持。实际Stats UI VideoID aqz-KE-bpKQ、itag299/avc1/1920x1080@60及251Opus、paused6:17、viewport1080x608、累计drop0/11319；这是本次新暂停读回，不追认早前phone窗unknown。34focused/1.681s通过的standalone有界UTF8 Stats parser解析actual59957byte dump与目视一致，processidentity false与observedFPS null保留，不把格式60当呈现60。无App/ADB自动操作默认、无credentials/raw XML输出，尚未集成live gate。两tap菜单没打开和semantic dump无targets明确保留，不把guard PASS说UI验收。详见[source Stats](source-paused-stats-readback-20261004.md)及对应JSON。

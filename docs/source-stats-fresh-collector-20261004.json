@@ -1,0 +1,491 @@
+{
+  "schema": 1,
+  "scope": "owner_nonisolated_M1_paused_source_only",
+  "source_files": {
+    "scripts/probes/source_ui_stats.py": "77b23117d860cafda011b9e00b76e5e9439b4d2a2c667b5a272d0e2e02c4cfc1",
+    "scripts/probes/source_stats_observation.py": "90625243270bb68a2e303173f9e0a8ad899c77f30cf96011b303bc276fa2cf2a",
+    "scripts/probes/owner_source_stats_gate.py": "2a9af99b632d8dbbd89e4913c6707600bb7e9ef118aeec20efe63fc710fc5873",
+    "tests/test_source_stats_observation.py": "17ffdc24ddc682a0c32f09ac89d71262aedff290f23db3479461bd386348edb4",
+    "tests/test_owner_source_stats_gate.py": "c32b939d717380a1c32c202cc66e8268a0ed390c2d61902b8c40140115d74a71"
+  },
+  "source_checks": {
+    "tests": 104,
+    "seconds": 2.113,
+    "result": "PASS",
+    "suite": [
+      "tests.test_source_stats_observation",
+      "tests.test_owner_source_stats_gate",
+      "tests.test_source_ui_stats",
+      "tests.test_source_decoder_observation",
+      "tests.test_owner_source_gate"
+    ]
+  },
+  "previous_exact_CI": {
+    "commit": "41b0a7ddf67b07c61281c95fdd0f0cdfff098358",
+    "run_id": 37150866427,
+    "conclusion": "success",
+    "jobs": {
+      "build": "success",
+      "udp_candidate": "success"
+    },
+    "scope": "previous parser source; not this new collector commit"
+  },
+  "first_live_failure": {
+    "candidate_sha": "dd2b80ce98bbbfc529154706f7307aa71a3d658165f88a30c0c12ffd67e70eed",
+    "collector_sha": "7aa1abea4dcc6079396b183987fad17df97cff26df83fecb4a126aabeb9540da",
+    "actual_operation_seconds": 4.339,
+    "qualified": false,
+    "failure_reason": "fresh_paused_Stats_collection_not_qualified",
+    "uia_stdout_bytes": 65,
+    "uia_command_exit_ok": true,
+    "full_identity_stable": true,
+    "focus_bracket_qualified": false,
+    "stats_format_known": false,
+    "diagnosis": [
+      "window windows omitted required current-focus row",
+      "proc-self-fd1 UI tool returned status text without XML"
+    ],
+    "reservation_explicitly_released": true,
+    "protected_role_zero": true,
+    "media_started": false
+  },
+  "collector_live": {
+    "candidate_sha": "407d26b62966d4b20e0a925410da7ed028fbddfdf8ab7e0073254cae33b77b6f",
+    "collector_sha": "90625243270bb68a2e303173f9e0a8ad899c77f30cf96011b303bc276fa2cf2a",
+    "actual_operation_seconds": 4.427,
+    "observation": {
+      "schema": "source-stats-observation-v1",
+      "qualified": true,
+      "required_state": "paused",
+      "identity_before": {
+        "known": true,
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 1462,
+        "host_started_monotonic_ns": 307822437260583,
+        "host_finished_monotonic_ns": 307822485064500,
+        "child_reaped": true
+      },
+      "identity_after": {
+        "known": true,
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 1462,
+        "host_started_monotonic_ns": 307824702689875,
+        "host_finished_monotonic_ns": 307824751336291,
+        "child_reaped": true
+      },
+      "identity_stable": true,
+      "focus_before": {
+        "foreground": true,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 49419,
+        "host_started_monotonic_ns": 307822485213625,
+        "host_finished_monotonic_ns": 307822518451166,
+        "child_reaped": true
+      },
+      "focus_after": {
+        "foreground": true,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 49549,
+        "host_started_monotonic_ns": 307824664164625,
+        "host_finished_monotonic_ns": 307824702348125,
+        "child_reaped": true
+      },
+      "playback_before": {
+        "schema": 1,
+        "unknown": false,
+        "matching_sessions": 1,
+        "active_sessions": 1,
+        "state_known": true,
+        "state": 2,
+        "position_ms": 377005,
+        "updated_elapsed_ms": 3694075,
+        "speed": 1.0,
+        "media_fps_known": false,
+        "media_fps": null,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 3212,
+        "host_started_monotonic_ns": 307822518808250,
+        "host_finished_monotonic_ns": 307822546438000,
+        "child_reaped": true
+      },
+      "playback_after": {
+        "schema": 1,
+        "unknown": false,
+        "matching_sessions": 1,
+        "active_sessions": 1,
+        "state_known": true,
+        "state": 2,
+        "position_ms": 377005,
+        "updated_elapsed_ms": 3694075,
+        "speed": 1.0,
+        "media_fps_known": false,
+        "media_fps": null,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 3212,
+        "host_started_monotonic_ns": 307824621337000,
+        "host_finished_monotonic_ns": 307824663991791,
+        "child_reaped": true
+      },
+      "session_owner_matches_bracket": true,
+      "state_matches_bracket": true,
+      "stats": {
+        "schema": 1,
+        "status": "observed",
+        "format_known": true,
+        "video_id": "aqz-KE-bpKQ",
+        "video_format": {
+          "itag": 299,
+          "codec": "avc1",
+          "width": 1920,
+          "height": 1080,
+          "descriptor_fps": 60.0
+        },
+        "audio_format": {
+          "itag": 251,
+          "codec": "opus"
+        },
+        "viewport": {
+          "width": 1080,
+          "height": 608,
+          "flag": true
+        },
+        "dropped_frames_cumulative": {
+          "dropped": 0,
+          "total": 11319
+        },
+        "player_ui_state": "paused",
+        "position_ui_seconds": 377,
+        "process_identity_verified": false,
+        "observed_content_fps": null,
+        "decoded_or_presented_fps_verified": false
+      },
+      "ui_command": {
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 60018,
+        "host_started_monotonic_ns": 307822546730666,
+        "host_finished_monotonic_ns": 307824619428833,
+        "child_reaped": true
+      },
+      "remote_uia_completion_receipt": true,
+      "device_UI_temp_created": true,
+      "device_UI_temp_removal_confirmed": true,
+      "fallback_cleanup_command": null,
+      "all_local_children_reaped": true,
+      "remote_uia_status": "completed",
+      "host_UI_files_created": false,
+      "raw_total_bytes": 168334,
+      "host_started_python_monotonic_ns": 307822437256166,
+      "host_finished_python_monotonic_ns": 307824751483500,
+      "visual_motion_observed": null,
+      "decoded_or_presented_fps": null,
+      "overlay_on_during_collection": true,
+      "overlay_or_collection_overhead_measured": false
+    },
+    "protected_role_zero": true,
+    "reservation_explicitly_released": true
+  },
+  "fresh_gate_live": {
+    "candidate_sha": "13399834f75ebacf0c094d31069439e1ae5d7dd67adea39848b6db5baa6eff62",
+    "gate_actual_sha": "938b0b22ccfd45bbcdf18a649bda2c2e0afc86a3b5227112adad4ade57ad2ffa",
+    "gate_final_sha": "2a9af99b632d8dbbd89e4913c6707600bb7e9ef118aeec20efe63fc710fc5873",
+    "final_delta": "pure endpoint/freshness validation only; actual collect_fresh function unchanged; historical gate passes final validator offline, not a new live call",
+    "gate": {
+      "schema": "owner-source-stats-gate-v1",
+      "evidence_kind": "fresh_player_Stats_UI_descriptor",
+      "native_clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+      "native_started_ns": 308115884087000,
+      "native_finished_ns": 308118223534000,
+      "collector_clock_domain": "python_time_monotonic_ns",
+      "collector_started_ns": 308120942587250,
+      "collector_finished_ns": 308123281980875,
+      "listener_ready_ns": null,
+      "identity": {
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "required_state": "paused",
+      "video_id": "aqz-KE-bpKQ",
+      "video_format": {
+        "itag": 299,
+        "codec": "avc1",
+        "width": 1920,
+        "height": 1080,
+        "descriptor_fps": 60.0
+      },
+      "audio_format": {
+        "itag": 251,
+        "codec": "opus"
+      },
+      "position_ui_seconds": 377,
+      "position_before_ms": 377005,
+      "position_after_ms": 377005,
+      "dropped_frames_cumulative": {
+        "dropped": 0,
+        "total": 11319
+      },
+      "process_session_focus_bracket_verified": true,
+      "visual_motion_observed": null,
+      "decoded_or_presented_fps": null,
+      "continuous_content_coverage_verified": false,
+      "collection_or_overlay_overhead_measured": false
+    },
+    "observation": {
+      "schema": "source-stats-observation-v1",
+      "qualified": true,
+      "required_state": "paused",
+      "identity_before": {
+        "known": true,
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 1462,
+        "host_started_monotonic_ns": 308120942591166,
+        "host_finished_monotonic_ns": 308120988181625,
+        "child_reaped": true
+      },
+      "identity_after": {
+        "known": true,
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 1462,
+        "host_started_monotonic_ns": 308123231386666,
+        "host_finished_monotonic_ns": 308123281775708,
+        "child_reaped": true
+      },
+      "identity_stable": true,
+      "focus_before": {
+        "foreground": true,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 49549,
+        "host_started_monotonic_ns": 308120988317791,
+        "host_finished_monotonic_ns": 308121028356625,
+        "child_reaped": true
+      },
+      "focus_after": {
+        "foreground": true,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 49678,
+        "host_started_monotonic_ns": 308123196901500,
+        "host_finished_monotonic_ns": 308123231038791,
+        "child_reaped": true
+      },
+      "playback_before": {
+        "schema": 1,
+        "unknown": false,
+        "matching_sessions": 1,
+        "active_sessions": 1,
+        "state_known": true,
+        "state": 2,
+        "position_ms": 377005,
+        "updated_elapsed_ms": 3694075,
+        "speed": 1.0,
+        "media_fps_known": false,
+        "media_fps": null,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 3212,
+        "host_started_monotonic_ns": 308121028753333,
+        "host_finished_monotonic_ns": 308121057277208,
+        "child_reaped": true
+      },
+      "playback_after": {
+        "schema": 1,
+        "unknown": false,
+        "matching_sessions": 1,
+        "active_sessions": 1,
+        "state_known": true,
+        "state": 2,
+        "position_ms": 377005,
+        "updated_elapsed_ms": 3694075,
+        "speed": 1.0,
+        "media_fps_known": false,
+        "media_fps": null,
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 3212,
+        "host_started_monotonic_ns": 308123156512000,
+        "host_finished_monotonic_ns": 308123196634000,
+        "child_reaped": true
+      },
+      "session_owner_matches_bracket": true,
+      "state_matches_bracket": true,
+      "stats": {
+        "schema": 1,
+        "status": "observed",
+        "format_known": true,
+        "video_id": "aqz-KE-bpKQ",
+        "video_format": {
+          "itag": 299,
+          "codec": "avc1",
+          "width": 1920,
+          "height": 1080,
+          "descriptor_fps": 60.0
+        },
+        "audio_format": {
+          "itag": 251,
+          "codec": "opus"
+        },
+        "viewport": {
+          "width": 1080,
+          "height": 608,
+          "flag": true
+        },
+        "dropped_frames_cumulative": {
+          "dropped": 0,
+          "total": 11319
+        },
+        "player_ui_state": "paused",
+        "position_ui_seconds": 377,
+        "process_identity_verified": false,
+        "observed_content_fps": null,
+        "decoded_or_presented_fps_verified": false
+      },
+      "ui_command": {
+        "command_ok": true,
+        "error_code": 0,
+        "raw_bytes": 60018,
+        "host_started_monotonic_ns": 308121057624666,
+        "host_finished_monotonic_ns": 308123152795000,
+        "child_reaped": true
+      },
+      "remote_uia_completion_receipt": true,
+      "device_UI_temp_created": true,
+      "device_UI_temp_removal_confirmed": true,
+      "fallback_cleanup_command": null,
+      "all_local_children_reaped": true,
+      "remote_uia_status": "completed",
+      "host_UI_files_created": false,
+      "raw_total_bytes": 168593,
+      "host_started_python_monotonic_ns": 308120942587250,
+      "host_finished_python_monotonic_ns": 308123281980875,
+      "visual_motion_observed": null,
+      "decoded_or_presented_fps": null,
+      "overlay_on_during_collection": true,
+      "overlay_or_collection_overhead_measured": false
+    },
+    "protected_operation": {
+      "schema": 1,
+      "scope": "owner_nonisolated_M1_fresh_paused_Stats_collection",
+      "passed": true,
+      "steps": [
+        {
+          "phase": "continuous_reservation_and_exact_idle_accepted"
+        },
+        {
+          "phase": "fresh_paused_full_identity_Stats_collected",
+          "stats": {
+            "schema": 1,
+            "status": "observed",
+            "format_known": true,
+            "video_id": "aqz-KE-bpKQ",
+            "video_format": {
+              "itag": 299,
+              "codec": "avc1",
+              "width": 1920,
+              "height": 1080,
+              "descriptor_fps": 60.0
+            },
+            "audio_format": {
+              "itag": 251,
+              "codec": "opus"
+            },
+            "viewport": {
+              "width": 1080,
+              "height": 608,
+              "flag": true
+            },
+            "dropped_frames_cumulative": {
+              "dropped": 0,
+              "total": 11319
+            },
+            "player_ui_state": "paused",
+            "position_ui_seconds": 377,
+            "process_identity_verified": false,
+            "observed_content_fps": null,
+            "decoded_or_presented_fps_verified": false
+          },
+          "collector_seconds": 2.339393625,
+          "raw_total_bytes": 168593,
+          "remote_uia_completion": true
+        }
+      ],
+      "phone_M5_NPS_gateway_reboot_or_control": false,
+      "scrcpy_or_remote_App_started": false,
+      "source_force_stopped": false,
+      "guest_properties_preferences_changed": false,
+      "guest_system_properties_changed": false,
+      "source_App_debug_overlay_may_persist": true,
+      "pixels_require_human_layout_review": true,
+      "source_content_format_known": true,
+      "source_BBB_identity_known": true,
+      "formal_TCP_admission_atomic": false,
+      "source_identity_before": {
+        "known": true,
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "source_identity_after": {
+        "known": true,
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "guest_renderer_property": "skiavk",
+      "source_actual_pipeline_this_round": null,
+      "new_emulator_pid": 48576,
+      "boot_identity_unchanged": true,
+      "original_gateway_identity_and_four_roles_zero_preserved": true,
+      "device_UI_temp_created": true,
+      "device_UI_temp_removal_confirmed": true,
+      "host_UI_files_created": false,
+      "phone_media_started": false,
+      "collection_overhead_measured": false,
+      "Stats_gate_native_clock": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+      "Stats_gate_collector_clock": "python_time_monotonic_ns",
+      "Stats_gate_native_bracket_ns": 2339447000,
+      "reservation_explicitly_released": true,
+      "protected_role_zero_before_release": true,
+      "owned_local_clients_started": 62,
+      "owned_local_clients_reaped": 62,
+      "owned_local_client_timeout_terminations": 0,
+      "operation_budget_seconds": 85,
+      "actual_operation_seconds": 4.483,
+      "budget_exceeded": false
+    }
+  },
+  "acceptance": {
+    "full_process_session_focus_bracket": true,
+    "paused_player_current_UI_descriptor": true,
+    "remote_UI_completion_and_temp_cleanup": true,
+    "actual_media": false,
+    "real_phone": false,
+    "source_motion": false,
+    "overhead_under_concurrent_media": false,
+    "stable_30_fps": false,
+    "public_path": false,
+    "V50": false
+  },
+  "next": "NEW protected 30s same-parameter LAN candidate; fresh playing descriptor after listener and pause/readback adjacent to sampler end, record overlay, keep cancellation/actual ownership protection"
+}
