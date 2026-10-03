@@ -24,6 +24,20 @@ MANIFEST_ASSET = 'experiment.json'
 MAX_APK_SIZE = 64 * 1024 * 1024
 UDP_CLASS = b'Llocal/remoteandroid/direct/AuthenticatedLanUdpUi;'
 UDP_NATIVE = 'lib/arm64-v8a/libhuoguo_udp_fec.so'
+# Explicit capability contracts; unknown versions never acquire public profiles.
+PUBLIC_OWNER_RELEASES = frozenset((
+    ('1.31-alpha.6', 37), ('1.31-alpha.7', 38), ('1.31-alpha.8', 39),
+))
+
+
+def is_public_owner_release(version_name, version_code):
+    pair = (version_name, version_code)
+    if pair in PUBLIC_OWNER_RELEASES:
+        return True
+    if (version_name in {name for name, _ in PUBLIC_OWNER_RELEASES}
+            or version_code in {code for _, code in PUBLIC_OWNER_RELEASES}):
+        raise ValueError('Public owner version/code must match an explicitly reviewed contract')
+    return False
 
 
 def run(argv, **kwargs):
@@ -110,10 +124,9 @@ def validate_apk(apk, sdk, version_name, version_code):
 
 def manifest(identity, repository, branch, sha, version_name, version_code, notes):
     tag = checked_version(version_name, version_code)
-    # The alpha6/7 contracts add fixed public owner-only profiles. Capability is
+    # The alpha6/7/8 contracts add fixed public owner-only profiles. Capability is
     # not a claim of cellular, V50, friend isolation or performance acceptance.
-    public_owner = (version_name, version_code) in {
-        ('1.31-alpha.6', 37), ('1.31-alpha.7', 38)}
+    public_owner = is_public_owner_release(version_name, version_code)
     return dict(schema=1, channel='experimental', prerelease=True,
                 version_name=version_name, version_code=version_code, release_tag=tag,
                 source_commit=sha, source_branch=branch,

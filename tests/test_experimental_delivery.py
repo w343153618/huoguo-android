@@ -52,7 +52,7 @@ class ExperimentalDeliveryCheck(unittest.TestCase):
                                  delivery.public_name(self.NAME))
 
     def test_only_reviewed_public_owner_version_code_pairs_have_public_capabilities(self):
-        for version, code in (('1.31-alpha.6', 37), ('1.31-alpha.7', 38)):
+        for version, code in (('1.31-alpha.6', 37), ('1.31-alpha.7', 38), ('1.31-alpha.8', 39)):
             for mirror in (False, True):
                 metadata = self.public_metadata(name=version, code=code, mirror=mirror)
                 with self.subTest(version=version, mirror=mirror):
@@ -64,13 +64,48 @@ class ExperimentalDeliveryCheck(unittest.TestCase):
                     self.assertIs(metadata['friend_isolation_acceptance'], False)
         reference = self.public_metadata()
         for version, code in (('1.31-alpha.5', 37), ('1.31-alpha.6', 38), ('1.31-alpha.7', 37),
-                              ('1.31-alpha.8', 39), ('1.32-alpha.6', 37)):
+                              ('1.31-alpha.8', 38), ('1.31-alpha.8', 40),
+                              ('1.31-alpha.9', 40), ('1.32-alpha.6', 37)):
             metadata = dict(reference, version_name=version, version_code=code,
                             release_tag='experimental-v' + version)
             metadata['apk_url'] = ('https://github.com/' + self.REPOSITORY + '/releases/download/'
                                    + metadata['release_tag'] + '/' + publisher.APK_ASSET)
             with self.subTest(version=version, code=code), self.assertRaises(RuntimeError):
                 delivery.validate_metadata(metadata, self.REPOSITORY, metadata['release_tag'])
+
+    def test_alpha8_mirror_keeps_signature_urls_and_false_acceptance_boundaries(self):
+        metadata = self.public_metadata(name='1.31-alpha.8', code=39, mirror=True)
+        for key, value in (('version_code', 38), ('version_code', 40),
+                           ('signing_certificate_sha256', '0' * 64),
+                           ('application_id', 'local.remoteandroid.direct'),
+                           ('public_udp_acceptance', True), ('friend_isolation_acceptance', True),
+                           ('public_cellular_acceptance', True),
+                           ('public_owner_profiles', ['m1', 'm5', 'v50']),
+                           ('source_commit', 'a' * 39), ('sha256', 'b' * 63),
+                           ('github_asset_url', metadata['github_asset_url'].replace('alpha.8', 'alpha.7')),
+                           ('apk_url', metadata['apk_url'].replace('alpha.8', 'alpha.7'))):
+            with self.subTest(field=key), self.assertRaises(RuntimeError):
+                delivery.validate_metadata(dict(metadata, **{key: value}),
+                                           self.REPOSITORY, metadata['release_tag'])
+        with tempfile.TemporaryDirectory() as folder:
+            directory = pathlib.Path(folder)
+            exposed = delivery.install(directory, metadata, self.APK, self.REPOSITORY)
+            before = (directory / publisher.MANIFEST_ASSET).read_bytes()
+            self.assertEqual(exposed, metadata)
+            with self.assertRaises(RuntimeError):
+                delivery.install(directory, dict(metadata, changelog='Changed same-version notes'),
+                                 self.APK, self.REPOSITORY)
+            self.assertEqual((directory / publisher.MANIFEST_ASSET).read_bytes(), before)
+            self.assertFalse((directory / 'update.json').exists())
+
+    def test_reserved_public_pair_cannot_be_laundered_as_legacy_lan(self):
+        metadata = self.public_metadata(name='1.31-alpha.8', code=39)
+        metadata.update(version_code=40, public_owner_profiles=[],
+                        media_transport=delivery.LAN_TRANSPORT)
+        for candidate in (metadata, {key: value for key, value in metadata.items()
+                                     if key in delivery.FIELDS}):
+            with self.subTest(fields=set(candidate)), self.assertRaises(RuntimeError):
+                delivery.validate_metadata(candidate, self.REPOSITORY, candidate['release_tag'])
 
     def test_public_owner_profiles_and_acceptance_flags_cannot_be_broadened_or_omitted(self):
         metadata = self.public_metadata()

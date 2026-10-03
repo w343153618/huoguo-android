@@ -109,7 +109,7 @@ class ExperimentalReleaseCheck(unittest.TestCase):
             self.assertEqual((destination / 'keep').read_text(), 'previous frozen release')
 
     def test_public_profiles_do_not_assert_cellular_or_friend_acceptance(self):
-        for version, code in [('1.31-alpha.6', 37), ('1.31-alpha.7', 38)]:
+        for version, code in [('1.31-alpha.6', 37), ('1.31-alpha.7', 38), ('1.31-alpha.8', 39)]:
             metadata = release.manifest(self.identity(), self.REPOSITORY, self.BRANCH,
                 self.SHA, version, code, 'Public owner trial only')
             self.assertEqual(metadata['public_owner_profiles'], ['m1', 'm5'])
@@ -117,6 +117,16 @@ class ExperimentalReleaseCheck(unittest.TestCase):
             for key in ('public_udp_acceptance', 'public_cellular_acceptance', 'friend_isolation_acceptance'):
                 self.assertIs(metadata[key], False)
         self.assertEqual(self.metadata()['public_owner_profiles'], [])
+
+    def test_public_owner_version_code_mismatch_never_silently_becomes_lan(self):
+        for version, code in (('1.31-alpha.6', 38), ('1.31-alpha.7', 39),
+                              ('1.31-alpha.8', 38), ('1.31-alpha.8', 40),
+                              ('1.31-alpha.9', 39), ('1.32-alpha.8', 39)):
+            with self.subTest(version=version, code=code), self.assertRaises(ValueError):
+                release.manifest(self.identity(), self.REPOSITORY, self.BRANCH,
+                                 self.SHA, version, code, 'Unreviewed pair')
+        self.assertEqual(release.PUBLIC_OWNER_RELEASES, frozenset((
+            ('1.31-alpha.6', 37), ('1.31-alpha.7', 38), ('1.31-alpha.8', 39))))
 
     def test_apk_output_inside_source_tree_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'outside the source tree'):

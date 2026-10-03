@@ -17,7 +17,8 @@ import tempfile
 
 from publish_experimental_release import (
     APPLICATION_ID, EXPECTED_SIGNER, APK_ASSET, MANIFEST_ASSET,
-    MAX_APK_SIZE, validate_apk as inspect_apk,
+    MAX_APK_SIZE, PUBLIC_OWNER_RELEASES, is_public_owner_release,
+    validate_apk as inspect_apk,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,7 +37,6 @@ CAPABILITY_FIELDS = FIELDS | frozenset((
     'public_owner_profiles', 'public_cellular_acceptance', 'friend_isolation_acceptance',
 ))
 MIRROR_FIELDS = CAPABILITY_FIELDS | frozenset(('github_asset_url',))
-PUBLIC_OWNER_RELEASES = frozenset((('1.31-alpha.6', 37), ('1.31-alpha.7', 38)))
 LAN_TRANSPORT = 'authenticated_udp_lan_and_registered_tailnet_experiment'
 PUBLIC_OWNER_TRANSPORT = 'authenticated_udp_public_NPS_owner_and_LAN_tailnet_experiment'
 
@@ -75,7 +75,10 @@ def validate_metadata(metadata, repository, tag, *, published=False):
         raise RuntimeError('Experimental release version/tag mismatch')
     if metadata['release_tag'] != tag or type(code) is not int or not 1 <= code <= 2100000000:
         raise RuntimeError('Invalid experimental release version code')
-    public_owner = (version, code) in PUBLIC_OWNER_RELEASES
+    try:
+        public_owner = is_public_owner_release(version, code)
+    except ValueError as error:
+        raise RuntimeError('Public owner version/code contract mismatch') from error
     capabilities = set(metadata) != FIELDS
     mirror = set(metadata) == MIRROR_FIELDS
     if metadata['media_transport'] != (PUBLIC_OWNER_TRANSPORT if public_owner else LAN_TRANSPORT):
