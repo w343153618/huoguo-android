@@ -32,6 +32,35 @@ Both pushed repair commits were verified by final Actions API reads, not just
 local test results. Remaining action/runner migration annotations are warnings
 in successful runs, not the failed test causes above.
 
+## Follow-up: owned DNS accounting race, 2026-10-04
+
+The later documentation-only commit
+`c19c3fe78ddad2c3e9b5aec507f246697f38980f` failed in
+[run37146375219](https://github.com/w343153618/huoguo-android/actions/runs/37146375219).
+Its sole failure was
+`DNSOutletTests.test_owned_upstream_randomized_id_and_bad_replies_then_valid`:
+the client received the correct reply, but the immediate `replied` snapshot
+was zero. Linux ran 1565 tests in 80.848 seconds with the same 11 platform
+skips. The dependent UDP job was skipped. This commit changed only documents;
+the preceding same-source `b07009b` run37145236790 passed both jobs.
+
+The real worker sends the UDP reply before incrementing `replied`. Client
+receipt therefore does not establish that post-send accounting has completed.
+The fixture now deliberately holds that accounting point with two bounded
+events while using actual owned loopback sockets. It verifies the restored
+client ID, randomized upstream ID, rejected malformed replies, physical-bind
+calls, and the pre-accounting zero snapshot. It then releases the worker and
+checks the final count of one after the existing owned guard has joined every
+worker. A gate timeout remains a failure; there is no arbitrary delay, new
+skip, or weakened count assertion.
+
+Only the test fixture changes. Production DNS validation, resolver binding,
+worker ordering, isolation guards and the workflow remain unchanged. The
+focused module passed 25 tests in 1.061 seconds; root independently ran the
+full repository suite: 1582 tests in 58.420 seconds, `OK`. The exact new GitHub
+SHA result is recorded separately when completed; these local results do not
+assert cloud success or a new APK/performance improvement.
+
 ## Confirmed causes and scoped changes
 
 - Four test modules used the owner's absolute Mac JDK/Android SDK paths.

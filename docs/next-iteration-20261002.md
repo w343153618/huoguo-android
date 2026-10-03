@@ -1,3 +1,7 @@
+## 2026-10-04 最新CI复发是DNS fixture回包与计数竞态，已本地修正
+
+精确c19c3fe/run37146375219实际failure：Linux1565/80.848s/11既有skip，只有restricted DNS owned upstream test回包后立即读replied为0；UDP dependent job skipped。c19相对之前绿b070仅改文档，不是renderer/RAM维护或App崩溃证据。真实worker sendto在计数之前，fixture新增有界事件明确重现“回包已收到但计数未完成”，释放后在原owned guard全部worker joined时核对replied1。仅test改动，生产DNS安全guard/顺序、workflow和服务均不改；root25/1.061s focused及1582/58.420s全仓PASS。修复须推送并独立核实际GitHub新SHA，不能借旧绿灯。见[CI修复](github-ci-portability-repair-20261003.md)。当前source gate/driver两agent继续既有新私有候选审查，尚未执行，不重复派/媒体。
+
 ## 2026-10-04 M1 renderer boot持久化已实际完成，下一保护source launch/布局验收
 
 单次维护实际exit0/18.182s、88ownedlocalclients全reaped/timeoutterminations0，emulator65956→48576/newboot，boot及runtimeHWUI skiavk、REskiaglthreaded保持，MemTotal8123368KiB/6核/1080x1920/density480/30.00Hz及AVD d2ff原字节保持。只M1 emulator job增加一对appenduserspace参数、plist88272，新限制备份保留；持续reserve/live503/原owner精确身份/4roleszero/两formalclear，actualprotectedquiescence后release。M5/NPS/gateway/phone/源App无操作。见[实际维护](m1-renderer-boot-deployment-20261004.md)。这项已完成，勿再追加参数/冷启。

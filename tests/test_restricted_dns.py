@@ -285,15 +285,38 @@ class DNSOutletTests(unittest.TestCase):
             wrong_id = struct.pack("!H", struct.unpack_from("!H", good)[0] ^ 0x8000)
             return [wrong_id + good[2:], response(packet, name="other.com"),
                     good + b"x" * 1232, good]
-        with OwnedResolver(replies) as resolver, owned_guard(resolver) as (guard, endpoint, binding):
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
-                client.settimeout(1)
-                client.sendto(query(identifier=54321), endpoint)
-                result, _ = client.recvfrom(2048)
-            self.assertEqual(result[:2], struct.pack("!H", 54321))
-            self.assertNotEqual(resolver.received[0][:2], struct.pack("!H", 54321))
-            self.assertTrue(all(call.args[1] == 7 for call in binding.call_args_list))
+
+        # Real UDP delivery can precede the worker's post-send accounting.
+        # Hold that point deliberately; final counters require joined workers.
+        count_entered, release_count = threading.Event(), threading.Event()
+        count_timeout = threading.Event()
+        original_count = dns.DNSGuard._count
+
+        def held_reply_count(guard, name):
+            if name == "replied":
+                count_entered.set()
+                if not release_count.wait(timeout=2):
+                    count_timeout.set()
+            original_count(guard, name)
+
+        with OwnedResolver(replies) as resolver, \
+                patch.object(dns.DNSGuard, "_count", held_reply_count):
+            with owned_guard(resolver) as (guard, endpoint, binding):
+                try:
+                    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+                        client.settimeout(1)
+                        client.sendto(query(identifier=54321), endpoint)
+                        result, _ = client.recvfrom(2048)
+                    self.assertTrue(count_entered.wait(timeout=1))
+                    self.assertEqual(result[:2], struct.pack("!H", 54321))
+                    self.assertNotEqual(resolver.received[0][:2], struct.pack("!H", 54321))
+                    self.assertTrue(all(call.args[1] == 7 for call in binding.call_args_list))
+                    self.assertEqual(guard.snapshot()["replied"], 0)
+                finally:
+                    release_count.set()
+            self.assertFalse(count_timeout.is_set())
             self.assertEqual(guard.snapshot()["replied"], 1)
+            self.assertEqual(guard.snapshot()["active"], 0)
 
     @unittest.skipUnless(socket.has_ipv6, "owned IPv6 loopback required")
     def test_both_families_share_the_same_guard_and_close(self):
