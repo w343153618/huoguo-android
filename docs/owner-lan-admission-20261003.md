@@ -35,6 +35,12 @@ all abort. Do not substitute an imported fresh registry or `lsof` for this
 live-object witness. This is an intentional failed factory, not a successful
 media session or a new maintenance API.
 
+The witness's proof time is the registry's atomic `create()` check: no old
+reservation or recorded cleanup failure existed at that point. It does not set
+the registry's sticky `begin_idle_drain()` flag or permanently reserve an idle
+registry. The continuously held UDP reserve, not the503 result alone, prevents
+subsequent and already-admitted public factories from starting guest work.
+
 After that witness the caller must provide a closed readback matching the
 expected gateway PID **and start identity**, exact source-entry SHA256, and
 frozen runtime manifest SHA256. All four owned process counts must be zero and
@@ -63,8 +69,13 @@ with guard:
 ```
 
 The final receipt combines the actual LAN gateway shutdown outcome with the
-caller's independently confirmed owned gateway and media process exits. On
-unconfirmed cleanup, context exit retains the socket and preserves any original
+caller's independently confirmed owned gateway and media process exits. Collect
+output from the **same Popen instance started
+inside this guard**, then confirm that instance's exit and owned media cleanup.
+The closed receipt schema contains no LAN PID or start identity: it cannot
+itself reject a previous attempt's otherwise valid receipt. A historical JSON
+file or the first matching line from a shared log is not sufficient.
+On unconfirmed cleanup, context exit retains the socket and preserves any original
 experiment exception. Keep the guard and supervisor alive, perform only bounded
 cleanup of that owned attempt, then confirm and `close()`. Never manufacture a
 receipt or kill an old service to obtain one. An OS process crash releases its
@@ -82,6 +93,17 @@ rejections, admission ordering, retained cleanup failure and preserved primary
 errors. A Darwin kernel fixture verifies real loopback exclusivity and interface
 binding by calling the shared socket primitive directly on its **own ephemeral
 tuple** (`127.0.0.1:0`). It never enters the production guard or occupies45965,
-or starts
-media, HTTP, devices or services. Source/kernel fixtures do not validate a live
+or starts media, HTTP, devices or services. Source/kernel fixtures do not validate a live
 witness adapter, source-specific process scan, handover or sampling overhead.
+
+`tests/test_owner_lan_legacy_registry_witness.py` independently executes the
+hash-pinned dd43 registry and its three parser/profile dependencies in private
+module namespaces. It uses the current identical bytes, or requires the exact
+local Git object `dd43a39f49f6dceb55854fbc6e43367d34f381c3` after source evolution;
+it never substitutes a newer registry or silently skips missing historical
+coverage. Four inert thread fixtures prove that normal and eventually failing
+inflight stop both return409 before entering the new factory; confirmed stop
+allows exact503 failed-factory witness; failed stop returns503 cleanup failure
+before entering the factory. These checks open no socket, supply no password,
+send no READY and perform no device/service operation. Their synthetic registry
+is an offline lock-contract fixture, not the running gateway's idle receipt.
