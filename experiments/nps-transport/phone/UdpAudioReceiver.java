@@ -201,8 +201,10 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
         }catch(Throwable error){
             if(boundedPcmQueueEnabled&&ownershipTransferred){releaseQueuedCurrent();}
             else{
-                if(nextOutput!=null){try{nextOutput.release();}catch(Exception ignored){}}
-                try{next.stop();}catch(Exception ignored){}try{next.release();}catch(Exception ignored){}
+                if(nextOutput!=null){try{nextOutput.release();}catch(Exception ignored){cleanupReleaseFailed=true;}
+                    catch(Error unexpected){cleanupReleaseFailed=true;throw unexpected;}}
+                try{next.stop();}catch(Exception ignored){}try{next.release();}catch(Exception ignored){cleanupReleaseFailed=true;}
+                catch(Error unexpected){cleanupReleaseFailed=true;throw unexpected;}
             }
             throw error;
         }

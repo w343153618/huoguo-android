@@ -102,6 +102,24 @@ public final class ActualAudioCompletionCheck {
    check(state==0&&c.releases==1&&t.releases==1,"release uncertainty never confirms audio");
    check(UdpVideoProbe.closeOwnedAudio(r)==0,"release uncertainty is sticky and cannot be erased by empty pointers");
    System.out.println("{\"before\":"+before+",\"after\":"+state+",\"releases\":2}");
+  }else if(mode.equals("unpublished_codec_error")||mode.equals("unpublished_track_error")||mode.equals("unpublished_clean")){
+   MediaCodec next=new MediaCodec();AudioTrack nextTrack=new AudioTrack();MediaCodec.nextCreated=next;
+   boolean trackError=mode.equals("unpublished_track_error");
+   boolean releaseError=!mode.equals("unpublished_clean");
+   boolean fatal=args.length>2&&args[2].equals("fatal");
+   next.configureFailure=!trackError;next.releaseFailure=!trackError&&releaseError&&!fatal;next.releaseFatal=!trackError&&releaseError&&fatal;
+   if(trackError){nextTrack.playFailure=true;nextTrack.releaseFailure=!fatal;nextTrack.releaseFatal=fatal;AudioTrack.nextCreated=nextTrack;}
+   long now=System.nanoTime();
+   @SuppressWarnings("unchecked")ArrayBlockingQueue<UdpAudioAssembler.Frame> q=(ArrayBlockingQueue<UdpAudioAssembler.Frame>)get(r,"queue");
+   q.offer(new UdpAudioAssembler.Frame(2,0,now,now,true,new byte[]{0x11,(byte)0x90}));
+   ((Thread)get(r,"worker")).join(2000);
+   check(!((Thread)get(r,"worker")).isAlive(),"real input worker finishes failed unpublished configure");
+   check(next.releases==(trackError&&fatal?0:1)&&(!trackError||nextTrack.releases==1),"actual unpublished release follows original Error propagation");
+   check(get(r,"decoder")==null&&get(r,"output")==null,"failed configure did not publish resources");
+   int state=UdpVideoProbe.closeOwnedAudio(r);
+   check(state==(releaseError?0:1),"failed unpublished release stays unknown; successful cleanup may confirm");
+   check(UdpVideoProbe.closeOwnedAudio(r)==state,"retry empty close cannot clear unpublished release uncertainty");
+   System.out.println("{\"before\":"+before+",\"after\":"+state+",\"unpublished_release_calls\":"+(next.releases+(trackError?nextTrack.releases:0))+"}");
   }else if(mode.equals("input_blocked")){
    check(bounded,"safe retained-resource timeout uses existing bounded PCM lifecycle");
    MediaCodec c=new MediaCodec();AudioTrack t=new AudioTrack();c.blockInput=true;set(r,"decoder",c);set(r,"output",t);media(r);
@@ -160,7 +178,17 @@ class CompletionReceiptChecks(unittest.TestCase):
             if relative in ('android/media/MediaCodec.java', 'android/media/AudioTrack.java'):
                 source = source.replace('public volatile int releases;', 'public volatile int releases;public boolean releaseFailure;')
                 source = source.replace('public volatile boolean blockInput;', 'public boolean releaseFailure;public volatile boolean blockInput;')
-                source = source.replace('public void release(){releases++;}', 'public void release(){releases++;if(releaseFailure)throw new IllegalStateException("fixture-only release uncertainty");}')
+                source = source.replace('public boolean releaseFailure;', 'public boolean releaseFatal;public boolean releaseFailure;')
+                source = source.replace('public void release(){releases++;}', 'public void release(){releases++;if(releaseFatal)throw new AssertionError("fixture-only release Error");if(releaseFailure)throw new IllegalStateException("fixture-only release uncertainty");}')
+                if relative == 'android/media/MediaCodec.java':
+                    source = source.replace('public boolean releaseFailure;', 'public boolean configureFailure;public boolean releaseFailure;')
+                    source = source.replace('public void configure(MediaFormat f,Object surface,Object crypto,int flags){}',
+                        'public void configure(MediaFormat f,Object surface,Object crypto,int flags){if(configureFailure)throw new IllegalStateException("fixture-only configure failure");}')
+                else:
+                    source = source.replace('public boolean releaseFailure;', 'public boolean playFailure;public boolean releaseFailure;public static volatile AudioTrack nextCreated;')
+                    source = source.replace('public void play(){}', 'public void play(){if(playFailure)throw new IllegalStateException("fixture-only play failure");}')
+                    source = source.replace('public AudioTrack build(){return new AudioTrack();}',
+                        'public AudioTrack build(){AudioTrack t=nextCreated;nextCreated=null;return t==null?new AudioTrack():t;}')
             cls.write(audio_folder, relative, source)
         cls.write(audio_folder, 'local/remoteandroid/direct/UdpVideoProbe.java', 'package local.remoteandroid.direct;import org.json.JSONObject;final class UdpVideoProbe {'+policy+'}')
         cls.write(audio_folder, 'ActualAudioCompletionCheck.java', AUDIO_HARNESS)
@@ -232,6 +260,20 @@ class CompletionReceiptChecks(unittest.TestCase):
                     value = self.run_java(1, 'ActualAudioCompletionCheck', mode, lifecycle)
                     self.assertEqual(value['before'], 0)
                     self.assertEqual(value['after'], int(mode == 'success'))
+
+    def test_actual_unpublished_configure_resource_release_uncertainty_is_sticky(self):
+        for mode in ('unpublished_codec_error', 'unpublished_track_error', 'unpublished_clean'):
+            for lifecycle in ('legacy', 'bounded'):
+                for error_kind in ('exception', 'fatal'):
+                    with self.subTest(mode=mode, lifecycle=lifecycle, error_kind=error_kind):
+                        value = self.run_java(1, 'ActualAudioCompletionCheck', mode, lifecycle, error_kind)
+                        self.assertEqual(value['before'], 0)
+                        self.assertEqual(value['after'], int(mode == 'unpublished_clean'))
+                        # A track Error preserves original propagation and
+                        # may stop before unpublished codec release. The whole
+                        # attempt stays UNKNOWN, never falsely confirmed.
+                        expected = 2 if mode == 'unpublished_track_error' and error_kind == 'exception' else 1
+                        self.assertEqual(value['unpublished_release_calls'], expected)
 
     def test_actual_receiver_live_workers_remain_incomplete_until_quiescent(self):
         for mode, lifecycle in [('input_blocked', 'bounded'), ('drain_blocked', 'legacy'), ('drain_blocked', 'bounded')]:
