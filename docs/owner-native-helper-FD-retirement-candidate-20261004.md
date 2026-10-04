@@ -65,3 +65,19 @@ The preceding 5bbeb767/run37209710122 was independently overall/build/UDPsuccess
 The new commit must receive its own CI readback, with no old-run reruns or
 workflow/guard changes. Continue with NEW protected stage/readback/writer-exit
 fixtures and complete supervisor binding; do not execute a partial live installer.
+
+Exact bc4cff63391b413867bcf51ac7fbefd91144d357/run37212308330 has now been
+independently read back completed/overall/build/UDPsuccess. The build log reports
+2041 Linux tests/85.523s/11 existing skips. No rerun or old green was borrowed.
+This cloud result is a local documentation append for the next meaningful source
+push; it does not cover the private follow-on.
+
+NEW private protected-layout argument/operation contract passes 13 pure/synthetic
+checks (0.001s) and two actual host C report roundtrips: complete owned scope0,
+and partial unlink with retained foreign entry2. It rejects old flat tmp paths,
+foreign/mismatched metadata, duplicate/extra/unhashable/contradictory JSON, claimed
+atomicity/PM/release and host fixtures presented as Android. Every metadata
+selection remains stage/retirement ineligible; even completed C JSON keeps
+idle-for-release false. It has no client/installer/supervisor execution. NEW
+protected creation, actual remote writer/PM ownership and full binding remain
+next; local ADB Success/EOF alone is insufficient. Old private bundles unchanged.

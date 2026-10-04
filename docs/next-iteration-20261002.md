@@ -1,5 +1,30 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF partial native helper owner library:16 actual host checks within
+77 affected/9.422s PASS. Root-only NEW parent/stage0700/APK0600 avoids granting
+shell new writeFDs; old flat/root:shell finalizer and private contract incompatible.
+Actual own upload EOF/writeFDclose/readhash/fork/waitpid/ignoredTERM/cancel/EOF
+fixtures, not Android PM/package/lease. SIGCHLDdefault/exclusivewaiter required.
+Android CLI has no activation; production close refuses possible scope pending
+matched retirement. Final arm64/API30 NDK compile19976B/a0435aed only; no stage.
+New create bracket APFS regularfile nlink corrected after11 fixturefailures;
+77 now PASS, no production failure. Next same-object matching retirement/fixed
+PM/helper/driver cleanup and NEW whole isolatedenv/operator/source/phone/admission
+binding, not partial execute. Phoneonce missing/no repoll/rootexecnull; oldf0/d043
+first on return. NewSHA requires ownCI; no App/helper/JNI/release/default change.
+Read owner-native-helper-owner candidate doc/json and actual private checkpoint.
+
+Exact bc4cff63391b413867bcf51ac7fbefd91144d357/run37212308330 now independently
+completed/overall/build/UDPsuccess2041/85.523s/11skip. No repeat. NEW private
+protected contract13pure/syntheticchecks/.001s +2actualhostC roundtrips(complete0,
+partialforeign2 retained). Contract/JSONnever grantsownership/PM/lease or
+idle-release. Oldflatbinding incompatible/unchanged. Next NEW native owned
+protectedcreation+pinned upload writer-FDclose/PMchildwait receipts, then whole
+supervisor/env/operator/source/phone/admission binding, not partial execute.
+Private design/pins in iteration-state. Phoneonce missing/no repoll/rootexecnull.
+Oldf0/d043 first on actual return. Cloud/private docs localappend next meaningful
+sourcepush; not doc-onlyCI. NewSHA needs ownrun; no App/helper/JNI/release change.
+
 NEW default-OFF helper FD retirement kernel:23actualhostchecks within
 61affected/6.591s PASS, arm64/API30 NDK build/ELF/nohosthooks verified only.
 No Android stage/run/PM/phone. `unlinkat` is not atomic compare-and-unlink:

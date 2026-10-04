@@ -3963,10 +3963,177 @@
       "covers_this_NEW_source": false
     },
     "this_candidate_CI": {
-      "status": "not_yet_pushed_or_cloud_verified"
+      "commit": "bc4cff63391b413867bcf51ac7fbefd91144d357",
+      "run_id": 37212308330,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "build_job": 111465798169,
+      "UDP_job": 111466375831,
+      "Linux_tests": 2041,
+      "Linux_seconds": 85.523,
+      "existing_skips": 11,
+      "URL": "https://github.com/w343153618/huoguo-android/actions/runs/37212308330",
+      "independently_readback_verified": true,
+      "private_followon_covered_by_CI": false
     },
     "next": "NEW protected-layout stage creation/readback/writer-quiescence and exact owned remote process receipts, then NEW complete supervisor/dependency/environment/operator/source/phone/admission binding. No live partial binding. On actual phone availability first unchanged reviewed f0/d043 authenticated frame-only.",
     "preceding_22_check_seconds": 1.79,
-    "preceding_60_affected_seconds": 5.304
+    "preceding_60_affected_seconds": 5.304,
+    "private_followon_contract": {
+      "schema": "private-helper-protected-layout-contract-v1",
+      "canonical_source_commit": "bc4cff63391b413867bcf51ac7fbefd91144d357",
+      "canonical_C_SHA256": "ab1c6f2e9460c8a0023c07f06662f5988f34cb44fb88a0d9f08e39570e3bb754",
+      "status": "pure_NEW_layout_and_bounded_operation_observation_not_installer_or_supervisor",
+      "synthetic_metadata_checks": 13,
+      "synthetic_metadata_seconds": 0.001,
+      "actual_host_C_report_roundtrips": 2,
+      "actual_host_C_roundtrip_outcomes": [
+        "owned_scope_exit0",
+        "partial_unlink_foreign_entry_exit2_retained"
+      ],
+      "actual_Android_operations": 0,
+      "closed_dev_inode_UID_mode_nlink_size_SHA_arguments": true,
+      "old_flat_tmp_binding_rejected": true,
+      "duplicate_extra_unhashable_false_boolean_contradictory_receipts_rejected": true,
+      "C_JSON_or_contract_makes_remote_ownership_PM_or_lease_true": false,
+      "all_metadata_stage_create_and_retirement_eligibility_false": true,
+      "idle_for_release_false_even_completed_C_JSON": true,
+      "prior_private_binding_or_frozen_source_modified": false,
+      "next": "NEW protected creation and file transfer tied to actual native process/FD ownership and writable-FD cessation; owned PM child waitpid receipts and complete driver/helper/scope lifecycle before whole supervisor execution. Local ADB Success/EOF cannot substitute."
+    }
+  },
+  "owner_native_helper_owner_candidate_20261004": {
+    "schema": "owner-native-helper-owner-candidate-v1",
+    "status": "default_OFF_partial_library_host_FD_child_fixtures_and_Android_compile_only",
+    "default_enabled": false,
+    "source_based_on_commit": "bc4cff63391b413867bcf51ac7fbefd91144d357",
+    "source_SHA256": {
+      "experiments/moonlight-v2/source-snapshot/helper_scope_owner.c": "942e231bc6099503b2bf2d967ca7c1af8c2f8c2450ed9ec2084421de1489226e",
+      "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d",
+      "scripts/probes/build_helper_scope_owner.py": "78d95fa6aad40557fa9243ce4c4cda00a3a4f7b519f1cdf4bce8bf2c603933c0",
+      "tests/test_helper_scope_owner.py": "2774f66fe748274731f4a70e79593ea5cd0290f9670dcd2e9ce3c10a5af6f7e5"
+    },
+    "new_checks": 16,
+    "affected_checks": 77,
+    "affected_seconds": 9.422,
+    "actual_host_FD_upload_and_owned_child_waitpid": true,
+    "host_UID_GID_are_host_not_Android_DAC": true,
+    "preceding_15_check_76_affected_seconds": 9.473,
+    "followon_fixture_failure": {
+      "affected_checks": 77,
+      "failures": 11,
+      "seconds": 6.929,
+      "cause": "New creation metadata bracket initially required unchanged stage nlink. Actual APFS new regular-file entry increments directory nlink2 to3; Linux differs. Closed own one-entry creation permits stable or plus-one count, while dev/inode/UID/GID/mode and closed entries stay required. Corrected and passing.",
+      "production_phone_or_guest_failure": false
+    },
+    "Android_compile": {
+      "schema": "partial-helper-owner-build-v1",
+      "NDK_revision": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "ELF_AArch64_verified": true,
+      "source_sha256": "942e231bc6099503b2bf2d967ca7c1af8c2f8c2450ed9ec2084421de1489226e",
+      "header_sha256": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d",
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "binary_sha256": "a0435aed5b8bb5cc6dc075f0451c0345f64e281714a078c95db8e7238b2ec27d",
+      "binary_bytes": 19976,
+      "fixture_macro_enabled": false,
+      "production_CLI_activation_available": false,
+      "NEW_scope_layout": "root-only parent/stage0700 and APK0600",
+      "prior_shell_tmp_or_root_shell_finalizer_compatible": false,
+      "default_PM_operations": 0,
+      "device_operations": 0,
+      "remote_writer_PM_DAC_or_ART_verified": false,
+      "complete_live_helper_supervisor": false,
+      "App_helper_JNI_or_release_changed": false,
+      "reservation_release_authorized": false
+    },
+    "Android_staged_or_executed": false,
+    "NEW_layout": {
+      "base": "/data/local",
+      "base_UID": 0,
+      "base_nonowner_write_or_special_bits_allowed": false,
+      "base_mode_changed": false,
+      "parent": "huoguo-helper-owner-<24-lowercase-hex>",
+      "parent_stage_UID_GID": [
+        0,
+        0
+      ],
+      "parent_stage_mode": "0700",
+      "APK_mode": "0600",
+      "APK_bytes": 86419,
+      "APK_SHA256": "28db54c6582fa6c855cb20eeb2163b2aa9bcccf8d4d675d111a8c98f54a9e425",
+      "prior_flat_tmp_root_shell_or_private_contract_compatible": false,
+      "matching_owner_retirement_implemented": false
+    },
+    "writer_contract": {
+      "native_parent_owns_only_created_write_FD": true,
+      "no_write_FD_duplication_or_fork_before_close": true,
+      "exact_size_plus_EOF_required": true,
+      "writer_close_then_readonly_FD_hash_and_identity": true,
+      "partial_wrong_hash_or_no_EOF_retains_scope": true,
+      "competing_privileged_actor_exclusion_still_required": true,
+      "atomic_content_hold_claimed": false
+    },
+    "child_contract": {
+      "fixed_PM_user0_helper_install_compiled_only": true,
+      "no_public_PID_argv_or_shell_setter": true,
+      "SIGCHLD_default_and_no_auto_reap_required": true,
+      "single_threaded_exclusive_waiter_required": true,
+      "signals_only_actual_unreaped_fork_child": true,
+      "TERM_KILL_calls_are_not_delivery_or_cleanup_proof": true,
+      "actual_host_ignored_TERM_KILL_child_reaped": true,
+      "forced_nonzero_overflow_or_missing_EOF_cannot_PASS": true,
+      "Success_exit0_and_EOF_are_not_remote_PM_or_package_quiescence": true,
+      "unreaped_unknown_requires_live_owner": true
+    },
+    "bounds": {
+      "cooperative_upload_ms": 1500,
+      "owned_child_wait_max_ms": 1000,
+      "TERM_to_KILL_ms": 150,
+      "pipe_retained_prefix_bytes_each": 4096,
+      "caller_single_command_seconds_unchanged": 3,
+      "filesystem_or_Popen_hard_wallclock_guaranteed": false
+    },
+    "production_CLI_activation_available": false,
+    "production_close_refuses_possible_scope_pending_matching_retirement": true,
+    "whole_supervisor_helper_installer_operator_lease_or_release_proved": false,
+    "phone_readback": {
+      "attempts_this_turn": 1,
+      "result": "device-not-found",
+      "repoll": false,
+      "fresh_installed_or_absence_known": false
+    },
+    "live_operations": {
+      "phone_mutations": 0,
+      "auth_media_RPC_UI_input": 0,
+      "remote_scope_or_PM": 0,
+      "reservation_started": false,
+      "original_NPS_signals": 0
+    },
+    "App_helper_JNI_or_release_changed": false,
+    "preceding_exact_CI": {
+      "commit": "bc4cff63391b413867bcf51ac7fbefd91144d357",
+      "run_id": 37212308330,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "build_job": 111465798169,
+      "UDP_job": 111466375831,
+      "Linux_tests": 2041,
+      "Linux_seconds": 85.523,
+      "existing_skips": 11,
+      "URL": "https://github.com/w343153618/huoguo-android/actions/runs/37212308330",
+      "independently_readback_verified": true,
+      "private_followon_covered_by_CI": false
+    },
+    "this_candidate_CI": {
+      "status": "not_pushed_or_verified_yet",
+      "covers_private_followon": false
+    },
+    "next": "NEW matching same-object root-only FD retirement and fixed uninstall/held driver/package/helper/input cleanup handshake, then complete isolated environment/operator/source/phone/admission supervisor. No partial live activation. On actual phone return first unchanged reviewed f0/d043 frame-only."
   }
 }

@@ -124,9 +124,44 @@
     "covers_this_NEW_source": false
   },
   "this_candidate_CI": {
-    "status": "not_yet_pushed_or_cloud_verified"
+    "commit": "bc4cff63391b413867bcf51ac7fbefd91144d357",
+    "run_id": 37212308330,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111465798169,
+    "UDP_job": 111466375831,
+    "Linux_tests": 2041,
+    "Linux_seconds": 85.523,
+    "existing_skips": 11,
+    "URL": "https://github.com/w343153618/huoguo-android/actions/runs/37212308330",
+    "independently_readback_verified": true,
+    "private_followon_covered_by_CI": false
   },
   "next": "NEW protected-layout stage creation/readback/writer-quiescence and exact owned remote process receipts, then NEW complete supervisor/dependency/environment/operator/source/phone/admission binding. No live partial binding. On actual phone availability first unchanged reviewed f0/d043 authenticated frame-only.",
   "preceding_22_check_seconds": 1.79,
-  "preceding_60_affected_seconds": 5.304
+  "preceding_60_affected_seconds": 5.304,
+  "private_followon_contract": {
+    "schema": "private-helper-protected-layout-contract-v1",
+    "canonical_source_commit": "bc4cff63391b413867bcf51ac7fbefd91144d357",
+    "canonical_C_SHA256": "ab1c6f2e9460c8a0023c07f06662f5988f34cb44fb88a0d9f08e39570e3bb754",
+    "status": "pure_NEW_layout_and_bounded_operation_observation_not_installer_or_supervisor",
+    "synthetic_metadata_checks": 13,
+    "synthetic_metadata_seconds": 0.001,
+    "actual_host_C_report_roundtrips": 2,
+    "actual_host_C_roundtrip_outcomes": [
+      "owned_scope_exit0",
+      "partial_unlink_foreign_entry_exit2_retained"
+    ],
+    "actual_Android_operations": 0,
+    "closed_dev_inode_UID_mode_nlink_size_SHA_arguments": true,
+    "old_flat_tmp_binding_rejected": true,
+    "duplicate_extra_unhashable_false_boolean_contradictory_receipts_rejected": true,
+    "C_JSON_or_contract_makes_remote_ownership_PM_or_lease_true": false,
+    "all_metadata_stage_create_and_retirement_eligibility_false": true,
+    "idle_for_release_false_even_completed_C_JSON": true,
+    "prior_private_binding_or_frozen_source_modified": false,
+    "next": "NEW protected creation and file transfer tied to actual native process/FD ownership and writable-FD cessation; owned PM child waitpid receipts and complete driver/helper/scope lifecycle before whole supervisor execution. Local ADB Success/EOF cannot substitute."
+  }
 }
