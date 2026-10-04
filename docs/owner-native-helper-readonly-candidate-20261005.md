@@ -52,3 +52,17 @@ request, valid JSON or Plan does not fill them. Unknown retains native owner,
 control/scope FDs and live supervisor/reservation; original five-field release
 boundary stays unchanged. On phone return, unmodified oldf0/d043 frame-only
 qualification precedes any new artifact upgrade.
+
+Exacta60b08bdd112e4354dc7eb49a5056c308182a8d2/run37223896338 independently
+completed/overall/build/UDPsuccess, Linux2133tests/84.695s/11existing skips.
+No repeated old CI or borrowedgreen; append is local for next meaningful source
+push, not a new doc-only CI.
+
+NEW private follow-on native same-process callback composition8hostchecks
+PASS2.442s; independent gate before actual query, same native lifecycle owner
+and retained pending query on unknown. Android eligibility/query outputs are
+synthetic, host PM/query/FD/EOF actual. Initial8/5fail2.078s fixture declared23
+bytes for24-byte public payload, fixed only fixture sizeof literal. No driver,
+uninstall, retirement, close or release entry. Private NDK42688B/89293cef
+compile only; not covered by a60CI or an actual whole bridge. Next review and
+all file/dependency pins are private in iteration-state; old bundles unchanged.

@@ -68,5 +68,20 @@
     "App_helper_JNI_or_release_changed": false,
     "reservation_release_authorized": false
   },
-  "next": "NEW same-process lifecycle callback binding using actual native readonly child/FD objects plus independently required operator/source/server/Attempt/driver/package/input gates; no host boolean or wire request as native authority"
+  "next": "NEW same-process lifecycle callback binding using actual native readonly child/FD objects plus independently required operator/source/server/Attempt/driver/package/input gates; no host boolean or wire request as native authority",
+  "exact_CI": {
+    "sha": "a60b08bdd112e4354dc7eb49a5056c308182a8d2",
+    "run": 37223896338,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 2133,
+    "Linux_seconds": 84.695,
+    "existing_skips": 11,
+    "independently_verified": true,
+    "build_job": 111499493532,
+    "udp_job": 111500049592
+  },
+  "source_commit": "a60b08bdd112e4354dc7eb49a5056c308182a8d2"
 }

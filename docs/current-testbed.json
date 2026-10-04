@@ -4597,6 +4597,164 @@
       "App_helper_JNI_or_release_changed": false,
       "reservation_release_authorized": false
     },
-    "next": "NEW same-process lifecycle callback binding using actual native readonly child/FD objects plus independently required operator/source/server/Attempt/driver/package/input gates; no host boolean or wire request as native authority"
+    "next": "NEW same-process lifecycle callback binding using actual native readonly child/FD objects plus independently required operator/source/server/Attempt/driver/package/input gates; no host boolean or wire request as native authority",
+    "exact_CI": {
+      "sha": "a60b08bdd112e4354dc7eb49a5056c308182a8d2",
+      "run": 37223896338,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 2133,
+      "Linux_seconds": 84.695,
+      "existing_skips": 11,
+      "independently_verified": true,
+      "build_job": 111499493532,
+      "udp_job": 111500049592
+    },
+    "source_commit": "a60b08bdd112e4354dc7eb49a5056c308182a8d2"
+  },
+  "owner_native_helper_read_callback_private_20261005": {
+    "schema": "private-native-read-callback-partial-v1",
+    "tests": 8,
+    "seconds": 2.442,
+    "initial_checks": {
+      "tests": 8,
+      "failures": 5,
+      "seconds": 2.078,
+      "cause": "Host fixture declared23 bytes for public24-byte payload; closed upload rejected before scope; fixed only fixture sizeof literal."
+    },
+    "actual_host_PM_standin_query_children_and_FD_reads": true,
+    "Android_query_outputs_and_independent_gates_synthetic": true,
+    "production_activation": false,
+    "complete_actual_coordinator_driver_bridge": false,
+    "uninstall_retire_close_or_release_entry": false,
+    "covered_by_a60_CI": false
+  },
+  "owner_native_helper_driver_candidate_20261005": {
+    "schema": 1,
+    "candidate": "default_OFF_same_parent_native_instrumentation_client_and_read_gate",
+    "checked_at_utc": "2026-10-04T19:02:00.881026+00:00",
+    "new_checks": 28,
+    "new_checks_seconds": 32.223,
+    "native_driver_checks": 20,
+    "sameprocess_read_gate_checks": 8,
+    "preceding_119_affected_seconds": 46.714,
+    "unchanged_dependency_checks_in_that_run": 92,
+    "late_first_collection_counterexample": {
+      "checks": 1,
+      "failures": 1,
+      "seconds": 7.247,
+      "actual_five_second_child": true,
+      "no_fake_clock": true,
+      "initial_candidate_accepted_after_own_deadline": true,
+      "corrected_before_successful_local_closure": true
+    },
+    "private_exploratory_19_checks_seconds": 25.24,
+    "actual_host_fork_wait_dual_EOF_FD_and_five_second_driver": true,
+    "Android_output_operator_server_Attempt_cleanup_callbacks": "synthetic",
+    "actual_Mac_coordinator_bridge": false,
+    "actual_Android_stage_PM_driver_auth_media_input": false,
+    "production_activation_available": false,
+    "wire_or_JSON_is_permission": false,
+    "local_child_zero_footer_EOF_is_remote_quiescence": false,
+    "driver_signal_API": false,
+    "unknown_keeps_actual_native_objects": true,
+    "command_poll_max_seconds": 3,
+    "process_ceiling_seconds": [
+      30,
+      3600
+    ],
+    "single_window_seconds": [
+      1,
+      10
+    ],
+    "single_window_default_seconds": 5,
+    "uninstall_retirement_release_wrapper": false,
+    "native_report_payload_validation": false,
+    "final_Android_compile_only": {
+      "schema": "inert-native-owned-driver-build-v1",
+      "NDK_revision": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "source_pins": {
+        "experiments/moonlight-v2/source-snapshot/helper_owner_native_driver.c": "5fea5ef83e835fb4edeaf882ff448155ca5de536597e7c6472dea32e1bfd7ebf",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_read_gate.c": "e4b628d5edba2c82b5b9815a411eacd5a6ca9cc471f238e08ad7312f4bc4412c",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_readonly.c": "3cb1463c87934b7d4384840e5a71557609ee81ccf65b25de4db56c7898fa7307",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_lifecycle.c": "ad54e7eeb50c658457dccc10b11fb5d574d8cf56e4ebdb02c50f204206a10d40",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_channel.c": "6f7857ae77b56c199c754ac6e4b7087677173e63c219565b39504848fe5ff937",
+        "experiments/moonlight-v2/source-snapshot/helper_scope_owner.c": "21665809c3134a101acb7f2c683ccdc470b7053ea9e0307423d4ca80c69466ca",
+        "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d"
+      },
+      "binary_bytes": 50040,
+      "binary_sha256": "578d54c76270eeb3707ee5740f960c534aba9415718e3a7747ef0006b0677a0b",
+      "fixture_macro_enabled": false,
+      "production_activation_available": false,
+      "actual_Android_stage_PM_or_driver": false,
+      "actual_Mac_coordinator_bridge": false,
+      "App_helper_JNI_or_release_changed": false,
+      "reservation_release_authorized": false
+    },
+    "new_App_helper_JNI_or_release": false,
+    "five_field_guard_defaults_or_NPS_changed": false,
+    "phone_get_state_once": "device-not-found",
+    "phone_repoll": false,
+    "fresh_M1_source_readonly": {
+      "schema": "fresh-M1-source-readonly-v1",
+      "main_matches": 1,
+      "source_identity": {
+        "pid": 3534,
+        "uid": 10235,
+        "start_ticks": 1913,
+        "cmdline_exact": true
+      },
+      "source_focus_known": false,
+      "source_focused": null,
+      "media_session": {
+        "schema": 1,
+        "unknown": true,
+        "matching_sessions": 0,
+        "active_sessions": 0,
+        "state_known": false,
+        "state": null,
+        "position_ms": null,
+        "updated_elapsed_ms": null,
+        "speed": null,
+        "media_fps_known": false,
+        "media_fps": null
+      },
+      "actual_format_geometry_verified": false,
+      "permission_or_guest_lease_established": false,
+      "device_or_source_inputs": 0,
+      "read_clients_started": 9,
+      "read_clients_reaped": 9,
+      "local_terminate_calls": 0,
+      "local_kill_calls": 0
+    },
+    "preceding_exact_CI": {
+      "sha": "a60b08bdd112e4354dc7eb49a5056c308182a8d2",
+      "run": 37223896338,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "applies_to_this_new_source": false
+    },
+    "cloud_CI_for_this_source": null,
+    "source_SHA256": {
+      "experiments/moonlight-v2/source-snapshot/helper_owner_read_gate.c": "e4b628d5edba2c82b5b9815a411eacd5a6ca9cc471f238e08ad7312f4bc4412c",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_native_driver.c": "5fea5ef83e835fb4edeaf882ff448155ca5de536597e7c6472dea32e1bfd7ebf",
+      "scripts/probes/build_helper_owner_native_driver.py": "78865078c602cece64cf61dee4873cc6dea250a0d58595ccd74e65fd3612cca1",
+      "tests/fixtures/helper_owner_read_gate_fixture.c": "cfe1d9815e181f3e27a9439ae8cb6d61e0215de1b5b65cc3df0036177ee992ec",
+      "tests/fixtures/helper_owner_native_driver_fixture.c": "249bc36e31d48ab648813702e549c88b7da66c73ac5d5e6d8e2a164e48c1c2eb",
+      "tests/test_helper_owner_read_gate.py": "34567cea20b8f0dde60f1823950f7f760b86f24c6ee7d80a91f479db13854ddf",
+      "tests/test_helper_owner_native_driver.py": "f93424be97a4d2a8f0e8c5a397d0f5e72d48e82fe70d638ea9bed113337a42b7"
+    },
+    "final_constructor_refusal_and_high_FD_followup": {
+      "checks": 2,
+      "seconds": 1.667,
+      "actual_early_child_exit_before_payload_write": true,
+      "same_Popen_and_dual_EOF_still_collected": true
+    }
   }
 }
