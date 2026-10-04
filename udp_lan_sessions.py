@@ -21,6 +21,8 @@ from stream_settings import parse_bitrate_mode, parse_max_fps, parse_settings
 from udp_network_scope import TAILNET_HOST, rfc1918_address
 from udp_nps_profile import (Endpoint, NPS_OWNER_SCOPE, owner_profile,
                              planned_profile, validate_public_endpoints)
+from owner_native_diagnostic_policy import (GUEST_SERIAL, GUEST_AVD,
+                                            validate_selection, select_options)
 
 
 _NPS_OWNER_SETTING_FIELDS = frozenset({
@@ -172,7 +174,11 @@ class UdpLanSessions:
                  node: str | None = None, allow_m5_owner_trial: bool = False,
                  guest_serial: str | None = None, guest_avd: str | None = None,
                  owner_accounts: tuple[str, ...] | list[str] | None = None,
-                 max_session_seconds: int = 120):
+                 max_session_seconds: int = 120,
+                 owner_native_diagnostic_plan=None):
+        native_plan = validate_selection(owner_native_diagnostic_plan, network_scope, peer_port)
+        if native_plan is not None and allow_owner_surface_submit_lead:
+            raise ValueError('native_diagnostic_requires_default_Surface_policy')
         try:
             address = ipaddress.IPv4Address(peer_host)
         except (ipaddress.AddressValueError, TypeError):
@@ -218,6 +224,13 @@ class UdpLanSessions:
         self._peer_host, self._peer_port, self._clock = str(address), peer_port, clock
         self._network_scope, self._scope_guard = network_scope, scope_guard
         self._allow_owner_surface_submit_lead = allow_owner_surface_submit_lead
+        self._owner_native_diagnostic_plan = native_plan
+        self._native_process_deadline = (self._clock() + native_plan.process_max_seconds
+                                         if native_plan is not None else None)
+        if native_plan is not None:
+            self._worker_backend = dict(guest_serial=GUEST_SERIAL, guest_avd=GUEST_AVD)
+            # Credential closure only; neither account establishes an operator.
+            self._owner_accounts = ('huoguo', 'wyw')
         self._lock = threading.RLock()
         self._active: _Session | None = None
         self._tombstones: OrderedDict[str, tuple[str, float]] = OrderedDict()
@@ -269,6 +282,9 @@ class UdpLanSessions:
         gate prevents READY, ALIVE and new touch writes from extending access.
         """
         try:
+            if (self._native_process_deadline is not None
+                    and self._clock() >= self._native_process_deadline):
+                return False
             return self._scope_guard is None or self._scope_guard() is True
         except Exception:
             return False
@@ -313,7 +329,9 @@ class UdpLanSessions:
         record = self._active
         if record is None or record.phase == 'closed':
             return 0, None
-        if record.phase in ('building', 'waiting'):
+        if self._native_process_deadline is not None and now >= self._native_process_deadline:
+            expired = True
+        elif record.phase in ('building', 'waiting'):
             expired = now >= record.ready_deadline
         else:
             expired = (now >= record.hard_deadline
@@ -351,9 +369,11 @@ class UdpLanSessions:
                factory: Callable[[dict], Worker]) -> dict:
         self._account(account)
         if not self._owner_account_allowed(account):
-            raise SessionError(403, 'nps_owner_account_required')
+            raise SessionError(403, ('owner_native_existing_account_required'
+                if self._owner_native_diagnostic_plan is not None else 'nps_owner_account_required'))
         try:
             options = parse_udp_settings(settings, max_session_seconds=self._max_session_seconds)
+            options = select_options(options, self._owner_native_diagnostic_plan)
         except ValueError:
             raise SessionError(400, 'invalid_udp_settings') from None
         if options['network_scope'] != self._network_scope:
@@ -388,12 +408,15 @@ class UdpLanSessions:
                 # A 30 FPS media cap must not require a 120 Hz phone panel.
                 # Zero is the candidate client's soft display hint; it is not
                 # a request to lower the guest or phone refresh rate to 30 Hz.
-                'diagnostic_events': False,
+                'diagnostic_events': self._owner_native_diagnostic_plan is not None,
                 'display_hz': 0 if options['fps'] == 30 else 120,
                 'network_feedback': True,
             }
             now = self._clock()
-            record = _Session(account, config, now, now + self.READY_SECONDS)
+            ready_deadline = now + self.READY_SECONDS
+            if self._native_process_deadline is not None:
+                ready_deadline = min(ready_deadline, self._native_process_deadline)
+            record = _Session(account, config, now, ready_deadline)
             self._active = record
             self._quiescent.clear()
         worker = None
@@ -446,6 +469,8 @@ class UdpLanSessions:
             now = self._clock()
             record.ready_at = record.alive_at = now
             record.hard_deadline = now + record.config['seconds']
+            if self._native_process_deadline is not None:
+                record.hard_deadline = min(record.hard_deadline, self._native_process_deadline)
             record.phase, record.starting = 'starting', True
             worker = record.worker
         start_ok = True

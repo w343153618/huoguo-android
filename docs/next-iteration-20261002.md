@@ -1,5 +1,25 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF trusted M1 LAN diagnostic selection is implemented at registry
+and worker constructors, without a CLI or live coordinator.14new/232affected
+checks PASS0.600s including an actual host pending-factory thread/reap race,
+fake sockets only. Descriptor diagnostic_events is selected by an explicit local
+Plan; HTTP/env/account cannot select it, and a worker without the same trusted
+selection refuses before files/sockets. Existing flag includes native and Java
+Inbox event history; overhead/report acceptance on ART is unknown. Dedicated
+UDP45963/M1 guest,30/4M VBR/80ms/lead0/FIFO/sessionFPS/AAC/touch, no raw trace or
+retry/queue override. Requested lease is capped at plan sample_seconds<=30;
+registry monotonic process ceiling caps READY/active lease but is not an actual
+finite process/sampler/full30s/quiescence receipt. Existing cleanup ownership
+barrier remains, failure is not success. No phone/device/network/media execution,
+no App artifact or production default changed. Read
+owner-native-diagnostic-selection-candidate-20261004.md/json. Next independent
+finite coordinator/factory/NEW freeze, restricted evidence and fresh actual
+permission/phone/current Attempt/server guest/admission qualification; do not
+run metadata alone. Phone still unavailable; unchanged reviewed f0/d043 frame-only
+candidate remains first when fresh eligibility returns. Exact preceding2e8/run
+37196597375 is now independently overall/build/UDPsuccess, not this later source.
+
 NEW inert native diagnostic preflight and exact3d local artifact are complete.
 Initial14new/90affected PASS0.388s, then package-binding review16new/92affected
 PASS0.386s. Actual built-helper manifest target matches experiment App; no phone

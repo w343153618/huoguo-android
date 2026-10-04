@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "When phone is actually available, use the unchanged reviewed f0 frame-only freeze after all fresh eligibility and normal saved-UI auth/current Attempt; one readonly frame only. Independently qualify how a bounded owner-only native-event descriptor would reach a new matching signed App and preserve OFF/default/64KiB limits before any live diagnostic. Do not enable events or treat these fixtures as moving public evidence.",
+  "next_source_task": "Implement a separate explicit bounded M1 LAN coordinator/trusted worker factory and private eligibility handoff using NEW full-source freeze; keep all public/persistent/Tailnet defaults OFF. When phone actually returns, first use unchanged reviewed f0/d043 frame-only qualification, not this uninstalled 3d/new helper.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -3139,5 +3139,119 @@
     "native_source_and_dependency_lock_unchanged_from_prior22f": true,
     "actual_AAPT_helper_target_package": "local.remoteandroid.direct.experiment",
     "actual_AAPT_helper_target_package_verified": true
+  },
+  "owner_native_diagnostic_selection_candidate_20261004": {
+    "schema": "owner-native-diagnostic-selection-candidate-v1",
+    "status": "default_OFF_trusted_registry_worker_selection_only_not_live_coordinator",
+    "source_SHA256": {
+      "owner_native_diagnostic_policy.py": "746c272aa429addb1e5464eeb0f49b48499714701989771e25f1ada92aa03790",
+      "udp_lan_sessions.py": "d063f591dc8036589a3a321a20cb502865eba6f597fb1e7b5c823fc968dd0909",
+      "udp_lan_worker.py": "bb8e554be051d5f033aaa3ffbdd360020b26bb127c88589ede37244c878332cb",
+      "tests/test_owner_native_diagnostic_policy.py": "e5d43fed517c9d239f94d4316c994b39ab1ee891fe7cc3c38635688ed138cbe7"
+    },
+    "checks": {
+      "new": 14,
+      "affected": 232,
+      "seconds": 0.6,
+      "layers": [
+        "In-memory registry and fake worker resources",
+        "Actual host thread pending-factory ownership race",
+        "No phone, emulator, server, authentication or media execution"
+      ],
+      "initial_fixture_timeout_argument_failure": "close_and_wait(0) refused by existing positive bounded timeout contract; corrected to 0.01; earlier failed run not accepted"
+    },
+    "selection": {
+      "default": null,
+      "trusted_constructor_only": true,
+      "CLI_HTTP_environment_enabled": false,
+      "node": "m1",
+      "guest_serial": "emulator-5556",
+      "guest_avd": "RemoteAndroid17Compare",
+      "network_scope": "lan",
+      "media_UDP_port": 45963,
+      "planned_control_HTTPS_port": 45560,
+      "control_HTTPS_listener_integrated": false,
+      "account_closure": [
+        "huoguo",
+        "wyw"
+      ],
+      "account_is_operator_permission": false
+    },
+    "media": {
+      "requested_max_size": 960,
+      "requested_fps": 30,
+      "requested_video_bit_rate": 4000000,
+      "bitrate_mode": "VBR",
+      "buffer_ms": 80,
+      "surface_submit_lead_ms": 0,
+      "audio_enabled": true,
+      "touch_enabled": true,
+      "raw_queue_policy": "fifo",
+      "raw_submit_fps_override": null,
+      "host_raw_trace_requested": false,
+      "enobufs_retry": false,
+      "App_stage_startup_PCM_preferences_verified": false,
+      "actual_media_readback": false
+    },
+    "bound": {
+      "process_seconds_min": 30,
+      "process_seconds_max": 3600,
+      "registry_process_lease_ceiling": "Existing Python monotonic anchored at explicit registry construction; no new persistent/OFF clock read",
+      "descriptor_seconds": "min(requested 1..120, local plan sample_seconds 1..30)",
+      "READY_seconds_max": 10,
+      "existing_ALIVE_silence_seconds": 3,
+      "absolute_deadline_caps_READY_and_active_lease": true,
+      "real_finite_Popen_supervisor_implemented": false,
+      "exact_30_second_sampler_coverage_proven": false
+    },
+    "ownership": {
+      "pending_factory_start_stop_existing_barrier_preserved": true,
+      "expiry_uses_existing_reap_cleanup": true,
+      "cleanup_failure_is_success": false,
+      "owned_stop_count_in_fixture": 1,
+      "actual_remote_child_quiescence_verified": false
+    },
+    "diagnostic_scope": {
+      "descriptor_diagnostic_events_selected_only_with_explicit_plan": true,
+      "worker_without_same_trusted_plan_refuses_before_resources": true,
+      "existing_flag_also_enables_Java_Inbox_event_history": true,
+      "native_ring": 256,
+      "Java_native_event_ring": 8192,
+      "numeric_remaining_prefix_rows": 64,
+      "whole_report_bytes_max": 65536,
+      "limits_changed": false,
+      "overhead_measured": false,
+      "packetizer_host_native_event_collection_enabled": false
+    },
+    "remaining_gates": [
+      "Independent finite process coordinator/factory wiring and exact full source freeze",
+      "Private restricted evidence and trusted operator provenance",
+      "Fresh actual phone App/JNI/helper/package/signer qualification",
+      "Original/formal live protection and continuous owned LAN admission",
+      "Normal saved-UI captured current App Attempt and exact server guest lease",
+      "Actual diagnostic flag and bounded numeric export ART/JNI readback",
+      "Actual owned shutdown/quiescence before reserve release",
+      "Qualified source identity, content and motion before any performance claim"
+    ],
+    "preceding_exact_CI": {
+      "SHA": "2e8b97a52daea723c43dc3b15fd4f0adf5a9126e",
+      "run": 37196597375,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "applies_to_this_later_source": false
+    },
+    "phone_status": "One get-state this turn: device-not-found; no inference of process/helper absence and no repeated polling",
+    "live_operations": {
+      "helper_install": 0,
+      "phone_auth_media": 0,
+      "emulator_UI_input": 0,
+      "framebuffer_RPC": 0,
+      "service_signals": 0,
+      "deployment": 0,
+      "new_APK_release": 0
+    },
+    "next": "Implement a separate explicit bounded M1 LAN coordinator/trusted worker factory and private eligibility handoff using NEW full-source freeze; keep all public/persistent/Tailnet defaults OFF. When phone actually returns, first use unchanged reviewed f0/d043 frame-only qualification, not this uninstalled 3d/new helper."
   }
 }

@@ -21,6 +21,7 @@ import time
 from hardware_stream import (BoundedCaptureTrace, HostHardwareSession, read_exact, read_control,
                              verify_raw_submit_budget_readback)
 from host_timing_trace import HostTimingTrace, private_trace_attempt, FIELDS
+from owner_native_diagnostic_policy import validate_worker as validate_native_diagnostic_worker
 
 UDP_SOURCE = Path(__file__).resolve().parent / 'experiments/moonlight-v2/transport/android-udp'
 if str(UDP_SOURCE) not in sys.path:
@@ -79,9 +80,14 @@ class LanMediaWorker:
     def __init__(self, config, peer_ip, host_ip, interface, runtime, packetizer,
                  native_encoder, registry, evidence_dir, busy, enobufs_retry_enabled=False,
                  *, guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare',
-                 capture_trace_dir=None, raw_queue_policy='fifo', raw_submit_fps=None):
+                 capture_trace_dir=None, raw_queue_policy='fifo', raw_submit_fps=None,
+                 owner_native_diagnostic_plan=None):
         if type(enobufs_retry_enabled) is not bool:
             raise ValueError('owner_enobufs_retry_boolean_required')
+        validate_native_diagnostic_worker(owner_native_diagnostic_plan, config,
+            guest_serial, guest_avd, capture_trace_dir=capture_trace_dir,
+            raw_queue_policy=raw_queue_policy, raw_submit_fps=raw_submit_fps,
+            enobufs_retry_enabled=enobufs_retry_enabled)
         self.raw_queue_policy = owner_raw_queue_policy(raw_queue_policy,
             config.get('network_scope', 'lan'), capture_trace_dir)
         self.owner_raw_submit_fps_requested = owner_raw_submit_fps(raw_submit_fps,
