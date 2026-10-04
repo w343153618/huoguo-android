@@ -64,5 +64,17 @@
     }
   },
   "next": "Actual owned host control client with sole Popen/channel, closed events and phase scheduling; native independent Android qualifiers and NEW whole selected-env/operator/source/phone/admission/currentAttempt/package cleanup remain required",
-  "exact_CI": null
+  "exact_CI": {
+    "sha": "63e636df060c1cfeecbb47cb7d04e2ed76c3aa47",
+    "run": 37221439093,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 2110,
+    "Linux_seconds": 104.305,
+    "existing_skips": 11,
+    "independently_verified": true
+  },
+  "source_commit": "63e636df060c1cfeecbb47cb7d04e2ed76c3aa47"
 }

@@ -64,3 +64,7 @@ all owned roles zero/fresh original+formal and independent phone/helper/input/
 package/scope cleanup still precede release. No performance or FEC-root-cause
 claim follows from these host fixtures. Exact e988 CI is accepted only for e988;
 this meaningful source change needs its own exact run.
+
+Exact 63e636df060c1cfeecbb47cb7d04e2ed76c3aa47/run37221439093 independently completed/overall/build/UDP allsuccess; Linux2110tests/104.305s/11existing skips. Cloud append remains local for the next meaningful source push; no repeat poll or doc-only CI.
+
+NEW private retained host-fixture client follow-on passes12checks6.991s, after an initial11/1failure+2errors caused by inherited host baseGID0 versus fixture credentialGID20, and a later12/2failure incomplete-order sticky-unknown fix. The11pass6.856s and failures remain recorded. Only its own NEW public host-fixture base GID is set; no Android or old base changes. Actual sole Popen/control/drains are held across5s stand-in work; events are closed/ordered and schedule one phase only, collect-once. Every Android gate remains synthetic, no device/PM or reservation release exists, and this private follow-on is outside canonical CI. The next concrete gate is native fixed readonly same-process package/process query helpers plus the actual coordinator-driver/currentAttempt whole binding. Private pins/receipt/review are in iteration-state; no partial live entry.

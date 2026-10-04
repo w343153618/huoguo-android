@@ -4502,6 +4502,101 @@
       }
     },
     "next": "Actual owned host control client with sole Popen/channel, closed events and phase scheduling; native independent Android qualifiers and NEW whole selected-env/operator/source/phone/admission/currentAttempt/package cleanup remain required",
-    "exact_CI": null
+    "exact_CI": {
+      "sha": "63e636df060c1cfeecbb47cb7d04e2ed76c3aa47",
+      "run": 37221439093,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 2110,
+      "Linux_seconds": 104.305,
+      "existing_skips": 11,
+      "independently_verified": true
+    },
+    "source_commit": "63e636df060c1cfeecbb47cb7d04e2ed76c3aa47"
+  },
+  "owner_native_helper_retained_client_private_20261005": {
+    "canonical_base_commit": "63e636df060c1cfeecbb47cb7d04e2ed76c3aa47",
+    "new_checks": 12,
+    "seconds": 6.991,
+    "actual_owned_host_parent_control_and_standin_driver": true,
+    "Android_qualifiers_synthetic": true,
+    "actual_Android_native_qualifier_host_bridge_or_whole_supervisor": false,
+    "device_ADB_PM_or_media_operations": 0,
+    "reservation_release": false,
+    "covered_by_canonical_63e636_CI": false
+  },
+  "owner_native_helper_readonly_candidate_20261005": {
+    "schema": "owner-native-helper-readonly-candidate-v1",
+    "default": "off",
+    "new_checks": 23,
+    "affected_checks": 92,
+    "affected_seconds": 18.32,
+    "validation_layer": "actual host owned query children and nofollow FD reads; synthetic Android query outputs",
+    "fixed_queries": [
+      "pm path --user 0 local.remoteandroid.direct.experiment",
+      "pm path --user 0 local.huoguo.lanuitest",
+      "ps -A -o PID,UID,NAME"
+    ],
+    "query_command_max_ms": 3000,
+    "aggregate_read_max_ms": 15000,
+    "each_pipe_retained_prefix_bytes": 65536,
+    "overflow_refuses_whole_observation": true,
+    "actual_exclusive_waiter_and_dual_EOF_required": true,
+    "timeout_signals_automatically": false,
+    "explicit_stop_only_actual_unreaped_query": true,
+    "forced_query_can_qualify": false,
+    "child_closes_all_inherited_FDs_even_above_lowered_soft_limit": true,
+    "fixed_new_local_App_and_single_helper_pins": true,
+    "old_frame_only_artifact_pins_unchanged": true,
+    "directory_component_nofollow_and_identity_bracket": true,
+    "file_single_link_exact_size_SHA_and_stat_bracket": true,
+    "idle_process_inventory_before_and_after": true,
+    "observation_is_atomic_content_package_or_process_hold": false,
+    "one_object_one_snapshot": true,
+    "unknown_sticky": true,
+    "permission_operator_Attempt_or_server_lease_verified": false,
+    "remote_PM_quiescence_or_driver_cleanup_verified": false,
+    "scope_mutation_or_retirement": false,
+    "reservation_release_authorized": false,
+    "production_activation_available": false,
+    "actual_Android_queries_or_staging": false,
+    "phone_once": "device-not-found; no repeated query",
+    "App_helper_JNI_or_release_changed": false,
+    "guard_or_buffer_or_NPS_changed": false,
+    "initial_checks": {
+      "tests": 22,
+      "failures": 8,
+      "seconds": 1.78,
+      "layer": "host fixture",
+      "cause": "Inherited host soft FD limit above supported bound refused every query before fork; only fresh fixture self lowers its limit to1024."
+    },
+    "preceding_pass": {
+      "tests": 22,
+      "seconds": 1.782
+    },
+    "independent_narrow_review": "Child must close inherited FDs above a lowered soft limit too; actual high-FD fixture added. All path components including data/app are nofollow and compared on both reads; mtime/ctime/size/dev/inode/UID/GID/mode/link changes reject.",
+    "source_build": {
+      "schema": "inert-helper-readonly-build-v1",
+      "NDK_revision": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "source_sha256": {
+        "experiments/moonlight-v2/source-snapshot/helper_owner_readonly.c": "3cb1463c87934b7d4384840e5a71557609ee81ccf65b25de4db56c7898fa7307",
+        "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d"
+      },
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "binary_sha256": "64cb16b06442e7279bf057c4a8068847323daec9311aa52f0f12e0abbb21fe42",
+      "binary_bytes": 22464,
+      "ELF_AArch64_verified": true,
+      "fixture_macro_enabled": false,
+      "production_activation_available": false,
+      "actual_device_or_PM_execution": false,
+      "complete_native_qualifier_or_live_bridge": false,
+      "App_helper_JNI_or_release_changed": false,
+      "reservation_release_authorized": false
+    },
+    "next": "NEW same-process lifecycle callback binding using actual native readonly child/FD objects plus independently required operator/source/server/Attempt/driver/package/input gates; no host boolean or wire request as native authority"
   }
 }
