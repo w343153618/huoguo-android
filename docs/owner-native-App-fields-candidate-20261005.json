@@ -1,0 +1,118 @@
+{
+  "schema": 1,
+  "candidate": "default_OFF_same_created_native_App_core_and_prefix_observer",
+  "checked_at_utc": "2026-10-04T21:39:37.677671+00:00",
+  "private_first_checks": {
+    "tests": 31,
+    "seconds": 6.122,
+    "passed": true
+  },
+  "private_after_narrow_review": {
+    "tests": 34,
+    "seconds": 6.364,
+    "passed": true
+  },
+  "canonical_checks": {
+    "tests": 34,
+    "seconds": 6.914,
+    "passed": true
+  },
+  "exact_decimal_counterexample": {
+    "literal": "1e-999",
+    "field": "surface_submit_wait_total_ms",
+    "actual_initial_reader_exit": 0,
+    "initially_observed_as_zero": true,
+    "corrected_using_original_mantissa_digits": true,
+    "Android_or_App_failure": false
+  },
+  "first_compile_refusal": {
+    "errors": 6,
+    "cause": "new C indentation/logical parentheses warnings with Werror",
+    "corrected_without_relaxing_compiler_flags": true
+  },
+  "closed_root_core_fields": 38,
+  "typed_prefixes": [
+    "Inbox epoch numeric",
+    "RX transport numeric",
+    "native frame numeric"
+  ],
+  "syntax_nodes": 8192,
+  "syntax_depth": 8,
+  "whole_bytes": 65536,
+  "integral_clocks_counts_exact_int64": true,
+  "finite_decimal_literals_preserved": true,
+  "small_positive_decimal_does_not_become_zero_claim": true,
+  "helper_integer_reader_nodes_unchanged": 512,
+  "native_ring_unchanged": 256,
+  "Java_ring_unchanged": 8192,
+  "native_prefix_unchanged": 64,
+  "own_factory_creates_App_FD_helper_query_driver_graph": true,
+  "supplied_graph_PID_JSON_or_digest_adoption": false,
+  "actual_host_owned_child_wait_dual_EOF_FDs_and_callback_replacement_checks": true,
+  "actual_Java_numeric_prefix_projection": true,
+  "Android_report_and_Attempt_callbacks": "synthetic",
+  "captured_Attempt_id_in_App_report": false,
+  "sameprocess_callback_required_before_after_association": true,
+  "callback_fixture_checks": [
+    "missing",
+    "later Attempt",
+    "later receiver",
+    "later Surface",
+    "later phone clock",
+    "phone clock backwards",
+    "wrong phone domain",
+    "file replaced by callback"
+  ],
+  "bracket_is_atomic_hold": false,
+  "optional_objects_are_explicitly_unqualified": true,
+  "whole_App_fields_qualified": false,
+  "audio_and_worker_cleanup_flags_are_claims_only": true,
+  "physical_loss_rate_FPS_codec_ready_presentation_or_root_cause_verified": false,
+  "operator_source_server_lease_or_normal_cleanup_verified": false,
+  "mutation_cleanup_retirement_release_API": false,
+  "production_activation_available": false,
+  "actual_Android_stage_query_PM_driver_or_phone": false,
+  "new_App_helper_JNI_or_release": false,
+  "original_guard_default_buffers_NPS_or_services_changed": false,
+  "existing_3s_6s_15s_descriptor30_single5s_processceilings_unchanged": true,
+  "phone_manual_limit_and_old82f_unknown_cleanup_preserved": true,
+  "Android_compile_only": {
+    "schema": "inert-native-App-fields-build-v1",
+    "NDK_revision": "29.0.14206865",
+    "API": 30,
+    "ABI": "arm64-v8a",
+    "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+    "source_pins": {
+      "experiments/moonlight-v2/source-snapshot/helper_owner_App_fields.c": "0732124182ee68261aebe1e81944056a678264afe7a09bb75a58343a173142f6",
+      "experiments/moonlight-v2/source-snapshot/helper_App_numeric_json.h": "52295fcbd8678773efaaa47dfd8e7ebe202a7fccf9d4dccc0995692387955351",
+      "experiments/moonlight-v2/source-snapshot/helper_App_fields_json.h": "106aac9f675ec3bc1f14848e8d64fbb293d80e1029d862d5094c034ed26bb782",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_App_report.c": "b0d52a5d3a9190cb3a45bfefd4a4087b94f53013dc064043abc72126d51b808f",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_report.c": "26f9136dc374fb5ebf36945a23682f6eaf4c9cd88c72f60deac89cd0f1560451",
+      "experiments/moonlight-v2/source-snapshot/helper_report_json.h": "e1900f9ea9237be0fc64c9ec36f3258f313eb263315cb32d1b89a587dbdbcd3e",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_output.c": "da0a80f50735af55d8f2b13d95822f7eaf53a1a10483d1b2767353d814594680",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_control.c": "2b26cadd9b251f1cae6e7eba18955c6a2685b8573d7a43b05fc183b5f9e43b7b",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_native_driver.c": "71d4c774d9520d058c4dfae8d5f6c97edf0c796c16aff12ca7cb55be7837e5c9",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_read_gate.c": "e4b628d5edba2c82b5b9815a411eacd5a6ca9cc471f238e08ad7312f4bc4412c",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_readonly.c": "802a232b8e459a4c9d4fc183534b062e2bd56943d975197889e4c580e26f5f4b",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_lifecycle.c": "ad54e7eeb50c658457dccc10b11fb5d574d8cf56e4ebdb02c50f204206a10d40",
+      "experiments/moonlight-v2/source-snapshot/helper_owner_channel.c": "6f7857ae77b56c199c754ac6e4b7087677173e63c219565b39504848fe5ff937",
+      "experiments/moonlight-v2/source-snapshot/helper_scope_owner.c": "21665809c3134a101acb7f2c683ccdc470b7053ea9e0307423d4ca80c69466ca",
+      "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d"
+    },
+    "binary_bytes": 95896,
+    "binary_sha256": "5f080b2d1abf86b8e74987cfc5de9bbb09454eacde29c4c955eebd8d6f2641fb",
+    "fixture_macro_enabled": false,
+    "production_activation_available": false,
+    "actual_Android_stage_PM_or_driver": false,
+    "actual_Mac_coordinator_bridge": false,
+    "App_helper_JNI_or_release_changed": false,
+    "actual_Android_Attempt_or_clock_association": false,
+    "whole_App_fields_qualified": false,
+    "reservation_release_authorized": false
+  },
+  "next": [
+    "close optional object sub-schemas without treating producer claims as cleanup",
+    "implement genuine same-native-process current captured Attempt/receiver/Surface/phone clock qualification",
+    "complete actual host and native eligibility plus independent package/absence/driver/input/privileged-writer and same-created-FD retirement"
+  ]
+}

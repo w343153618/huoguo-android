@@ -71,3 +71,9 @@ the complete actual host/native qualification bridge remain separate pending
 work. JSON, process exit, metadata and a valid parser do not authorize them.
 This source change needs its own exact CI; accepted d7 and older runs are not
 repolled or borrowed, and source publication is not an APK release.
+
+Exact392cee09f5ce58d3639ed16d9cc7f7bb51cd10a7/run37234924841 was independently
+completed/overall/build/UDPsuccess. Linux2226tests/152.985s/11existing skips.
+This validates this source and cloud builds only; the actual failed phone round
+and unknown App/helper cleanup remain failed/pending. Cloud appendix stays local
+for the next meaningful source push, not another doc-only CI run.

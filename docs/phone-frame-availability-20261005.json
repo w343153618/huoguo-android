@@ -93,5 +93,23 @@
   },
   "next_real_phone_gate": "Human handles App usage restriction and normal exit; independently fresh App/helper/input and instrumentation cleanup qualification before any new run; never repeat populated old output directory",
   "next_independent_code_gate": "Owned App closed fields/native capturedAttempt/phoneclock callbacks and whole actual host/native qualifiers remain pending",
-  "CI": "new source requires its own exact run"
+  "CI": "new source requires its own exact run",
+  "source_commit": "392cee09f5ce58d3639ed16d9cc7f7bb51cd10a7",
+  "exact_CI": {
+    "source_commit": "392cee09f5ce58d3639ed16d9cc7f7bb51cd10a7",
+    "run_id": 37234924841,
+    "run_url": "https://github.com/w343153618/huoguo-android/actions/runs/37234924841",
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP_candidate": "success",
+    "build_job": 111532016974,
+    "UDP_job": 111532905495,
+    "Linux_tests": 2226,
+    "Linux_seconds": 152.985,
+    "existing_skips": 11,
+    "checked_at_utc": "2026-10-04T21:18:19.329956+00:00",
+    "no_rerun_or_borrowed_green": true,
+    "no_App_release_or_phone_acceptance": true
+  }
 }
