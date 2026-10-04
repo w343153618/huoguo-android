@@ -180,6 +180,41 @@ class ScopeJournal:
             raise ValueError('scope_journal_retirement_rejected')
         self._record_consistency(ticket, result, 'owned-source-retirement-consistency-observed-v1')
 
+    def record_failure_lifetime_consistency(self, ticket, result):
+        # Two-file failure diagnostics never close a scope or authorize release.
+        # Import locally to keep journal construction inert and avoid a module
+        # initialization cycle with the explicit failure observer.
+        from scripts.probes import source_failed_runner_observation as failure
+        if type(result) is not dict:
+            raise ValueError('scope_journal_failed_lifetime_rejected')
+        result = dict(result)
+        if (set(result) != {'schema', *failure.TRUE_FLAGS, *failure.FALSE_FLAGS, *failure.NUMBERS}
+                or result['schema'] != 'failed-owned-runner-lifetime-v1'
+                or any(result[k] is not True for k in failure.TRUE_FLAGS)
+                or any(result[k] is not False for k in failure.FALSE_FLAGS)
+                or any(type(result[k]) is not int for k in failure.NUMBERS)
+                or result['reason'] not in range(5) or result['exit_kind'] not in (0, 1, 2)
+                or not 0 <= result['exit_value'] <= 255 or not 0 <= result['log_bytes'] <= 8191
+                or any(result[k] not in (0, 1) for k in
+                    ('term_sent', 'kill_sent', 'child_reaped', 'log_eof', 'exec_gate_released', 'ownership_error'))
+                or result['child_reaped'] != int(result['exit_kind'] != 0)
+                or result['kill_sent'] > result['term_sent']
+                or (result['exit_kind'] == 0 and result['exit_value'] != 0)
+                or (result['exit_kind'] == 2 and not 1 <= result['exit_value'] <= 127)
+                or (result['reason'] == 0 and
+                    (result['term_sent'] or result['kill_sent'] or result['ownership_error']))):
+            raise ValueError('scope_journal_failed_lifetime_rejected')
+        self.assert_registered(ticket)
+        raw = _encoded({'schema': 'owned-source-failure-lifetime-observed-v1',
+                        'nonce': ticket.nonce, 'binding': result,
+                        'remote_scope_may_exist': True})
+        fd, directory = self._open(ticket)
+        try:
+            self._write(fd, 'failure-' + ticket.nonce + '.json', raw)
+            self._still_named(directory)
+        finally:
+            os.close(fd)
+
     def _record_consistency(self, ticket, result, schema):
         self.assert_registered(ticket)
         raw = _encoded({'schema': schema,

@@ -1,5 +1,21 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Explicit failed-runner lifetime observer now implemented: only an existing
+registered scope/actual exec header/current cleanup authority can request the
+two C receipts, including after nonzero launcher return.9 new/46 focused checks
+PASS1.551s, actual local journal/fake remote reads only. Failure, missing wait
+and even natural0 without normal retirement keep scope/lease unaccepted; no
+signal/delete/launch, default six-file success unchanged. See
+source-failed-runner-observation-candidate-20261004.md/json. No device UI,
+phone media or new artifact. Actual current lease and global failed retirement
+remain gates; next assess that authority boundary and a separately gated
+gRPC-pixel qualification path to avoid UiAutomation. Keep old renderer/Apps/
+NPS maintenance complete and source identities fresh after the prior reboot.
+
+Exact preceding4f4404b/run37188401639 is now independently overall/build/UDP
+success; preceding44a5b51/run37187015743 also completed success. Do not borrow
+either result for this later failed-observer source.
+
 Latest explicit human NPC-encryption maintenance is completed. Existing M1
 client1466/M5client1468 `Cnf.Crypt=true` now matches persisted/runtime/web and
 all6 tasks, QUIC identities/routes/ports unchanged;40 online before/after,

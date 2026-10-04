@@ -1,0 +1,42 @@
+{
+  "schema": "source-failed-runner-observation-candidate-v1",
+  "source_SHA256": {
+    "scripts/probes/source_failed_runner_observation.py": "2fe1ad0a897bc0f8a202f6c72652e15480a844824a5b9b7133c9b479b8b4d968",
+    "scripts/probes/source_owned_scope_journal.py": "ea289debf16e7566abcd8558aae9a1c5ba58c6681054a68733491f729ea40748"
+  },
+  "default_reader_changed": false,
+  "constructor_IO": false,
+  "new_checks": 9,
+  "focused_checks": 46,
+  "focused_seconds": 1.551,
+  "fake_remote_reads_only": true,
+  "actual_local_private_journal_fixtures": true,
+  "collection_byte_limit": 4096,
+  "new_UI_session_started": false,
+  "device_UI_operations": 0,
+  "phone_media_sessions": 0,
+  "service_signals": 0,
+  "App_JAR_native_artifacts_changed": false,
+  "published_manifest_changed": false,
+  "actual_remote_failed_retirement_verified": false,
+  "actual_current_permission_lease_integrated": false,
+  "scope_removal_or_lease_release_authorized": false,
+  "readonly_preflight": {
+    "phone_experimental_target_active": false,
+    "phone_helper_active": false,
+    "candidate_ports": {
+      "45560": "no_listener",
+      "45963": "no_listener",
+      "45965": "no_listener"
+    },
+    "reservation_acquired": false
+  },
+  "preceding_source_CI": {
+    "SHA": "4f4404b72819f3d222d8bb6fc7d52055438e9e92",
+    "run": 37188401639,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  },
+  "next": "Actual held cleanup/source authority and failed UI retirement boundary; separately assess gRPC pixels under a normal current App Attempt. No device UI until qualification."
+}
