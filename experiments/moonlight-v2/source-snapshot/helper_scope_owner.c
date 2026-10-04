@@ -196,12 +196,12 @@ static int make_pipe(int p[2]) {
         close(p[0]);close(p[1]);return 0;}
     return 1;
 }
-/* No child argv/PID setters. The production library's only PM operation is
- * fixed helper user0 install. It still needs complete caller/package/lease
+/* No child argv/PID setters. The production library's two PM operations are
+ * fixed helper user0 install/uninstall. They still need caller/package/lease
  * binding; the Android executable has no activation entry into this library.
  */
-int hg_owner_pm_start(struct hg_owner *o,const char *fixture_action) {
-    if (!o||cancelled||!o->upload_verified||!o->writer_closed||o->writer>=0||o->child
+static int hg_owner_pm_start_fixed(struct hg_owner *o,int operation,const char *fixture_action) {
+    if ((operation!=1&&operation!=2)||!o||cancelled||!o->upload_verified||!o->writer_closed||o->writer>=0||o->child
             ||!current_scope(o)||!exact_node(o->reader,&o->file_stat)
             ||!named_node(o->stage,"owned.apk",&o->file_stat)) return 0;
     /* Auto-reap or a competing SIGCHLD handler would invalidate the unreaped
@@ -239,13 +239,21 @@ int hg_owner_pm_start(struct hg_owner *o,const char *fixture_action) {
         if (!strcmp(fixture_action,"failure")) {write(1,"Failure\n",8);_exit(7);}
         write(1,"Success\n",8);_exit(0);
 #else
-        char *const words[]={"pm","install","--user","0","-r",o->path,NULL};
+        char *const install[]={"pm","install","--user","0","-r",o->path,NULL};
+        char *const uninstall[]={"pm","uninstall","--user","0","local.huoguo.lanuitest",NULL};
         char *const env[]={"PATH=/system/bin:/system/xbin","LANG=C",NULL};
-        execve("/system/bin/pm",words,env);_exit(127);
+        execve("/system/bin/pm",operation==1?install:uninstall,env);_exit(127);
 #endif
     }
     o->child=p;close(out[1]);close(err[1]);o->pipes[0]=out[0];o->pipes[1]=err[0];
     return 1;
+}
+/* Retain the existing install-only API. Fixed uninstall is usable only by an
+ * explicitly bound caller after independent matching package/driver checks;
+ * neither library operation is reachable from the inert Android executable.
+ */
+int hg_owner_pm_start(struct hg_owner *o,const char *fixture_action) {
+    return hg_owner_pm_start_fixed(o,1,fixture_action);
 }
 static void drain(struct hg_owner *o,int i) {
     if (o->pipe_EOF[i]||o->pipes[i]<0) return;
@@ -311,8 +319,8 @@ int hg_owner_pm_wait(struct hg_owner *o,unsigned budget_ms) {
 int hg_owner_close_handles(struct hg_owner *o) {
     if (!o||(o->child&&!o->child_reaped)) return 0;
 #ifndef HG_HELPER_OWNER_FIXTURE
-    /* Matched owner-FD retirement is not implemented yet. Keep these actual
-     * handles rather than allowing a partial live caller to abandon its scope.
+    /* Only a bound same-owner retirement kernel can clear possible_scope.
+     * Keep actual handles when a partial caller would abandon its scope.
      */
     if (o->possible_scope) return 0;
 #endif

@@ -60,3 +60,24 @@ Preceding dca400b/run37215217607 independently passed overall/build/UDP with
 Read this new SHA's exact CI after the meaningful push, then continue actual
 owner/PM/driver lifecycle binding fixtures. Do not execute a partial installer
 or relax saved-credential/operator/admission/package/scope gates for progress.
+
+Exact6024c524d67655f9cbfa1f2a252d0f0249c354f7/run37216818138 is independently
+completed/overall/build/UDPsuccess; Linux2072tests/91.470s/11existing skips.
+This local cloud append is for the next meaningful source push, not another
+CI/doc-only push, and does not cover the private follow-on.
+
+NEW private fixed phase binding passes9actual host checks2.174s. It binds framed
+requests to separately supplied host-only callbacks and actual owned install/
+uninstall stand-in children plus actual held host driver/dual EOF. Missing
+operator, later Attempt/package, driver exit without EOF and failed/forced PM
+stand-in reject; no scope retirement or release occurs. Android callbacks are
+synthetic, and every real phone/operator/PM/package/lease claim stays false.
+An initial one-JSON fixture parser error on the extra owned-child-ready event
+was fixed to closed events plus unique footer; no native/device failure.
+The private modified fixed-user0 install/uninstall owner library compiles as
+arm64/API30 with host macrosOFF (20168bytes/b6a90ff3); no activation CLI or
+Android stage/run. The host phase wrapper was not Android-built. Old canonical
+sources/freezes/private bundles are preserved. NEW whole isolated environment,
+operator/source/phone/Attempt/package/native owner/driver cleanup binding and
+post-PM matching FD retirement remain required; synthetic callbacks cannot grant
+these or justify live execution.

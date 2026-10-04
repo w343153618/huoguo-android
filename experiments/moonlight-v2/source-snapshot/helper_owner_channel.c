@@ -115,6 +115,7 @@ enum hg_request hg_channel_next_request(struct hg_channel *c,uint64_t end) {
     if (kind==HG_RETIRE) c->stopped=1;else c->expected=(enum hg_request)(kind+1);
     return kind;
 }
+#ifndef HG_HELPER_CHANNEL_LIBRARY
 int main(int argc,char **argv) {
     if (argc==1) {puts("{\"event\":\"helper_channel_prepared\",\"operations_started\":false,\"production_activation_available\":false,\"release_authorized\":false}");return 0;}
 #ifndef HG_HELPER_CHANNEL_FIXTURE
@@ -141,3 +142,4 @@ int main(int argc,char **argv) {
     free(o);return complete&&closed?0:2;
 #endif
 }
+#endif

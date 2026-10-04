@@ -1,5 +1,31 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW defaultOFF same-parent helper lifecycle/post-PM own-FD retirement kernel:
+20new/106affected actualhostchecks PASS14.296s, syntheticAndroidcallbacks only.
+Actual owned PMstandins+helddriver/dualEOF precede own hostscope retirement;
+unknown/partial/laterAttempt/package/absence/privilegedwriter refuse close.
+No PID/JSON adoption, operation request is not ACK/permission. Fixeduser0 PM
+words internal, old installAPI/defaults/frozen bundles preserved. NDK29/API30
+compile29456B/04842e7c only, no stage/PM/phone. Complete actual whole selectedenv/
+dependency/operator/source/phone/currentAttempt/package/nativeowner/driver+input/
+helper/scope callbacks still required; new callback kernel is not live binding.
+Original gateway/five-field/release guard unchanged. Phoneonce missing/no repoll,
+oldf0/d043 first on actual return. NewSHA needs own CI; no partial execute.
+Read owner-native-helper-lifecycle candidate doc/json and private checkpoint.
+
+Exact6024c52/run37216818138 independently completed/overall/build/UDPsuccess,
+Linux2072tests/91.470s/11existing skips; no repeat. NEW private fixedphase9actual
+host child/driver/dualEOF checks2.174s, syntheticAndroidcallbacks. Valid request
+can't supply missing operator/Attempt/package; later/failed/forced/EOFunknown
+reject; scope retirement and idle-release false. New private fixed-user0 PM
+library NDK arm64/API30 compile20168B/b6a90ff3 only, not Android host-wrapper run.
+Oldcopy/freeze/sourcepins unchanged. Initial extra-ready-event JSONfixtureparser
+error resolved; not native/phone failure. Next NEW complete selectedenv/operator/
+source/phone/currentAttempt/package/nativeowner/driver-cleanup binding and
+post-PM same-FD retirement, not partial execute. Private pointers/receipts in
+iteration-state. Phoneonce missing/no repoll/rootexecnull; oldf0/d043 first on
+actual return. Clouddocs localappend next meaningfulsourcepush, not doc-onlyCI.
+
 NEW defaultOFF native helper channel partial library:15new/92affected actual
 host checks PASS11.800s; NDK29/API30 compile23280B/87506466 only, no stage/run.
 112B closed frame/exact pinned payload+SEAL keeps controlFD open after sole APK
