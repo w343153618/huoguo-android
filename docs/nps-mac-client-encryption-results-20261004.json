@@ -1,0 +1,176 @@
+{
+  "schema": "mac-nps-client-encryption-deployment-v1",
+  "observed_utc": "2026-10-04T08:15:46.451944+00:00",
+  "user_authorization": "Enable encryption on existing M1/M5 NPC lines",
+  "deployment": {
+    "helper_dir": "/root/.config/huoguo-nps-client-encryption/20261004T081017Z-ad165a6d",
+    "helper_sha256": "927b7eb927890d450b3c87029a0bcb6781115ee4c2f12d2dedf51aed3fc23f4c",
+    "exit_code": 0,
+    "result": {
+      "after_online_count": 40,
+      "backup_checksums_verified": true,
+      "backup_path": "/root/nps-backups/client-encryption-20261004T081125Z-63ca92f2",
+      "backup_regular_files": 9,
+      "changed_client_ids": [
+        1466,
+        1468
+      ],
+      "clients": [
+        {
+          "compress": false,
+          "crypt": true,
+          "id": 1466,
+          "mode": "quic,quic",
+          "web_selection_verified": true
+        },
+        {
+          "compress": false,
+          "crypt": true,
+          "id": 1468,
+          "mode": "quic,quic",
+          "web_selection_verified": true
+        }
+      ],
+      "core_sha256": "9b9a36a2cae50c5e66f35c3450c9c4ddccc2ff04c839cb0df03592069c674b12",
+      "formal_nps_process": {
+        "pid": 3412973,
+        "start_ticks": 135647986
+      },
+      "missing_original_online_count": 0,
+      "original_online_count": 40,
+      "preservation_verified": true,
+      "service_signals": 0,
+      "status": "verified",
+      "tasks": [
+        {
+          "client_id": 1466,
+          "crypt": true,
+          "id": 1409,
+          "mode": "tcp",
+          "port": 15556,
+          "running": true,
+          "target": "127.0.0.1:15556"
+        },
+        {
+          "client_id": 1468,
+          "crypt": true,
+          "id": 1411,
+          "mode": "tcp",
+          "port": 15558,
+          "running": true,
+          "target": "127.0.0.1:15556"
+        },
+        {
+          "client_id": 1466,
+          "crypt": true,
+          "id": 1414,
+          "mode": "tcp",
+          "port": 49556,
+          "running": true,
+          "target": "127.0.0.1:45561"
+        },
+        {
+          "client_id": 1468,
+          "crypt": true,
+          "id": 1415,
+          "mode": "tcp",
+          "port": 49558,
+          "running": true,
+          "target": "127.0.0.1:45561"
+        },
+        {
+          "client_id": 1466,
+          "crypt": true,
+          "id": 1412,
+          "mode": "udp",
+          "port": 15556,
+          "running": true,
+          "target": "127.0.0.1:45965"
+        },
+        {
+          "client_id": 1468,
+          "crypt": true,
+          "id": 1413,
+          "mode": "udp",
+          "port": 15558,
+          "running": true,
+          "target": "127.0.0.1:45965"
+        }
+      ],
+      "write_requested": true
+    }
+  },
+  "post_health": [
+    {
+      "port": 15556,
+      "http_status": 200,
+      "certificate_pin_verified": true,
+      "certificate_sha256": "17bdaea4cb05b89cf8d64af02b8ed445bdb731f10923da7505d2aec91109c3c0",
+      "tls_version": "TLSv1.3",
+      "physical_interface": "en7",
+      "ip_bound_if_verified": 30,
+      "elapsed_ms": 154.929
+    },
+    {
+      "port": 15558,
+      "http_status": 200,
+      "certificate_pin_verified": true,
+      "certificate_sha256": "15d5e6eb9e8ad36c6e06f94f4db872619d6745e253759a5b46701bb48957139e",
+      "tls_version": "TLSv1.3",
+      "physical_interface": "en7",
+      "ip_bound_if_verified": 30,
+      "elapsed_ms": 84.072
+    }
+  ],
+  "readonly_postcheck": {
+    "crypt_web_and_persisted_runtime": true,
+    "all_six_selected_tasks_running": true,
+    "all_40_original_online_clients_present": true,
+    "same_nps_pid_start_and_core_sha": true,
+    "domestic_geo_rules_and_references_unchanged": true,
+    "m1_npc_pid_before_after": 43079,
+    "m1_npc_relay_pid_before_after": 41372
+  },
+  "validation": {
+    "new_checks": 9,
+    "new_and_existing_checks": 53,
+    "seconds": 0.051,
+    "source_scope": "inert form/preservation/active-session/UI/read-only/order/idempotency fixtures",
+    "real_phone_media_after_change": false,
+    "UDP_datagram_payload_round_trip_after_change": false,
+    "performance_claim": false,
+    "host_or_LAN_isolation_acceptance": false
+  },
+  "preserved": {
+    "client_ids": [
+      1466,
+      1468
+    ],
+    "task_ids": [
+      1409,
+      1411,
+      1412,
+      1413,
+      1414,
+      1415
+    ],
+    "NPC_bridge": "QUIC over physical UDP48126 to cloud UDP8025",
+    "compression": false,
+    "server_core_modified": false,
+    "service_restart_reload_signals": 0,
+    "App_artifact_or_manifest_changed": false
+  },
+  "initial_refusals": [
+    {
+      "stage": "read_only_preflight",
+      "reason": "configuration reader incorrectly required UID0 on official executable; actual UID1001 verified, corrected to live executable inode and known SHA",
+      "mutation": false
+    },
+    {
+      "stage": "optional_M5_SSH_baseline",
+      "reason": "historical 192.168.9.8 SSH endpoint timed out; no M5 commands ran; cloud online/runtime and pinned public endpoint verified",
+      "mutation": false
+    }
+  ],
+  "rollback": "Change only client Crypt back to No via official client/edit preserving full current form; restricted pre-change conf/clients.json is available in backup. No blanket database restore or NPS restart."
+}

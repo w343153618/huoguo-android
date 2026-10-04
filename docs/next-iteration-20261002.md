@@ -1,5 +1,16 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Latest explicit human NPC-encryption maintenance is completed. Existing M1
+client1466/M5client1468 `Cnf.Crypt=true` now matches persisted/runtime/web and
+all6 tasks, QUIC identities/routes/ports unchanged;40 online before/after,
+original process/core/geo preserved, no service signals. Fresh9-file restricted
+cloud backup and pinned physical-en7 public HTTPS ping200 on both gateways.
+53 focused inert checks PASS. See nps-mac-client-encryption-20261004.md/json
+(results file uses `-results-`). No phone media/UDP payload/performance or
+host-isolation acceptance, no App artifact changed. Do not repeat this write
+or restart NPS. Resume the existing M1 owned-reader retirement/current lease
+boundary and then the moving-public diagnostic.
+
 Explicit six-file observation/journal is now implemented, default factory
 unchanged:6 new and37 affected checks passed1.568s, local journal with fake remote
 reads only. See source-retirement-observation-candidate-20261004.md/json.

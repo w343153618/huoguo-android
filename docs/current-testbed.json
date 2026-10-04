@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30\u219219 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -2681,5 +2681,27 @@
       "build": "success",
       "udp_candidate": "success"
     }
+  },
+  "nps_mac_client_encryption_20261004": {
+    "status": "deployed_and_persisted_runtime_web_verified",
+    "document": "docs/nps-mac-client-encryption-20261004.md",
+    "evidence": "docs/nps-mac-client-encryption-results-20261004.json",
+    "client_ids": [
+      1466,
+      1468
+    ],
+    "crypt": true,
+    "compress": false,
+    "bridge": "quic,quic",
+    "all_40_online_before_remain_online": true,
+    "nps_restarted": false,
+    "NPS_core_modified": false,
+    "backup_cloud": "/root/nps-backups/client-encryption-20261004T081125Z-63ca92f2",
+    "public_pinned_HTTPS_ping": {
+      "M1": 200,
+      "M5": 200
+    },
+    "post_change_phone_media_tested": false,
+    "APK_or_manifest_changed": false
   }
 }
