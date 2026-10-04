@@ -18,6 +18,7 @@ struct bd_bridge {
     int possible_start,started,done,unknown;
 #ifdef HG_NATIVE_DRIVER_FIXTURE
     const char *fixture_mode;
+    const char *fixture_numeric_result; /* host fixture only; never production */
     int fixture_high_fd;
 #endif
 };
@@ -105,8 +106,8 @@ static void bd_exec_fixed(struct bd_bridge *b,int a[2],int c[2]) {
     if (!strcmp(m,"overflow")) {unsigned char x[4096];memset(x,'x',sizeof(x));
         for (int j=0;j<40;++j) if (write(1,x,sizeof(x))!=(ssize_t)sizeof(x)) _exit(125);_exit(0);}
     if (!strcmp(m,"five_seconds")) {struct timespec t={5,0};while (nanosleep(&t,&t)&&errno==EINTR) {}}
-    const char *result="INSTRUMENTATION_RESULT: numeric_result={\"fixture\":true}\n";
-    write(1,result,strlen(result));
+    const char *result=b->fixture_numeric_result?b->fixture_numeric_result:"{\"fixture\":true}";
+    dprintf(1,"INSTRUMENTATION_RESULT: numeric_result=%s\n",result);
     if (!strcmp(m,"missing_footer")) _exit(0);
     if (!strcmp(m,"duplicate_footer")) write(1,"INSTRUMENTATION_CODE: -1\n",25);
     write(1,"INSTRUMENTATION_CODE: -1\n",25);_exit(0);

@@ -51,3 +51,7 @@ cannot supply those gates. Actual gateway/reaper/full roles/original/formal plus
 independent phone/helper/input/scope cleanup still project only the original
 five release fields. On phone return, unchanged reviewed f0/d043 frame-only
 qualification remains first. No partial activation, larger timeouts or buffers.
+
+Exact source 6ba2d13507bd006642ec9761ac8477093f88d7a2/run37228853964 independently completed with overall, build and UDP success. Linux 2180 tests/123.297s/11 existing skips. No further polling or borrowed green. This cloud appendix is local for the next meaningful source push.
+
+NEW private owned-output follow-on:6 host checks4.081s, expanded7 checks2.814s, deterministic actual parent-exit-before-reader-EOF follow-up1 check1.854s. Actual owned native child output copy/SHA/collect-once only; opaque JSON, synthetic Android gates, no permission or cleanup. Separate private NDK compile53760B/a1af744c only, not this source CI or Android execution. Next bounded same-process native payload validation and matching fresh App-report qualifications, then whole actual host gates. No partial activation.

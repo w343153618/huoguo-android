@@ -1,0 +1,210 @@
+{
+  "requested_owner_native_window": true,
+  "helper_owned_attempt_started": true,
+  "requested_v50_profile": true,
+  "first_saved_UI_route_verified": true,
+  "first_saved_UI_allowed_account_verified": true,
+  "first_saved_UI_nonempty_credential_verified": true,
+  "first_saved_UI_normal_restore_used": true,
+  "normal_UI_login_received_media": true,
+  "first_v50_profile_button_clicked": true,
+  "first_video_profile_readback_verified": true,
+  "first_network_readback_verified": true,
+  "first_media_transport_is_App_UDP_not_NPC_outer_verification": true,
+  "native_window_current_attempt_observed": true,
+  "native_window_diagnostic_events_observed": true,
+  "native_window_no_reconnect": true,
+  "native_window_no_source_input": true,
+  "native_window_no_UiAutomation": true,
+  "first_exit_dialog_shown": true,
+  "first_exit_repeated_back_same_dialog": true,
+  "first_exit_continue_preserved_attempt": true,
+  "first_exit_continue_media_progress": true,
+  "first_exit_positive_button_clicked": true,
+  "first_exit_captured_attempt_cancelled": true,
+  "first_exit_used_actual_UI_buttons": true,
+  "first_exit_UI_callbacks_observed": true,
+  "first_surface_submit_execution_verified": true,
+  "first_stage_diagnostics_verified": true,
+  "first_codec_startup_readback_verified": true,
+  "left_through_App_back": true,
+  "saved_UI_private_input_touched": false,
+  "saved_UI_secret_exported": false,
+  "requested_stage_diagnostics_enabled": false,
+  "requested_codec_startup_ready_enabled": false,
+  "requested_authenticated_source_input": false,
+  "source_pause_only_recovery": false,
+  "physical_FPS_acceptance": false,
+  "requested_credential_save_acceptance": false,
+  "first_video_profile_is_presented_FPS": false,
+  "native_window_server_atomic_hold_verified": false,
+  "native_window_is_presented_FPS": false,
+  "activity_running_after_leave": false,
+  "requested_owner_native_window_seconds": 5,
+  "requested_credential_source": "saved-ui",
+  "requested_surface_submit_lead_ms": 0,
+  "requested_steady_seconds": null,
+  "requested_network_scope": "lan",
+  "requested_node": "",
+  "requested_scope_index": 0,
+  "first_actual_fps_limit": 30,
+  "first_actual_buffer_ms": 80,
+  "first_actual_video_width": 540,
+  "first_actual_video_height": 960,
+  "first_v50_profile_button_click_count": 1,
+  "first_actual_network_scope": "lan",
+  "first_actual_node": "",
+  "first_actual_control_host": "192.168.9.128",
+  "first_actual_control_port": 45560,
+  "first_actual_media_peer_host": "192.168.9.128",
+  "first_actual_media_peer_port": 45963,
+  "first_actual_received_frames": 15,
+  "first_actual_codec_callback_count": 10,
+  "native_window_click_ns": 1000000000,
+  "native_window_started_ns": 2000000000,
+  "native_window_finished_ns": 7000000000,
+  "native_window_budget_end_ns": 31000000000,
+  "native_window_descriptor_seconds": 30,
+  "native_window_close_margin_ns": 8000000000,
+  "first_App_report_sha256": "abababababababababababababababababababababababababababababababab",
+  "first_surface_submit_lead_ms": 0,
+  "first_surface_submit_status_code": 0,
+  "first_surface_submit_wait_count": 0,
+  "first_surface_submit_applications": 0,
+  "first_stage_diagnostics_enabled": 0,
+  "first_codec_startup_ready_enabled": 0,
+  "first_leave_audio_threads_alive": 0,
+  "first_leave_audio_thread_observations": 1,
+  "first_leave_audio_thread_observation_ms": 0,
+  "native_window_samples": [
+    {
+      "phone_ns": 2000000000,
+      "worker_received_frames": 15,
+      "codec_callback_count": 10
+    },
+    {
+      "phone_ns": 2250000000,
+      "worker_received_frames": 16,
+      "codec_callback_count": 11
+    },
+    {
+      "phone_ns": 2500000000,
+      "worker_received_frames": 17,
+      "codec_callback_count": 12
+    },
+    {
+      "phone_ns": 2750000000,
+      "worker_received_frames": 18,
+      "codec_callback_count": 13
+    },
+    {
+      "phone_ns": 3000000000,
+      "worker_received_frames": 19,
+      "codec_callback_count": 14
+    },
+    {
+      "phone_ns": 3250000000,
+      "worker_received_frames": 20,
+      "codec_callback_count": 15
+    },
+    {
+      "phone_ns": 3500000000,
+      "worker_received_frames": 21,
+      "codec_callback_count": 16
+    },
+    {
+      "phone_ns": 3750000000,
+      "worker_received_frames": 22,
+      "codec_callback_count": 17
+    },
+    {
+      "phone_ns": 4000000000,
+      "worker_received_frames": 23,
+      "codec_callback_count": 18
+    },
+    {
+      "phone_ns": 4250000000,
+      "worker_received_frames": 24,
+      "codec_callback_count": 19
+    },
+    {
+      "phone_ns": 4500000000,
+      "worker_received_frames": 25,
+      "codec_callback_count": 20
+    },
+    {
+      "phone_ns": 4750000000,
+      "worker_received_frames": 26,
+      "codec_callback_count": 21
+    },
+    {
+      "phone_ns": 5000000000,
+      "worker_received_frames": 27,
+      "codec_callback_count": 22
+    },
+    {
+      "phone_ns": 5250000000,
+      "worker_received_frames": 28,
+      "codec_callback_count": 23
+    },
+    {
+      "phone_ns": 5500000000,
+      "worker_received_frames": 29,
+      "codec_callback_count": 24
+    },
+    {
+      "phone_ns": 5750000000,
+      "worker_received_frames": 30,
+      "codec_callback_count": 25
+    },
+    {
+      "phone_ns": 6000000000,
+      "worker_received_frames": 31,
+      "codec_callback_count": 26
+    },
+    {
+      "phone_ns": 6250000000,
+      "worker_received_frames": 32,
+      "codec_callback_count": 27
+    },
+    {
+      "phone_ns": 6500000000,
+      "worker_received_frames": 33,
+      "codec_callback_count": 28
+    },
+    {
+      "phone_ns": 6750000000,
+      "worker_received_frames": 34,
+      "codec_callback_count": 29
+    },
+    {
+      "phone_ns": 7000000000,
+      "worker_received_frames": 35,
+      "codec_callback_count": 30
+    }
+  ],
+  "first_codec_startup_gate": {
+    "enabled": 0,
+    "phase": 7,
+    "phase_before_close": 0,
+    "failure_code": 0,
+    "started_ns": 1100000000,
+    "bootstrap_received_ns": 0,
+    "prepare_started_ns": 0,
+    "ready_ns": 0,
+    "fresh_received_ns": 0,
+    "committed_ns": 0,
+    "bootstrap_pts_us": -1,
+    "fresh_pts_us": -1,
+    "width": 0,
+    "height": 0,
+    "bootstrap_admissions": 0,
+    "preparing_drops": 0,
+    "waiting_drops": 0,
+    "fresh_expired_drops": 0,
+    "before_ready_drops": 0,
+    "requests_reserved": 0,
+    "chain_losses": 0
+  },
+  "first_media_transport_code": 1
+}

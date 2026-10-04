@@ -104,7 +104,20 @@
     "tests/fixtures/helper_owner_control_fixture.c": "2bb2a8a7165222bc89cfbe65c678ce83d40840eab208b5af958b132eb470fc0f",
     "tests/test_owner_native_control.py": "002d1ddb12819784ac760517a7da1304803222166d65deed9c160f2a6ce4db97"
   },
-  "exact_CI": "pending_for_new_SHA",
+  "exact_CI": {
+    "sha": "6ba2d13507bd006642ec9761ac8477093f88d7a2",
+    "run": 37228853964,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111514064237,
+    "udp_job": 111514723051,
+    "Linux_tests": 2180,
+    "Linux_elapsed_seconds": 123.297,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  },
   "independent_root_review": {
     "exact_environment_no_loader_proxy_ADB_override": true,
     "production_activation_off": true,
@@ -112,5 +125,29 @@
     "host_and_native_callbacks_separate": true,
     "whole_actual_Android_qualifiers_missing": true,
     "idle_response_ambiguity_corrected": true
+  },
+  "source_commit": "6ba2d13507bd006642ec9761ac8477093f88d7a2",
+  "private_owned_output_followon": {
+    "initial_host_checks": {
+      "tests": 6,
+      "seconds": 4.081,
+      "passed": true
+    },
+    "expanded_host_checks": {
+      "tests": 7,
+      "seconds": 2.814,
+      "passed": true
+    },
+    "deterministic_actual_parent_exit_before_output_reader_EOF": {
+      "tests": 1,
+      "seconds": 1.854,
+      "passed": true,
+      "reader_waits_actual_EOF_and_queue_completion": true
+    },
+    "opaque_payload_copy_once_and_SHA": true,
+    "Android_metadata_and_callbacks": "synthetic",
+    "JSON_App_fields_qualified": false,
+    "actual_Android_operations": false,
+    "private_followon_not_in_exact_source_CI": true
   }
 }
