@@ -29,5 +29,13 @@
     "candidate_UiAutomation_markers_present": false,
     "cleanup_witness_qualified": false,
     "raw_dump_retained": false
+  },
+  "exact_CI": {
+    "SHA": "bbf142f746093b601e21415c32c09429eddc714e",
+    "run": 37185638482,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
   }
 }

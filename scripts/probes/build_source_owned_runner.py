@@ -18,7 +18,9 @@ SOURCE = ROOT / 'experiments/moonlight-v2/source-snapshot/owned_runner.c'
 REVISION = '29.0.14206865'
 
 
-def build(output, ndk):
+def build(output, ndk, *, retirement=False):
+    if type(retirement) is not bool:
+        raise ValueError('owned_runner_build_mode_rejected')
     output, ndk = Path(output).resolve(), Path(ndk).resolve()
     if output == ROOT or ROOT in output.parents:
         raise ValueError('owned_runner_artifact_outside_source_required')
@@ -36,6 +38,7 @@ def build(output, ndk):
     binary = output / 'source-owned-runner'
     command = [str(compiler), '-std=c11', '-O2', '-Wall', '-Wextra', '-Werror',
                '-fPIE', '-pie', '-Wl,-z,relro,-z,now', str(SOURCE), '-o', str(binary)]
+    if retirement: command.insert(1, '-DHG_RETIREMENT_RUNNER')
     result = subprocess.run(command, capture_output=True, timeout=30)
     if result.returncode:
         raise RuntimeError('owned_runner_compile_failed')
@@ -47,6 +50,12 @@ def build(output, ndk):
              'binary_sha256': pin(binary), 'binary_bytes': binary.stat().st_size,
              'fixture_macro_enabled': False, 'device_operations': 0,
              'UI_sessions_started': 0, 'App_artifact_changed': False}
+    if retirement:
+        value.update(schema='source-owned-retirement-runner-build-v1',
+                     required_operation='--snapshot-retirement',
+                     required_runner='local.huoguo.sourceprobe.RetirementRunner',
+                     retirement_runner_enabled=True,
+                     prior_default_binary_unchanged=True)
     receipt = output / 'build.json'
     receipt.write_text(json.dumps(value, indent=2) + '\n'); receipt.chmod(0o600)
     return value
@@ -56,6 +65,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute', action='store_true')
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--retirement', action='store_true', help='Separate explicit six-file candidate')
     sdk = Path(os.environ.get('ANDROID_HOME', Path.home() / 'Library/Android/sdk'))
     parser.add_argument('--ndk', type=Path,
         default=Path(os.environ.get('ANDROID_NDK_ROOT', sdk / 'ndk' / REVISION)))
@@ -64,7 +74,7 @@ def main(argv=None):
         print(json.dumps({'phase': 'prepared_not_built', 'device_operations': 0}))
         return 0
     if args.output is None: parser.error('--output required for explicit build')
-    print(json.dumps(build(args.output, args.ndk), sort_keys=True))
+    print(json.dumps(build(args.output, args.ndk, retirement=args.retirement), sort_keys=True))
     return 0
 
 

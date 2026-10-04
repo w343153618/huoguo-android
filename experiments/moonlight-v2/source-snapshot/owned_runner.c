@@ -260,7 +260,11 @@ static void child_main(pid_t parent, int ready, int gate, int output,
     snprintf(relative, sizeof(relative), "%s/window.xml", namespace);
     /* Fixed executable and class; no sh -c, --nohup, input or caller argv. */
     char *const args[] = {"uiautomator", "runtest", jar, "-c",
-        "local.huoguo.sourceprobe.SourceSnapshot#testSnapshot", "-e", "relative", relative, NULL};
+        "local.huoguo.sourceprobe.SourceSnapshot#testSnapshot", "-e", "relative", relative,
+#ifdef HG_RETIREMENT_RUNNER
+        "-e", "runner", "local.huoguo.sourceprobe.RetirementRunner",
+#endif
+        NULL};
     execve("/system/bin/uiautomator", args, environment);
     _exit(127);
 #else
@@ -283,7 +287,12 @@ int main(int argc, char **argv) {
     if (argc != 4 || strcmp(argv[1], "--host-fixture") || !nonce_ok(argv[2]) || !fixture_ok(argv[3])) return 64;
     mode = argv[3];
 #elif defined(__ANDROID__)
-    if (argc != 4 || strcmp(argv[1], "--snapshot") || !nonce_ok(argv[2]) || !nonce_ok(argv[3])
+#ifdef HG_RETIREMENT_RUNNER
+    const char *operation = "--snapshot-retirement";
+#else
+    const char *operation = "--snapshot";
+#endif
+    if (argc != 4 || strcmp(argv[1], operation) || !nonce_ok(argv[2]) || !nonce_ok(argv[3])
             || !strcmp(argv[2], argv[3])) return 64;
     struct art_environment env;
     if (prepare_art_environment(&env)) return 78; /* Before mkdir/fork. */

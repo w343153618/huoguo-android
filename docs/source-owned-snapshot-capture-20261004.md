@@ -53,3 +53,7 @@ three-file deletion or unverified lease release. Then prepare one NEW frozen
 readonly M1 qualification; source PID/UID/start must be fresh after maintenance.
 Do not rerun old campaigns, menus, source3470 witnesses or media to test this
 source-only candidate. Moving-video public diagnostics follow real qualification.
+
+Exact source bbf142f746093b601e21415c32c09429eddc714e/run37185638482
+subsequently independently verified overall/build/udp_candidate success.
+This cloud check still is not device execution or source-input acceptance.

@@ -2547,6 +2547,100 @@
       "candidate_UiAutomation_markers_present": false,
       "cleanup_witness_qualified": false,
       "raw_dump_retained": false
+    },
+    "exact_CI": {
+      "SHA": "bbf142f746093b601e21415c32c09429eddc714e",
+      "run": 37185638482,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    }
+  },
+  "source_framework_retirement_candidate_20261004": {
+    "schema": "source-framework-retirement-candidate-v1",
+    "framework_SHA256": "7e35b4f6d866c6cbeec7802c6360f1775f081d1a2393e6047acb271d032476b3",
+    "installed_framework_dex_SHA256": "a7697e858f8a343f378b4b1578406d2932ec2636e6a89813081d26208fa85689",
+    "normal_start_return_site_audited": true,
+    "framework_run_exit_zero_after_virtual_start": true,
+    "JUnit_OK_precedes_disconnect": true,
+    "framework_custom_runner_parameter_audited": true,
+    "ABI_shim_compile_only": true,
+    "ABI_shim_defined_in_DEX": false,
+    "defined_DEX_classes": [
+      "Llocal/huoguo/sourceprobe/RetirementReceipt;",
+      "Llocal/huoguo/sourceprobe/RetirementRunner;",
+      "Llocal/huoguo/sourceprobe/SnapshotPath;",
+      "Llocal/huoguo/sourceprobe/SourceSnapshot;"
+    ],
+    "JAR": {
+      "schema": "source-retirement-snapshot-build-v1",
+      "source_sha256": {
+        "experiments/moonlight-v2/source-snapshot/SnapshotPath.java": "df60f8bb44ce56f3994864473fb5e12663e090988dc71e2190f6399460db56f6",
+        "experiments/moonlight-v2/source-snapshot/SourceSnapshot.java": "43881e41bbc8bce109c0855788cd48d492a520a468303af596981a5eb0e48990",
+        "experiments/moonlight-v2/source-snapshot/RetirementRunner.java": "66553f7928e013ebdd9727cd5d817e3681a57e365d651eec45a6d14fe7ab9d40",
+        "experiments/moonlight-v2/source-snapshot/RetirementReceipt.java": "62340202845ad939d757c51104165ea15b1600e0da63317c60232603d10c2617"
+      },
+      "dependency_sha256": {
+        "android.jar": "bf1b4387cc7ca94fc6ef684f040d9d16fbf16248e181819f020736ea2053f177",
+        "uiautomator.jar": "409657f8af2bf70f558be083411c7d9d59d2623016ecca644efdea19993100c4",
+        "android.test.base.jar": "39cba5b2c198aadcbefc450fd0edd3e913162236669043dd634bc3eb196a7c4d",
+        "d8": "b773a721be3d4988dea9660815a9e441b76100e5b0f5c72b5893cfadadc76c6f",
+        "javac": "18046707ee067a5a7ababd7a1f9dd2cbae1e6686ebc50d57ea4a7f3a80f1af43"
+      },
+      "jar_sha256": "329cad9923e03a8e3fb9d152d12347e54b91433c7d921acdb102ecf74f731efd",
+      "jar_bytes": 9188,
+      "device_operations": 0,
+      "App_artifact_changed": false,
+      "installed_framework_dex_sha256": "a7697e858f8a343f378b4b1578406d2932ec2636e6a89813081d26208fa85689",
+      "compile_only_abi_source_sha256": "6423859ef8c463c0a37e80df1fb47548bfccb0b4c6cbb6a08cd61f86f8dc44c0",
+      "compile_only_abi_packaged": false,
+      "required_runner": "local.huoguo.sourceprobe.RetirementRunner",
+      "actual_UI_execution_verified": false
+    },
+    "native": {
+      "schema": "source-owned-retirement-runner-build-v1",
+      "NDK_revision": "29.0.14206865",
+      "ABI": "arm64-v8a",
+      "API": 30,
+      "source_sha256": "229c6344c8a7463c841f529c91500ef6c7428743248264809627c8bb7686ab50",
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "binary_sha256": "859e2756c1676ee3e87dbf2df8eb7715697cab094252aee34d00ed44efe145c4",
+      "binary_bytes": 17048,
+      "fixture_macro_enabled": false,
+      "device_operations": 0,
+      "UI_sessions_started": 0,
+      "App_artifact_changed": false,
+      "required_operation": "--snapshot-retirement",
+      "required_runner": "local.huoguo.sourceprobe.RetirementRunner",
+      "retirement_runner_enabled": true,
+      "prior_default_binary_unchanged": true
+    },
+    "new_checks": 8,
+    "focused_checks": 57,
+    "focused_seconds": 5.028,
+    "JVM_order_fixture_modes": [
+      "normal",
+      "throws",
+      "returns",
+      "foreign",
+      "badpath"
+    ],
+    "device_operations_this_candidate": 0,
+    "UI_runner_started": false,
+    "current_App_lease_integration": false,
+    "actual_framework_retirement_verified": false,
+    "six_file_observer_integrated": false,
+    "remote_failure_retirement_boundary_complete": false,
+    "old_five_file_binding_changed": false,
+    "App_artifact_changed": false,
+    "source_identity_qualified": false,
+    "preceding_exact_CI": {
+      "SHA": "bbf142f746093b601e21415c32c09429eddc714e",
+      "run": 37185638482,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
     }
   }
 }

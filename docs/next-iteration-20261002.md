@@ -1,5 +1,20 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Latest default-OFF framework retirement candidate now implemented: installed
+framework7e35b4f6/DEXa7697e85 explicitly pins the compile-only runner ABI. The
+new custom runner writes a numeric sixth `retired` receipt only after normal
+`super.start()` return; actual installed normal cleanup call sites precede
+that return. Eight new checks and57 focused checks passed5.028s; actual API37
+compile, JVM order/error fixtures, DEX class-definition audit and arm64 build
+passed. New JAR329cad99/9188B and native859e2756/17048B are private, not staged
+or executed. No UI/phone/media/App release changed. See
+source-framework-retirement-candidate-20261004.md/json. Old five-file defaults
+and frozen artifacts remain separate. Next integrate explicit six-file
+observation/journal, then close the actual current permission lease and failed
+remote retirement boundary before any device UI run. Numeric consistency is
+not global service quiescence. Preceding bbf142f7/run37185638482 is independently
+verified overall/build/UDPsuccess, not evidence for this later candidate.
+
 The user has explicitly moved all research, exploration and optimization to M1.
 Future stable releases use authenticated UDP and default to M1; M5 is retained
 as a selectable backup/test host. This supersedes the earlier M5-friend/M1-owner
