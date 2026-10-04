@@ -2,12 +2,12 @@
   "schema": "owner-native-diagnostic-preflight-candidate-v1",
   "status": "inert_local_plan_and_artifact_comparison_not_gateway_integration",
   "source_SHA256": {
-    "scripts/probes/owner_native_diagnostic_preflight.py": "6dc5334f7919246dd37254c059c140278408e3c1c34b8f8fa683d20e037a4b7d",
-    "tests/test_owner_native_diagnostic_preflight.py": "df26b0e4a147eb5373f96d603d3295b5d76bd31574d129cc7c060275c7bf2331"
+    "scripts/probes/owner_native_diagnostic_preflight.py": "c7a5208741313b4626d555f017703d860110b245d56a0e3764610e10cac72fa7",
+    "tests/test_owner_native_diagnostic_preflight.py": "3c8eea0585df4da4640040578eda833bc0d15eed13d6ee5f636339c976f54053"
   },
-  "new_checks": 14,
-  "affected_checks": 90,
-  "affected_seconds": 0.388,
+  "new_checks": 16,
+  "affected_checks": 92,
+  "affected_seconds": 0.386,
   "final_new_checks": 14,
   "final_new_seconds": 0.002,
   "validation_layers": [
@@ -48,5 +48,9 @@
     "framebuffer_RPC": 0,
     "service_signals": 0
   },
-  "next": "Integrate only a separate explicit bounded M1 LAN coordinator/trusted descriptor selection after actual permission/admission/private evidence/current Attempt qualification and the new matching signed phone artifacts. Persistent/NPS/Tailnet defaults stay OFF. Phone unavailable: continue independent source work; do not execute or poll repeatedly."
+  "next": "Integrate only a separate explicit bounded M1 LAN coordinator/trusted descriptor selection after actual permission/admission/private evidence/current Attempt qualification and the new matching signed phone artifacts. Persistent/NPS/Tailnet defaults stay OFF. Phone unavailable: continue independent source work; do not execute or poll repeatedly.",
+  "previous_artifact_only_checks": 14,
+  "previous_affected_checks": 90,
+  "actual_helper_target_package_manifest_read": true,
+  "actual_phone_helper_package_binding_verified": false
 }

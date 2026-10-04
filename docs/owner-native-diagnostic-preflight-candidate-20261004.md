@@ -18,7 +18,8 @@ wall-clock termination guarantee. These values do not prove listeners are free
 or provide admission; existing exact live protections are still required.
 
 The plan copies exact source/APK/version/JNI/helper/original-signer expectations
-into a frozen value. Direct construction rechecks the same bounds. Public
+and exact experimental App/helper/target-package bindings into a frozen value.
+Direct construction rechecks the same bounds. Public
 alpha8, installed22f/d043 and historical local030126da lack the new export and
 are explicitly ineligible. This is a known-old-byte exclusion, not a complete
 classifier of arbitrary APK contents. A caller must independently establish a
@@ -48,7 +49,11 @@ inertness, strict scope/budget/pins, old artifacts, malformed readbacks, caller
 mutation and direct-construction bounds. An actual in-memory registry create
 keeps diagnostics false despite HTTP/environment requests and a successful local
 preflight; the NPS-owner parser rejects an HTTP diagnostic field. No live service,
-phone or native/JNI sampling was used by these fixtures.
+phone or native/JNI sampling was used by these fixtures. A later narrow review
+adds two cases requiring the actual phone App package, helper package and
+instrumentation target as well as their byte pins:16new/92affected checks
+passed0.386s. Actual AAPT read of the built helper manifest confirms the expected
+experimental target; no phone package/target readback was available.
 
 A separate exact3d476 freeze of1048 tracked source files subsequently built
 code40 alpha9 debug/release and release lint with exit0. The same freeze built

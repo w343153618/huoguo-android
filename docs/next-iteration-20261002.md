@@ -1,7 +1,9 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
 NEW inert native diagnostic preflight and exact3d local artifact are complete.
-14new/90affected in-memory checks PASS0.388s; final14PASS0.002s. The pure local
+Initial14new/90affected PASS0.388s, then package-binding review16new/92affected
+PASS0.386s. Actual built-helper manifest target matches experiment App; no phone
+readback. The pure local
 plan rejects wrong scope/guest/formal ports, unbounded budgets, old App bytes and
 foreign/coercible fields. Exact artifact matching remains pins-only; no permission,
 current Attempt, private evidence, server lease, native schema or collection is

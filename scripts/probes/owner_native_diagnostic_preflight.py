@@ -14,8 +14,13 @@ OLD_APP_HASHES = frozenset((
     'd0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08',
     '030126da900e16a11fb46dccbd1ed54edd5e0a7757a42503ca0ae40047c3d570',
 ))
-ARTIFACT_FIELDS = frozenset(('app_sha256', 'app_version_code', 'jni_sha256',
-                            'helper_sha256', 'signer_sha256'))
+DIGEST_FIELDS = frozenset(('app_sha256', 'jni_sha256', 'helper_sha256', 'signer_sha256'))
+PACKAGE_BINDINGS = {
+    'application_id': 'local.remoteandroid.direct.experiment',
+    'helper_application_id': 'local.huoguo.lanuitest',
+    'helper_target_package': 'local.remoteandroid.direct.experiment',
+}
+ARTIFACT_FIELDS = DIGEST_FIELDS | frozenset(('app_version_code',)) | frozenset(PACKAGE_BINDINGS)
 PLAN_FIELDS = ARTIFACT_FIELDS | frozenset(('schema', 'app_source_commit',
     'network_scope', 'node', 'guest_serial', 'guest_avd', 'https_port',
     'udp_port', 'process_max_seconds', 'sample_seconds'))
@@ -39,8 +44,11 @@ def _digest(value, length, error):
 def _artifacts(value):
     _closed(value, ARTIFACT_FIELDS, 'closed_artifact_pins_required')
     _integer(value['app_version_code'], 40, 2**31 - 1, 'candidate_version_required')
-    for key in ARTIFACT_FIELDS - {'app_version_code'}:
+    for key in DIGEST_FIELDS:
         _digest(value[key], 64, 'artifact_digest_required')
+    for key, expected in PACKAGE_BINDINGS.items():
+        if type(value[key]) is not str or value[key] != expected:
+            raise ValueError('exact_experiment_helper_package_binding_required')
     if value['signer_sha256'] != SIGNER:
         raise ValueError('original_signer_required')
     if value['app_sha256'] in OLD_APP_HASHES:
@@ -56,6 +64,9 @@ class Plan:
     jni_sha256: str
     helper_sha256: str
     signer_sha256: str
+    application_id: str
+    helper_application_id: str
+    helper_target_package: str
     process_max_seconds: int
     sample_seconds: int
 

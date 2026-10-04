@@ -39,9 +39,11 @@
     }
   },
   "scope": "offline exact frozen3d build only; no install, release, collection or phone readback",
-  "source_and_dependency_lock_unchanged_from_prior22f": true,
   "native_full_bytes_not_claimed_reproducible": true,
   "old_installed_d043_and_public_alpha8_unchanged": true,
   "old_reviewed_frame_only_controller_unchanged": true,
-  "helper_late_typed_observer_boundary_remains": true
+  "helper_late_typed_observer_boundary_remains": true,
+  "native_source_and_dependency_lock_unchanged_from_prior22f": true,
+  "actual_AAPT_helper_target_package": "local.remoteandroid.direct.experiment",
+  "actual_AAPT_helper_target_package_verified": true
 }

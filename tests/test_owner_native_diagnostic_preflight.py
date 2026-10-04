@@ -10,7 +10,8 @@ from udp_lan_sessions import UdpLanSessions, parse_udp_settings
 def plan_input():
     return dict(schema=1, app_source_commit='f' * 40, app_sha256='a' * 64,
         app_version_code=40, jni_sha256='b' * 64, helper_sha256='c' * 64,
-        signer_sha256=preflight.SIGNER, network_scope='lan', node='m1',
+        signer_sha256=preflight.SIGNER, **preflight.PACKAGE_BINDINGS,
+        network_scope='lan', node='m1',
         guest_serial='emulator-5556', guest_avd='RemoteAndroid17Compare',
         https_port=45560, udp_port=45963, process_max_seconds=600,
         sample_seconds=30)
@@ -97,6 +98,22 @@ class OwnerNativePreflightChecks(unittest.TestCase):
                            ('app_version_code', 39)):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 preflight.parse_plan(dict(plan_input(), **{key: value}))
+
+    def test_plan_cannot_bind_formal_App_or_another_instrumentation_target(self):
+        for key in preflight.PACKAGE_BINDINGS:
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'package_binding'):
+                preflight.parse_plan(dict(plan_input(), **{key: 'local.remoteandroid.direct'}))
+
+    def test_actual_phone_package_and_helper_target_are_required_not_hash_aliases(self):
+        plan = preflight.parse_plan(plan_input())
+        for key in preflight.PACKAGE_BINDINGS:
+            pins = plan.artifacts(); del pins[key]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                preflight.qualify(plan, pins, caller_verified_readback=True)
+            for value in (True, 'local.remoteandroid.direct'):
+                pins = dict(plan.artifacts(), **{key: value})
+                with self.subTest(key=key, value=value), self.assertRaises(ValueError):
+                    preflight.qualify(plan, pins, caller_verified_readback=True)
 
     def test_closed_actual_readback_and_boolean_qualification_required(self):
         plan = preflight.parse_plan(plan_input())
