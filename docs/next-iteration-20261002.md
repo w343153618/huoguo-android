@@ -1,5 +1,10 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW defaultOFF cooperative Java captured-object interface:29actualJVM checks5.523s/API37 bootstrap+DEX11596B/e108d13d compileonly. Actual3.1s monitor-wait counterexample retained/fixed original caller budget before lock. Same-JVM View/refs/three owned hostworkers/close+join observed; Android adapters/normal codec-audio-input native quiescence/bridge/operator/server/PM/release remain false. No App/helper callsite or phonepoll; old82f/manual unknown unchanged. Next genuine cooperative App/resource adapter and independent native bridge/whole gates; new source ownCI. Read owner-cooperative-association candidate md/json.
+
+Exactfed42cd75fa7911256dd1ef96d3c3602e378ccb5/run37237047038 independently completed/overall/build/UDPsuccess, actualLinux2260/129.528s/11existing skips. No repoll/rerun/borrow; new App core/prefix observer34host/JVM6.914s and NDK95896B/5f080b2d compileonly. Actual App/private native association callback absent: Java captured objects live only in App/helper; root parent clientwait/JSON/FD cannot recover them. NEW cooperation-boundary design in private state; no fabricated AppID/hostboolean/nativepermission. Phone manual handling and old82f remote cleanup stillunknown/no repoll. Cloudappend local next meaningfulsourcepush, notdoc-onlyCI.
+
+
 NEW defaultOFF same-created native App core/prefix observer:34new actualhost/JVM checks PASS6.914s; actual ownFD/wait/dualEOF and syntheticAndroid association callbacks. Closed38 scalar/default/OFF-CLOSED7/stageabsent/three typed prefixes, App8192syntaxnodes vs unchangedhelper512, whole64KiB. Actual `1e-999`→falsezero counterexample fixed using original mantissa; missing/OFF/omission/eviction/pending/999ns remainunknown. Optionalobjects explicitlyunqualified; wholeAppfields/AndroidAttempt/operator/server/cleanup/release stillfalse. NDK29/API30 95896B/5f080b2d compileonly15sourcepins/noactivation, nophonepoll or old82fcleanup mutation. Next close nestedobjects/genuine native Attempt-clock qualifiers and whole real host/native gates; newSHA needs ownCI. Read owner-native-App-fields candidate md/json.
 
 

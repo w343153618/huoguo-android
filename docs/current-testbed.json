@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "NEW native-owned helper output/current captured Attempt/normal codec/audio/input sameprocess qualifiers, matching package/independent absence/privileged writers/same-created-FD retirement; host actual operator/source/phone/admission/gateway separately. No partial activation; unchanged reviewed f0/d043 first on actual phone return.",
+  "next_source_task": "NEW cooperative App adapter must use actual Java captured state/resources and normal retirement; prove actual native-process bridge separately. Closer return/Thread.TERMINATED cannot replace codec/audio/input quiescence. Whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway release gates remain.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -5439,6 +5439,104 @@
       "close optional object sub-schemas without treating producer claims as cleanup",
       "implement genuine same-native-process current captured Attempt/receiver/Surface/phone clock qualification",
       "complete actual host and native eligibility plus independent package/absence/driver/input/privileged-writer and same-created-FD retirement"
-    ]
+    ],
+    "exact_source_CI": {
+      "sha": "fed42cd75fa7911256dd1ef96d3c3602e378ccb5",
+      "run": 37237047038,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "UDP": "success",
+      "build_job": 111538158887,
+      "UDP_job": 111538877138,
+      "actual_test_summaries": [
+        [
+          "2260",
+          "129.528"
+        ]
+      ],
+      "actual_verdicts": [
+        "OK",
+        "OK",
+        "OK (skipped=11)"
+      ],
+      "build_log_sha256": "aa2e191f8a35e2101dbaa17ac54195c802ba27736678060859e321d839c1dbea",
+      "independent_exact_SHA_readback": true,
+      "tests": 2260,
+      "seconds": 129.528,
+      "existing_skips": 11,
+      "rerun": false,
+      "APK_release": false
+    }
+  },
+  "owner_cooperative_association_candidate_20261005": {
+    "schema": "cooperative-captured-attempt-association-candidate-v1",
+    "source_base": "fed42cd75fa7911256dd1ef96d3c3602e378ccb5",
+    "default": "standalone_unwired_inert_constructor_no_App_or_helper_activation",
+    "source": "experiments/moonlight-v2/authenticated-lan/association/CapturedAttemptAssociation.java",
+    "source_SHA256": "46b26f2cc00a24fc6dec8f80525bd8ad976b2c1dcc542fc9001490bd2dba928f",
+    "actual_JVM_checks": 29,
+    "seconds": 5.523,
+    "actual_host_evidence": [
+      "same JVM object identity and original monitor",
+      "phase-scoped view refuses escape and foreign thread",
+      "three actual worker threads close their own Pipe endpoints",
+      "actual Thread.join and TERMINATED observation",
+      "peer death while actual join retains UNKNOWN",
+      "actual monitor wait 3.1 seconds refuses late callback after fix"
+    ],
+    "Android_state_resource_adapters": "synthetic",
+    "independent_review_counterexample": {
+      "checks": 1,
+      "failure": 1,
+      "seconds": 3.682,
+      "cause": "Initial caller budget began after acquiring monitor, allowing callback after actual 3.1s monitor wait. Fixed original caller clock before monitor acquisition; callback refused; original total end unchanged."
+    },
+    "initial_fixture_setup_error": {
+      "checks": 0,
+      "errors": 1,
+      "cause": "New fixture AutoCloseable.close could throw InterruptedException, rejected by javac lint/Werror; narrowed cleanup IOException with interrupt retained."
+    },
+    "API37_compile": {
+      "exit": 0,
+      "bootstrap": "actual API37.0 android.jar",
+      "source_target": 8,
+      "all_code_lint_Werror": true,
+      "only_obsolete_JDK_options_warning_suppressed": true
+    },
+    "DEX": {
+      "exit": 0,
+      "min_API": 30,
+      "bytes": 11596,
+      "SHA256": "e108d13ddb3cb2d5c971fe2e68e529f49817ebdf86e80689bbedd44ee186bddf",
+      "inputs": 10,
+      "compile_only": true
+    },
+    "lifetime": [
+      "single capture, no reset or later owner adoption",
+      "current Attempt/receiver/Surface/phone-clock/generation compare before and after actual callback under original lock",
+      "retirement requires same captured cancelled/stopped Attempt and exact generation+1",
+      "retained resource identity/worker/closer refs; normal close callable only on exact captured worker",
+      "joins outside original monitor; actual thread exit and callback return only observations",
+      "UNKNOWN sticky keeps refs, no destructor/signals/permission/release"
+    ],
+    "limits": {
+      "phase_ns": 3000000000,
+      "original_association_ceiling_ns": 30000000000,
+      "renew_original_end": false,
+      "preemptive_hard_wallclock": false
+    },
+    "true_Android_App_helper_adapter": false,
+    "actual_Android_ART": false,
+    "JNI_or_Binder_bridge": false,
+    "normal_codec_audio_input_quiescence": false,
+    "actual_operator_source_server_admission": false,
+    "native_parent_or_PM_qualification": false,
+    "package_or_scope_retirement": false,
+    "gateway_release": false,
+    "App_helper_JNI_public_release_changed": false,
+    "phone_manual_gate_and_old82f_cleanup": "unchanged_unknown_no_device_poll_or_mutation",
+    "next": "NEW cooperative App adapter must use actual Java captured state/resources and normal retirement; prove actual native-process bridge separately. Closer return/Thread.TERMINATED cannot replace codec/audio/input quiescence. Whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway release gates remain.",
+    "CI": "pending_own_source_SHA_run"
   }
 }

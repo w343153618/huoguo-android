@@ -114,5 +114,33 @@
     "close optional object sub-schemas without treating producer claims as cleanup",
     "implement genuine same-native-process current captured Attempt/receiver/Surface/phone clock qualification",
     "complete actual host and native eligibility plus independent package/absence/driver/input/privileged-writer and same-created-FD retirement"
-  ]
+  ],
+  "exact_source_CI": {
+    "sha": "fed42cd75fa7911256dd1ef96d3c3602e378ccb5",
+    "run": 37237047038,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP": "success",
+    "build_job": 111538158887,
+    "UDP_job": 111538877138,
+    "actual_test_summaries": [
+      [
+        "2260",
+        "129.528"
+      ]
+    ],
+    "actual_verdicts": [
+      "OK",
+      "OK",
+      "OK (skipped=11)"
+    ],
+    "build_log_sha256": "aa2e191f8a35e2101dbaa17ac54195c802ba27736678060859e321d839c1dbea",
+    "independent_exact_SHA_readback": true,
+    "tests": 2260,
+    "seconds": 129.528,
+    "existing_skips": 11,
+    "rerun": false,
+    "APK_release": false
+  }
 }
