@@ -61,6 +61,13 @@
     "build": "success",
     "udp_candidate": "success"
   },
-  "this_candidate_CI": "pending_own_source_commit",
+  "this_candidate_CI": {
+    "SHA": "f0444b81a21dc9f8a449212b98fc7794a5d9fc69",
+    "run": 37194141701,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  },
   "next": "Keep reviewed f0 frame-only freeze unchanged. When dedicated phone is available, fresh App/JNI/helper/CPU/original/formal/emulator qualification then one normal saved-UI current Attempt/read-only frame. Separately design a bounded closed offline event consumer and explicit native-event diagnostic qualification; do not enable events or publish from these fixtures."
 }

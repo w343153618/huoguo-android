@@ -1,0 +1,66 @@
+{
+  "schema": "owner-native-frame-progress-analysis-candidate-v1",
+  "status": "offline_only_no_live_input_or_collection",
+  "default_association_enabled": false,
+  "default_file_or_device_or_network_access": false,
+  "new_checks": 14,
+  "focused_checks": 30,
+  "focused_seconds": 1.683,
+  "post_review_affected_checks": 29,
+  "post_review_seconds": 0.004,
+  "validation_layers": [
+    "Synthetic closed numeric prefix fixtures",
+    "Actual Java report projection with typed JSON substitutes to Python schema consumer",
+    "Existing RX/worker offline association fixtures"
+  ],
+  "actual_JNI_ART_or_phone_verified": false,
+  "initial_fixture_failure": "Substring assertion for frame_id accidentally matched the distinct-frame-count field name. Replaced with an exact quoted key assertion; initial failing run is not accepted.",
+  "source_SHA256": {
+    "scripts/probes/native_frame_progress_analysis.py": "9c5f8ea5859e378677d4401299fd43584df4c2d2e7ac25dd9b1f9650ab94e355",
+    "tests/test_native_frame_progress_analysis.py": "8859f7062a97e304ae1cd43870c918d1f3b5acf329c8b58b2b6818aacd1dab01",
+    "scripts/probes/transport_progress_analysis.py": "fe6d73d3e2f8eb44532ca3fe7b68203a8615f91ef6097279da147a0c88c78c81"
+  },
+  "contract": {
+    "native_exported_rows_max": 64,
+    "RX_exported_rows_max": 64,
+    "worker_rows_max": 48,
+    "schema_exact_closed_fields": true,
+    "count_and_sequence_coverage_checked": true,
+    "same_frame_mapping_contradictions_rejected": true,
+    "unavailable_not_zero_events": true,
+    "RX_unavailable_not_successful_empty_association": true,
+    "same_attempt_phone_clock_required_from_caller_not_JSON": true,
+    "phone_microsecond_rounding_max_ns": 999,
+    "boundary_overlap_not_assigned_to_interior": true,
+    "counts_are_retained_prefix_only_not_rates": true,
+    "whole_window_or_session_coverage_verified": false,
+    "physical_packet_loss_or_FEC_root_cause_verified": false,
+    "codec_ready_or_presentation_verified": false,
+    "raw_frame_ids_exported_in_analysis": false,
+    "cross_host_clock_subtraction": false
+  },
+  "native_projection_dependency": {
+    "source_commit": "f0444b81a21dc9f8a449212b98fc7794a5d9fc69",
+    "source_SHA256": "9dea0d6d316e216ec0b46320d160d7fe01232c9009a83591f99475591031e962",
+    "own_exact_CI": {
+      "SHA": "f0444b81a21dc9f8a449212b98fc7794a5d9fc69",
+      "run": 37194141701,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    }
+  },
+  "live_operations": {
+    "phone_media": 0,
+    "source_input": 0,
+    "framebuffer_RPC": 0,
+    "UiAutomation": 0,
+    "service_signals": 0
+  },
+  "new_APK_JNI_helper_or_manifest": false,
+  "previous_frame_only_frozen_candidate_changed": false,
+  "dedicated_phone_current_status": "device-not-found, no repeated polling or inferred process absence",
+  "this_candidate_CI": "requires_new_exact_source_SHA",
+  "next": "When phone is actually available, use the unchanged reviewed f0 frame-only freeze after all fresh eligibility and normal saved-UI auth/current Attempt; one readonly frame only. Independently qualify how a bounded owner-only native-event descriptor would reach a new matching signed App and preserve OFF/default/64KiB limits before any live diagnostic. Do not enable events or treat these fixtures as moving public evidence."
+}

@@ -1,5 +1,20 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW pure offline native event/RX/worker consumer is implemented.14new+16existing
+checks30PASS1.683s including actual Java projection/typed-JSON schema roundtrip;
+bounded-schema review29affectedPASS0.004s. No default reads, collection toggle,
+App/JNI/helper build, live phone/RPC/input/UI/service operations. Same Attempt/
+phone-clock qualification must come from caller, not JSON;64 native/RX rows,
+48 helper rows, prefix omissions/pending/evictions remain explicit. Microsecond
+quantization boundary overlap is unknown, counts are retained only/not rates,
+no whole-window/physical-loss/codec-ready/presentation promotion. Read
+native-frame-progress-analysis-candidate-20261004.md/json. The preceding exact
+export f0444b8/run37194141701 independently overall/build/UDPsuccess, not evidence
+for this later consumer. Unchanged reviewed f0 frame-only freeze stays available
+only after fresh phone and normal saved-UI Attempt eligibility. Phone still
+unavailable; next independent narrow work is owner diagnostic descriptor/App
+qualification, not default enablement or repeated device polling.
+
 Current source-only native frame export is implemented: report-time closed
 numeric64-row remaining-prefix projection of the existing OFF-by-default native
 256/Java8192 ring. Eight new checks plus transport/Inbox/budget/completion/hour

@@ -89,3 +89,8 @@ new App build, actual report or moving public event association has yet been
 accepted. Preserve80ms/FIFO/sessionFPS/lead0/AAC, wait/guard and all existing
 host/NPS/user-data protections. This export does not resolve the earlier public
 source30/phone20 stall, prove physical packet loss or support a new APK release.
+
+Exact export source f0444b81a21dc9f8a449212b98fc7794a5d9fc69/
+run37194141701 was independently read as completed with overall/build/
+UDP success. This validates that source's cloud checks, not a signed App
+artifact, native collection or later offline consumer source.
