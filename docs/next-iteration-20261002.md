@@ -1,3 +1,44 @@
+## 2026-10-04 latest: standalone active-source snapshot candidate built; no UI execution yet
+
+Default-OFF legacy runtest direct-dump JAR and closed-path/receipt reader now
+implemented.57 focused/API37/JVM checks passed; actual DEX/JAR5888B SHAa19c50f5
+built privately. Three scoped ADB file-staging commands all reaped; original
+M1 gateway identity/four roles zero, phone target/helper absent and source exact
+3470/10235/start1952 still playing independently verified. Staging did not open
+UiAutomation, run the program, send input, authenticate, start media or signal
+services. Public/installed App artifacts unchanged. Read
+source-active-snapshot-candidate-20261004.md/json. Old design's NOTimplemented
+line is historical; actual runner setup/dump/exit/cost remains UNVERIFIED.
+
+Reader preserves the existing3s command/15s total/1MiB/4MiB bounds and the full
+source PID/focus/owner/display qualifications. Completion needs actual runner
+success, closed PID/start serialization receipt, prior runner exit, matching
+file inode/size and owned removal. Failed/unknown remote runner retains the exact
+owned scope and exports closed uncertainty booleans; no old fallback deletion.
+No live session has been started. Private deployed namespace/inodes are in the
+iteration-state pointer, not credentials. Next integrate an explicit reader
+factory into NEW saved-UI owner-current-Attempt qualification (or full protected
+source-only admission); never execute a free-standing UI session from a socket
+snapshot alone. Current source is playing, so old paused-first candidate/coords
+cannot be rerun. Fresh Pause target/current authenticated Attempt and independent
+state transition precede the next moving-video window. Keep80/FIFO/sessionFPS,
+M5/NPS/defaults unchanged, no timeout increase or performance claim.
+
+## 2026-10-04 latest: exact followup CI green; installed active-UI audit guides next collector
+
+Exactcfd9b907e6805b046255f7ea8192f90de26bc463/run37171387795 independently verified
+overall/build/UDPsuccess. No Appartifact/service change. Nativefirstpublic failure
+and sourcecurrentlyplaying remain. Read source-active-snapshot-design-20261004.md:
+actual systemuiautomator.jar7e35b4f6/DEXa7697e85 CLIwaitForIdle1000/10000 precedes
+rootdump; legacyUiDevice directdump/queryroot has no such explicitwait. Toolcontract
+candidate, not UDP/transitionrootcause. Standalone readonlyruntest JAR/collector
+NOTimplemented/built/deployed, no guestUI session/input. Next closedownedrelative
+path/status/SDK37 fixture then protectedsource-onlyreadonlyplayingqualification,
+same3s/bounds/reap and provenance; nohook/sourceAppattach/input/blindcoords/wait
+extension. Actualrunner/setup/accessibilitysideeffects unknown. Newtestbedcheckpoint,
+this cloudresult and design are local docs for next meaningfulsourcecommit, no
+doc-onlyCIpush. Rootexecnull, phone/helper/input clear, originalroleszero verified.
+
 ## 2026-10-04 latest: first native public Play qualification failed; bounded readonly followup prepared
 
 NEW frozenf100/303Pythonpins+finala575helper executed once via installedowner40/

@@ -2211,5 +2211,69 @@
     "credentials_read_or_exported": false,
     "source_controls": 0,
     "next": "Authenticated in-session source controls and per-frame assembly audit; no blind re-run or release."
+  },
+  "owner_authenticated_source_driver_checkpoint": {
+    "source_commit": "cfd9b907e6805b046255f7ea8192f90de26bc463",
+    "driver_default": "off",
+    "scope": "M1/nps_owner/saved-ui/media-only explicitly opted-in owner nonisolated",
+    "installed_owner_App": "22f/code40/d043/JNI4bf unchanged",
+    "public_App": "alpha8/code39 unchanged",
+    "final_matching_helper": "a575, actual user0 installed then removed",
+    "actual_public_attempt": "phase1 numeric command published, immediate independent transition rejected, no SF samplers",
+    "current_source_identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "current_source_state": "playing, later readonly verified; pause unverified",
+    "source_format": "fresh prior paused BBB299avc1/1920x1080 descriptor60/audio251Opus, not presented60",
+    "original_late_independent_roles_zero": true,
+    "initial_original_after_check_passed": false,
+    "phone_target_helper_input_cleared": true,
+    "new_steady_performance_acceptance": false,
+    "bounded_previous_state_polling_phone_validated": false,
+    "cleanup_source_receipt_export_phone_validated": false,
+    "next": "safe authenticated Pause/requalification and readonly snapshot design, then NEW protected public window",
+    "evidence": "docs/authenticated-source-first-public-20261004.json",
+    "exact_source_CI": {
+      "sha": "cfd9b907e6805b046255f7ea8192f90de26bc463",
+      "run": 37171387795,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    }
+  },
+  "owner_source_active_snapshot_candidate": {
+    "schema": "source-active-snapshot-candidate-checkpoint-v1",
+    "source_only_owner_nonisolated": true,
+    "default_enabled": false,
+    "SDK37_compile_and_DEX": true,
+    "Jar_SHA": "a19c50f5e21803958bb059e000f05152e572421166fd826f3d91328981ed903f",
+    "Jar_bytes": 5888,
+    "sources_SHA": {
+      "experiments/moonlight-v2/source-snapshot/SnapshotPath.java": "df60f8bb44ce56f3994864473fb5e12663e090988dc71e2190f6399460db56f6",
+      "experiments/moonlight-v2/source-snapshot/SourceSnapshot.java": "43881e41bbc8bce109c0855788cd48d492a520a468303af596981a5eb0e48990"
+    },
+    "owned_Jar_staged_on_M1": true,
+    "staging_commands_started": 3,
+    "staging_commands_reaped": 3,
+    "device_UI_session_started": false,
+    "source_input_sent": false,
+    "media_started": false,
+    "credentials_read": false,
+    "service_signals": 0,
+    "focused_checks": 57,
+    "source_current_state": "playing",
+    "source_PID": 3470,
+    "source_UID": 10235,
+    "source_start_ticks": 1952,
+    "current_format_or_video_requalified": false,
+    "original_gateway_identity_and_four_roles_zero": true,
+    "phone_target_helper_absent": true,
+    "live_runner_cost_and_remote_completion_verified": false,
+    "real_phone_performance_claim": false,
+    "App_release_or_manifest_changed": false,
+    "unconfirmed_runner_policy": "retain_owned_scope_and_fail_not_delete_or_extend_timeout",
+    "document": "docs/source-active-snapshot-candidate-20261004.md"
   }
 }
