@@ -2151,7 +2151,8 @@
     "complete_frame_and_callback_max_idle_ns": 4768971769,
     "public_performance_accepted": false,
     "service_restarted_or_replaced": false,
-    "original_and_cleanup_root_verified": true
+    "original_and_cleanup_root_verified": true,
+    "helper_counter_stage": "worker-admitted after Inbox checks, before codec; not RX-complete or packet ingress"
   },
   "CI_raw_budget60_evidence_verification_20261004": {
     "sha": "b853ee22c26bfbab6bc3fe9ac56bf380aa1c8915",
@@ -2185,6 +2186,14 @@
     "new_JNI_sha256": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
     "new_helper_sha256": "8c34c233b3520dd9a17a79d02756c114bd5fee0df3f4176f0b72d786d3df5f35",
     "build_evidence": "docs/app-transport-progress-local-build-20261004.json",
-    "typed_receipt_late_observer_boundary_remains": true
+    "typed_receipt_late_observer_boundary_remains": true,
+    "new_received_media_frames_stage": "RX complete-body consume before Inbox, distinct from helper worker counter",
+    "exact_source_CI": {
+      "run": 37164393753,
+      "source": "22f16fa892180901911200cbdc7a2558439be1e8",
+      "build": "success",
+      "udp_candidate": "success",
+      "overall": "success"
+    }
   }
 }

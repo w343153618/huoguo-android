@@ -1402,8 +1402,9 @@
     "Host pipeline bins are wider than the phone/SF sampler window and do not prove same-frame association.",
     "LAN frozen runtime versus existing public runtime/path is not a controlled protocol-only AB.",
     "Python interpreter and worker are both 3.14.7; a 3.9 versus 3.14 explanation was disproved.",
-    "Receive plateau plus callback plateau argues against only a final display/Surface bottleneck; does not locate physical network versus encoder supply/reassembly.",
     "Host deadlines/reference losses and phone FEC expiry totals are whole session; not event-correlated sole root cause.",
-    "No cellular, remote V50, optical/acoustic, public isolation or stable no-stall30 acceptance."
-  ]
+    "No cellular, remote V50, optical/acoustic, public isolation or stable no-stall30 acceptance.",
+    "Worker-admitted/callback plateau must not be renamed RX-complete or packet-arrival plateau; new candidate separates RX receivedMedia from old helper worker count."
+  ],
+  "counter_stage_correction": "helper worker_received_frames is MainActivity.receivedFrames incremented in processVideo after Inbox checks; first_App received_media_frames is RX receivedMedia before Inbox; old helper plateau does not establish RX silence or exclude codec/Surface backpressure"
 }
