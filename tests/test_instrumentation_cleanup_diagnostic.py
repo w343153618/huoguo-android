@@ -49,6 +49,27 @@ class InstrumentationCleanupDiagnosticCheck(unittest.TestCase):
         self.assertIsNone(report['stdout_bytes'])
         self.assertNotIn('numeric_result', report)
 
+    def test_source_local_contact_receipts_survive_cleanup_without_claiming_playback(self):
+        tap={name: False for name in ('down_attempted','down_returned','up_attempted','up_returned',
+            'cancel_attempted','cancel_returned','cancel_skipped_for_changed_owner','remote_playback_verified_by_helper')}
+        tap.update(down_attempted=True,down_returned=True,up_attempted=True,up_returned=True)
+        row={'requested_authenticated_source_input':True,'source_phase_1_local_tap':tap,
+             'bounded_failure_label':'source_marker_timeout','source_phase_1_external_observer_confirmation':False,
+             'source_owned_marker_cleanup_failed':False}
+        report=self.diagnostic(marker(dict(row,password='never export',nonce=77)))
+        self.assertEqual(report['numeric_result'],row)
+        self.assertEqual(report['scope'],'cleanup_output_not_media_success_or_phone_ownership')
+        self.assertFalse(report['numeric_result']['source_phase_1_local_tap']['remote_playback_verified_by_helper'])
+        self.assertNotIn('nonce',json.dumps(report));self.assertNotIn('never export',json.dumps(report))
+        for field in ('requested_authenticated_source_input','source_phase_1_external_observer_confirmation'):
+            bad=dict(row);bad[field]=1
+            self.assertEqual(self.diagnostic(marker(bad))['numeric_result_status'],'malformed')
+        for field in tap:
+            bad=dict(row);bad['source_phase_1_local_tap']=dict(tap);bad['source_phase_1_local_tap'][field]=1
+            self.assertEqual(self.diagnostic(marker(bad))['numeric_result_status'],'malformed')
+        bad=dict(row);bad['source_phase_1_local_tap']=dict(tap,foreign='secret')
+        self.assertEqual(self.diagnostic(marker(bad))['numeric_result_status'],'malformed')
+
     def test_empty_or_stderr_only_result_is_absent(self):
         for stdout, stderr, count in (('', '', 0), ('ordinary private output\n', '', 0),
                 ('', marker({'helper_owned_attempt_started': True}), 1)):

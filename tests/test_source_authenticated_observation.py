@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from scripts.probes import source_authenticated_observation as m
 from scripts.probes.source_authenticated_driver import Rejected
@@ -43,4 +43,35 @@ class SourceAuthenticatedObservationChecks(unittest.TestCase):
                               ('emulator-5556', dict(EXPECTED, start_ticks=0))):
             with self.assertRaises(Rejected):
                 m.collect_state('inert', serial, ident, 'playing', reader_factory=factory)
+        factory.assert_not_called()
+
+    def test_explicit_previous_state_polling_requires_two_consecutive_goals_without_input(self):
+        rows = []
+        for state in (2, 3, 2, 3, 3):
+            rows.extend([identity(), focus(), session(state=state, speed=1)])
+        reader = FakeReader(rows)
+        with patch.object(m.time, 'sleep') as sleep:
+            value = m.collect_state('inert', 'emulator-5556', EXPECTED, 'playing',
+                previous_state='paused', reader_factory=lambda *_: reader, timeout=3)
+        self.assertTrue(value['verified']); self.assertEqual(value['command_count'], 15)
+        self.assertEqual(value['known_previous_state_observations'], 2)
+        self.assertTrue(value['explicit_previous_state_polling'])
+        self.assertEqual(sleep.call_count, 2)
+        self.assertFalse(value['input_executed_by_observer'])
+
+    def test_previous_state_polling_is_bounded_and_never_relaxes_foreign_ownership(self):
+        for kind in ('all_previous', 'foreign_focus', 'foreign_identity', 'foreign_owner', 'unknown_state'):
+            rows = [identity(), focus(), session(state=2)]*8
+            if kind == 'foreign_focus': rows[4] = focus('foreign.app')
+            elif kind == 'foreign_identity': rows[3] = identity(start=1)
+            elif kind == 'foreign_owner': rows[5] = session(pid=1)
+            elif kind == 'unknown_state': rows[5] = session(state=6)
+            reader = FakeReader(rows)
+            with patch.object(m.time, 'sleep'), self.assertRaises(Rejected):
+                m.collect_state('inert', 'emulator-5556', EXPECTED, 'playing',
+                    previous_state='paused', reader_factory=lambda *_: reader, timeout=3)
+            self.assertLessEqual(len(reader.arguments), 24)
+        factory=Mock(side_effect=AssertionError('read'))
+        with self.assertRaises(Rejected):
+            m.collect_state('inert','emulator-5556',EXPECTED,'playing',previous_state='playing',reader_factory=factory)
         factory.assert_not_called()

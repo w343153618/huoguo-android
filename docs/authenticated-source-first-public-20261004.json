@@ -1,0 +1,244 @@
+{
+  "schema": "owner-authenticated-native-source-public-v1",
+  "owner_nonisolated": true,
+  "source_commit": "f10055ad8266e21106f826b1080fd3b020d004e5",
+  "path": "same_home_WiFi_public_NPS_M1",
+  "cellular_or_V50_acceptance": false,
+  "outer_route_verified": false,
+  "credentials_or_store_read": false,
+  "guest_input_commands": false,
+  "new_gateway": false,
+  "service_signals": 0,
+  "App_SHA": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+  "JNI_SHA": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+  "helper_SHA": "a575abeda09383b247043fe5bb8c90c1d90229f7cd117ca22d6522f60bfe67b0",
+  "old_untracked_empty_stage_retained": true,
+  "original_before": {
+    "gateway_pid": 26875,
+    "gateway_start_id": "Sat_Oct_3_17:37:47_2026",
+    "gateway_source_sha256": "215a0a254d3f91e87c600c1455c8239f6d1e2d0208011612a43bd6e1370b3a9a",
+    "runtime_manifest_sha256": "b708399680cc9b4ff19a5cd2048e04dd70dbb75502c1a22cb3eae8419967844f",
+    "coverage_complete": true,
+    "owned_descendants": 0,
+    "hardware_process_groups": 0,
+    "packetizer_processes": 0,
+    "guest_control_processes": 0
+  },
+  "source_paused_before": {
+    "schema": "authenticated-source-state-observation-v1",
+    "verified": true,
+    "identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "state": "paused",
+    "observations": [
+      {
+        "state": 2,
+        "position_ms": 410285
+      },
+      {
+        "state": 2,
+        "position_ms": 410285
+      }
+    ],
+    "all_local_children_reaped": true,
+    "elapsed_python_monotonic_ns": 264008541,
+    "command_count": 6,
+    "raw_total_bytes": 109191,
+    "input_executed_by_observer": false,
+    "state_bracket_atomic": false,
+    "visual_motion_observed": null,
+    "format_or_presentation_fps_verified": false
+  },
+  "helper_actual_installed": true,
+  "CPU_before": {
+    "policy0": [
+      364800,
+      1689600,
+      1689600
+    ],
+    "policy2": [
+      499200,
+      1824000,
+      1824000
+    ],
+    "policy5": [
+      499200,
+      1824000,
+      1824000
+    ],
+    "policy7": [
+      480000,
+      1939200,
+      1939200
+    ]
+  },
+  "actual_started": true,
+  "driver_exit": 1,
+  "driver_reaped": true,
+  "driver_failure_label": "source_input_transition_unverified",
+  "driver_failure_class": "Rejected",
+  "authenticated_source_marker_cleanup": {
+    "owned_marker_cleanup_confirmed": true,
+    "cleanup_failures": 0,
+    "filesystem_checks_atomic": false
+  },
+  "instrumentation_cleanup_diagnostic": {
+    "schema": 1,
+    "scope": "cleanup_output_not_media_success_or_phone_ownership",
+    "output_available": true,
+    "stdout_bytes": 2609,
+    "stderr_bytes": 0,
+    "stdout_lines": 2,
+    "stderr_lines": 0,
+    "numeric_result_status": "valid",
+    "numeric_result_count": 1,
+    "stderr_numeric_marker_count": 0,
+    "instrumentation_failed_marker_count": 0,
+    "instrumentation_aborted_marker_count": 0,
+    "security_exception_line_count": 0,
+    "instrumentation_code_count": 1,
+    "instrumentation_code_status": "valid",
+    "instrumentation_code": 0,
+    "numeric_result": {
+      "helper_owned_attempt_started": true,
+      "failure_class": "IllegalStateException",
+      "bounded_failure_label": "unclassified"
+    }
+  },
+  "source_phase_1_verified": false,
+  "source_phase_2_verified": false,
+  "trial_passed": false,
+  "helper_uninstalled": true,
+  "CPU_after_cleanup": {
+    "policy0": [
+      364800,
+      1574400,
+      1574400
+    ],
+    "policy2": [
+      499200,
+      1824000,
+      1824000
+    ],
+    "policy5": [
+      499200,
+      1612800,
+      1612800
+    ],
+    "policy7": [
+      480000,
+      1939200,
+      1939200
+    ]
+  },
+  "original_idle_and_identity_verified": false,
+  "target_absent": true,
+  "helper_process_absent": true,
+  "input_absent": true,
+  "source_paused_after_unknown": true,
+  "scope": "real owner phone saved-UI M1 public authenticated source-input qualification; not steady video/FPS acceptance",
+  "phone_sampler_started": false,
+  "phase1_target_qualified": true,
+  "phase1_command_published": true,
+  "phase1_target_identity": {
+    "known": true,
+    "pid": 3470,
+    "uid": 10235,
+    "start_ticks": 1952,
+    "command_ok": true,
+    "error_code": 0,
+    "raw_bytes": 1464,
+    "host_started_monotonic_ns": 328543632719958,
+    "host_finished_monotonic_ns": 328543684167166,
+    "child_reaped": true
+  },
+  "phase1_target_format": {
+    "itag": 299,
+    "codec": "avc1",
+    "width": 1920,
+    "height": 1080,
+    "descriptor_fps": 60.0
+  },
+  "later_readonly_followup": {
+    "read_only_followup": true,
+    "source_controls": false,
+    "original_now": {
+      "gateway_pid": 26875,
+      "gateway_start_id": "Sat_Oct_3_17:37:47_2026",
+      "gateway_source_sha256": "215a0a254d3f91e87c600c1455c8239f6d1e2d0208011612a43bd6e1370b3a9a",
+      "runtime_manifest_sha256": "b708399680cc9b4ff19a5cd2048e04dd70dbb75502c1a22cb3eae8419967844f",
+      "coverage_complete": true,
+      "owned_descendants": 0,
+      "hardware_process_groups": 0,
+      "packetizer_processes": 0,
+      "guest_control_processes": 0
+    },
+    "original_idle_verified": true,
+    "paused_failure_class": "Rejected",
+    "paused_failure_label": "source_input_transition_unverified",
+    "playing": {
+      "schema": "authenticated-source-state-observation-v1",
+      "verified": true,
+      "identity": {
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "state": "playing",
+      "observations": [
+        {
+          "state": 3,
+          "position_ms": 410662
+        },
+        {
+          "state": 3,
+          "position_ms": 410662
+        }
+      ],
+      "all_local_children_reaped": true,
+      "elapsed_python_monotonic_ns": 266749834,
+      "command_count": 6,
+      "raw_total_bytes": 109556,
+      "input_executed_by_observer": false,
+      "state_bracket_atomic": false,
+      "visual_motion_observed": null,
+      "format_or_presentation_fps_verified": false
+    }
+  },
+  "current_source_state": "playing",
+  "current_source_pause_verified": false,
+  "source_contact_receipt_exported": false,
+  "matched_dispatched_marker_inferred_from_audited_control_flow": true,
+  "matched_dispatched_marker_has_explicit_event_record": false,
+  "followup_candidates": {
+    "bounded_previous_state_readonly_polling": {
+      "default_previous_state": null,
+      "driver_opt_in": true,
+      "same_total_budget_seconds": 3,
+      "max_triplets": 8,
+      "requires_two_consecutive_goal_states": true,
+      "retries_input": false,
+      "relaxes_identity_focus_owner": false,
+      "real_device_validated": false
+    },
+    "source_cleanup_numeric_projection": {
+      "closed_boolean_contact_receipts": true,
+      "actual_owner_phone_validated": false
+    },
+    "targeted_checks": {
+      "count": 63,
+      "seconds": 0.038,
+      "passed": true
+    }
+  },
+  "exact_f100_CI": {
+    "sha": "f10055ad8266e21106f826b1080fd3b020d004e5",
+    "run": 37170621906,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  }
+}

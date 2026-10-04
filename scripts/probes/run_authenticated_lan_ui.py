@@ -31,7 +31,12 @@ INSTRUMENTATION_FAILURE_LABELS = frozenset((
     'saved_UI_route_unverified', 'saved_UI_account_unavailable',
     'saved_UI_credential_unavailable', 'saved_UI_restore_unavailable',
     'reconnect_UI_button_missing', 'normal_UI_reconnect',
-    'reconnect_no_authenticated_media', 'steady_sampler_completion_missing'))
+    'reconnect_no_authenticated_media', 'steady_sampler_completion_missing',
+    'source_marker_timeout', 'source_marker_preexisting', 'source_marker_descriptor_bound',
+    'source_marker_changed_size', 'source_marker_changed_inode', 'source_input_capture',
+    'source_phase_preexisting', 'source_command_cleanup', 'source_input_ownership',
+    'source_input_dispatch', 'source_observer_nonce_changed', 'source_verified_marker_cleanup',
+    'source_owned_marker_cleanup'))
 sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
 from scripts.probes import owner_source_gate
@@ -423,6 +428,23 @@ def instrumentation_cleanup_diagnostic(output):
             if type(value['helper_owned_attempt_started']) is not bool:
                 raise ValueError('bool_required')
             projected['helper_owned_attempt_started'] = value['helper_owned_attempt_started']
+        for name in ('requested_authenticated_source_input', 'source_owned_marker_cleanup_failed',
+                     'source_phase_1_external_observer_confirmation', 'source_phase_2_external_observer_confirmation'):
+            if name in value:
+                if type(value[name]) is not bool:
+                    raise ValueError('bool_required')
+                projected[name] = value[name]
+        tap_keys = {'down_attempted', 'down_returned', 'up_attempted', 'up_returned',
+                    'cancel_attempted', 'cancel_returned', 'cancel_skipped_for_changed_owner',
+                    'remote_playback_verified_by_helper'}
+        for phase in (1, 2):
+            name = 'source_phase_%d_local_tap' % phase
+            if name in value:
+                receipt = value[name]
+                if (type(receipt) is not dict or set(receipt) != tap_keys
+                        or any(type(flag) is not bool for flag in receipt.values())):
+                    raise ValueError('tap_receipt_bool_schema')
+                projected[name] = dict(receipt)
         for name, allowed in (('failure_class', INSTRUMENTATION_FAILURE_CLASSES),
                 ('failure_cause_class', INSTRUMENTATION_FAILURE_CLASSES),
                 ('bounded_failure_label', INSTRUMENTATION_FAILURE_LABELS)):
@@ -637,7 +659,7 @@ def main():
             def observe_transition(state, identity):
                 begin = time.monotonic_ns()
                 value = source_authenticated_observation.collect_state('adb', args.guest, identity,
-                    state, timeout=3)
+                    state, timeout=3, previous_state='paused' if state == 'playing' else 'playing')
                 if state == 'paused':
                     remaining = 6 - (time.monotonic_ns()-begin)/1e9
                     if remaining < 3:

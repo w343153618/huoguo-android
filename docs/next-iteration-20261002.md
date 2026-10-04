@@ -1,3 +1,28 @@
+## 2026-10-04 latest: first native public Play qualification failed; bounded readonly followup prepared
+
+NEW frozenf100/303Pythonpins+finala575helper executed once via installedowner40/
+d043/JNI4bf normal savedUI/publicM1. Fresh pausedBBB3470/10235/start1952/
+299avc1/1080descriptor60/251Opus+display/rotation qualified2.448s, phase1 command
+published; matched dispatch is inferred from audited failure path, no exported
+local-contact receipt. Immediate independent transition rejected; noSFsamplers/
+30swindow. Driver1/coordinator2, helper/input/target/namedmarkers cleaned. Initial
+originalpostcheck failed; later root readonly same26875/start/source215a/runtimeb708
+and fourroleszero confirmed. Later source sameidentity nowPLAYING/anchor410662,
+notpaused. Do not restart oldpaused-first candidate/coords/collector-only or use
+guestADB/credentials to pause. Read authenticated-source-first-public-20261004.md/json.
+
+Prepared explicit previous-state readonly polling within SAME3s/max8triplets,
+requiring two consecutive goal brackets with unchanged identity/focus/owner;
+defaultstandalone unchanged/noinput retry. Actual cause of first refusal unknown,
+polling notyetdevicevalidated. Cleanupdiagnostic now closedsourceboolean contacts/
+labels only, cannotrecover oldreceipt or treatJSONasownership.63focused0.038sPASS.
+Next safe authenticated Pause/requalification from nowplaying source, then NEW
+qualified ordinarypublic movingvideo window; playingUI3stimeout remainsfailure.
+Default80/FIFO/sessionFPS/lead0/off retained, M5/NPS/services unchanged. CPUcaps
+this round higher/drifting, no writes/controlledCPU/V50/performanceclaim. Exact
+f100/run37170621906 overall/build/UDPsuccess; newfollowup needs ownCI. Sourcepush
+is notnewAPK. Rootexecnull and noactivephone/media.
+
 ## 2026-10-04 latest: default-off authenticated source driver integrated; actual marker protocol passed
 
 M1 saved-UI/nps_owner/media-only source-input driver now integrates finala575
