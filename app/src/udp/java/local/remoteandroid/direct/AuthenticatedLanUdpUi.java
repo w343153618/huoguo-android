@@ -48,11 +48,128 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         final boolean boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled;final int surfaceSubmitLeadMs;
         volatile boolean cancelled;volatile Socket https;volatile UdpVideoProbe receiver;
         volatile String sessionId;volatile boolean stopped;
+        // Null in ordinary sessions. No helper, UI, Intent or transport callsite.
+        OwnerInputObservation ownerInputObservation;
         Attempt(long generation,String endpoint,String credential,String scope,String node,NpsPhysicalNetwork physicalNetwork,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;this.node=node;this.physicalNetwork=physicalNetwork;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
         if(!BuildConfig.AUTHENTICATED_LAN_UDP||!BuildConfig.APPLICATION_ID.equals("local.remoteandroid.direct.experiment"))throw new IllegalStateException("isolated build required");
         this.activity=activity;passwordStore=new PasswordStore(activity);
+    }
+    /** Same-App candidate only. This observes actual queue actions and their
+     * cleanup; it does not join the shared executor or qualify codec/audio,
+     * remote input, PM, server lease or a native-parent callback. */
+    OwnerInputObservation ownerCaptureInput(long originalEndNs) {
+        final long begin=System.nanoTime();
+        synchronized(lock) {
+            final long now=System.nanoTime();
+            if(now<begin || now-begin>=3_000_000_000L || now>=originalEndNs)
+                throw new IllegalStateException("owner_input_original_deadline");
+            Attempt attempt=current;
+            if(originalEndNs<=begin || originalEndNs-begin>30_000_000_000L
+                    || attempt==null || attempt.ownerInputObservation!=null
+                    || generation==Long.MAX_VALUE || activity.generation==Integer.MAX_VALUE)
+                throw new IllegalStateException("owner_input_capture_refused");
+            OwnerInputObservation observation=new OwnerInputObservation(this,attempt,originalEndNs);
+            observation.liveState();
+            observation.budget(begin);
+            observation.scope=activity.input.captureDrain(attempt,observation.activityGeneration);
+            attempt.ownerInputObservation=observation; // Retain before any post-check can fail.
+            observation.bound=true;
+            try { observation.liveState(); observation.budget(begin); }
+            catch(RuntimeException | Error failure) { observation.unknown(); throw failure; }
+            return observation;
+        }
+    }
+    static final class OwnerInputObservation {
+        private static final int LIVE=0, SEALED=1, OBSERVED=2, UNKNOWN=3;
+        private final AuthenticatedLanUdpUi ui;
+        private final Attempt attempt;
+        private final UdpVideoProbe receiver;
+        private final android.view.SurfaceView screen;
+        private final android.view.Surface surface;
+        private final int activityGeneration;
+        private final long uiGeneration,endNs;
+        private InputQueue.DrainScope scope;
+        private InputQueue.DrainObservation inputObservation;
+        private int phase=LIVE;
+        private boolean outstanding,bound;
+        private OwnerInputObservation(AuthenticatedLanUdpUi ui,Attempt attempt,long endNs) {
+            this.ui=ui; this.attempt=attempt; this.endNs=endNs;
+            receiver=attempt.receiver; screen=ui.activity.screen;
+            surface=screen==null?null:screen.getHolder().getSurface();
+            activityGeneration=ui.activity.generation; uiGeneration=ui.generation;
+        }
+        private void unknown() { phase=UNKNOWN; ui.activity.input.invalidateDrain(scope); }
+        private void budget(long begin) {
+            long now=System.nanoTime();
+            if(begin<=0 || now<begin || now-begin>=3_000_000_000L || now>=endNs)
+                throw new IllegalStateException("owner_input_original_deadline");
+        }
+        private void objects() {
+            if(Looper.myLooper()!=Looper.getMainLooper() || ui.activity.isFinishing()
+                    || ui.activity.isDestroyed() || bound && attempt.ownerInputObservation!=this
+                    || receiver==null || attempt.receiver!=receiver || screen==null
+                    || ui.activity.screen!=screen || surface==null
+                    || screen.getHolder().getSurface()!=surface)
+                throw new IllegalStateException("owner_input_objects_changed");
+        }
+        private void liveState() {
+            objects();
+            if(ui.current!=attempt || ui.retiring!=null || attempt.cancelled || attempt.stopped
+                    || ui.generation!=uiGeneration || attempt.generation!=uiGeneration
+                    || ui.activity.generation!=activityGeneration || !ui.activity.running
+                    || !surface.isValid()) throw new IllegalStateException("owner_input_not_current");
+        }
+        private void retiredState(boolean completed) {
+            objects();
+            int gen=ui.activity.generation;
+            if(ui.current!=null || ui.retiring!=null && ui.retiring!=attempt
+                    || !attempt.cancelled || !attempt.stopped || ui.generation!=uiGeneration+1
+                    || gen!=activityGeneration && gen!=activityGeneration+1
+                    || completed && (ui.retiring!=null || gen!=activityGeneration+1 || ui.activity.running))
+                throw new IllegalStateException("owner_input_not_same_retirement");
+        }
+        // Called explicitly by a future same-App cooperative adapter; no ordinary callsite.
+        void observeLive() {
+            final long begin=System.nanoTime();
+            synchronized(ui.lock) {
+                try {
+                    if(phase!=LIVE || outstanding) throw new IllegalStateException("owner_input_phase");
+                    outstanding=true; budget(begin); liveState(); budget(begin);
+                } catch(RuntimeException | Error failure) { unknown(); throw failure; }
+                finally { outstanding=false; }
+            }
+        }
+        void sealAfterNormalCancel() {
+            final long begin=System.nanoTime();
+            synchronized(ui.lock) {
+                try {
+                    if(phase!=LIVE || outstanding) throw new IllegalStateException("owner_input_phase");
+                    outstanding=true; budget(begin); retiredState(false);
+                    ui.activity.input.sealDrain(scope,attempt,activityGeneration);
+                    retiredState(false); budget(begin); phase=SEALED;
+                } catch(RuntimeException | Error failure) { unknown(); throw failure; }
+                finally { outstanding=false; }
+            }
+        }
+        /** Past observation only. Later work can start; this is not an atomic
+         * input lease or a normal codec/audio/remote-input cleanup receipt. */
+        boolean observeRetiredInput() {
+            final long begin=System.nanoTime();
+            synchronized(ui.lock) {
+                try {
+                    if(phase!=SEALED || outstanding) throw new IllegalStateException("owner_input_phase");
+                    outstanding=true; budget(begin); retiredState(true);
+                    InputQueue.DrainObservation found=ui.activity.input.observeDrain(scope,attempt,activityGeneration);
+                    retiredState(true); budget(begin);
+                    if(found==null) return false;
+                    if(!ui.activity.input.matches(scope,found)) throw new IllegalStateException("owner_input_drain_changed");
+                    inputObservation=found; phase=OBSERVED; return true;
+                } catch(RuntimeException | Error failure) { unknown(); throw failure; }
+                finally { outstanding=false; }
+            }
+        }
     }
     @Override public boolean active(){synchronized(lock){return current!=null&&!current.stopped;}}
     @Override public void showLogin(){

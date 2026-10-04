@@ -1,0 +1,94 @@
+{
+  "schema": "owner-App-input-drain-candidate-v1",
+  "source_base": "da44db2571d8e581a4a8cd664f4c961f57360872",
+  "default": "explicit same-App package-private unwired interface; nullable observer in ordinary paths; no helper, CLI, HTTP, env, account, Intent, transport or native callsite",
+  "actual_JVM_checks": 39,
+  "new_checks": 38,
+  "seconds": 5.356,
+  "related_checks": [
+    {
+      "name": "completion receipt",
+      "checks": 7,
+      "seconds": 5.064
+    },
+    {
+      "name": "normal saved UI credentials",
+      "checks": 14,
+      "seconds": 3.931
+    },
+    {
+      "name": "normal exit callback await",
+      "checks": 10,
+      "seconds": 0.804
+    }
+  ],
+  "Android_state_in_JVM": "synthetic; actual adapter source extracted verbatim",
+  "actual_queue_evidence": [
+    "active action and cleanup wait on own host latches; clear not join",
+    "MOVE coalescing preserves all cleanup counts",
+    "pending clear observed only after actual drain returns",
+    "action/cleanup failure, executor rejection, global shutdown, changed generation, enqueue after seal remain UNKNOWN",
+    "64 diagnostic tracking bound refuses observation without limiting ordinary queue execution",
+    "foreign queue/Attempt/generation and repeated phases refused; detached marker is past observation only"
+  ],
+  "actual_App_adapter": [
+    "actual Attempt retained on Attempt and queue scope; no later owner adoption",
+    "same receiver, screen and Surface object identity; main thread, current/retiring Attempt, Activity generation and normal cancel transition",
+    "original 3s command anchored before original UI monitor; original <=30s end never renewed",
+    "normal cancel + MainActivity.stop generation+1 observed, does not call cancel/stop or alter their implementation",
+    "shared InputQueue executor retained; queue Work action and cleanup accounted, no executor shutdown or ordinary barrier task",
+    "no prototype three-worker contract imposed on real codec/audio/remote input paths"
+  ],
+  "counterexample": {
+    "checks": 1,
+    "failures": 1,
+    "seconds": 0.709,
+    "cause": "initial adapter accepted a cleared captured observer binding; now exact bound pointer required, sticky UNKNOWN"
+  },
+  "initial_fixture_setup_error": "auxiliary-class javac lint/Werror; fixed fixture using the same Attempt receiver, warnings not suppressed",
+  "API37": {
+    "complete_sources": 43,
+    "complete_classes": 115,
+    "complete_exit": 0,
+    "changed_exit": 0,
+    "changed_lint_Werror": true,
+    "bootstrap_android_and_core_lambda_stubs": true,
+    "baseline_serial_warnings": 2,
+    "existing_deprecation_and_obsolete_option_warnings_only_suppressed": true,
+    "build_dependencies": "existing private debug BuildConfig and R.jar references pinned; no secret copy",
+    "compile_only": true,
+    "final_changed_post_review_exit": 0
+  },
+  "initial_compile_refusals": [
+    "missing generated UDP source set and R.jar",
+    "Android LambdaMetafactory needs SDK core-lambda-stubs.jar",
+    "existing two serial warnings rejected whole-source Werror; full source retains warnings, both changed files independently Werror clean"
+  ],
+  "source_pins": {
+    "app/src/main/java/local/remoteandroid/direct/InputQueue.java": "a20a9b58ce2967176cb784d4fdd39b5ebbada6c8ce04591baed5c48d334c73a5",
+    "app/src/udp/java/local/remoteandroid/direct/AuthenticatedLanUdpUi.java": "ed81a6ac85228bdb19b8b3a6480d83552d8808aaac7d9bed804fc43f327b720d",
+    "tests/test_owner_input_observation.py": "18b722c37dc34d5bf99e88e4fec5ee68792efb66466491911ebb7b64a5ea6bb1",
+    "tests/fixtures/InputDrainFixture.java": "5473d8ba710f86041e5d39eb70eccf985c8807bc2a124493da233930be77ab86",
+    "tests/fixtures/OwnerInputAppSkeleton.java.txt": "6dd6fac6be281aabcc5456961c0e33b761f5c62eff5067502e29d44783e6ae87",
+    "tests/fixtures/OwnerInputAppFixture.java": "243795c2de9dbd5ac5835aaff20033d38df7d6c748d0cc9cffbe85a28cd6549e"
+  },
+  "true_Android_ART": false,
+  "helper_callsite_or_app_report_bridge": false,
+  "native_process_qualifier_or_phoneclock_report_association": false,
+  "normal_codec_audio_remote_input_quiescence": false,
+  "PM_package_scope_ownership_retirement": false,
+  "operator_source_server_admission": false,
+  "gateway_release": false,
+  "new_APK_helper_JNI_sign_install_publish": false,
+  "old_artifact_pins": "old local3d App/helper106-class match belongs to those old bytes only; new source/classes require separately built exact artifacts",
+  "phone_manual_and_old82f_cleanup": "unknown unchanged; no poll, screenshot, install, auth, media, RPC, UI, input or cleanup action",
+  "original_guards_deadlines_buffers_defaults_changed": false,
+  "next": "Actual cooperative UdpVideoProbe and UdpAudioReceiver resource ownership/normal-close adapters, same native-process bridge and whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway gates. Past input drain observation never releases.",
+  "early_resource_read_counterexample": {
+    "checks": 1,
+    "failures": 1,
+    "seconds": 3.707,
+    "actual_monitor_wait_ms": 3100,
+    "cause": "capture constructor read Surface after exhausted original caller budget; now budget checked before first actual resource read"
+  }
+}

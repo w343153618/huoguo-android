@@ -66,5 +66,31 @@
   "App_helper_JNI_public_release_changed": false,
   "phone_manual_gate_and_old82f_cleanup": "unchanged_unknown_no_device_poll_or_mutation",
   "next": "NEW cooperative App adapter must use actual Java captured state/resources and normal retirement; prove actual native-process bridge separately. Closer return/Thread.TERMINATED cannot replace codec/audio/input quiescence. Whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway release gates remain.",
-  "CI": "pending_own_source_SHA_run"
+  "CI": "accepted_exact_source_only_no_APK_release",
+  "exact_source_CI": {
+    "sha": "da44db2571d8e581a4a8cd664f4c961f57360872",
+    "run": 37238864790,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP": "success",
+    "build_job": 111543337896,
+    "UDP_job": 111544088887,
+    "actual_test_summaries": [
+      [
+        "2289",
+        "143.233"
+      ]
+    ],
+    "actual_verdicts": [
+      "OK (skipped=11)"
+    ],
+    "build_log_SHA256": "611cc601e1327bfcf96d8c4820cac062ee7ff81e06c1c08d307eeb4fe2f92a04",
+    "build_log_bytes": 76606,
+    "independently_exact_SHA_job_readback": true,
+    "APK_release": false,
+    "Linux_tests": 2289,
+    "Linux_seconds": 143.233,
+    "existing_skips": 11
+  }
 }

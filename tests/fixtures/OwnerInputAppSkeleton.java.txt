@@ -1,0 +1,26 @@
+package local.remoteandroid.direct;
+import android.os.Looper;
+final class MainActivity {
+    final InputQueue input;
+    android.view.SurfaceView screen=new android.view.SurfaceView();
+    int generation=3;
+    boolean running=true,dead;
+    MainActivity(InputQueue queue) { input=queue; }
+    boolean isFinishing() { return dead; }
+    boolean isDestroyed() { return dead; }
+}
+final class UdpVideoProbe { }
+public final class AuthenticatedLanUdpUi {
+    final MainActivity activity;
+    final Object lock=new Object();
+    long generation=7;
+    Attempt current,retiring;
+    static final class Attempt {
+        long generation=7;
+        boolean cancelled,stopped;
+        UdpVideoProbe receiver=new UdpVideoProbe();
+        OwnerInputObservation ownerInputObservation;
+    }
+    AuthenticatedLanUdpUi(InputQueue queue) { activity=new MainActivity(queue); current=new Attempt(); }
+/* ACTUAL_APP_ADAPTER */
+}
