@@ -1,0 +1,112 @@
+{
+  "schema": "owner-native-helper-channel-candidate-v1",
+  "status": "default_OFF_partial_framed_library_actual_host_FD_checks_and_Android_compile_only",
+  "default_enabled": false,
+  "source_based_on_commit": "dca400bec225b5637836a31fb30339f90d392521",
+  "source_SHA256": {
+    "experiments/moonlight-v2/source-snapshot/helper_owner_channel.c": "9961170415aeffef02f52de5e9a5c00112acd445e4df4cd6ab47fce69e7c8032",
+    "scripts/probes/build_helper_owner_channel.py": "f3407451da10f519552ac66f4a5421165ef1716c1aa7a5e60a42e6c5b3fad8bc",
+    "tests/test_helper_owner_channel.py": "0826e89a2afb7eea25bbaabe1cbb361be6a74e88bd4454e10b6af537f3f2159b"
+  },
+  "new_checks": 15,
+  "affected_checks": 92,
+  "affected_seconds": 11.8,
+  "preceding_13_checks_seconds": 2.789,
+  "actual_host_open_duplex_input_and_owned_APK_writer_FD": true,
+  "Android_UID_PM_ART_operator_or_lease_verified": false,
+  "protocol": {
+    "fixed_header_bytes": 112,
+    "magic": "HGHC0001",
+    "flags_and_reserved_zero": true,
+    "nonce_bytes": 24,
+    "monotonic_sequence_bytes": 8,
+    "payload_length_bytes": 4,
+    "SHA256_hex_bytes": 64,
+    "UPLOAD_payload_bytes_production": 86419,
+    "exact_SEAL_instead_of_input_EOF": true,
+    "control_FD_remains_open_after_writer_close": true,
+    "partial_extra_wrong_hash_bad_header_or_replay_refused": true,
+    "ordered_requests": [
+      "INSTALL",
+      "DRIVER_DONE",
+      "UNINSTALL",
+      "RETIRE"
+    ],
+    "CANCEL_only_sets_owned_flag_and_request": true,
+    "requests_perform_operations_or_grant_permission": false,
+    "no_PID_or_old_JSON_scope_adoption": true
+  },
+  "bounds": {
+    "fixed_command_header_max_128_bytes": true,
+    "single_command_caller_budget_seconds_unchanged": 3,
+    "cooperative_read_deadline_max_ms": 3000,
+    "fixture_deadline_ms": 1000,
+    "host_fixture_payload_cap_bytes": 131072,
+    "filesystem_and_Popen_creation_hard_wallclock_guarantee": false
+  },
+  "owner_contract": {
+    "actual_only_created_write_FD_closed_before_readonly_hash_or_child": true,
+    "root_only_NEW_layout": true,
+    "existing_owner_source_modified": false,
+    "old_flat_root_shell_metadata_or_private_finalizer_compatible": false,
+    "production_close_possible_scope_refusal_kept": true,
+    "unknown_requires_actual_held_owner_supervisor": true
+  },
+  "Android_compile": {
+    "schema": "partial-helper-channel-build-v1",
+    "NDK_revision": "29.0.14206865",
+    "API": 30,
+    "ABI": "arm64-v8a",
+    "source_sha256": {
+      "experiments/moonlight-v2/source-snapshot/helper_owner_channel.c": "9961170415aeffef02f52de5e9a5c00112acd445e4df4cd6ab47fce69e7c8032",
+      "experiments/moonlight-v2/source-snapshot/helper_scope_owner.c": "942e231bc6099503b2bf2d967ca7c1af8c2f8c2450ed9ec2084421de1489226e",
+      "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d"
+    },
+    "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+    "binary_sha256": "87506466b07bfd06243e380aca2793d31cbdbde7cc091a3ba694c58ecd5cb438",
+    "binary_bytes": 23280,
+    "ELF_AArch64_verified": true,
+    "fixture_macro_enabled": false,
+    "production_activation_available": false,
+    "device_PM_or_native_Android_execution": false,
+    "wire_requests_grant_operator_lease_or_cleanup": false,
+    "complete_installer_or_supervisor": false,
+    "App_helper_JNI_or_release_changed": false,
+    "reservation_release_authorized": false
+  },
+  "Android_binary_staged_or_executed": false,
+  "live_operations": {
+    "phone_queries_this_turn": 1,
+    "phone_result": "device-not-found",
+    "repoll": false,
+    "phone_or_helper_mutations": 0,
+    "authentication_media_RPC_UI_input": 0,
+    "remote_scope_or_PM_operations": 0,
+    "admission_reservation_started": false,
+    "original_or_NPS_signals": 0
+  },
+  "production_CLI_activation_available": false,
+  "complete_installer_control_coordinator_driver_uninstall_or_supervisor": false,
+  "App_helper_JNI_or_release_changed": false,
+  "preceding_exact_CI": {
+    "commit": "dca400bec225b5637836a31fb30339f90d392521",
+    "run_id": 37215217607,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111474221648,
+    "UDP_job": 111474890261,
+    "Linux_tests": 2057,
+    "Linux_seconds": 93.735,
+    "existing_skips": 11,
+    "URL": "https://github.com/w343153618/huoguo-android/actions/runs/37215217607",
+    "independently_readback_verified": true,
+    "private_followon_covered_by_CI": false
+  },
+  "this_candidate_CI": {
+    "status": "not_pushed_or_verified_yet",
+    "private_followon_covered": false
+  },
+  "next": "NEW trusted phase binding to actual held native owner: fixed user0 PM/actual child wait/dual EOF plus independent driver/current-Attempt/package/helper/input/scope cleanup callbacks and whole operator/source/phone/admission/environment. Valid request is never a grant. First old reviewed f0/d043 frame-only when phone actually returns."
+}

@@ -125,8 +125,47 @@
     "private_followon_covered_by_CI": false
   },
   "this_candidate_CI": {
-    "status": "not_pushed_or_verified_yet",
-    "covers_private_followon": false
+    "commit": "dca400bec225b5637836a31fb30339f90d392521",
+    "run_id": 37215217607,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111474221648,
+    "UDP_job": 111474890261,
+    "Linux_tests": 2057,
+    "Linux_seconds": 93.735,
+    "existing_skips": 11,
+    "URL": "https://github.com/w343153618/huoguo-android/actions/runs/37215217607",
+    "independently_readback_verified": true,
+    "private_followon_covered_by_CI": false
   },
-  "next": "NEW matching same-object root-only FD retirement and fixed uninstall/held driver/package/helper/input cleanup handshake, then complete isolated environment/operator/source/phone/admission supervisor. No partial live activation. On actual phone return first unchanged reviewed f0/d043 frame-only."
+  "next": "NEW matching same-object root-only FD retirement and fixed uninstall/held driver/package/helper/input cleanup handshake, then complete isolated environment/operator/source/phone/admission supervisor. No partial live activation. On actual phone return first unchanged reviewed f0/d043 frame-only.",
+  "private_followon": {
+    "schema": "private-same-owner-pre-PM-retirement-v1",
+    "directory": "/private/tmp/huoguo-helper-owner-retire-8dlce3be",
+    "canonical_commit": "dca400bec225b5637836a31fb30339f90d392521",
+    "files": {
+      "helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d",
+      "source-pins.json": "239c5ee046a4c73f0035be2728037c2b1c4a9c1bf7928b69ab2628002c3437cb",
+      "helper_scope_owner.c": "942e231bc6099503b2bf2d967ca7c1af8c2f8c2450ed9ec2084421de1489226e",
+      "test_owner_retire.py": "001a3f64e7fa86cf05697c98eb34b5817d5b24574fd6e214edf60ecb9f103761",
+      "owner_retire_fixture.c": "6d73861316def3aa11cd5636738556f443d123f58a82dbebf82a368d2f71e1c6"
+    },
+    "actual_host_scope_FD_upload_retirement_fixtures": 11,
+    "actual_host_seconds": 1.134,
+    "preceding_11_checks_seconds": 1.491,
+    "scope_layout": "NEW root-only owner parent/stage0700 APK0600",
+    "old_shell_tmp_root_shell_or_metadata_contract_compatible": false,
+    "actual_same_owner_object_not_PID_or_JSON_adoption": true,
+    "PM_child_ever_started_blocks_pre_PM_cleanup_even_natural0": true,
+    "foreign_changed_or_partial_scope_retained": true,
+    "later_scope_never_reclaimed": true,
+    "ordinary_unlink_is_atomic_compare": false,
+    "competing_privileged_writer_exclusion_required": true,
+    "Android_compile_execution_or_PM": false,
+    "complete_installer_helper_cleanup_or_supervisor": false,
+    "operator_permission_remote_PM_lease_and_release_verified": false,
+    "next": "Fixed owned uninstall after actual held driver/independent same-package cleanup qualification; native live control transport must bind commands to actual held parent without PID adoption. Whole env/operator/source/phone/admission required. No private partial execute."
+  }
 }

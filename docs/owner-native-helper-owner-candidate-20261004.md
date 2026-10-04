@@ -66,3 +66,22 @@ The preceding bc4/run37212308330 independently passed overall/build/UDP with
 Read the new SHA's own CI after the meaningful source push, and continue with
 matching same-object root-only retirement and bounded fixed PM/helper lifecycle;
 never execute a partial live installer.
+
+Exact dca400bec225b5637836a31fb30339f90d392521/run37215217607 is now independently
+completed/overall/build/UDPsuccess; actual Linux2057tests/93.735s/11existing skips.
+No rerun or old green. This cloud append is local pending the next meaningful
+source push and does not cover the private follow-on.
+
+NEW private matching owner-object pre-PM retirement passes11actual host checks
+(1.134s; preceding pass1.491s preserved). It removes only the verified upload
+scope owned by that actual process's held FDs; no old receipt/PID adoption. Any
+PM child ever started blocks this pre-PM path even with natural0/EOF. Wrong mode,
+changed contents/replaced nodes/unknown upload/partial foreign entries retain;
+a later scope at the same name cannot be reclaimed. All Android PM/permission/
+lease/release claims remain false, and old contracts remain incompatible. No
+Android binary was built or run for this private follow-on. Fixed uninstall and
+full driver/package/helper cleanup still require implementation. The current
+upload consumes stdin to EOF, so a NEW bounded native-owned control transport is
+needed before later driver/uninstall phases; closed stdin cannot carry commands.
+Do not use JSON/PIDs or local ADB EOF to bridge that gap or execute partial live
+code. Actual Android DAC/SELinux/PM and full supervisor qualification remain open.

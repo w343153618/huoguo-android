@@ -1,5 +1,29 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW defaultOFF native helper channel partial library:15new/92affected actual
+host checks PASS11.800s; NDK29/API30 compile23280B/87506466 only, no stage/run.
+112B closed frame/exact pinned payload+SEAL keeps controlFD open after sole APK
+writeFDclose/hash, fixing prior EOF incompatibility. Bad/partial/replayed input
+refuses/retains. INSTALL/DRIVER_DONE/UNINSTALL/RETIRE are ONLY requests, not PM,
+cleanup/operator/lease/release acknowledgments; productionCLI activation rejected.
+Next trusted actual held owner-child/driver/package/freshcurrentAttempt callbacks
+and whole environment/operator/source/phone/admission binding, not partial live
+execute. Oldscope/layout/sourcepins unchanged. Phoneonce missing/no repoll,
+rootexecnull; oldreviewed f0/d043 first on actual return. NewSHA ownCI.
+Read owner-native-helper-channel candidate doc/json and private checkpoint.
+
+Exact dca400b/run37215217607 independently overall/build/UDPsuccess2057/93.735s/
+11existing skips; no repeat or borrowed green. NEW private same-owner pre-PM
+retirement11actualhostchecks/1.134s: actualheldFDs/ownscope only, refuses PM-ever-
+started even0/EOF, replacements/hash/partialunknown/later scope preserved.
+No Android/PM/permission/lease/release. Current upload closes stdin at EOF;
+NEW reviewed native-owned control transport is a compatibility gate for later
+fixed uninstall/driver phases. No PID/JSON/ADB EOF adoption. Next whole lifecycle
+transport+helddriver/freshsamepackage cleanup and original five-field gates,
+not partial execute. Oldcontracts/frozenpins unchanged; phoneonce missing/no
+repoll/rootexecnull. Oldf0/d043 first on actual return. Clouddocs localappend
+next meaningful sourcepush, not doc-onlyCI.
+
 NEW default-OFF partial native helper owner library:16 actual host checks within
 77 affected/9.422s PASS. Root-only NEW parent/stage0700/APK0600 avoids granting
 shell new writeFDs; old flat/root:shell finalizer and private contract incompatible.
