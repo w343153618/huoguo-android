@@ -1,0 +1,66 @@
+{
+  "schema": "owner-native-frame-numeric-export-candidate-v1",
+  "status": "source_and_offline_JVM_API37_only_not_built_or_deployed",
+  "native_collection_default_enabled": false,
+  "report_projection_changes_collection": false,
+  "scope": "Existing default-OFF RX-owned native event detail; report-time closed numeric App projection only",
+  "new_checks": 8,
+  "focused_checks": 42,
+  "focused_seconds": 18.098,
+  "additional_API37_and_stage_checks": 4,
+  "additional_seconds": 3.096,
+  "actual_API37_all_App_and_helper_sources_compile": true,
+  "existing_worst_stage_numeric_report_bytes_with_native_collection_off": 55219,
+  "JSON_fixture_scope": "Actual Java report methods with typed JSON substitutes, not Android JSONObject/ART or phone runtime",
+  "source_SHA256": {
+    "experiments/nps-transport/phone/UdpVideoProbe.java": "9dea0d6d316e216ec0b46320d160d7fe01232c9009a83591f99475591031e962",
+    "tests/test_udp_native_frame_export.py": "db151982858037728bc49e7edab1ac6d628025980053afb931eb35ea8231cf1e"
+  },
+  "export": {
+    "schema_version": 1,
+    "event_capacity": 64,
+    "selection": "First 64 remaining rows of existing Java ring, not necessarily first 64 generated",
+    "native_ring_capacity": 256,
+    "native_drain_batch": 64,
+    "Java_ring_capacity": 8192,
+    "whole_report_max_bytes": 65536,
+    "oversize_rejected_without_truncation": true,
+    "missing_or_disabled_not_known_zero": true,
+    "generated_accounting_checked": true,
+    "omitted_rows_validated_only_when_none_omitted": true,
+    "all_generated_does_not_mean_all_pipeline_events": true,
+    "host_capture_timestamp_exported": false,
+    "physical_packet_arrival_verified": false,
+    "quorum_is_codec_ready": false,
+    "frame_identity_from_JSON_verified": false,
+    "host_phone_clock_subtraction_valid": false,
+    "changes_native_assembly_80ms_or_queue_or_drain_or_RX": false
+  },
+  "artifact": {
+    "new_App_APK_built": false,
+    "new_JNI_built": false,
+    "helper_built_or_installed": false,
+    "public_experimental_code": 39,
+    "public_experimental_SHA256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+    "private_phone_last_verified_code": 40,
+    "private_phone_last_verified_SHA256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "phone_current_readback": "ADB device-not-found; process/helper/installed artifact current state unknown"
+  },
+  "live_operations": {
+    "phone_media": 0,
+    "framebuffer_RPC": 0,
+    "source_input": 0,
+    "UiAutomation": 0,
+    "service_signals": 0
+  },
+  "performance_or_FEC_root_cause_accepted": false,
+  "preceding_exact_CI": {
+    "SHA": "f0e508f58aa667fb61017f7a7c4b5ea0a2224c5b",
+    "run": 37192379073,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  },
+  "this_candidate_CI": "pending_own_source_commit",
+  "next": "Keep reviewed f0 frame-only freeze unchanged. When dedicated phone is available, fresh App/JNI/helper/CPU/original/formal/emulator qualification then one normal saved-UI current Attempt/read-only frame. Separately design a bounded closed offline event consumer and explicit native-event diagnostic qualification; do not enable events or publish from these fixtures."
+}

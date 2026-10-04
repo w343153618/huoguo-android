@@ -60,5 +60,14 @@
     "snapshot_does_not_establish_permission": true,
     "helper_or_media_started": false,
     "next": "When phone ADB is available, use the existing qualified hardware venv for a NEW frozen coordinator; require fresh device/App/helper/formal/process pins, then one normal saved-UI frame-only Attempt. No UiAutomation/source input."
+  },
+  "dependency_gate_exact_CI": {
+    "SHA": "f0e508f58aa667fb61017f7a7c4b5ea0a2224c5b",
+    "run": 37192379073,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "independently_read_this_turn": true
   }
 }

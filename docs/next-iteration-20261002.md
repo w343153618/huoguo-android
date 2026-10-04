@@ -1,5 +1,27 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Current source-only native frame export is implemented: report-time closed
+numeric64-row remaining-prefix projection of the existing OFF-by-default native
+256/Java8192 ring. Eight new checks plus transport/Inbox/budget/completion/hour
+fixtures42PASS18.098s; actual full SDK37 Java compile and three stage checks
+4PASS3.096s. OFF worst-stage report55219B; whole64KiB rejection unchanged.
+Missing/OFF is unavailable, not zero faults; pending/evictions/omission/accounting
+explicit, all-pipeline coverage/physical arrival/codec-ready/provenance/clock
+promotion remain false. No new APK/JNI/helper build or live diagnostics.
+Read native-frame-numeric-export-candidate-20261004.md/json. This source needs its
+own pushed CI; f0/run37192379073 is independently green only for f0.
+
+The NEW reviewed private f0 frame-only controller and334 Python freeze remain
+unchanged. Three mocked execute branches and exact signature/freeze dry run were
+accepted; neither establishes live phone permission. Dedicated OP12 get-state
+again reports device-not-found; no helper/auth/media/RPC/source UI was started.
+Current pointer is in private iteration-state; do not run the prior fra7 controller
+with its wrong execute-only observer pin. Next fresh phone/artifact/CPU/original/
+formal/emulator qualification when available, then one normal saved-UI current
+Attempt/read-only frame. Keep failed UiAutomation retirement separate. Independent
+next work is a bounded numeric event consumer/explicit diagnostic scope design,
+not native event enablement, wider buffers or a release.
+
 Actual host dependency qualification found the default Python has no grpc/
 protobuf; the existing hardware venv (Python3.14.7/grpc1.84.0/protobuf7.36.2)
 loads both pinned proto snapshots and passes explicit preflight, zero token/

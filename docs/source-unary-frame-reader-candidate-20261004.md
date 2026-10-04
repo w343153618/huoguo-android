@@ -100,3 +100,34 @@ helper process is absent, and did not authorize installation or instrumentation.
 No helper, media or gRPC session was started. Next get fresh full pins and
 actual absence when that dedicated device is available; do not reuse these
 snapshots as permission or cached source/playback qualification.
+
+Exact dependency-gate source f0e508f58aa667fb61017f7a7c4b5ea0a2224c5b/
+run37192379073 is now independently completed with overall/build/UDP success.
+The dedicated OP12 still reports device-not-found; there is no new helper,
+media or framebuffer attempt. This CI result does not validate later source.
+
+An independent root review of the prepared private controller found that its
+execute-only import gate compared the frame-reader hash with the old source-
+observation module's manifest key. The preparation dry run had never reached
+that branch. The old controller and freeze remain unchanged. A NEW private
+controller uses the correct key and separately checks the imported admission
+module's frozen bytes. It also preserves the primary unavailable-device error:
+unknown phone process/helper/input state cannot become a cleanup success.
+Three execute-branch fixtures with entirely fake device boundaries passed0.091s;
+actual local signature/frozen334 Python-byte checks passed. One initial fixture
+mutated the inventory instead of the later import read and was corrected; that
+first failing assertion is retained in the private review receipt. No device
+installation, instrumentation, framebuffer, UiAutomation or media was executed.
+Current candidate and receipt pointers stay in the private iteration-state.
+
+The parallel source-only contract review found that the existing native frame
+ring is256 records, with64 per drain and a Java8192 detail ring. Native event
+collection is a separate descriptor diagnostic switch; enabling decoder-stage
+metrics does not enable it. The current App numeric summary omits that detail
+ring, so existing FEC poll deltas cannot supply frame identities or actual expiry
+times. An80ms grant starts at the first successfully admitted mapping shard,
+not the first rejected shard or a cross-host capture time. Quorum events mark
+mathematical shard sufficiency, not logical delivery or codec readiness. These
+are source facts, not a new live FEC observation, cause or performance result.
+Keep defaults OFF and do not enable collection/promote buffering while the
+fresh real phone/source qualification is unavailable.

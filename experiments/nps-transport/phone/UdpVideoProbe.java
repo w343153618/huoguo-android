@@ -1210,8 +1210,84 @@ public final class UdpVideoProbe extends Instrumentation {
         // truncation. Only this closed, bounded numeric schema may cross App mode.
         out.put("inbox_epoch_events_numeric",numericInboxEpochEvents(report));
         out.put("transport_samples_numeric",numericTransportSamples(report));
+        out.put("native_frame_events_numeric",numericNativeFrameEvents(report));
         if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");
         return out;
+    }
+    /** Final report projection only, from the existing default-OFF native ring.
+     * This does not enable collection or change RX/drain/assembly behavior.
+     * Phone arrival/tick decisions are not physical packet arrivals. Quorum
+     * is mathematical shard sufficiency, not logical delivery or codec ready.
+     * Host capture timestamps and arbitrary source fields are never exported.
+     */
+    static JSONObject numericNativeFrameEvents(JSONObject report)throws Exception{
+        final int capacity=64,sourceCapacity=8192,nativeCapacity=256;
+        JSONObject out=new JSONObject().put("schema_version",1).put("available",0).put("enabled",-1)
+            .put("capacity",capacity).put("source_ring_capacity",sourceCapacity).put("native_ring_capacity",nativeCapacity)
+            .put("all_generated_events_exported",0).put("all_pipeline_events_covered",0)
+            .put("timestamp_is_physical_packet_arrival",0).put("quorum_is_codec_ready",0)
+            .put("host_phone_clock_subtraction_valid",0).put("frame_identity_from_JSON_verified",0)
+            .put("omitted_rows_validated",0);
+        Object selected=report.opt("diagnostic_events_enabled");
+        if(selected==null)return out;
+        if(!(selected instanceof Boolean))throw new IOException("native_frame_enabled_boolean_required");
+        out.put("enabled",(Boolean)selected?1:0);
+        if(!((Boolean)selected))return out;
+        Object raw=report.opt("native_frame_events"),snapshot=report.opt("native_frame_event_stats");
+        if(!(raw instanceof JSONArray)||!(snapshot instanceof JSONObject))
+            throw new IOException("native_frame_snapshot_required");
+        JSONArray rows=(JSONArray)raw;JSONObject stats=(JSONObject)snapshot;
+        if(!Boolean.TRUE.equals(stats.opt("enabled")))throw new IOException("native_frame_snapshot_enabled_mismatch");
+        long sourceBound=nativeFrameLong(report,"native_frame_event_capacity"),javaEvicted=nativeFrameLong(report,"native_frame_events_evicted"),
+            nativeEvicted=nativeFrameLong(stats,"native_events_evicted"),pending=nativeFrameLong(stats,"pending"),generated=nativeFrameLong(stats,"generated");
+        if(sourceBound!=sourceCapacity||rows.length()>sourceCapacity||pending>nativeCapacity)
+            throw new IOException("native_frame_ring_bound");
+        long accounted=nativeFrameAdd(nativeFrameAdd(nativeFrameAdd(rows.length(),javaEvicted),nativeEvicted),pending);
+        if(accounted!=generated)throw new IOException("native_frame_generated_accounting");
+        String[] fields={"frame_id","reference_id","flags","first_arrival_us","last_arrival_us","fec_quorum_ready_us",
+            "event_phone_us","deadline_phone_us","logical_bytes","reason_code","event_sequence","pts_us"};
+        String[] types={"invalid","fec_quorum_ready","frame_delivered","frame_expired","settled_by_delivered_frame","logical_rejected"};
+        String[] reasons={"none","keyframe","predictive","assembly_deadline","superseded_by_delivered_frame","malformed_logical_body","logical_chain_blocked"};
+        JSONArray eventCodes=new JSONArray();out.put("event_code",eventCodes);
+        JSONArray[] columns=new JSONArray[fields.length];
+        for(int i=0;i<fields.length;i++){columns[i]=new JSONArray();out.put(fields[i],columns[i]);}
+        int retained=Math.min(rows.length(),capacity);long previousSequence=0,previousTime=0;boolean contiguous=true;
+        for(int i=0;i<retained;i++){
+            Object item=rows.get(i);if(!(item instanceof JSONObject))throw new IOException("native_frame_record_required");
+            JSONObject row=(JSONObject)item;long[] v=new long[fields.length];
+            for(int j=0;j<v.length;j++)v[j]=nativeFrameLong(row,fields[j]);
+            int type=0;for(int j=1;j<types.length;j++)if(types[j].equals(row.opt("event")))type=j;
+            long reason=v[9],sequence=v[10],first=v[3],last=v[4],quorum=v[5],now=v[6],deadline=v[7];
+            if(type==0||reason>=reasons.length||!reasons[(int)reason].equals(row.opt("reason"))
+                    ||!(type==1&&reason==0||type==2&&(reason==1||reason==2)||type==3&&reason==3
+                        ||type==4&&reason==4||type==5&&(reason==5||reason==6)))
+                throw new IOException("native_frame_event_reason_contract");
+            if(v[0]==0||v[2]>3||v[8]==0||v[8]>1048576||first==0||last<first||now<last
+                    ||deadline<=first||deadline-first<1000||deadline-first>80000
+                    ||quorum!=0&&(quorum<first||quorum>last)
+                    ||type==1&&quorum==0||type==3&&now<deadline
+                    ||sequence==0||sequence<=previousSequence||sequence>generated||now<previousTime)
+                throw new IOException("native_frame_metadata_contract");
+            if(sequence!=previousSequence+1)contiguous=false;
+            eventCodes.put(type);for(int j=0;j<v.length;j++)columns[j].put(v[j]);
+            previousSequence=sequence;previousTime=now;
+        }
+        boolean all=retained==rows.length()&&pending==0&&nativeEvicted==0&&javaEvicted==0
+            &&contiguous&&(retained==0?generated==0:previousSequence==generated);
+        return out.put("available",1).put("source_retained_count",rows.length()).put("exported_count",retained)
+            .put("omitted_prefix_following_count",rows.length()-retained).put("generated_count",generated)
+            .put("native_pending_count",pending).put("native_evicted_count",nativeEvicted).put("java_evicted_count",javaEvicted)
+            .put("exported_sequence_contiguous_from_one",contiguous?1:0).put("all_generated_events_exported",all?1:0)
+            .put("omitted_rows_validated",retained==rows.length()?1:0);
+    }
+    private static long nativeFrameLong(JSONObject object,String key)throws IOException{
+        Object value=object.opt(key);
+        if(!(value instanceof Byte||value instanceof Short||value instanceof Integer||value instanceof Long)
+                ||((Number)value).longValue()<0)throw new IOException("native_frame_nonnegative_integral_required");
+        return ((Number)value).longValue();
+    }
+    private static long nativeFrameAdd(long a,long b)throws IOException{
+        if(a>Long.MAX_VALUE-b)throw new IOException("native_frame_count_overflow");return a+b;
     }
     /** Existing RX-owned one-second samples; export after receive ends only.
      * No live cross-thread sampling or per-packet clocks/JSON are introduced.
