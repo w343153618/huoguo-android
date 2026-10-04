@@ -78,7 +78,23 @@
     "App_helper_JNI_or_release_changed": false,
     "reservation_release_authorized": false
   },
-  "exact_CI": null,
+  "exact_CI": {
+    "sha": "390c7e6559ac1fb6b2853152ed3a2d1a53e5b153",
+    "run": 37231105080,
+    "status": "completed",
+    "overall": "failure",
+    "build": "failure",
+    "udp_candidate": "skipped",
+    "build_job": 111520723657,
+    "independent_readback": true,
+    "tests": 2203,
+    "seconds": 144.342,
+    "existing_skips": 11,
+    "errors": 1,
+    "cause": "old host early_done fixture wrote DRIVER_DONE after actual refused native parent exited; BrokenPipe without collecting final refusal",
+    "Android_build_and_lint": "success",
+    "rerun": false
+  },
   "source_SHA256": {
     "experiments/moonlight-v2/source-snapshot/helper_owner_output.c": "da0a80f50735af55d8f2b13d95822f7eaf53a1a10483d1b2767353d814594680",
     "experiments/moonlight-v2/source-snapshot/helper_report_json.h": "e1900f9ea9237be0fc64c9ec36f3258f313eb263315cb32d1b89a587dbdbcd3e",

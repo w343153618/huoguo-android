@@ -53,3 +53,16 @@ App/helper/JNI/public releases and NPS/default buffering/guard boundaries stay
 separate. On device return the unchanged reviewed f0/d043 frame-only qualification
 still comes first. The next implementation is the matching native App-report FD
 reader and then complete actual host/native qualification; no partial activation.
+
+Exact source390c7e6559ac1fb6b2853152ed3a2d1a53e5b153/run37231105080
+completed with overall/build failure and UDP skipped. Android compilation/lint
+succeeded; Linux2203 tests/144.342s had1 error and11 existing skips. An older
+host early_DRIVER_DONE fixture wrote after the same correctly refusing native
+parent exited, producing BrokenPipe before collecting its failure record. This
+is a host test transport race, not Android/App/guest failure. The follow-up
+source fixes only this expected rejection branch and deterministically forces
+parent exit before the late write. It still requires the same Popen exit2,
+unique refusal record and both actual EOFs; no skip/workflow/production guard
+change or old-run rerun.21 driver checks passed31.656s, including the new race
+regression; the two direct refusal checks passed2.587s. The failed source is
+retained as failed; the follow-up source requires its own CI.

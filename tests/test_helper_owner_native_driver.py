@@ -48,7 +48,7 @@ class NativeOwnedDriver(unittest.TestCase):
             dict(DIRECT_AUTH_FILE='/restricted/auth.json',DIRECT_CERT='/restricted/cert.pem',
                 DIRECT_KEY='/restricted/key.pem',DIRECT_VIDEO_BACKEND='videotoolbox'))
     def tearDown(self): self.temp.cleanup()
-    def run_fixture(self,mode,accepted=False):
+    def run_fixture(self,mode,accepted=False,*,refusal_exit_before_done_write=False):
         digest=hashlib.sha256(PAYLOAD).hexdigest()
         child=subprocess.Popen([str(self.host),'--fixture',str(self.owner),str(self.pkg),mode,digest],
             stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0,
@@ -75,14 +75,22 @@ class NativeOwnedDriver(unittest.TestCase):
             try:child.stdin.write(wire);child.stdin.flush()
             except BrokenPipeError:write_failed=True
             end=time.monotonic()+12
-            final=None;events=[]
+            final=None;events=[];early_done_write_failed=False
             while final is None:
                 row=lines.get(timeout=max(.01,end-time.monotonic()))
                 if isinstance(row,Exception): raise row
                 if 'event' not in row: final=row;break
                 events.append(row['event'])
                 if row['event']=='driver_started':
-                    if mode=='early_done': child.stdin.write(frame(4,3));child.stdin.flush()
+                    if mode=='early_done':
+                        # Native rejects early DRIVER_DONE before reading its
+                        # wire frame. Its queued start event can reach this
+                        # reader after that same parent has already exited.
+                        if refusal_exit_before_done_write:
+                            self.assertTrue(stdout_eof.wait(timeout=1))
+                            self.assertEqual(child.wait(timeout=1),2)
+                        try:child.stdin.write(frame(4,3));child.stdin.flush()
+                        except BrokenPipeError:early_done_write_failed=True
                     if mode=='control_EOF': child.stdin.close()
                 elif row['event']=='driver_local_closed' and mode!='control_EOF':
                     if mode=='trailing_request':
@@ -94,6 +102,10 @@ class NativeOwnedDriver(unittest.TestCase):
             self.assertTrue(stdout_eof.is_set());self.assertTrue(stderr_eof.is_set());self.assertEqual(errors,b'')
             if write_failed:self.assertFalse(final['constructed'])
             self.assertEqual(code,0 if accepted else 2,final)
+            if early_done_write_failed:
+                self.assertEqual(mode,'early_done');self.assertTrue(final['constructed'])
+                self.assertTrue(final['unknown']);self.assertFalse(final['driver_done_qualified'])
+            final['local_early_done_write_broken_pipe']=early_done_write_failed
             for k in ('release_authorized',): self.assertFalse(final[k])
             if final['constructed']:
                 for k in ('actual_Mac_coordinator_bridge','actual_Android_PM_driver','production_activation_available',
@@ -134,6 +146,10 @@ class NativeOwnedDriver(unittest.TestCase):
         row,_=self.run_fixture('later_package');self.assertTrue(row['unknown'])
     def test_early_DRIVER_DONE_cannot_replace_actual_child_exit(self):
         row,_=self.run_fixture('early_done');self.assertTrue(row['unreaped_retained']);self.assertTrue(row['unknown'])
+    def test_late_DRIVER_DONE_write_collects_same_refused_parent_and_dual_EOF(self):
+        row,_=self.run_fixture('early_done',refusal_exit_before_done_write=True)
+        self.assertTrue(row['local_early_done_write_broken_pipe']);self.assertTrue(row['unknown'])
+        self.assertTrue(row['unreaped_retained']);self.assertFalse(row['driver_done_qualified'])
     def test_nonzero_stderr_overflow_and_missing_or_duplicate_footer(self):
         for mode in ('nonzero','stderr','overflow','missing_footer','duplicate_footer'):
             with self.subTest(mode=mode):
