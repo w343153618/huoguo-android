@@ -1,0 +1,52 @@
+{
+  "schema": "owned-ART-projection-local-v1",
+  "source_sha256": "a869cc2e2872acef2a79c864e36cddb13cfc902c92582ba154653edb204c639e",
+  "fresh_M1_readonly_core_env_accepted_by_host_C": true,
+  "observed_lengths": {
+    "ANDROID_ART_ROOT": 21,
+    "ANDROID_I18N_ROOT": 22,
+    "ANDROID_TZDATA_ROOT": 24,
+    "BOOTCLASSPATH": 2913,
+    "DEX2OATBOOTCLASSPATH": 574
+  },
+  "observed_env_SHA256": "88466a3d6792ed3e56b920c893df9b9dace4c01055b3df1428a89abee7e2eec5",
+  "fields_preserved": [
+    "ANDROID_ART_ROOT",
+    "ANDROID_I18N_ROOT",
+    "ANDROID_TZDATA_ROOT",
+    "BOOTCLASSPATH",
+    "DEX2OATBOOTCLASSPATH"
+  ],
+  "fields_fixed": [
+    "ANDROID_DATA",
+    "ANDROID_ROOT",
+    "PATH"
+  ],
+  "arbitrary_environment_forwarded": false,
+  "Android_build": {
+    "schema": "source-owned-runner-build-v1",
+    "NDK_revision": "29.0.14206865",
+    "ABI": "arm64-v8a",
+    "API": 30,
+    "source_sha256": "a869cc2e2872acef2a79c864e36cddb13cfc902c92582ba154653edb204c639e",
+    "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+    "binary_sha256": "2bf4b6496a5b00a602012ec2bfa4c3a0ec8f700e03c1b5896b344bfd718e4c83",
+    "binary_bytes": 16920,
+    "fixture_macro_enabled": false,
+    "device_operations": 0,
+    "UI_sessions_started": 0,
+    "App_artifact_changed": false
+  },
+  "Android_runner_executed": false,
+  "UI_sessions_started": 0,
+  "source_or_phone_input": false,
+  "App_artifact_changed": false,
+  "focused_checks": 33,
+  "focused_seconds": 3.917,
+  "new_ART_host_C_checks": 5,
+  "classpath_limit_bytes_each": 4096,
+  "classpath_limit_entries_each": 128,
+  "new_invalid_environment_code": 78,
+  "scope_or_child_created_for_invalid_environment": false,
+  "source_performance_root_cause_proven": false
+}

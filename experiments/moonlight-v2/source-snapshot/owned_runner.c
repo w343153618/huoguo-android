@@ -108,6 +108,77 @@ static int owned_signal(pid_t child, int reaped, int signo) {
     if (child <= 1 || reaped) return -1;
     return kill(child, signo);
 }
+#if defined(HG_HOST_FIXTURE) || defined(__ANDROID__)
+/* Read only the ART variables observed in the trusted Android shell. Do not
+ * forward the caller's whole environment or accept shell/path expansion. The
+ * caller still pins the guest/build and grants the source/UI lease separately.
+ * Syntax qualification does not prove classpath file identity or a UI session.
+ */
+#define CP_LIMIT 4096
+struct art_environment {
+    char boot[CP_LIMIT + 32], dex[CP_LIMIT + 32];
+    char *items[9];
+};
+static int safe_component(const char *p, size_t n) {
+    if (!n || !((p[0] >= 'a' && p[0] <= 'z') || (p[0] >= 'A' && p[0] <= 'Z')
+            || (p[0] >= '0' && p[0] <= '9'))) return 0;
+    for (size_t i = 0; i < n; ++i) {
+        char c = p[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                || (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')) return 0;
+        if (c == '.' && i && p[i - 1] == '.') return 0;
+    }
+    return 1;
+}
+static int classpath_token(const char *p, size_t n) {
+    const char *name;
+    size_t remaining;
+    const char system[] = "/system/framework/", apex[] = "/apex/com.android.";
+    if (n > sizeof(system) - 1 && !memcmp(p, system, sizeof(system) - 1)) {
+        name = p + sizeof(system) - 1; remaining = n - (sizeof(system) - 1);
+    } else if (n > sizeof(apex) - 1 && !memcmp(p, apex, sizeof(apex) - 1)) {
+        size_t slash = sizeof(apex) - 1;
+        while (slash < n && p[slash] != '/') ++slash;
+        if (!safe_component(p + sizeof(apex) - 1, slash - (sizeof(apex) - 1))
+                || n - slash <= 9 || memcmp(p + slash, "/javalib/", 9)) return 0;
+        name = p + slash + 9; remaining = n - slash - 9;
+    } else return 0;
+    return remaining > 4 && !memcmp(name + remaining - 4, ".jar", 4)
+        && safe_component(name, remaining);
+}
+static int classpath_ok(const char *value) {
+    if (!value) return 0;
+    size_t size = strnlen(value, CP_LIMIT + 1);
+    if (!size || size > CP_LIMIT) return 0;
+    const char *seen[128]; size_t lengths[128], count = 0, begin = 0;
+    for (size_t i = 0; i <= size; ++i) {
+        if (i != size && value[i] != ':') continue;
+        size_t n = i - begin;
+        if (count == 128 || !classpath_token(value + begin, n)) return 0;
+        for (size_t j = 0; j < count; ++j)
+            if (lengths[j] == n && !memcmp(seen[j], value + begin, n)) return 0;
+        seen[count] = value + begin; lengths[count++] = n; begin = i + 1;
+    }
+    return 1;
+}
+static int prepare_art_environment(struct art_environment *env) {
+    static const char *keys[] = {"ANDROID_ART_ROOT", "ANDROID_I18N_ROOT", "ANDROID_TZDATA_ROOT"};
+    static const char *roots[] = {"/apex/com.android.art", "/apex/com.android.i18n", "/apex/com.android.tzdata"};
+    for (size_t i = 0; i < 3; ++i) {
+        const char *v = getenv(keys[i]);
+        if (!v || strcmp(v, roots[i])) return -1;
+    }
+    const char *boot = getenv("BOOTCLASSPATH"), *dex = getenv("DEX2OATBOOTCLASSPATH");
+    if (!classpath_ok(boot) || !classpath_ok(dex)) return -1;
+    snprintf(env->boot, sizeof(env->boot), "BOOTCLASSPATH=%s", boot);
+    snprintf(env->dex, sizeof(env->dex), "DEX2OATBOOTCLASSPATH=%s", dex);
+    char *items[] = {"PATH=/system/bin", "ANDROID_DATA=/data", "ANDROID_ROOT=/system",
+        "ANDROID_ART_ROOT=/apex/com.android.art", "ANDROID_I18N_ROOT=/apex/com.android.i18n",
+        "ANDROID_TZDATA_ROOT=/apex/com.android.tzdata", env->boot, env->dex, NULL};
+    memcpy(env->items, items, sizeof(items));
+    return 0;
+}
+#endif
 static int drain(int fd, int logfd, size_t *bytes, int *eof) {
     char buf[256];
     for (int chunks = 0; chunks < 33; ++chunks) {
@@ -158,7 +229,8 @@ static void fixture_child(const char *mode) {
 #endif
 
 static void child_main(pid_t parent, int ready, int gate, int output,
-                       const char *namespace, const char *jar_namespace, const char *mode) {
+                       const char *namespace, const char *jar_namespace, const char *mode,
+                       char *const *environment) {
     struct sigaction action;
     memset(&action, 0, sizeof(action)); action.sa_handler = SIG_DFL;
     sigemptyset(&action.sa_mask);
@@ -179,7 +251,7 @@ static void child_main(pid_t parent, int ready, int gate, int output,
     if (dup2(output, STDOUT_FILENO) < 0 || dup2(output, STDERR_FILENO) < 0) _exit(122);
     close(output);
 #ifdef HG_HOST_FIXTURE
-    (void)namespace; (void)jar_namespace;
+    (void)namespace; (void)jar_namespace; (void)environment;
     fixture_child(mode);
 #elif defined(__ANDROID__)
     (void)mode;
@@ -189,24 +261,33 @@ static void child_main(pid_t parent, int ready, int gate, int output,
     /* Fixed executable and class; no sh -c, --nohup, input or caller argv. */
     char *const args[] = {"uiautomator", "runtest", jar, "-c",
         "local.huoguo.sourceprobe.SourceSnapshot#testSnapshot", "-e", "relative", relative, NULL};
-    char *const env[] = {"PATH=/system/bin", "ANDROID_DATA=/data", "ANDROID_ROOT=/system", NULL};
-    execve("/system/bin/uiautomator", args, env);
+    execve("/system/bin/uiautomator", args, environment);
     _exit(127);
 #else
-    (void)namespace; (void)jar_namespace; (void)mode;
+    (void)namespace; (void)jar_namespace; (void)mode; (void)environment;
     _exit(121);
 #endif
 }
 
 int main(int argc, char **argv) {
     const char *mode = NULL;
+    char *const *environment = NULL;
     char namespace[64], jar_namespace[64] = {0};
 #ifdef HG_HOST_FIXTURE
+    if (argc == 2 && !strcmp(argv[1], "--host-env-check")) {
+        struct art_environment env;
+        if (prepare_art_environment(&env)) return 78;
+        for (size_t i = 0; env.items[i]; ++i) puts(env.items[i]);
+        return 0; /* Fixture only: no scope, child, Android runner or device. */
+    }
     if (argc != 4 || strcmp(argv[1], "--host-fixture") || !nonce_ok(argv[2]) || !fixture_ok(argv[3])) return 64;
     mode = argv[3];
 #elif defined(__ANDROID__)
     if (argc != 4 || strcmp(argv[1], "--snapshot") || !nonce_ok(argv[2]) || !nonce_ok(argv[3])
             || !strcmp(argv[2], argv[3])) return 64;
+    struct art_environment env;
+    if (prepare_art_environment(&env)) return 78; /* Before mkdir/fork. */
+    environment = env.items;
     snprintf(jar_namespace, sizeof(jar_namespace), "huoguo-source-ui-%s", argv[3]);
 #else
     (void)argc; (void)argv;
@@ -251,7 +332,7 @@ int main(int argc, char **argv) {
     if (child < 0) return 71;
     if (child == 0) {
         close(birth[0]); close(gate[1]); close(output[0]); close(dir); close(logfd);
-        child_main(parent, birth[1], gate[0], output[1], namespace, jar_namespace, mode);
+        child_main(parent, birth[1], gate[0], output[1], namespace, jar_namespace, mode, environment);
         _exit(120);
     }
     close(birth[1]); close(gate[0]); close(output[1]);

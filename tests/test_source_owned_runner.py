@@ -40,6 +40,74 @@ class OwnedRunnerHostChecks(unittest.TestCase):
     @classmethod
     def tearDownClass(cls): cls.work.cleanup()
 
+    def environment_check(self, updates=None, remove=()):
+        env = dict(os.environ)
+        env.update(ANDROID_ART_ROOT='/apex/com.android.art',
+                   ANDROID_I18N_ROOT='/apex/com.android.i18n',
+                   ANDROID_TZDATA_ROOT='/apex/com.android.tzdata',
+                   BOOTCLASSPATH='/apex/com.android.art/javalib/core-oj.jar:/system/framework/framework.jar',
+                   DEX2OATBOOTCLASSPATH='/apex/com.android.art/javalib/core-oj.jar')
+        env.update(updates or {})
+        for key in remove: env.pop(key, None)
+        with tempfile.TemporaryDirectory(prefix='huoguo-owned-env-') as folder:
+            result = subprocess.run([str(self.binary), '--host-env-check'], cwd=folder,
+                env=env, capture_output=True, text=True, timeout=2)
+            self.assertEqual(list(Path(folder).iterdir()), [])
+            self.assertEqual(result.stderr, '')
+        return result
+
+    def test_ART_projection_keeps_only_closed_core_runtime_fields(self):
+        result = self.environment_check({'CLASSPATH': '/data/foreign.jar',
+            'HOME': '/data/foreign', 'PATH': '/foreign', 'ANDROID_DATA': '/foreign',
+            'SYSTEMSERVERCLASSPATH': '/data/private.jar', 'EXTRA_SECRET': 'do-not-forward'})
+        self.assertEqual(result.returncode, 0)
+        actual = dict(line.split('=', 1) for line in result.stdout.splitlines())
+        self.assertEqual(set(actual), {'PATH', 'ANDROID_DATA', 'ANDROID_ROOT',
+            'ANDROID_ART_ROOT', 'ANDROID_I18N_ROOT', 'ANDROID_TZDATA_ROOT',
+            'BOOTCLASSPATH', 'DEX2OATBOOTCLASSPATH'})
+        self.assertEqual(actual['PATH'], '/system/bin')
+        self.assertEqual(actual['ANDROID_DATA'], '/data')
+        self.assertEqual(actual['ANDROID_ROOT'], '/system')
+        self.assertNotIn('do-not-forward', result.stdout)
+        self.assertEqual(actual['BOOTCLASSPATH'],
+            '/apex/com.android.art/javalib/core-oj.jar:/system/framework/framework.jar')
+
+    def test_missing_or_foreign_ART_roots_fail_before_scope_or_fork(self):
+        for key in ('ANDROID_ART_ROOT', 'ANDROID_I18N_ROOT', 'ANDROID_TZDATA_ROOT',
+                    'BOOTCLASSPATH', 'DEX2OATBOOTCLASSPATH'):
+            result = self.environment_check(remove=(key,))
+            self.assertEqual(result.returncode, 78); self.assertEqual(result.stdout, '')
+        for key in ('ANDROID_ART_ROOT', 'ANDROID_I18N_ROOT', 'ANDROID_TZDATA_ROOT'):
+            for value in ('', '/data/private', '/apex/com.android.art/../art',
+                          '/apex/com.android.art\n'):
+                result = self.environment_check({key: value})
+                self.assertEqual(result.returncode, 78); self.assertEqual(result.stdout, '')
+
+    def test_classpath_traversal_expansion_empty_duplicates_and_foreign_roots_rejected(self):
+        valid = '/system/framework/framework.jar'
+        for value in ('', valid + ':', ':' + valid, valid + '::' + valid,
+                      valid + ':' + valid, '/data/local/tmp/foreign.jar',
+                      '/system/framework/../private.jar', '/system/framework/nested/private.jar',
+                      '/system/framework/$HOME.jar', '/system/framework/$(id).jar',
+                      '/system/framework/ok.jar\n', '/system/framework/ok.jar;id',
+                      '/apex/com.android.art/javalib/../../foreign.jar',
+                      '/apex/foreign/javalib/foreign.jar', '/system/framework/not-jar.so'):
+            for key in ('BOOTCLASSPATH', 'DEX2OATBOOTCLASSPATH'):
+                result = self.environment_check({key: value})
+                self.assertEqual(result.returncode, 78); self.assertEqual(result.stdout, '')
+
+    def test_classpath_byte_and_entry_limits_remain_bounded(self):
+        for value in ('/system/framework/' + 'a' * 4096 + '.jar',
+                      ':'.join('/system/framework/a%d.jar' % i for i in range(129))):
+            self.assertEqual(self.environment_check({'BOOTCLASSPATH': value}).returncode, 78)
+
+    def test_default_Android_environment_is_validated_before_owned_scope_creation(self):
+        source = SOURCE.read_text().split('int main(', 1)[1]
+        self.assertLess(source.index('if (prepare_art_environment(&env)) return 78; /* Before mkdir/fork. */'),
+                        source.index('mkdirat(base, namespace'))
+        self.assertIn('execve("/system/bin/uiautomator", args, environment)', SOURCE.read_text())
+        self.assertNotIn('execve("/system/bin/uiautomator", args, environ)', SOURCE.read_text())
+
     def birth_wait(self, directory):
         scope = directory / SCOPE
         meta = scope.stat()

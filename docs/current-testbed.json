@@ -2428,5 +2428,28 @@
     "fsck_resize_postcheck_completed": true,
     "normal_launch_job_restored": true,
     "original_launch_plist_unchanged": true
+  },
+  "M1_primary_migration_exact_CI_20261004": {
+    "source_sha": "5093247b84c80d162edab8712c6f78332bd9eed5",
+    "github_run": 37183188165,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_unittest_count": 1791,
+    "Linux_unittest_seconds": 53.56,
+    "existing_platform_skips": 11,
+    "App_release_changed": false
+  },
+  "owned_source_ART_candidate_20261004": {
+    "source_sha256": "a869cc2e2872acef2a79c864e36cddb13cfc902c92582ba154653edb204c639e",
+    "binary_sha256": "2bf4b6496a5b00a602012ec2bfa4c3a0ec8f700e03c1b5896b344bfd718e4c83",
+    "binary_bytes": 16920,
+    "focused_checks": 33,
+    "preserved_core_fields": 5,
+    "arbitrary_env_forwarded": false,
+    "Android_UI_executed": false,
+    "App_release_changed": false,
+    "evidence": "docs/source-owned-ART-environment-20261004.md"
   }
 }

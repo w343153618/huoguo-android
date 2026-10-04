@@ -27,7 +27,16 @@ ART environment, Java receipt binding, scope journal, permission lease and
 actual remote quiescence remain separate gates. Latest focused source-runner,
 reader and UDP preference checks:28 PASS/4.051s. A mistaken nonexistent test-module
 selection was a local command import error and was corrected, not an App crash.
-Current changes have not yet been pushed or given a new exact cloud CI run.
+Source and migration evidence pushed5093247b84c80d162edab8712c6f78332bd9eed5.
+Exact run37183188165 independently verified overall/build/UDPsuccess;
+Linux1791tests/53.560s/11existing platform skips. No Apprelease changed.
+New default-OFF owned runner validates/preserves five closed ART fields before
+scope/fork;33focused checks passed3.917s, actual M1 readonly values accepted
+by host validator, locked Android arm64 build2bf4b649/16920bytes. No Android
+runner/UI/phone/media execution. See source-owned-ART-environment-20261004.md/json.
+Next: exact scope journal + real started/waited/Java serialization binding under
+current authenticated App lease; keep budgets/quiescence boundary, not a
+UDP performance fix or source-input acceptance. New source still needs its own CI.
 
 ## 2026-10-04 latest: explicit playing-source Pause/direct reader integration; no runtime UI/input yet
 
