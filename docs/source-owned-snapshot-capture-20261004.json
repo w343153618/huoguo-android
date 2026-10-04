@@ -1,0 +1,33 @@
+{
+  "schema": "owned-source-snapshot-capture-inert-v1",
+  "source": "scripts/probes/source_owned_snapshot_capture.py",
+  "new_checks": 8,
+  "focused_checks": 37,
+  "focused_seconds": 0.046,
+  "generated_launch_bytes_fixture": 2036,
+  "generated_collection_bytes_fixture": 4832,
+  "remote_lifecycle_integrated_with_current_App": false,
+  "collector_driver_replaced": false,
+  "constructor_IO": false,
+  "UI_runner_started": false,
+  "phone_media_sessions": 0,
+  "App_artifact_changed": false,
+  "remote_UI_quiescence_verified": false,
+  "permission_lease_verified": false,
+  "preceding_journal_exact_CI": {
+    "SHA": "9ad7b271e0b86a80181bcfc3e39f55179ecbff99",
+    "run": 37184975305,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  },
+  "readonly_framework_marker_observation": {
+    "command_ok": true,
+    "local_child_reaped": true,
+    "bytes": 2679,
+    "candidate_UiAutomation_markers_present": false,
+    "cleanup_witness_qualified": false,
+    "raw_dump_retained": false
+  }
+}

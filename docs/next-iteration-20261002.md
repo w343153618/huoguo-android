@@ -52,6 +52,15 @@ independently verified overall/build/UDPsuccess. Read source-owned-scope-journal
 Next NEW frozen five-file owned adapter, real exec-parent binding/current lease,
 not repeated host fixtures or old source witnesses. No new Android UI/App/media.
 
+NEW default-OFF five-file owned capture connects journal, pinned exec-parent
+header and C/Java binding;8 new inert checks,37 focused /0.046s PASS. It retains
+scope on success or failure and is not a collector/source-qualification adapter.
+Actual framework retirement/current App lease remain gates; readonly accessibility
+dump lacks the candidate UI markers, so does NOT prove cleanup. No UI/phone/media.
+Exact9ad/run37184975305 overall/build/UDPsuccess verified. Read
+source-owned-snapshot-capture-20261004.md/json; next narrow installed-framework
+retirement contract and actual lease integration, before one NEW M1 readonly run.
+
 ## 2026-10-04 latest: explicit playing-source Pause/direct reader integration; no runtime UI/input yet
 
 Exactddcf05a962df0a2a7519db4ede83298cd4a4547a/run37175124505 independently
