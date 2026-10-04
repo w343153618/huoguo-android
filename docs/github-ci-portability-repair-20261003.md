@@ -65,6 +65,25 @@ ran 1565 tests in 85.910 seconds, `OK (skipped=11)`; stable Android compile/lint
 took 2m15s and the UDP candidate 1m35s. These are actual cloud results for this
 SHA. They do not publish a new APK or assert a real-phone performance gain.
 
+## 2026-10-04: helper compilation dependency list repaired
+
+The exact source-input helper commit `6382bf59e2990715625778019d47a5c9d94f7131`
+failed [run37168197526](https://github.com/w343153618/huoguo-android/actions/runs/37168197526).
+Android compile/lint succeeded, but the separate API37 Java compilation fixture
+passed `LanUiAcceptance.java` without its new `OwnerSourceTap.java` dependency.
+The compiler reported ten missing-class references; Linux finished 1722 tests
+with one failure and the same eleven platform skips. The UDP job was skipped
+after that dependency failure, not accepted.
+
+The actual signed-helper builder already included both sources. The repair
+adds the missing dependency to the separate fixture's explicit compiler input
+list. No production code, source-input ownership guard, workflow or skip policy
+changes. The formerly failing module plus the helper transaction, target,
+same-snapshot observer, Stats and callback suites passed 56 tests in 3.301s,
+including actual API37 compilation. The pushed repair needs its own cloud run;
+the preceding green runs cannot validate this change. No APK/manifest, phone,
+guest, gateway, M5 or NPS operation is part of this repair.
+
 ## Confirmed causes and scoped changes
 
 - Four test modules used the owner's absolute Mac JDK/Android SDK paths.

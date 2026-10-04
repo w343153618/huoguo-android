@@ -85,7 +85,8 @@ public final class LeaseCheck {
                 'UdpAudioReceiver.java','BoundedPcmQueue.java','UdpTouchControl.java','CodecFileProbe.java',
                 'FramedH264Fixture.java','CodecStartupGate.java')
             paths += [str(ROOT/'experiments/nps-transport/phone'/name) for name in generated]
-            paths.append(str(ROOT/'experiments/moonlight-v2/authenticated-lan/LanUiAcceptance.java'))
+            paths += [str(ROOT/'experiments/moonlight-v2/authenticated-lan'/name)
+                for name in ('LanUiAcceptance.java', 'OwnerSourceTap.java')]
             result=subprocess.run([javac,'-cp',str(ANDROID),'-d',folder,*paths],capture_output=True,text=True,timeout=30)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 

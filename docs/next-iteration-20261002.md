@@ -454,3 +454,15 @@ Native生命周期四文件与文档已经6f978b0提交，29项owned/兼容fixtu
 ## 2026-10-03 alpha8 follow-up
 
 Read alpha8-onehour-public-results-20261003.json and physical30 deployment record first. Released alpha8/source73d196a is immutable. Both public App endpoints use actual authenticated UDP. Public session cap3600/process max0; LAN/Tailnet120. Preserve actual guest30Hz and owner phone CPU/global refresh. M1 135-second steady SFcadence26.423/max265.225ms, versus M5 short29.999/max49.735, is not a controlled host AB comparison. M1 complete host feed3900/141.465seconds (~27.569 records/sec), packetizer output3897, budgetdrops0/deadline1/dependent2; these unequal host/phone windows do not locate every gap or prove unique source FPS. Next verify actual BBB format/play state/position, collect source SF and timestamps with the existing bounded diagnostics, then identify whether long phone gaps follow source supply or receive bursts before choosing one parameter. No high-refresh/high-bitrate wide matrix, no TCP-media optimization. Real one-hour expiry UI, MTK/V50, cellular and friend host/LAN isolation remain separately pending.
+## 2026-10-04 latest: source-input preflight CI dependency corrected
+
+Exact6382/run37168197526 failed only the separate API37 helper compile fixture:
+it omitted new OwnerSourceTap.java while compiling LanUiAcceptance. Actual signed
+helper builder already included it; Android compile/lint passed. Linux1722 with
+one failure/eleven existing skips; UDP job skipped. Added the dependency to the
+fixture, no production/guard/workflow changes;56 focused checks including actual
+API37 compilation PASS/3.301s. The repair must receive its own exact cloud result.
+Final helper a575abed remains built/uninstalled, code40 App/d043 unchanged; driver
+integration and authenticated moving-video public round are still next. No new
+phone/media/source controls/M5/NPS operations or performance claim. Read
+docs/github-ci-portability-repair-20261003.md; preserve initial failure history.
