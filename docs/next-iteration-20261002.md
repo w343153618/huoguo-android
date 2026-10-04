@@ -1,5 +1,26 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF helper scope/user0 package readonly receipts and actual held-driver
+exit/EOF gate implemented:19new/63affected PASS4.488s. Synthetic Android metadata,
+actual host driver/live/overflow/pipe-inheritance/env fixtures and shell syntax,
+not realphone/PM/stage ownership. Exact selected env required; no uninstall,
+remove or release authority. Next NEW actual mutation/package/scope callbacks
+and whole supervisor binding; old f0/d043 first when phone returns. Phoneonce
+unavailable/no repoll, old freezes/6f entry unchanged, no App/helper bytes/media.
+NewSHA requires ownCI; preceding1fa accepted, do not repeat. Read helper-scope
+candidate doc/json and privatecheckpoint.
+
+Exact1fa0b0994de26dc96fe00efd2370801c804b7879/run37207680721 now independently
+completed/overall/build/UDPsuccess, Linux1999/68.080s/11existing skips. No repeat.
+NEW private helper-mutation client kernel8actualhostchecks PASS.732s: pre-Popen
+checkpoint, heldactualclient, timeout/interrupt no signals, postcheckpointfailure
+pipes drain; fixed explicit env. Exit0/Success/EOF not remotePM/helper ownership
+or release. No realADB/helper/auth/media. Scope UID/inode/package receipts and
+actual driver/helper cleanup + NEW complete qualification binding remain next.
+Phoneonce unavailable/no repoll; old f0/d043 first on actual availability. Older
+6f entry remains unexecuted and needs NEW exact env binding, no frozen rewrites.
+Clouddocs localappend next meaningfulsourcepush, no doc-only CI.
+
 Latest NEW default-OFF phone readonly qualification and exact child environment
 are implemented:18new/83affected checks PASS6.055s, synthetic Android reads and
 existing actual API37/JVM fixtures, not fresh phone/ART. Fixed children use

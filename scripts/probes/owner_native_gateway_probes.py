@@ -35,7 +35,13 @@ class Commands:
     unreaped client stays in pending, and cannot become successful readback.
     These are read-only commands, not gateway/media cleanup authority.
     """
-    def __init__(self):
+    def __init__(self, *, env=None):
+        if env is not None and (type(env) is not dict
+                or any(type(k) is not str or type(v) is not str or '\0' in k + v for k, v in env.items())):
+            raise ValueError('native_probe_explicit_environment_required')
+        # Existing readonly callers retain their behavior. A reviewed private
+        # binding can isolate ADB/import/loader/proxy settings for its probes.
+        self.env = None if env is None else dict(env)
         self.pending = []
         self.started = self.reaped = 0
         self.terminate_calls = self.kill_calls = 0
@@ -63,7 +69,7 @@ class Commands:
         failure = None
         try:
             child = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE, shell=False, close_fds=True, bufsize=0)
+                stderr=subprocess.PIPE, shell=False, close_fds=True, bufsize=0, env=self.env)
             self.pending.append(child); self.started += 1
             for index, pipe in enumerate((child.stdout, child.stderr)):
                 pipes.append(pipe); os.set_blocking(pipe.fileno(), False); selector.register(pipe, selectors.EVENT_READ, index)

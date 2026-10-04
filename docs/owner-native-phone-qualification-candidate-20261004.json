@@ -67,5 +67,28 @@
     "tests/test_owner_native_gateway_environment.py": "8947345ce31fc2eaf99afa8e071f5a25af846e5028aac1d576463059ac97d0de",
     "tests/test_owner_native_gateway_coordinator.py": "2454004d51ff717ffb1262fdef0a47e32a4f0f59fe957eaa5aa09a2b9110b116"
   },
-  "cloud_CI_for_this_source": null
+  "cloud_CI_for_this_source": {
+    "sha": "1fa0b0994de26dc96fe00efd2370801c804b7879",
+    "run": 37207680721,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1999,
+    "Linux_elapsed_seconds": 68.08,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  },
+  "source_commit": "1fa0b0994de26dc96fe00efd2370801c804b7879",
+  "NEW_private_helper_mutation_client": {
+    "kernel_only": true,
+    "actual_host_checks": 8,
+    "elapsed_seconds": 0.732,
+    "real_ADB_or_helper": false,
+    "no_PID_adoption_or_timeout_signal": true,
+    "checkpoint_precedes_Popen": true,
+    "checkpoint_post_failure_drain_kept": true,
+    "local_Success_exit_EOF_establishes_remote_helper_ownership": false,
+    "installed_scope_package_receipts_or_live_callbacks_integrated": false
+  }
 }

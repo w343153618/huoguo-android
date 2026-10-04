@@ -1,0 +1,77 @@
+{
+  "schema": "owner-native-helper-scope-candidate-v1",
+  "status": "source_and_synthetic_Android_metadata_actual_host_driver_only",
+  "default_enabled": false,
+  "source_SHA256": {
+    "scripts/probes/owner_native_helper_scope.py": "d653b54719f4819cbc03dda8de503c3f03b7dae73e64d008ae8e9844d1ce321e",
+    "tests/test_owner_native_helper_scope.py": "316a1575bc441b8491c449b82004cb69d14b7f9bfb466cab7c278e35eea3e7e2",
+    "scripts/probes/owner_native_gateway_probes.py": "88e0b7acfe2c85a8001af4d5b838bb5650225661344c9bffa8c18e2064bf3cc2"
+  },
+  "new_checks": 19,
+  "affected_checks": 63,
+  "affected_seconds": 4.488,
+  "initial_subset_checks": 17,
+  "initial_subset_seconds": 0.528,
+  "actual_host_Popen_EOF_pipe_inheritance_and_environment_checks": true,
+  "actual_host_shell_syntax_only": true,
+  "actual_phone_stage_PM_or_ART_validated": false,
+  "closed_scope_contract": {
+    "directory_uid_gid": 2000,
+    "directory_mode": "0700",
+    "APK_uid_gid": 2000,
+    "APK_mode": "0600",
+    "APK_max_bytes": 131072,
+    "APK_single_link": true,
+    "installed_APK_uid_gid_allowed": [
+      0,
+      1000
+    ],
+    "installed_APK_mode": "0644",
+    "single_command_seconds": 3,
+    "aggregate_read_seconds": 15,
+    "text_receipt_max_bytes": 4096,
+    "atomic_remote_filesystem_hold": false,
+    "remote_openat_nofollow_descriptor": false,
+    "receipt_establishes_installation_ownership": false,
+    "mutation_or_scope_removal_provided": false
+  },
+  "held_driver_gate": {
+    "actual_coordinator_Popen_required": true,
+    "both_pipe_EOF_required": true,
+    "live_missing_overflow_refused": true,
+    "failure_exit_is_playback_success": false,
+    "JSON_PID_adoption": false,
+    "remote_helper_PM_quiescence_claimed": false,
+    "uninstall_or_release_authorized": false
+  },
+  "probe_environment": {
+    "new_adapter_exact_selected_environment_required": true,
+    "runner_copies_explicit_environment": true,
+    "existing_caller_defaults_changed": false,
+    "old_6f_binding_or_freezes_changed": false
+  },
+  "phone_readback": "one get-state device-not-found, no repeatpoll or inferred package/process absence",
+  "live_operations": {
+    "helper_or_App_install": 0,
+    "authentication": 0,
+    "media": 0,
+    "RPC": 0,
+    "source_input": 0,
+    "UiAutomation": 0,
+    "service_signals": 0
+  },
+  "new_App_helper_JNI_or_release": false,
+  "preceding_exact_CI": {
+    "SHA": "1fa0b0994de26dc96fe00efd2370801c804b7879",
+    "run": 37207680721,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1999,
+    "seconds": 68.08,
+    "existing_skips": 11
+  },
+  "this_candidate_CI": null,
+  "next": "Bind actual held mutation clients/package/scope ownership and supervisor cleanup in NEW whole binding; no partial kernel live execution. Old reviewed f0/d043 first when phone is available."
+}

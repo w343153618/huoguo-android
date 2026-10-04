@@ -59,3 +59,22 @@ Exact preceding6fda/run37205328297 was independently overall/build/UDPsuccess,
 Linux1981tests/74.328s/11existing skips. That result covers6f only; this source
 requires its own exact CI. No historical failure was rerun, workflow/guard
 removed, skip added, buffer enlarged or production default promoted.
+
+Exact1fa0b0994de26dc96fe00efd2370801c804b7879/run37207680721 was independently
+read back completed/overall/build/UDPsuccess. Actual Linux log records1999tests/
+68.080s/11existing skips. Do not repeat or apply this green result to a later
+SHA. Cloud evidence is appended locally for the next meaningful source push,
+not a doc-only CI round.
+
+The next NEW private helper mutation-client kernel has8actual bounded host-child
+fixtures PASS0.732s. A fixed operation and finite fresh root callbacks are
+required; possible start is checkpointed before actual Popen. Timeout or
+interruption keeps that actual client and never sends a signal. A failed
+post-start checkpoint still leaves pipes draining. Explicit child environment
+rejects inherited ADB-server/Python/loader overrides. Actual Success/exit0/EOF
+remains a local-client observation, with remote scope possibly remaining and
+no helper-install ownership, PM quiescence or reservation release authority.
+There is no CLI, scope-removal operation, PID adoption or live integration.
+Exact remote stage UID/inodes/package receipts, actual owned driver cleanup
+and NEW full callback binding remain next. No ADB/helper/App mutation occurred;
+the8host fixtures are outside1fa cloud validation.
