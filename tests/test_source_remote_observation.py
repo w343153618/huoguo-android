@@ -75,6 +75,35 @@ class SourceRemoteObservationChecks(unittest.TestCase):
                     display_height=1920, reader_factory=factory)
         factory.assert_not_called()
 
+    def test_opt_in_geometry_uses_actual_size_and_two_display_rotation_brackets(self):
+        rows = values()
+        window = b'  Display: mDisplayId=0\n    mRotation=0 mDeferredRotationPauseCount=0\n'
+        rows[1] += window; rows[5] += window
+        rows = [b'Physical size: 1080x1920\n'] + rows + [b'Physical size: 1080x1920\n']
+        reader = FakeReader(rows)
+        result = target.collect('inert', 'emulator-5556', 'aqz-KE-bpKQ',
+            display_width=1080, display_height=1920, require_display=True,
+            reader_factory=lambda *_: reader)
+        self.assertTrue(result['target_qualified']); self.assertTrue(result['display_geometry_verified'])
+        self.assertEqual(len(reader.arguments), 9)
+        self.assertEqual(sum(a[0] == ['wm', 'size'] for a in reader.arguments), 2)
+        self.assertTrue(all(not raw for raw in reader.buffers))
+
+    def test_geometry_opt_in_rejects_rotation_missing_or_different_effective_size(self):
+        for bad in ('rotation', 'size', 'missing'):
+            rows = values()
+            window = b'  Display: mDisplayId=0\n    mRotation=0 mDeferredRotationPauseCount=0\n'
+            rows[1] += window; rows[5] += window
+            if bad == 'rotation': rows[5] = rows[5].replace(b'mRotation=0', b'mRotation=1')
+            if bad == 'missing': rows[1] = existing.focus()
+            rows = [b'Physical size: 1080x1920\n'] + rows + [b'Physical size: 1080x1920\n']
+            if bad == 'size': rows[-1] = b'Physical size: 1080x1920\nOverride size: 720x1280\n'
+            reader = FakeReader(rows)
+            result = target.collect('inert', 'emulator-5556', 'aqz-KE-bpKQ',
+                display_width=1080, display_height=1920, require_display=True,
+                reader_factory=lambda *_: reader)
+            self.assertFalse(result['target_qualified'])
+
 
 if __name__ == '__main__':
     unittest.main()

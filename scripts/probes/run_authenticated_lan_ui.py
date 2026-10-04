@@ -36,6 +36,8 @@ sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
 from scripts.probes import owner_source_gate
 from scripts.probes import owner_source_stats_gate, source_window_control
+from scripts.probes import source_authenticated_driver, source_authenticated_observation
+from scripts.probes import source_remote_observation, source_phone_markers
 from scripts.probes.owner_trace_prefix import TracePrefixReader, SourceTraceError, LABELS as TRACE_LABELS
 
 
@@ -486,6 +488,10 @@ def parse_arguments(argv=None):
                    help='Fresh private empty root for this owned listener; never a historical trace directory')
     p.add_argument('--source-stats-window', choices=['off','on'], default='off',
                    help='Explicit protected M1 owner experiment: paused Stats endpoints around owned playback')
+    p.add_argument('--source-input', choices=['off', 'native'], default='off',
+                   help='Explicit M1 saved-UI owner trial: current authenticated helper native play/pause')
+    p.add_argument('--source-input-identity', default=None,
+                   help='Exact fresh source PID:UID:start_ticks; never a cached target-coordinate file')
     args = p.parse_args(argv)
     source_options = (args.source_listener_monotonic_ns, args.source_expected_pid,
                       args.source_expected_uid, args.source_expected_start_ticks, args.source_trace_root)
@@ -524,6 +530,22 @@ def parse_arguments(argv=None):
             p.error('Explicit source guest must match the fixed public node profile')
     else:
         args.guest = args.guest or 'emulator-5556'
+    if args.source_input == 'native':
+        if (args.network_scope != 'nps_owner' or args.node != 'm1' or not args.media_only
+                or args.phone_only_sampler or args.credential_source != 'saved-ui'
+                or args.owner_source_guard != 'off' or args.source_stats_window != 'off'
+                or args.source_input_identity is None):
+            p.error('Native source input requires explicit M1 saved-UI media-only and fresh source identity')
+        match = re.fullmatch(r'([0-9]{1,10}):([0-9]{1,10}):([0-9]{1,19})', args.source_input_identity)
+        if match is None:
+            p.error('Native source input identity must be bounded PID:UID:start_ticks')
+        values = list(map(int, match.groups()))
+        if not (1 <= values[0] <= 2147483647 and 0 <= values[1] <= 2147483647
+                and 1 <= values[2] <= 9223372036854775807):
+            p.error('Native source input identity out of range')
+        args.source_input_identity = dict(zip(('pid', 'uid', 'start_ticks'), values))
+    elif args.source_input_identity is not None:
+        p.error('Native source input identity requires explicit opt-in')
     return args
 
 
@@ -539,7 +561,7 @@ def main():
         return adb(args.phone, 'su -c '+shlex.quote(command), check)
 
     def app_uid():
-        if args.owner_source_guard != 'off':
+        if args.owner_source_guard != 'off' or args.source_input == 'native':
             return target_user0_uid(adb(args.phone,
                 'cmd package list packages --user 0 -U '+TARGET_PACKAGE))
         return adb(args.phone,'cmd package list packages -U '+TARGET_PACKAGE).stdout.split('uid:',1)[1].split(',',1)[0].strip()
@@ -547,6 +569,7 @@ def main():
     flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
     proc = None
     source_reader = source_gate = source_stats_before = None
+    source_native = source_markers = None
     instrumentation_reaped = False
     samplers=[]
     scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
@@ -573,6 +596,7 @@ def main():
         source_final_target_process_absent_verified=False,
         source_freshness_scope='first_owned_session_capture_only_not_reconnect_or_presentation')
     report['source_stats_window_enabled'] = args.source_stats_window == 'on'
+    report['requested_authenticated_source_input'] = args.source_input
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -587,6 +611,52 @@ def main():
             raise RuntimeError('target_App_process_active_skip' if state == 'active'
                                else 'target_App_process_check_unavailable_skip')
         report['preinstrument_target_process_absent_verified'] = True
+        if args.source_input == 'native':
+            def marker_root(command):
+                return subprocess.run(['adb', '-s', args.phone, 'shell', 'su -c '+shlex.quote(command)],
+                    capture_output=True, text=True, timeout=1)
+            source_markers = source_phone_markers.PhoneMarkers(marker_root, int(app_uid()))
+            source_markers.require_absent()
+            # Actual installed APK bytes, not a helper filename or request echo.
+            for package, expected_sha in (
+                    ('local.huoguo.lanuitest', source_authenticated_driver.HELPER_SHA256),
+                    (TARGET_PACKAGE, 'd0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08')):
+                path_result = adb(args.phone, 'pm path --user 0 '+package)
+                match = re.fullmatch(r'package:(/data/app/[A-Za-z0-9_/+~=.-]+/base\.apk)\s*', path_result.stdout)
+                if path_result.stderr or match is None:
+                    raise source_authenticated_driver.Rejected('source_input_helper_unmatched')
+                digest = marker_root('sha256sum '+shlex.quote(match[1]))
+                if (digest.returncode != 0 or digest.stderr
+                        or digest.stdout != expected_sha+'  '+match[1]+'\n'):
+                    raise source_authenticated_driver.Rejected('source_input_helper_unmatched')
+            report['source_input_matching_installed_artifacts_verified'] = True
+            def observe_target(state):
+                return source_remote_observation.collect('adb', args.guest, 'aqz-KE-bpKQ',
+                    required_state=state, display_width=1080, display_height=1920,
+                    require_display=True, timeout=6)
+            def observe_transition(state, identity):
+                begin = time.monotonic_ns()
+                value = source_authenticated_observation.collect_state('adb', args.guest, identity,
+                    state, timeout=3)
+                if state == 'paused':
+                    remaining = 6 - (time.monotonic_ns()-begin)/1e9
+                    if remaining < 3:
+                        raise source_authenticated_driver.Rejected('source_input_observer_budget')
+                    post = source_remote_observation.collect('adb', args.guest, 'aqz-KE-bpKQ',
+                        required_state='paused', display_width=1080, display_height=1920,
+                        require_display=True, timeout=min(6, remaining))
+                    # Qualify the current snapshot before interpreting its fields.
+                    ready = dict(source_native.ready, phase=1)
+                    source_authenticated_driver.command(ready, post, identity, time.monotonic_ns())
+                    first = source_native.observations['1']['target']['source']['stats']
+                    after = post['source']['stats']
+                    if any(first[k] != after[k] for k in ('video_id', 'video_format', 'audio_format')):
+                        raise source_authenticated_driver.Rejected('source_input_identity_changed')
+                    value['paused_Stats_after'] = post
+                    value['endpoint_formats_match'] = True
+                return value
+            source_native = source_authenticated_driver.Coordinator(source_markers, observe_target,
+                observe_transition, args.source_input_identity)
         if args.credential_source == 'private-file' and root('test -s '+PRIVATE+'udp-test-login.json',False).returncode:
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
@@ -621,11 +691,24 @@ def main():
                 owner_source_stats_gate.require_fresh(source_stats_before, launch_ns)
             report.update(source_launch_freshness_verified=True,
                           source_instrumentation_launch_monotonic_ns=launch_ns)
+        if source_native is not None:
+            state = target_process_state(adb(args.phone, 'pidof '+TARGET_PACKAGE, False))
+            if state != 'absent':
+                raise RuntimeError('target_App_process_active_skip' if state == 'active'
+                                   else 'target_App_process_check_unavailable_skip')
+            report['source_input_final_target_absence_verified'] = True
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e credential_source '+args.credential_source+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e credential_source '+args.credential_source+' -e source_input '+args.source_input+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
+            if source_native is not None:
+                if source_native.phase == 1 or (source_native.phase == 2 and report.get('steady_samplers_completed_before_leave')):
+                    source_native.advance(samplers_completed=bool(report.get('steady_samplers_completed_before_leave')))
+                    report['authenticated_source_phases'] = source_native.observations
+                if source_native.phase == 1:
+                    time.sleep(.1)
+                    continue
             if source_gate is not None and not report['source_first_capture_freshness_verified']:
                 now_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
                 owner_source_gate.validate_launch_fresh(source_gate, now_ns)
@@ -769,6 +852,12 @@ def main():
         report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on')
         report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
         report['credential_source_readback_verified']=verify_credential_source_readback(report.get('ui_result'),args.credential_source)
+        if source_native is not None:
+            ui_source = report.get('ui_result', {})
+            report['authenticated_source_phases_complete'] = (source_native.completed == [1, 2]
+                and source_authenticated_driver.helper_readback(ui_source))
+            if not report['authenticated_source_phases_complete']:
+                raise source_authenticated_driver.Rejected('source_input_transition_unverified')
         report['exit_confirmation_readback_verified']=verify_exit_confirmation_readback(report.get('ui_result'))
         report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
         report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
@@ -835,6 +924,7 @@ def main():
         labels.update(owner_source_stats_gate.LABELS)
         labels.update(source_window_control.LABELS)
         labels.add('source_Stats_endpoint_mismatch')
+        labels.update(source_authenticated_driver.LABELS)
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
@@ -844,7 +934,7 @@ def main():
             attempt_cleanup(report, 'pause_owned_source_window',
                 lambda: report.update(source_pause_receipt=source_window_control.transition(
                     'adb', args.guest, source_stats_before['identity'], 'paused')))
-        if (proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
+        if (source_native is None and proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
                 and not report.get('saved_UI_unavailable_skip')):
             # Terminating the local adb client alone does not end Android
             # instrumentation. Stop only these two known isolated packages.
@@ -852,7 +942,12 @@ def main():
                 attempt_cleanup(report, 'stop_'+package,
                                 lambda package=package: adb(args.phone,'am force-stop '+package,False))
         if proc is not None and not instrumentation_reaped:
-            cleanup_output = reap_owned_process(proc, report, 'instrumentation', 2, terminate=failed)
+            # Native source failures let the helper's bounded wait expire and
+            # its finally cancel only the captured Attempt. Never force-stop a
+            # later UI session to compensate for an observer failure.
+            cleanup_output = reap_owned_process(proc, report, 'instrumentation',
+                args.steady_seconds+25 if source_native is not None and failed else 2,
+                terminate=failed and source_native is None)
             report['instrumentation_exit_code']=proc.returncode
             if failed:
                 try:
@@ -867,6 +962,11 @@ def main():
                 source_reader.close()
             except Exception as failure:
                 record_cleanup_failure(report, 'close_source_trace_prefix', failure=failure)
+        if source_markers is not None:
+            cleanup = source_markers.cleanup()
+            report['authenticated_source_marker_cleanup'] = cleanup
+            if not cleanup['owned_marker_cleanup_confirmed']:
+                record_cleanup_failure(report, 'owned_source_markers', failure=RuntimeError('source_marker_cleanup'))
         cleanup_paths = ([PRIVATE+'udp-test-login.json'] if args.credential_source == 'private-file' else [])
         # A pre-instrument saved-mode refusal owns no App markers or input.
         if args.credential_source == 'private-file' or proc is not None:

@@ -1,0 +1,42 @@
+{
+  "schema": "owner-source-markers-real-device-v1",
+  "phone_input_executed": false,
+  "guest_controls": false,
+  "media_started": false,
+  "credentials_read": false,
+  "service_operations": false,
+  "initial_failed_creation_empty_stage_retained": true,
+  "initial_all_named_markers_absent": true,
+  "nonreplacing_publication_readback": true,
+  "uid_regular_mode600_inode_bracket_verified": true,
+  "result": "pass",
+  "cleanup": {
+    "owned_marker_cleanup_confirmed": true,
+    "cleanup_failures": 0,
+    "filesystem_checks_atomic": false
+  },
+  "elapsed_ms": 2796.059792,
+  "source_sha256": {
+    "scripts/probes/run_authenticated_lan_ui.py": "12f849e715490ccd797ae1cd30e7faf93d26c91e03fc6ca175b8f5b17220602a",
+    "scripts/probes/source_authenticated_driver.py": "031fd886b2973a593c5e2e290e0815b6732ca444e8fcc5bdd21bfdf449307767",
+    "scripts/probes/source_authenticated_observation.py": "c30606947123638596ecdb95a9b6145dd4430589294ff5bd163db4908ef517d1",
+    "scripts/probes/source_phone_markers.py": "5f1e5b3007a7510a9056f78b008b500596cbe0e82f89f343c6a00d78b16e3972",
+    "scripts/probes/source_remote_observation.py": "14cec7f397be679ba7392c69af3a7e47db253b54bc9ee769e9b0d3e9b5604180"
+  },
+  "scope": "owned test-marker filesystem on actual owner phone; not authenticated source input, media, or performance",
+  "first_fixture": {
+    "result": "fail",
+    "failure_label": "source_input_marker_command",
+    "elapsed_ms": 1803.982334,
+    "reason": "restorecon returned0 but emitted SELinux context-loading diagnostics on stderr; empty stage created before receipt was accepted",
+    "untracked_empty_stage_retained": true
+  },
+  "focused_checks": {
+    "count": 113,
+    "passed": true,
+    "runs": "111 checks6.201s plus added main-cleanup and restorecon fixtures in targeted29 checks0.011s",
+    "all_113_rerun_together": false
+  },
+  "driver_integrated": true,
+  "live_authenticated_source_input_executed": false
+}

@@ -80,8 +80,11 @@ adds the missing dependency to the separate fixture's explicit compiler input
 list. No production code, source-input ownership guard, workflow or skip policy
 changes. The formerly failing module plus the helper transaction, target,
 same-snapshot observer, Stats and callback suites passed 56 tests in 3.301s,
-including actual API37 compilation. The pushed repair needs its own cloud run;
-the preceding green runs cannot validate this change. No APK/manifest, phone,
+including actual API37 compilation. The repair `6142e0ed71903ea8045a2ba43afa757790e8d668` completed its own
+[run37168471495](https://github.com/w343153618/huoguo-android/actions/runs/37168471495)
+with overall, build and udp_candidate all successful. Linux ran 1722 tests in
+79.717s, `OK (skipped=11)`. These are actual results for the repaired SHA;
+the preceding green runs do not validate this change. No APK/manifest, phone,
 guest, gateway, M5 or NPS operation is part of this repair.
 
 ## Confirmed causes and scoped changes
