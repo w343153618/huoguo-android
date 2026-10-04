@@ -1,5 +1,29 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW defaultOFF retained native helper idle scheduler:18new/92affected actual
+hostchecks PASS17.649s, actualnativeparent/control/scope over actual5s hostdriver.
+Process30–3600 ceiling anchored once to lifecycle constructor; each command3s
+unchanged. Actual Darwin queued-cleanup+EOF counterexample initially92/1failure
+preserved; HUP-only insufficient, fixed strict one outstanding DRIVER_DONE and
+trailing-readiness refusal. Unknown/no signals/retained objects; callbacks and
+wire not permission. Earlier15/1fixtureeventtimeout retained causeunknown.
+NDK29/API30 compile30984B/37f110ab only, no Android/device/PM. Native Android
+qualifiers/whole actual host bridge still gated. Next actual owned parent/client
+closed phase scheduling with selected env and existing whole eligibility; no
+partial execute. Phoneonce missing/no repoll/rootexecnull. Oldf0/d043 first on
+actual return; no App/helper/JNI/release/buffer/guard change. NewSHA ownCI.
+
+Exacte988/run37218981771 independently allsuccess2092Linux/99.364s/11existing
+skips, no repeat. NEW private root-owner readonly adapter12checks0.043s:
+HGHO1 newrootlayout separate from oldflat ScopeProbes; Android metadata synthetic,
+actual host shellsyntax/env only. No device/PM/permission/release. Wholebinding
+review identified native same-process qualifier/host bridge and persistent actual
+driver wait scheduling still missing;5swindow must not extend3s command.
+Next implement those bound callbacks/phase scheduling with actualobjects, not
+serialized hostboolean/pins as native permission. Private next review in state;
+oldf0/d043 first on device return, no repoll/partialactivation. Cloud/private
+append for next meaningfulsourcepush, notdoc-onlyCI or fulltest repetition.
+
 NEW defaultOFF same-parent helper lifecycle/post-PM own-FD retirement kernel:
 20new/106affected actualhostchecks PASS14.296s, syntheticAndroidcallbacks only.
 Actual owned PMstandins+helddriver/dualEOF precede own hostscope retirement;

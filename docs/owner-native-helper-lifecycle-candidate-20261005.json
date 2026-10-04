@@ -60,5 +60,21 @@
   "phone_operator_server_lease_or_release_verified": false,
   "existing_frozen_or_private_bundles_changed": false,
   "next": "NEW whole selected environment/dependency/operator/source/phone/current Attempt/package/native owner/actual held driver and input/helper/scope callback binding; no partial live execution. Phone return first unchanged reviewed f0/d043 frame-only.",
-  "exact_CI": "pending meaningful source push; prior6024 CI not coverage"
+  "exact_CI": {
+    "commit": "e98805ca6d2120224f4c3138058ad33684b0b364",
+    "run_id": 37218981771,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111485254756,
+    "UDP_job": 111485950531,
+    "Linux_tests": 2092,
+    "Linux_seconds": 99.364,
+    "existing_skips": 11,
+    "URL": "https://github.com/w343153618/huoguo-android/actions/runs/37218981771",
+    "independently_readback_verified": true,
+    "private_followon_covered": false
+  },
+  "private_followon": "NEW root-owner readonly HGHO1 adapter12 checks/0.043s; Android metadata synthetic, actual host shell syntax/env only; no device or scope read/PM/permission. Separate whole native qualifier/host bridge and persistent driver scheduling remain gated."
 }

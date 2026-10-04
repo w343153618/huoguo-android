@@ -22,6 +22,8 @@ struct hg_lifecycle {
     void *context;
     int install_natural,uninstall_natural;
     int file_removed,stage_removed,parent_removed,retirement_started;
+    uint64_t constructed_ms;
+    int idle_attached;
 };
 /* Never accept an existing hg_owner, receipt, child PID or old scope. This
  * instance creates and retains its own actual owner across all four requests.
@@ -38,6 +40,8 @@ struct hg_lifecycle *hg_lifecycle_new(int control,const char *nonce,uint64_t siz
     if (!l->owner||!hg_channel_init(&l->channel,control,nonce,size,sha)) {
         free(l->owner);free(l);return NULL;
     }
+    l->constructed_ms=now_ms();
+    if (!l->constructed_ms) {free(l->owner);free(l);return NULL;}
     l->qualify=qualify;l->context=context;return l;
 }
 static int fail_lifecycle(struct hg_lifecycle *l) {

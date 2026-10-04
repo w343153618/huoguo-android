@@ -86,3 +86,18 @@ Popen natural0/dual EOF, unique closed native footer/reapertrue/stop0, all owned
 roles zero, fresh original/formal checks and independent phone/helper/input/
 package/scope cleanup still precede the original five-field projection and
 explicit release. No guard, schema, production default or playback buffer changes.
+
+Exact e98805ca6d2120224f4c3138058ad33684b0b364/run37218981771 is independently
+completed/overall/build/UDPsuccess; Linux2092tests/99.364s/11existing skips.
+This cloud append remains local for the next meaningful source push. No repeat
+poll or doc-only CI; subsequent source requires its own exact run.
+
+NEW private whole-binding review found old ScopeProbes uses incompatible flat
+shell-owned layout. A separate readonly root-owner HGHO1 adapter now passes12
+checks0.043s (initial0.040s). Android node/read outputs remain synthetic; only
+host shell syntax/environment children are actual. No device/scope read, stage,
+PM or release occurred. The separate adapter is not covered by e988CI, and
+metadata cannot become the retained native FDs or permission. Real same-process
+native qualifiers/host bridge and persistent owned-driver scheduling still need
+implementation; a5s driver window cannot silently expand the3s command timeout.
+Private receipts/pins and detailed next whole-binding review are in checkpoint.
