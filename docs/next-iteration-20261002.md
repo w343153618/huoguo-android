@@ -1,5 +1,17 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Default-OFF unary frame reader now integrated into frame-only driver.17 new/
+79 focused/API37/JVM checks PASS3.293s; actual current emulator process parser
+accepted after narrowing the SDK headless @AVD form. No gRPC/media/helper install
+or source input; existing82f helper/code40 App unchanged. Read
+source-unary-frame-reader-candidate-20261004.md/json. Next NEW exact freeze,
+fresh phone/formal/artifact eligibility and one normal saved-UI authenticated
+App Attempt/read-only frame; no UiAutomation or source control. Metadata and
+before/after identity do not establish permission, atomic hold or moving FPS.
+Exact preceding856/run37190843471 independently overall/build/UDPsuccess;
+this later source needs its own CI. Old failed UI retirement stays separately
+gated, all M1/M5/NPS maintenance remains completed.
+
 New default-OFF helper `frame-only` and standalone non-input coordinator are
 implemented:14new/69focused/API37/JVM checks PASS6.755s, final strict report
 schema7checks PASS0.003s. Original-signer helper82f46146/82323B built6.816s

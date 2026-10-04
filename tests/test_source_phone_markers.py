@@ -79,5 +79,17 @@ class SourcePhoneMarkerChecks(unittest.TestCase):
         with self.assertRaises(Rejected): marker.publish(names(1)['ready'], b'77\n')
         self.assertEqual(r.commands, [])
 
+    def test_frame_READ_is_only_closed_bounded_phase_one_command(self):
+        stage = m.PRIVATE+'udp-ui-source-driver-a1B2c3D4e5F6'
+        r = Runner([(44, ''), (0, stage+'\n'+stat(0)), (0, stat(0)), (0, ''), (0, stat(0)), (0, '')])
+        marker = m.PhoneMarkers(r, UID);marker.publish(names(1)['command'], b'READ 77\n')
+        self.assertIn("'READ 77\n'",r.commands[5]);self.assertIn('ln -T ',r.commands[5])
+        for name,body in ((names(2)['command'],b'READ 77\n'),(names(1)['verified'],b'READ 77\n'),
+                (names(1)['command'],b'READ 077\n'),(names(1)['command'],b'READ 0\n'),
+                (names(1)['command'],b'READ 9223372036854775808\n'),(names(1)['command'],b'READ 77\nREAD 77\n')):
+            run=Runner([])
+            with self.assertRaises(Rejected):m.PhoneMarkers(run,UID).publish(name,body)
+            self.assertEqual(run.commands,[])
+
 
 if __name__ == '__main__': unittest.main()

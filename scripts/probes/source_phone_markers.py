@@ -89,7 +89,11 @@ class PhoneMarkers:
         destination = self.path(name)
         if not name.endswith(('-command', '-verified')) or type(body) is not bytes or len(body) > 128:
             raise Rejected('source_input_marker_bound')
-        if not re.fullmatch(rb'[0-9]+(?: [0-9]+){0,5}\n', body):
+        frame_read = (name == names(1)['command'] and len(body) <= 32
+                      and re.fullmatch(rb'READ ([1-9][0-9]{0,18})\n', body))
+        if frame_read and int(frame_read[1]) >= 1 << 63:
+            raise Rejected('source_input_marker_bound')
+        if not frame_read and not re.fullmatch(rb'[0-9]+(?: [0-9]+){0,5}\n', body):
             raise Rejected('source_input_marker_bound')
         if destination in self.owned or self._stat(destination) is not None:
             raise Rejected('source_input_preexisting_marker')

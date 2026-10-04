@@ -36,13 +36,14 @@ INSTRUMENTATION_FAILURE_LABELS = frozenset((
     'source_marker_changed_size', 'source_marker_changed_inode', 'source_input_capture',
     'source_phase_preexisting', 'source_command_cleanup', 'source_input_ownership',
     'source_input_dispatch', 'source_observer_nonce_changed', 'source_verified_marker_cleanup',
-    'source_owned_marker_cleanup'))
+    'source_owned_marker_cleanup', 'source_frame_command_cleanup', 'source_frame_verified_cleanup'))
 sys.path.insert(0, str(ROOT))
 from udp_nps_profile import planned_profile
 from scripts.probes import owner_source_gate
 from scripts.probes import owner_source_stats_gate, source_window_control
 from scripts.probes import source_authenticated_driver, source_authenticated_observation
 from scripts.probes import source_remote_observation, source_phone_markers, source_snapshot_selection
+from scripts.probes import source_frame_coordinator, source_grpc_frame
 from scripts.probes.owner_trace_prefix import TracePrefixReader, SourceTraceError, LABELS as TRACE_LABELS
 
 
@@ -298,7 +299,13 @@ def verify_steady_media_progress(result):
 
 def verify_pause_recovery(result, args, driver_report):
     """One actual first-session close; never imply steady/reconnect acceptance."""
-    if (not source_authenticated_driver.helper_readback(result, mode='pause-only')
+    return (source_authenticated_driver.helper_readback(result, mode='pause-only')
+            and verify_single_observation_session(result, args, driver_report))
+
+
+def verify_single_observation_session(result, args, driver_report):
+    """Shared real first-session UI/network/cleanup checks; no mode fabrication."""
+    if (type(result) is not dict or 'failure_class' in result
             or driver_report.get('phone_sampler_started') is not False
             or driver_report.get('touch_source_switched') is not False
             or result.get('first_leave_audio_threads_alive') != 0
@@ -460,11 +467,22 @@ def instrumentation_cleanup_diagnostic(output):
             projected['helper_owned_attempt_started'] = value['helper_owned_attempt_started']
         for name in ('requested_authenticated_source_input', 'source_owned_marker_cleanup_failed',
                      'source_pause_only_recovery', 'source_recovery_no_steady_window', 'source_recovery_no_reconnect',
+                     'source_frame_only_observation', 'source_observation_input_sent',
                      'source_phase_1_external_observer_confirmation', 'source_phase_2_external_observer_confirmation'):
             if name in value:
                 if type(value[name]) is not bool:
                     raise ValueError('bool_required')
                 projected[name] = value[name]
+        if 'source_frame_observation' in value:
+            frame = value['source_frame_observation']
+            flags = {'owned_before','publication_attempted','publication_returned','confirmation_matched','owned_after',
+                'input_sent','remote_pixels_verified_by_helper','source_identity_verified_by_helper',
+                'server_lease_independently_verified_by_helper','atomic_hold'}
+            if (type(frame) is not dict or set(frame) != flags | {'nonce'}
+                    or any(type(frame[k]) is not bool for k in flags)
+                    or type(frame['nonce']) is not int or not 1 <= frame['nonce'] < 1 << 63):
+                raise ValueError('frame_receipt_schema')
+            projected['source_frame_observation'] = dict(frame)
         tap_keys = {'down_attempted', 'down_returned', 'up_attempted', 'up_returned',
                     'cancel_attempted', 'cancel_returned', 'cancel_skipped_for_changed_owner',
                     'remote_playback_verified_by_helper'}
@@ -541,12 +559,14 @@ def parse_arguments(argv=None):
                    help='Fresh private empty root for this owned listener; never a historical trace directory')
     p.add_argument('--source-stats-window', choices=['off','on'], default='off',
                    help='Explicit protected M1 owner experiment: paused Stats endpoints around owned playback')
-    p.add_argument('--source-input', choices=['off', 'native', 'pause-only'], default='off',
+    p.add_argument('--source-input', choices=['off', 'native', 'pause-only', 'frame-only'], default='off',
                    help='Explicit M1 saved-UI owner trial: current authenticated helper native play/pause')
     p.add_argument('--source-snapshot-deployment', type=Path, default=None,
                    help='Explicit pause-only trial: private pinned standalone readonly JAR descriptor')
     p.add_argument('--source-input-identity', default=None,
                    help='Exact fresh source PID:UID:start_ticks; never a cached target-coordinate file')
+    p.add_argument('--source-frame-deployment', type=Path, default=None,
+                   help='Frame-only: private exact emulator identity and private pixel destination; no input or accessibility')
     args = p.parse_args(argv)
     source_options = (args.source_listener_monotonic_ns, args.source_expected_pid,
                       args.source_expected_uid, args.source_expected_start_ticks, args.source_trace_root)
@@ -589,21 +609,28 @@ def parse_arguments(argv=None):
         if (args.network_scope != 'nps_owner' or args.node != 'm1' or not args.media_only
                 or args.phone_only_sampler or args.credential_source != 'saved-ui'
                 or args.owner_source_guard != 'off' or args.source_stats_window != 'off'
-                or args.source_input_identity is None):
+                or (args.source_input != 'frame-only' and args.source_input_identity is None)):
             p.error('Native source input requires explicit M1 saved-UI media-only and fresh source identity')
-        match = re.fullmatch(r'([0-9]{1,10}):([0-9]{1,10}):([0-9]{1,19})', args.source_input_identity)
-        if match is None:
-            p.error('Native source input identity must be bounded PID:UID:start_ticks')
-        values = list(map(int, match.groups()))
-        if not (1 <= values[0] <= 2147483647 and 0 <= values[1] <= 2147483647
-                and 1 <= values[2] <= 9223372036854775807):
-            p.error('Native source input identity out of range')
-        args.source_input_identity = dict(zip(('pid', 'uid', 'start_ticks'), values))
+        if args.source_input == 'frame-only':
+            if args.source_input_identity is not None:
+                p.error('Frame observation does not accept a cached source target identity')
+        else:
+            match = re.fullmatch(r'([0-9]{1,10}):([0-9]{1,10}):([0-9]{1,19})', args.source_input_identity)
+            if match is None:
+                p.error('Native source input identity must be bounded PID:UID:start_ticks')
+            values = list(map(int, match.groups()))
+            if not (1 <= values[0] <= 2147483647 and 0 <= values[1] <= 2147483647
+                    and 1 <= values[2] <= 9223372036854775807):
+                p.error('Native source input identity out of range')
+            args.source_input_identity = dict(zip(('pid', 'uid', 'start_ticks'), values))
     elif args.source_input_identity is not None:
         p.error('Native source input identity requires explicit opt-in')
     if ((args.source_input == 'pause-only') != (args.source_snapshot_deployment is not None)
             or (args.source_snapshot_deployment is not None and not args.source_snapshot_deployment.is_absolute())):
         p.error('Direct snapshot selection requires the explicit bounded pause-only owner trial')
+    if ((args.source_input == 'frame-only') != (args.source_frame_deployment is not None)
+            or args.source_frame_deployment is not None and not args.source_frame_deployment.is_absolute()):
+        p.error('Frame reader selection requires the explicit bounded frame-only owner trial')
     return args
 
 
@@ -627,7 +654,7 @@ def main():
     flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
     proc = None
     source_reader = source_gate = source_stats_before = None
-    source_native = source_markers = snapshot_selection = None
+    source_native = source_frame = source_frame_reader = source_markers = snapshot_selection = None
     instrumentation_reaped = False
     samplers=[]
     scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
@@ -680,7 +707,8 @@ def main():
             source_markers.require_absent()
             # Actual installed APK bytes, not a helper filename or request echo.
             for package, expected_sha in (
-                    ('local.huoguo.lanuitest', source_authenticated_driver.HELPER_SHA256),
+                    ('local.huoguo.lanuitest', source_frame_coordinator.HELPER_SHA256
+                        if args.source_input == 'frame-only' else source_authenticated_driver.HELPER_SHA256),
                     (TARGET_PACKAGE, 'd0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08')):
                 path_result = adb(args.phone, 'pm path --user 0 '+package)
                 match = re.fullmatch(r'package:(/data/app/[A-Za-z0-9_/+~=.-]+/base\.apk)\s*', path_result.stdout)
@@ -717,8 +745,13 @@ def main():
                     value['paused_Stats_after'] = post
                     value['endpoint_formats_match'] = True
                 return value
-            source_native = source_authenticated_driver.Coordinator(source_markers, observe_target,
-                observe_transition, args.source_input_identity, mode=args.source_input)
+            if args.source_input == 'frame-only':
+                source_frame_reader = source_grpc_frame.Reader(source_grpc_frame.read_deployment(args.source_frame_deployment))
+                source_frame = source_frame_coordinator.Coordinator(source_markers, source_frame_reader.observe)
+                report['source_SF_sampled_by_this_driver'] = False
+            else:
+                source_native = source_authenticated_driver.Coordinator(source_markers, observe_target,
+                    observe_transition, args.source_input_identity, mode=args.source_input)
         if args.credential_source == 'private-file' and root('test -s '+PRIVATE+'udp-test-login.json',False).returncode:
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
@@ -753,7 +786,7 @@ def main():
                 owner_source_stats_gate.require_fresh(source_stats_before, launch_ns)
             report.update(source_launch_freshness_verified=True,
                           source_instrumentation_launch_monotonic_ns=launch_ns)
-        if source_native is not None:
+        if source_native is not None or source_frame is not None:
             state = target_process_state(adb(args.phone, 'pidof '+TARGET_PACKAGE, False))
             if state != 'absent':
                 raise RuntimeError('target_App_process_active_skip' if state == 'active'
@@ -764,6 +797,10 @@ def main():
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
+            if source_frame is not None:
+                source_frame.advance()
+                time.sleep(.1)
+                continue  # Even an old steady marker must not start samplers.
             if source_native is not None:
                 if source_native.phase == 1 or (source_native.phase == 2 and report.get('steady_samplers_completed_before_leave')):
                     source_native.advance(samplers_completed=bool(report.get('steady_samplers_completed_before_leave')))
@@ -911,7 +948,7 @@ def main():
             report['saved_UI_unavailable_skip'] = True
             report['saved_UI_declined_before_owned_attempt'] = ui_result.get('helper_owned_attempt_started') is False
             raise RuntimeError(ui_result['bounded_failure_label'])
-        stages = ('first',) if args.source_input == 'pause-only' else ('first', 'second')
+        stages = ('first',) if args.source_input in ('pause-only','frame-only') else ('first', 'second')
         report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on',stages=stages)
         report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
         report['credential_source_readback_verified']=verify_credential_source_readback(report.get('ui_result'),args.credential_source,stages=stages)
@@ -922,13 +959,22 @@ def main():
                 and source_authenticated_driver.helper_readback(ui_source, mode=args.source_input))
             if not report['authenticated_source_phases_complete']:
                 raise source_authenticated_driver.Rejected('source_input_transition_unverified')
-        if args.source_input == 'pause-only':
-            report['source_pause_recovery_verified'] = verify_pause_recovery(
-                report.get('ui_result'), args, report)
+        if args.source_input in ('pause-only','frame-only'):
+            if source_frame is not None:
+                if proc.returncode != 0:
+                    raise source_frame_coordinator.Rejected('source_frame_instrumentation_failed')
+                report['source_frame_observation'] = source_frame.finish(report.get('ui_result'))
+                report['source_frame_session_cleanup_verified'] = verify_single_observation_session(
+                    report.get('ui_result'), args, report)
+                completed = report['source_frame_session_cleanup_verified']
+            else:
+                report['source_pause_recovery_verified'] = verify_pause_recovery(
+                    report.get('ui_result'), args, report)
+                completed = report['source_pause_recovery_verified']
             report['steady_media_progress_verified'] = None
             report['steady_window_readback_verified'] = None
             report['reconnect_acceptance_exercised'] = False
-            if not report['source_pause_recovery_verified']:
+            if not completed:
                 raise source_authenticated_driver.Rejected('source_input_transition_unverified')
             result = root('cat '+PRIVATE+'udp-app-last-report.json', False)
             if result.returncode != 0 or result.stderr or not 0 < len(result.stdout.encode('utf-8')) <= 65536:
@@ -1009,6 +1055,9 @@ def main():
         labels.update(('source_Stats_endpoint_mismatch', 'source_recovery_report_unverified',
                        'source_recovery_audio_cleanup_unverified', 'snapshot_selection_rejected'))
         labels.update(source_authenticated_driver.LABELS)
+        labels.update(('source_frame_reader_failed','source_frame_reader_budget',
+                       'source_frame_helper_readback_rejected','source_frame_instrumentation_failed',
+                       'source_frame_incomplete','source_frame_descriptor_rejected'))
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
@@ -1018,7 +1067,7 @@ def main():
             attempt_cleanup(report, 'pause_owned_source_window',
                 lambda: report.update(source_pause_receipt=source_window_control.transition(
                     'adb', args.guest, source_stats_before['identity'], 'paused')))
-        if (source_native is None and proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
+        if (source_native is None and source_frame is None and proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
                 and not report.get('saved_UI_unavailable_skip')):
             # Terminating the local adb client alone does not end Android
             # instrumentation. Stop only these two known isolated packages.
@@ -1030,8 +1079,8 @@ def main():
             # its finally cancel only the captured Attempt. Never force-stop a
             # later UI session to compensate for an observer failure.
             cleanup_output = reap_owned_process(proc, report, 'instrumentation',
-                args.steady_seconds+25 if source_native is not None and failed else 2,
-                terminate=failed and source_native is None)
+                args.steady_seconds+25 if (source_native is not None or source_frame is not None) and failed else 2,
+                terminate=failed and source_native is None and source_frame is None)
             report['instrumentation_exit_code']=proc.returncode
             if failed:
                 try:
@@ -1045,6 +1094,8 @@ def main():
             report['direct_source_snapshot'] = snapshot_selection.status()
             if not report['direct_source_snapshot']['remote_scope_clear_verified']:
                 record_cleanup_failure(report, 'source_snapshot_remote_scope_unconfirmed')
+        if source_frame_reader is not None:
+            report['source_frame_reader_status'] = dict(source_frame_reader.status)
         if source_reader is not None:
             try:
                 source_reader.close()
