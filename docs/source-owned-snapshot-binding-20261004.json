@@ -1,0 +1,22 @@
+{
+  "schema": "owned-source-snapshot-binding-offline-v1",
+  "source": "scripts/probes/source_owned_snapshot_binding.py",
+  "new_checks": 6,
+  "focused_total": 32,
+  "focused_seconds": 3.706,
+  "device_operations": 0,
+  "UI_sessions_started": 0,
+  "phone_media_sessions": 0,
+  "App_artifact_changed": false,
+  "actual_execution_ownership_verified": false,
+  "remote_UI_quiescence_verified": false,
+  "permission_lease_verified": false,
+  "runtime_adapter_integrated": false,
+  "preceding_ART_CI": {
+    "SHA": "5e3fad61969284604cf7cad9f7cf54b7650e3c5e",
+    "run": 37184071128,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  }
+}

@@ -38,6 +38,13 @@ Next: exact scope journal + real started/waited/Java serialization binding under
 current authenticated App lease; keep budgets/quiescence boundary, not a
 UDP performance fix or source-input acceptance. New source still needs its own CI.
 
+New inert five-file C parent/Java serialization binding:6 new offline checks,
+32 focused checks /3.706s PASS. Runtime adapter is not integrated; no Android
+runner/UI/phone/media. Exact preceding5e3fad6/run37184071128 overall/build/UDP
+success verified, not a result for later binding source. Read
+source-owned-snapshot-binding-20261004.md/json. Next integrate exact scope
+journal/five-file lifecycle, retaining unknown remote cleanup and lease gates.
+
 ## 2026-10-04 latest: explicit playing-source Pause/direct reader integration; no runtime UI/input yet
 
 Exactddcf05a962df0a2a7519db4ede83298cd4a4547a/run37175124505 independently

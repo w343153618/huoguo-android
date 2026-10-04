@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30\u219219 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -2451,5 +2451,27 @@
     "Android_UI_executed": false,
     "App_release_changed": false,
     "evidence": "docs/source-owned-ART-environment-20261004.md"
+  },
+  "owned_source_snapshot_binding_candidate_20261004": {
+    "schema": "owned-source-snapshot-binding-offline-v1",
+    "source": "scripts/probes/source_owned_snapshot_binding.py",
+    "new_checks": 6,
+    "focused_total": 32,
+    "focused_seconds": 3.706,
+    "device_operations": 0,
+    "UI_sessions_started": 0,
+    "phone_media_sessions": 0,
+    "App_artifact_changed": false,
+    "actual_execution_ownership_verified": false,
+    "remote_UI_quiescence_verified": false,
+    "permission_lease_verified": false,
+    "runtime_adapter_integrated": false,
+    "preceding_ART_CI": {
+      "SHA": "5e3fad61969284604cf7cad9f7cf54b7650e3c5e",
+      "run": 37184071128,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    }
   }
 }
