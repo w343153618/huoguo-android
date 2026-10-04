@@ -18,6 +18,43 @@ public class MainActivity extends Activity {
  volatile int probeVideoSubmissionLeadMs=0; // 0: existing immediate Surface submission, never a saved preference.
  final java.util.concurrent.atomic.AtomicLong probeVideoSubmissionWaits=new java.util.concurrent.atomic.AtomicLong(),probeVideoSubmissionWaitNs=new java.util.concurrent.atomic.AtomicLong(),probeVideoSubmissionWaitedOutputs=new java.util.concurrent.atomic.AtomicLong(),probeVideoSubmissionMaxHoldNs=new java.util.concurrent.atomic.AtomicLong(),probeVideoSubmissionMaxParkNs=new java.util.concurrent.atomic.AtomicLong(),probeVideoSubmissionBudgetFallbacks=new java.util.concurrent.atomic.AtomicLong();
  volatile String videoDecoderName="";
+ // Explicit same-App observer binding only; ordinary sessions keep this null.
+ private final java.util.concurrent.atomic.AtomicReference<OwnerMediaObservation> ownerMediaObservation=new java.util.concurrent.atomic.AtomicReference<>();
+ void ownerBindResourceObservation(OwnerMediaObservation value,int capturedGeneration){
+  if(value==null)return;
+  OwnerMediaObservation previous=ownerMediaObservation.get();
+  if(previous!=null||generation!=capturedGeneration||video!=null||audio!=null||track!=null){
+   value.invalidate();if(previous!=null)previous.invalidate();return;
+  }
+  if(!ownerMediaObservation.compareAndSet(null,value)){value.invalidate();ownerMediaObservation.get().invalidate();return;}
+  // This is a bracketed binding snapshot, not a monitor/Attempt/resource hold.
+  if(generation!=capturedGeneration||video!=null||audio!=null||track!=null)value.invalidate();
+ }
+ void ownerStop(MediaCodec resource){
+  OwnerMediaObservation value=ownerMediaObservation.get();
+  OwnerResourceObservation.Call call=value==null?null:value.resourceCalls.begin(this,resource,OwnerResourceObservation.STOP);
+  boolean returned=false;
+  try{resource.stop();returned=true;}finally{if(call!=null)call.finish(returned);}
+ }
+ void ownerRelease(MediaCodec resource){
+  OwnerMediaObservation value=ownerMediaObservation.get();
+  OwnerResourceObservation.Call call=value==null?null:value.resourceCalls.begin(this,resource,OwnerResourceObservation.RELEASE);
+  boolean returned=false;
+  try{resource.release();returned=true;}finally{if(call!=null)call.finish(returned);}
+ }
+ void ownerStop(AudioTrack resource){
+  OwnerMediaObservation value=ownerMediaObservation.get();
+  OwnerResourceObservation.Call call=value==null?null:value.resourceCalls.begin(this,resource,OwnerResourceObservation.STOP);
+  boolean returned=false;
+  try{resource.stop();returned=true;}finally{if(call!=null)call.finish(returned);}
+ }
+ void ownerRelease(AudioTrack resource){
+  OwnerMediaObservation value=ownerMediaObservation.get();
+  OwnerResourceObservation.Call call=value==null?null:value.resourceCalls.begin(this,resource,OwnerResourceObservation.RELEASE);
+  boolean returned=false;
+  try{resource.release();returned=true;}finally{if(call!=null)call.finish(returned);}
+ }
+
  PasswordStore passwordStore;
  int maxSize=960,bitRate=4000000;int maxFps=30,bufferMs=80;String bitrateMode="VBR";volatile AdaptiveBitrate adaptive;volatile int acceptedBitrate;volatile boolean adaptiveRejected;boolean metricsVisible;volatile boolean soundEnabled=true;int avSyncOffsetMs=0;
  void login(){
@@ -188,7 +225,7 @@ public class MainActivity extends Activity {
    for(String type:info.getSupportedTypes())if(type.equalsIgnoreCase("video/avc")){chosen=info;break;}
    if(chosen!=null)break;
   }
-  MediaCodec decoder=chosen==null?MediaCodec.createDecoderByType("video/avc"):MediaCodec.createByCodecName(chosen.getName());hardwareVideo=decoder.getCodecInfo().isHardwareAccelerated();videoDecoderName=decoder.getName();return decoder;
+  MediaCodec decoder=chosen==null?MediaCodec.createDecoderByType("video/avc"):MediaCodec.createByCodecName(chosen.getName());OwnerMediaObservation observation=ownerMediaObservation.get();if(observation!=null)observation.resourceCalls.allocated(this,decoder,OwnerResourceObservation.CODEC);hardwareVideo=decoder.getCodecInfo().isHardwareAccelerated();videoDecoderName=decoder.getName();return decoder;
  }
  void stats(int gen){final long[] previous={System.nanoTime(),0,0,0,0};ui.postDelayed(new Runnable(){public void run(){if(!running||gen!=generation)return;long now=System.nanoTime(),rx=receivedFrames.get(),shown=presentedFrames.get(),bytes=receivedVideoBytes.get(),late=lateDiscardedFrames.get();double dt=(now-previous[0])/1e9;perf.setText(String.format(java.util.Locale.ROOT,"接收 %.0f · 解码回调 %.0f FPS · 逾期丢帧 %.0f/秒\n%d×%d · %s\n网络往返 %s ms · 缓冲 %d ms\n%s · 目标 %.2f / 视频接收 %.2f Mbps%s",(rx-previous[1])/dt,(shown-previous[2])/dt,(late-previous[4])/dt,width,height,hardwareVideo?"硬件解码":"软件解码",networkRttMs<0?"—":Long.toString(networkRttMs),bufferMs,bitrateMode,acceptedBitrate/1e6,(bytes-previous[3])*8/dt/1e6,adaptiveRejected?"（调整失败）":""));android.util.Log.i("AndroidDirectTelemetry",String.format(java.util.Locale.ROOT,"t_ns=%d cap=%d rx=%.2f shown=%.2f late=%.2f rtt_ms=%d bitrate_target=%d video_mbps=%.3f hw_decode=%s",now,maxFps,(rx-previous[1])/dt,(shown-previous[2])/dt,(late-previous[4])/dt,networkRttMs,acceptedBitrate,(bytes-previous[3])*8/dt/1e6,hardwareVideo));previous[0]=now;previous[1]=rx;previous[2]=shown;previous[3]=bytes;previous[4]=late;ui.postDelayed(this,1000);}},1000);}
 
@@ -199,7 +236,7 @@ public class MainActivity extends Activity {
   width=w;height=h;runOnUiThread(this::fit);
   for(int i=0;i<100&&running&&gen==generation&&!screen.getHolder().getSurface().isValid();i++)Thread.sleep(20);
   if(!running||gen!=generation)return;
-  MediaCodec old=video;video=null;if(old!=null){old.stop();old.release();}
+  MediaCodec old=video;video=null;if(old!=null){ownerStop(old);ownerRelease(old);}
   MediaFormat format=MediaFormat.createVideoFormat("video/avc",w,h);
   format.setInteger(MediaFormat.KEY_LOW_LATENCY,1);
   if(DeviceProfiles.isQualcomm())format.setInteger("vendor.qti-ext-dec-low-latency.enable",1);
@@ -311,7 +348,7 @@ public class MainActivity extends Activity {
  void rotateRemoteDevice(int gen){input.execute(()->{synchronized(controlWriteLock){DataOutputStream writer=control;if(writer==null||!running||gen!=generation)return;try{writer.writeByte(11);writer.flush();}catch(Exception e){if(running&&gen==generation)fail(e);}}});}
  void toggleOrientation(int gen){boolean isLandscape=getResources().getConfiguration().orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE;if(isLandscape){setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);if(width>height)rotateRemoteDevice(gen);}else{setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);if(width<height)rotateRemoteDevice(gen);}}
  @Override public void onConfigurationChanged(android.content.res.Configuration newConfig){super.onConfigurationChanged(newConfig);if(rotateButton!=null){rotateButton.setText(newConfig.orientation==android.content.res.Configuration.ORIENTATION_LANDSCAPE?"竖屏":"横屏");}if(canvas!=null){canvas.post(this::fit);}}
- synchronized void stop(){runOnUiThread(()->setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));rotateButton=null;adaptive=null;running=false;generation++;input.clear();control=null;auth=null;synchronized(sockets){for(SSLSocket s:sockets)try{s.close();}catch(Exception ignored){}sockets.clear();}MediaCodec v=video,a=audio;video=null;audio=null;for(MediaCodec d:new MediaCodec[]{v,a})if(d!=null)try{d.stop();d.release();}catch(Exception ignored){}if(track!=null){try{track.stop();track.release();}catch(Exception ignored){}track=null;}}
+ synchronized void stop(){runOnUiThread(()->setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));rotateButton=null;adaptive=null;running=false;generation++;input.clear();control=null;auth=null;synchronized(sockets){for(SSLSocket s:sockets)try{s.close();}catch(Exception ignored){}sockets.clear();}MediaCodec v=video,a=audio;video=null;audio=null;for(MediaCodec d:new MediaCodec[]{v,a})if(d!=null)try{ownerStop(d);ownerRelease(d);}catch(Exception ignored){}if(track!=null){try{ownerStop(track);ownerRelease(track);}catch(Exception ignored){}track=null;}}
  void openFiles(){boolean resume=running;String credential=auth;stop();auth=credential;transfer=new MediaTransfer(this,()->{transfer=null;if(resume){new Thread(()->{try{String id=session();runOnUiThread(()->show(id));}catch(Exception e){runOnUiThread(()->{auth=null;login();status.setText("重新连接失败："+message(e));});}},"resume-after-files").start();}else{auth=null;login();}});}
  public void onActivityResult(int request,int code,android.content.Intent data){super.onActivityResult(request,code,data);if(transfer!=null)transfer.result(request,code,data);}
  // API33+ is registered with the platform dispatcher above; this fallback serves API30-32.

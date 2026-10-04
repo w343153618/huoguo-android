@@ -21,7 +21,7 @@ class OwnerMediaChecks(unittest.TestCase):
         cls.java=str(JDK/'java') if (JDK/'java').is_file() else shutil.which('java')
         if not javac or not cls.java: raise RuntimeError('Existing JDK required')
         cls.env={'PATH':str(Path(javac).parent)+':/usr/bin:/bin','LANG':'C','JAVA_HOME':str(Path(javac).parent.parent)}
-        result=subprocess.run([javac,'-Xlint:all','-Werror','-d',cls.temp.name,str(MEDIA),
+        result=subprocess.run([javac,'-Xlint:all','-Werror','-d',cls.temp.name,str(MEDIA),str(ROOT/'app/src/main/java/local/remoteandroid/direct/OwnerResourceObservation.java'),
             str(ROOT/'tests/fixtures/OwnerMediaFixture.java')],capture_output=True,text=True,timeout=30,env=cls.env)
         if result.returncode: cls.temp.cleanup();raise AssertionError(result.stdout+result.stderr)
         probe=PROBE.read_text()

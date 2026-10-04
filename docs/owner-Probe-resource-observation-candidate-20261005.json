@@ -59,5 +59,31 @@
   ],
   "ART_native_permission_release": false,
   "App_helper_JNI_build_install_publish": false,
-  "phone_actions_this_round": false
+  "phone_actions_this_round": false,
+  "exact_source_CI_accepted": {
+    "schema": "owner-media-exact-CI-722-accepted-v1",
+    "source_sha": "722118a147a33ab8bba35ff508174392d914df24",
+    "run_id": 37243290073,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP": "success",
+    "build_job_id": 111556113819,
+    "UDP_job_id": 111557001609,
+    "url": "https://github.com/w343153618/huoguo-android/actions/runs/37243290073",
+    "verified_exact_head_and_jobs": true,
+    "log_fetch_exit": 0,
+    "log_bytes": 76679,
+    "log_sha256": "130bb7fb4a17db4be7ec4b1754adf10e80879e0e658fd6f1ce47eb11aa6d45b3",
+    "actual_tests": [
+      [
+        "2362",
+        "181.476"
+      ]
+    ],
+    "actual_skips": [
+      "11"
+    ],
+    "signed_APK_release": false
+  }
 }

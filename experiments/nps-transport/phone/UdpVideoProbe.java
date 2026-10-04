@@ -447,6 +447,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 a.receivedFrames.set(0);a.receivedVideoBytes.set(0);a.presentedFrames.set(0);a.lateDiscardedFrames.set(0);
                 a.audioOutputBytes.set(0);
                 a.running=true;generation[0]=++a.generation;appGeneration=generation[0];
+                if(observation!=null)a.ownerBindResourceObservation(observation,generation[0]);
                 a.canvas=new FrameLayout(a);a.screen=new SurfaceView(a);
                 a.canvas.addView(a.screen,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
                 if(appActivity!=null){android.widget.Button leave=new android.widget.Button(a);leave.setText("离开 UDP 测试");

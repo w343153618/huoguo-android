@@ -1,0 +1,77 @@
+{
+  "schema": "owner-resource-allocation-call-source-candidate-v1",
+  "source_base": "722118a147a33ab8bba35ff508174392d914df24",
+  "new_actual_JVM_checks": 25,
+  "new_seconds": 2.247,
+  "affected_checks": 79,
+  "affected_seconds": 13.281,
+  "all_affected_pass": true,
+  "Android_resources": "synthetic API substitutes; actual Main.fastDecoder/Main.stop and Receiver configuration/normal cleanup source paths; actual JVM input/owner threads",
+  "default": "no ownerPrepareResources callsite; nullable same-App observer only; no helper/CLI/Intent/HTTP/env/account/transport/native activation",
+  "observed_paths": [
+    "Actual codec allocation before metadata/configuration/start; AudioTrack before state/play/publication",
+    "Retain actual source/resource/allocation-thread references even when setup never publishes",
+    "Stop and release attempt/return/failure are separate; pending calls cannot count as returned; no resource operation in ledger",
+    "Main original stop failure skips release; Receiver original stop exception does not skip its separate release try",
+    "Main binding single CAS, no new wait on normal Activity monitor; bracket is not an atomic captured Attempt hold",
+    "Foreign/unregistered/replaced/duplicate/pending/reentrant/expiry/contention/diagnostic capacity unknown retains actual references; normal operations continue unchanged"
+  ],
+  "constraints": {
+    "resource_diagnostic_bound": 128,
+    "call_diagnostic_bound": 512,
+    "command_seconds": 3,
+    "original_capture_end_seconds_max": 30,
+    "normal_queue_buffer_deadlines_unchanged": true
+  },
+  "remaining_unknown": [
+    "Actual Android/ART codec and AudioTrack release behavior; returned calls not platform or atomic release proof",
+    "Current captured Attempt/receiver/Surface/input/phoneclock/normal generation association and pre-start resource preparation; no new factory cooperation endpoint",
+    "Main legacy TCP audio allocations are not adopted; any unregistered Main resource makes observation UNKNOWN",
+    "Audio pause/flush and remote-input effects remain separate; stop not attempted is not successful stop",
+    "Genuine AppUID/root-native cooperation, operator/source/phone/admission, same native PM/package/driver/helper/input/absence/privileged-writer/FD-retirement gates"
+  ],
+  "resource_released_qualified": false,
+  "attempt_qualified": false,
+  "release_eligible": false,
+  "source_pins": {
+    "app/src/main/java/local/remoteandroid/direct/OwnerResourceObservation.java": "a3fdca3bef99400a0e419c22f6678efc5e917274abec851e947d13aa5c4bdfd3",
+    "app/src/main/java/local/remoteandroid/direct/OwnerMediaObservation.java": "14595737fd74972e3894b83dc3f157ed0eb4be767499758d7dbea4f35a1c7b17",
+    "app/src/main/java/local/remoteandroid/direct/MainActivity.java": "c68be2cb63ebb18020077190761e197afe3833813b0dc46b24a18e41be4a4cad",
+    "experiments/nps-transport/phone/UdpAudioReceiver.java": "f8dd5b3f053fc44b821bd2f5970fab77f497d904e360054dd1368adefa200363",
+    "experiments/nps-transport/phone/UdpVideoProbe.java": "4a02b2fb088248699779342cf725436df797d6944fb90c2c60b2376e3ff0542a",
+    "tests/test_owner_resource_observation.py": "021db59ba590cdcdd38b78c076e997c03e6fba36d0f366b6e767008f8ca97715",
+    "tests/fixtures/OwnerResourceFixture.java": "97bd7bc08583a78f6ce1c0913c569b680df585bfec9ab5b56b6a68a5120cc85b",
+    "tests/test_owner_media_observation.py": "b865f58a19ffe9a55df8c16f368747772c9ca7289d9a7ed0c45c2e06c06ec975",
+    "tests/test_udp_audio_retirement.py": "6ef5bfa905951d871427583e1d893a0adba75fd09493865b90ce2d38816d2e03",
+    "tests/test_udp_completion_receipt.py": "dffb32c1d89ba3b847df1e9fd5a69c67e9a1fe85c9c40950de6eb1da92f46ab3"
+  },
+  "API37": {
+    "full_exit": 0,
+    "changed_exit": 0,
+    "sources": 45,
+    "classes": 123,
+    "seconds": 2.462,
+    "pins_after_match": true,
+    "compile_only": true
+  },
+  "initial_errors_retained": [
+    {
+      "kind": "new fixture setup",
+      "error": "missing ActivityInfo API substitute",
+      "tests": 0,
+      "production_Android_failure": false
+    },
+    {
+      "kind": "affected runner setup",
+      "tests": 70,
+      "successes": 69,
+      "errors": 1,
+      "seconds": 11.772,
+      "error": "nonexistent test_probe_app_callback_boundary module; final selected actual test_lan_ui_callback_await",
+      "production_Android_failure": false
+    }
+  ],
+  "phone_actions_this_round": false,
+  "App_helper_JNI_build_install_publish": false,
+  "own_CI": "new source not yet pushed; must verify its exact run; old accepted runs not reused"
+}

@@ -170,6 +170,7 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
         format.setInteger(MediaFormat.KEY_PCM_ENCODING,AudioFormat.ENCODING_PCM_16BIT);
         format.setByteBuffer("csd-0",ByteBuffer.wrap(asc));
         MediaCodec next=MediaCodec.createDecoderByType("audio/mp4a-latm");
+        if(ownerObservation!=null)ownerObservation.resourceCalls.allocated(this,next,OwnerResourceObservation.CODEC);
         AudioTrack nextOutput=null;
         boolean ownershipTransferred=false;
         try{
@@ -181,6 +182,7 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
                 .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE).build()).setTransferMode(AudioTrack.MODE_STREAM)
                 .setBufferSizeInBytes(Math.max(min,4096)).setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY).build();
+            if(ownerObservation!=null)ownerObservation.resourceCalls.allocated(this,nextOutput,OwnerResourceObservation.TRACK);
             if(nextOutput.getState()!=AudioTrack.STATE_INITIALIZED)throw new IOException("audio_track_not_initialized");
             nextOutput.setVolume(activity.soundEnabled?1f:0f);nextOutput.play();
             MediaCodec owned=next;AudioTrack track=nextOutput;
@@ -209,9 +211,9 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
         }catch(Throwable error){
             if(boundedPcmQueueEnabled&&ownershipTransferred){releaseQueuedCurrent();}
             else{
-                if(nextOutput!=null){try{nextOutput.release();}catch(Exception ignored){cleanupReleaseFailed=true;}
+                if(nextOutput!=null){try{ownerRelease(nextOutput);}catch(Exception ignored){cleanupReleaseFailed=true;}
                     catch(Error unexpected){cleanupReleaseFailed=true;throw unexpected;}}
-                try{next.stop();}catch(Exception ignored){}try{next.release();}catch(Exception ignored){cleanupReleaseFailed=true;}
+                try{ownerStop(next);}catch(Exception ignored){}try{ownerRelease(next);}catch(Exception ignored){cleanupReleaseFailed=true;}
                 catch(Error unexpected){cleanupReleaseFailed=true;throw unexpected;}
             }
             throw error;
@@ -398,14 +400,36 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
             .put("actual_acoustic_output_measured",false).put("actual_lip_sync_measured",false);
     }
     boolean hasDecodedAudio(){return pcmBytes.get()>0;}
+    // Observer-null calls execute the identical original operation. Exceptions
+    // and Errors propagate through the original caller's unchanged catches.
+    private void ownerStop(MediaCodec resource){
+        OwnerResourceObservation.Call call=ownerObservation==null?null:ownerObservation.resourceCalls.begin(this,resource,OwnerResourceObservation.STOP);
+        boolean returned=false;
+        try{resource.stop();returned=true;}finally{if(call!=null)call.finish(returned);}
+    }
+    private void ownerRelease(MediaCodec resource){
+        OwnerResourceObservation.Call call=ownerObservation==null?null:ownerObservation.resourceCalls.begin(this,resource,OwnerResourceObservation.RELEASE);
+        boolean returned=false;
+        try{resource.release();returned=true;}finally{if(call!=null)call.finish(returned);}
+    }
+    private void ownerStop(AudioTrack resource){
+        OwnerResourceObservation.Call call=ownerObservation==null?null:ownerObservation.resourceCalls.begin(this,resource,OwnerResourceObservation.STOP);
+        boolean returned=false;
+        try{resource.stop();returned=true;}finally{if(call!=null)call.finish(returned);}
+    }
+    private void ownerRelease(AudioTrack resource){
+        OwnerResourceObservation.Call call=ownerObservation==null?null:ownerObservation.resourceCalls.begin(this,resource,OwnerResourceObservation.RELEASE);
+        boolean returned=false;
+        try{resource.release();returned=true;}finally{if(call!=null)call.finish(returned);}
+    }
     private void releaseCurrent(){
         if(boundedPcmQueueEnabled){releaseQueuedCurrent();return;}
         MediaCodec old=decoder;AudioTrack oldTrack=output;decoder=null;output=null;
         if(activity.audio==old)activity.audio=null;if(activity.track==oldTrack)activity.track=null;
         Thread previous=drain;if(previous!=null&&previous!=Thread.currentThread()){previous.interrupt();try{previous.join(300);}catch(InterruptedException ignored){}}
         if(oldTrack!=null){try{lastPlaybackFrames=oldTrack.getPlaybackHeadPosition()&0xffffffffL;}catch(Exception ignored){}
-            try{oldTrack.pause();oldTrack.flush();oldTrack.stop();}catch(Exception ignored){}try{oldTrack.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
-        if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
+            try{oldTrack.pause();oldTrack.flush();ownerStop(oldTrack);}catch(Exception ignored){}try{ownerRelease(oldTrack);}catch(Exception ignored){cleanupReleaseFailed=true;}}
+        if(old!=null){try{ownerStop(old);}catch(Exception ignored){}try{ownerRelease(old);}catch(Exception ignored){cleanupReleaseFailed=true;}}
     }
     /** Retire a whole B epoch before a new codec can publish. A failed bounded
      * join retains at most one old resource set and prohibits reconfiguration;
@@ -432,8 +456,8 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
                 if(handoff!=null){pcmQueueTotals.accumulate(handoff.snapshot());pcmHandoff=null;}
             }
             if(oldTrack!=null){try{lastPlaybackFrames=oldTrack.getPlaybackHeadPosition()&0xffffffffL;}catch(Exception ignored){}
-                try{oldTrack.pause();oldTrack.flush();oldTrack.stop();}catch(Exception ignored){}try{oldTrack.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
-            if(old!=null){try{old.stop();}catch(Exception ignored){}try{old.release();}catch(Exception ignored){cleanupReleaseFailed=true;}}
+                try{oldTrack.pause();oldTrack.flush();ownerStop(oldTrack);}catch(Exception ignored){}try{ownerRelease(oldTrack);}catch(Exception ignored){cleanupReleaseFailed=true;}}
+            if(old!=null){try{ownerStop(old);}catch(Exception ignored){}try{ownerRelease(old);}catch(Exception ignored){cleanupReleaseFailed=true;}}
             retiringDecoder=null;retiringTrack=null;
         }
     }

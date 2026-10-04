@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * All writes are nonblocking so a reader cannot delay normal media cleanup.
  */
 final class OwnerMediaObservation {
+    final OwnerResourceObservation resourceCalls;
     private final Object owner;
     private final long endNs;
     private final ReentrantLock lock=new ReentrantLock();
@@ -27,18 +28,18 @@ final class OwnerMediaObservation {
     private final ArrayList<AudioEpoch> audioEpochs=new ArrayList<>();
     private static final int MAX_AUDIO_EPOCHS=64;
 
-    private OwnerMediaObservation(Object owner,long endNs){this.owner=owner;this.endNs=endNs;}
+    private OwnerMediaObservation(Object owner,long endNs){this.owner=owner;this.endNs=endNs;resourceCalls=new OwnerResourceObservation(endNs);}
     static OwnerMediaObservation prepare(Object owner,long endNs){
         long now=System.nanoTime();
         if(owner==null||endNs<=now||endNs-now>30_000_000_000L)
             throw new IllegalArgumentException("owner_media_observation_budget");
         return new OwnerMediaObservation(owner,endNs);
     }
-    void invalidate(){unknown.set(true);}
+    void invalidate(){unknown.set(true);resourceCalls.invalidate();}
     private boolean enter(){
-        if(unknown.get()||System.nanoTime()>=endNs){invalidate();return false;}
+        if(unknown.get()||resourceCalls.isUnknown()||System.nanoTime()>=endNs){invalidate();return false;}
         if(!lock.tryLock()){invalidate();return false;}
-        if(unknown.get()||System.nanoTime()>=endNs){invalidate();lock.unlock();return false;}
+        if(unknown.get()||resourceCalls.isUnknown()||System.nanoTime()>=endNs){invalidate();lock.unlock();return false;}
         return true;
     }
     private boolean runner(Object source){
