@@ -64,6 +64,14 @@ class HelperReadonlyTests(unittest.TestCase):
         for mode in ('active_App','active_helper','later_active'): self.run_fixture(mode,False)
     def test_malformed_numeric_inventory_and_duplicate_PID_rejected(self):
         for mode in ('duplicate_PID','bad_UID','embedded_NUL'): self.run_fixture(mode,False)
+    def test_actual_android_NAME_padding_and_kernel_spaces_are_full_columns(self):
+        self.assertEqual(self.run_fixture('kernel_NAME')['queries_natural'],4)
+    def test_clone_profile_inventory_UID_is_distinct_from_user0_package_qualification(self):
+        self.assertEqual(self.run_fixture('clone_UID')['queries_natural'],4)
+        for mode in ('clone_App','clone_helper'): self.run_fixture(mode,False)
+    def test_expanded_full_column_still_refuses_ambiguous_or_malformed_names_and_UIDs(self):
+        for mode in ('bad_UID_range','control_NAME','target_space','bad_header_tail'):
+            self.run_fixture(mode,False)
     def test_child_nonzero_or_stderr_does_not_qualify(self):
         for mode in ('nonzero','stderr'): self.run_fixture(mode,False)
     def test_overflow_drains_actual_child_to_EOF_then_refuses(self):

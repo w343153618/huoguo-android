@@ -5179,6 +5179,130 @@
       "tests/fixtures/helper_owner_App_report_fixture.c": "b9285f98bde846fca2e6d4bcf1a31cb149889704abd5dfabb051a08cb69a94fa",
       "tests/test_helper_owner_native_driver.py": "57081d2dadb3ef61f02716bbd7ca9ff3f8f1be44feb789aa3bdc19c7b1e91b56"
     },
-    "exact_CI": null
+    "exact_CI": {
+      "sha": "d7ec364c6f660fb88bf2997d46b86e7a4b1b1b1b",
+      "run": 37232350281,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "build_job": 111524552423,
+      "udp_job": 111525261525,
+      "tests": 2219,
+      "seconds": 126.415,
+      "existing_skips": 11,
+      "independent_readback": true,
+      "url": "https://github.com/w343153618/huoguo-android/actions/runs/37232350281"
+    },
+    "source_commit": "d7ec364c6f660fb88bf2997d46b86e7a4b1b1b1b",
+    "private_numeric_grammar_followup": {
+      "checks": {
+        "tests": 16,
+        "seconds": 3.656,
+        "passed": true,
+        "actual_JVM_projection_cases": 2,
+        "actual_native_host_parser": true,
+        "Android_ART_JNI": false
+      },
+      "part_of_this_CI": false,
+      "App_semantic_or_owned_binding_verified": false
+    }
+  },
+  "phone_frame_availability_20261005": {
+    "schema": 1,
+    "checked_at_utc": "2026-10-04T21:07:43.345304+00:00",
+    "baseline_source": "d7ec364c6f660fb88bf2997d46b86e7a4b1b1b1b",
+    "host": "M1",
+    "owner_nonisolated": true,
+    "path": "same-home WiFi / public NPS M1; physical outer route unverified",
+    "phone_USB_state": "device",
+    "installed_App_SHA256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "installed_JNI_bound_by_exact_preverified_APK": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+    "App_version": "1.31-alpha.9/code40",
+    "old_reviewed_helper_SHA256": "82f4614679e828bdd2738838270a97f188bed11dc19d04ecd2dc2fa0203968d7",
+    "reviewed_f0_controller_unchanged": true,
+    "actual_controller_exit": 2,
+    "actual_controller_dual_EOF": true,
+    "actual_driver_exit": 1,
+    "failure": "instrumentation_timeout",
+    "frame_reader_RPC_calls": 0,
+    "source_frame_PNG_created": false,
+    "captured_qualified_Attempt": false,
+    "private_input_absent_after": true,
+    "owned_phase_marker_cleanup_reported": true,
+    "App_process_absent_after": false,
+    "helper_process_absent_after": true,
+    "helper_package_uninstalled": false,
+    "helper_package_retained": true,
+    "cleanup_accepted": false,
+    "local_instrumentation_client_exit": -15,
+    "local_client_exit_does_not_prove_remote_quiescence": true,
+    "observed_phone_foreground": "com.coloros.digitalwellbeing/.module.setting.ExpireTimeCoverActivity",
+    "root_read_phone_screen_text": "给火锅的安卓 · 实验版 / 停用中，无法使用 / 解除限制",
+    "PackageManager_user0_suspended": false,
+    "PackageManager_flag_is_insufficient_for_UI_availability": true,
+    "exact_instrumentation_timeout_thread_cause_proven": false,
+    "source_input_or_UiAutomation": false,
+    "CPU_or_refresh_writes": false,
+    "settings_observed": {
+      "system_min_refresh_rate": "0.0",
+      "system_peak_refresh_rate": "120.00001",
+      "global_min_refresh_rate": "null",
+      "global_peak_refresh_rate": "null"
+    },
+    "original_gateway_identity_and_runtime_unchanged": true,
+    "original_role_counts_before_after": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "formal_TCP15556_15558_clear_snapshots": true,
+    "original_services_signaled": false,
+    "UDP45965_reserved": false,
+    "native_Android_partial_activated": false,
+    "new_App_or_numeric_helper_or_JNI_deployed": false,
+    "public_release_changed": false,
+    "real_video_FPS_or_FEC_or_performance_acceptance": false,
+    "offline_parser_fix": {
+      "actual_full_inventory_rows": 953,
+      "actual_space_NAME_rows": 4,
+      "actual_clone_UID_rows": 3,
+      "final_related_checks": 73,
+      "final_seconds": 6.479,
+      "new_checks": 7,
+      "Android_outputs_for_native_owned_child_fixtures": "synthetic",
+      "actual_phone_readback_python_parser": "parsed completely and rejected current active App",
+      "initial_refusals_retained": [
+        "full-column spaces unknown",
+        "clone UID above old bound",
+        "incorrect test module name caused one setup error"
+      ],
+      "native_and_Python_protected_package_prefixes_still_refuse": true,
+      "native_name_bound_rows_pipe_deadline_unchanged": true
+    },
+    "Android_compile_only": {
+      "schema": "inert-helper-readonly-build-v1",
+      "NDK_revision": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "source_sha256": {
+        "experiments/moonlight-v2/source-snapshot/helper_owner_readonly.c": "802a232b8e459a4c9d4fc183534b062e2bd56943d975197889e4c580e26f5f4b",
+        "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d"
+      },
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "binary_sha256": "e4173fbd76e19960dce5bb580ed1251c0c8735e4aeb4f84943fa22d39a185295",
+      "binary_bytes": 22528,
+      "ELF_AArch64_verified": true,
+      "fixture_macro_enabled": false,
+      "production_activation_available": false,
+      "actual_device_or_PM_execution": false,
+      "complete_native_qualifier_or_live_bridge": false,
+      "App_helper_JNI_or_release_changed": false,
+      "reservation_release_authorized": false
+    },
+    "next_real_phone_gate": "Human handles App usage restriction and normal exit; independently fresh App/helper/input and instrumentation cleanup qualification before any new run; never repeat populated old output directory",
+    "next_independent_code_gate": "Owned App closed fields/native capturedAttempt/phoneclock callbacks and whole actual host/native qualifiers remain pending",
+    "CI": "new source requires its own exact run"
   }
 }

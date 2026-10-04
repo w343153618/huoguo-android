@@ -47,11 +47,18 @@ def processes(raw):
         raise ProbeError('native_phone_process_inventory_unknown')
     rows = {}
     for line in lines[1:]:
-        match = re.fullmatch(r'\s*([0-9]+)\s+([0-9]+)\s+(\S+)\s*', line)
-        if match is None:
+        # NAME is the final ps column, not a shell word. Actual Android kernel
+        # threads include names such as "[irq/260-q6v5 wdog]". Keep the full
+        # name and still refuse incomplete, oversized or control-bearing rows.
+        match = re.fullmatch(r'\s*([0-9]+)\s+([0-9]+)\s+(\S(?:.*\S)?)\s*', line)
+        if (match is None or len(line) > 4096
+                or any(ord(c) < 32 or ord(c) == 127 for c in match[3])):
             raise ProbeError('native_phone_process_inventory_unknown')
         pid, uid, name = int(match[1]), int(match[2]), match[3]
-        if not 0 < pid <= 4194304 or not 0 <= uid <= 999999 or pid in rows:
+        # The inventory covers every Android user. A real clone-profile UID
+        # (99910267) exceeds a user0-only range; keep its full unsigned UID.
+        # This does not change the separate user0 package/artifact qualification.
+        if not 0 < pid <= 4194304 or not 0 <= uid < 4294967295 or pid in rows:
             raise ProbeError('native_phone_process_inventory_unknown')
         rows[pid] = (uid, name)
     return rows
@@ -60,7 +67,9 @@ def processes(raw):
 def idle(rows):
     # Name prefixes cover secondary App/helper processes. An absent main pidof
     # alone would not cover these; neither check establishes an atomic hold.
-    return not any(name == p or name.startswith(p + ':')
+    # A space-bearing name using a protected package prefix is ambiguous;
+    # refusing it prevents the full-column parser from masking that process.
+    return not any(name == p or name.startswith((p + ':', p + ' '))
                    for _, name in rows.values() for p in (APP, HELPER))
 
 

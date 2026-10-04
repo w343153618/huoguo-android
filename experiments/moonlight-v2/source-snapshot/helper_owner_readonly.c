@@ -143,6 +143,14 @@ static int read_start_fixed(struct hg_readonly *q,int operation) {
             if (!strcmp(m,"later_active")&&q->fixture_queries>2) text="PID UID NAME\n42 10200 local.huoguo.lanuitest:later\n";
             if (!strcmp(m,"duplicate_PID")) text="PID UID NAME\n1 0 init\n1 0 zygote\n";
             if (!strcmp(m,"bad_UID")) text="PID UID NAME\n1 root init\n";
+            if (!strcmp(m,"kernel_NAME")) text="  PID   UID NAME                       \n1 0 init\n1032 0 [irq/260-q6v5 wdog]\n1285 0 [Surge kthread]\n";
+            if (!strcmp(m,"clone_UID")) text="PID UID NAME\n1 0 init\n9007 99910234 cloned.process\n";
+            if (!strcmp(m,"clone_App")) text="PID UID NAME\n9007 99910234 local.remoteandroid.direct.experiment:worker\n";
+            if (!strcmp(m,"clone_helper")) text="PID UID NAME\n9007 99910267 local.huoguo.lanuitest:worker\n";
+            if (!strcmp(m,"bad_UID_range")) text="PID UID NAME\n1 4294967295 init\n";
+            if (!strcmp(m,"control_NAME")) text="PID UID NAME\n1 0 [kernel\tthread]\n";
+            if (!strcmp(m,"target_space")) text="PID UID NAME\n9007 10316 local.remoteandroid.direct.experiment ambiguous suffix\n";
+            if (!strcmp(m,"bad_header_tail")) text="PID UID NAME EXTRA\n1 0 init\n";
             write(1,text,strlen(text));_exit(0);
         }
         const char *path="package:/data/app/~~fixture/name/base.apk\n";
@@ -199,20 +207,24 @@ static int read_spaces(const char **p) {
 static int read_idle_table(struct hg_readonly *q) {
     const char *p=(char *)q->output[0];while (*p==' '||*p=='\t') ++p;
     if (strncmp(p,"PID",3)) return 0;p+=3;if (!read_spaces(&p)||strncmp(p,"UID",3)) return 0;
-    p+=3;if (!read_spaces(&p)||strncmp(p,"NAME\n",5)) return 0;p+=5;
+    p+=3;if (!read_spaces(&p)||strncmp(p,"NAME",4)) return 0;p+=4;
+    while (*p==' '||*p=='\t') ++p;if (*p++!='\n') return 0;
     uint64_t pids[HG_READ_ROWS];unsigned rows=0;
     while (*p) {
         while (*p==' '||*p=='\t') ++p;uint64_t pid,uid;
         if (rows>=HG_READ_ROWS||!read_uint(&p,4194304,&pid)||!pid||!read_spaces(&p)
-                ||!read_uint(&p,999999,&uid)||!read_spaces(&p)) return 0;
+                ||!read_uint(&p,UINT32_MAX-1,&uid)||!read_spaces(&p)) return 0;
         (void)uid;for (unsigned i=0;i<rows;++i) if (pids[i]==pid) return 0;pids[rows++]=pid;
-        const char *name=p;while (*p&&*p!='\n'&&*p!=' '&&*p!='\t') {
-            if ((unsigned char)*p<33||(unsigned char)*p>126||p-name>=255) return 0;++p;}
-        size_t n=(size_t)(p-name);if (!n) return 0;
+        /* NAME is the entire final column. Keep Android kernel thread spaces
+         * and clone-profile UIDs, not a user0-only shell-word approximation.
+         */
+        const char *name=p;while (*p&&*p!='\n') {
+            if ((unsigned char)*p<32||(unsigned char)*p>126||p-name>=255) return 0;++p;}
+        size_t n=(size_t)(p-name);while (n&&name[n-1]==' ') --n;if (!n) return 0;
         const char *targets[]={read_app,read_helper};
         for (unsigned i=0;i<2;++i) {size_t z=strlen(targets[i]);
-            if (n>=z&&!memcmp(name,targets[i],z)&&(n==z||name[z]==':')) return 0;}
-        while (*p==' '||*p=='\t') ++p;if (*p++!='\n') return 0;
+            if (n>=z&&!memcmp(name,targets[i],z)&&(n==z||name[z]==':'||name[z]==' ')) return 0;}
+        if (*p++!='\n') return 0;
     }
     return rows>0;
 }

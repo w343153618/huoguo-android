@@ -60,3 +60,26 @@ f0/d043 normal saved-UI currentAttempt frame-only qualification still comes
 first. Existing App/helper/JNI/public releases, NPS and default buffering stay
 separate. Next implement bounded App-field/Attempt/phoneclock observations and
 complete real independent host/native qualifiers; no partial activation.
+
+Exactd7ec364c6f660fb88bf2997d46b86e7a4b1b1b1b/run37232350281 was
+independently read back as completed/overall/build/UDP success. Actual Linux
+2219 tests passed126.415s with11 existing skips. The old390 failed run remains
+failed; neither it nor accepted predecessors were rerun or borrowed. This cloud
+result is source validation, not signed APK publication or phone acceptance.
+
+The next private numeric grammar observer passed16 host/JVM checks3.656s plus
+two inert host-client checks. Actual Java projection demonstrates finite decimal
+metrics and256 retained Inbox rows exceeding the helper's512-node limit. A
+separate private8192-node/depth8/64KiB grammar preserves finite decimal nodes,
+while integer clocks/counts require exact int64 nodes; duplicates, escaped aliases,
+non-numeric values, nonfinite/overflow/partial input refuse. Helper512 and all
+RX/Inbox/native ring/TTL/buffer bounds are unchanged. Its private NDK29/API30
+9240B/e7b9242c compile was not part of this CI, not staged or activated, and not
+an App/helper/JNI release. Numeric syntax acceptance is not closed App-field
+validation or native owned-FD binding. Concrete capturedAttempt/phoneclock and
+independent operator/server/normalcleanup qualifiers remain next; the report
+has no Attempt identifier from which those can be reconstructed.
+
+Cloud/private appendices are local for the next meaningful source push. No
+doc-only CI or full-repository rerun was created. USB authorization remains the
+required manual action before real phone qualification.

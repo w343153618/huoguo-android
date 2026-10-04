@@ -135,6 +135,37 @@ class PhoneProbeChecks(unittest.TestCase):
         for raw in ('', 'package:/etc/base.apk', 'package:'+APP_PATH+'\npackage:'+HELPER_PATH):
             with self.assertRaises(ProbeError): probes.package_path(raw)
 
+    def test_actual_kernel_thread_NAME_keeps_spaces_in_the_final_column(self):
+        raw = PS + '1032 0 [irq/260-q6v5 wdog]\n1285 0 [Surge kthread]\n'
+        rows = probes.processes(raw)
+        self.assertEqual(rows[1032], (0, '[irq/260-q6v5 wdog]'))
+        self.assertEqual(rows[1285], (0, '[Surge kthread]'))
+        self.assertTrue(probes.idle(rows))
+
+    def test_full_NAME_cannot_hide_ambiguous_App_or_helper_prefix(self):
+        for package in (probes.APP, probes.HELPER):
+            for suffix in (':receiver', ' ambiguous suffix'):
+                rows = probes.processes(PS + '99 10316 ' + package + suffix + '\n')
+                self.assertFalse(probes.idle(rows))
+
+    def test_full_NAME_still_refuses_control_oversized_and_duplicate_rows(self):
+        for tail in ('99 0 [kernel\tthread]\n', '99 0 [kernel\x00thread]\n',
+                     '99 0 ' + 'x' * 4096 + '\n',
+                     '99 0 [irq/260-q6v5 wdog]\n99 0 [Surge kthread]\n'):
+            with self.assertRaisesRegex(ProbeError, 'inventory_unknown'):
+                probes.processes(PS + tail)
+
+    def test_full_inventory_retains_clone_profile_UID_without_user0_assumption(self):
+        rows = probes.processes(PS + '9007 99910234 cloned.process\n')
+        self.assertEqual(rows[9007], (99910234, 'cloned.process'))
+        self.assertTrue(probes.idle(rows))
+        for package in (probes.APP, probes.HELPER):
+            rows = probes.processes(PS + '16137 99910267 ' + package + ':receiver\n')
+            self.assertFalse(probes.idle(rows))
+        for uid in ('-1', '4294967295', '4294967296'):
+            with self.assertRaisesRegex(ProbeError, 'inventory_unknown'):
+                probes.processes(PS + '99 ' + uid + ' invalid.uid\n')
+
     def test_CPU_unknown_policy_duplicate_or_reversed_caps_refuses(self):
         self.assertEqual(set(probes.cpu(CPU)), {'policy0','policy2','policy5','policy7'})
         for raw in ('', CPU+'policy0 1 2 1\n', CPU.replace('policy7','policy8'), CPU.replace('364800 672000','672000 364800')):

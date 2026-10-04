@@ -122,5 +122,50 @@
     "tests/fixtures/helper_owner_App_report_fixture.c": "b9285f98bde846fca2e6d4bcf1a31cb149889704abd5dfabb051a08cb69a94fa",
     "tests/test_helper_owner_native_driver.py": "57081d2dadb3ef61f02716bbd7ca9ff3f8f1be44feb789aa3bdc19c7b1e91b56"
   },
-  "exact_CI": null
+  "exact_CI": {
+    "sha": "d7ec364c6f660fb88bf2997d46b86e7a4b1b1b1b",
+    "run": 37232350281,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111524552423,
+    "udp_job": 111525261525,
+    "tests": 2219,
+    "seconds": 126.415,
+    "existing_skips": 11,
+    "independent_readback": true,
+    "url": "https://github.com/w343153618/huoguo-android/actions/runs/37232350281"
+  },
+  "source_commit": "d7ec364c6f660fb88bf2997d46b86e7a4b1b1b1b",
+  "private_numeric_grammar_followup": {
+    "directory": "/private/tmp/huoguo-App-numeric-reader-53g4gvi9",
+    "checks": {
+      "tests": 16,
+      "seconds": 3.656,
+      "passed": true,
+      "actual_JVM_projection_cases": 2,
+      "actual_native_host_parser": true,
+      "Android_ART_JNI": false
+    },
+    "Android_compile_only": {
+      "NDK": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "source_pins": {
+        "inert.c": "e030872a986167f156fee06f18acff98b489432ca002e06cd2602a2d1632d370",
+        "App_numeric_json.h": "52295fcbd8678773efaaa47dfd8e7ebe202a7fccf9d4dccc0995692387955351"
+      },
+      "binary_bytes": 9240,
+      "binary_sha256": "e7b9242c0fea4c5d9207ef2497d25cff0ca092749ece0e97d1e4f7de4957f005",
+      "fixture_macros": false,
+      "stage_phone_or_PM": false,
+      "native_owned_FD_or_report_binding": false,
+      "App_helper_JNI_release": false
+    },
+    "inert_host_checks": 2,
+    "part_of_this_CI": false,
+    "owned_FD_App_field_semantic_binding": false
+  }
 }

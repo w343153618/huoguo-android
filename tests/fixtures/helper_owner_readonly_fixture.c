@@ -24,7 +24,8 @@ int main(int argc,char **argv) {
     const char *m=argv[3];const char *modes[]={"valid","absent","wrong_path","traversal","multiple","later_path",
         "active_App","active_helper","later_active","duplicate_PID","bad_UID","nonzero","stderr","overflow",
         "embedded_NUL","ignore_TERM","held_EOF","contents_changed","mode_changed","growth","file_replaced",
-        "parent_replaced","repeat","deadline","cancel","autoreap","invalid_kind","idle","App","above_soft_limit"};
+        "parent_replaced","repeat","deadline","cancel","autoreap","invalid_kind","idle","App","above_soft_limit",
+        "kernel_NAME","clone_UID","clone_App","clone_helper","bad_UID_range","control_NAME","target_space","bad_header_tail"};
     int allowed=0;for (unsigned i=0;i<sizeof(modes)/sizeof(modes[0]);++i) if (!strcmp(m,modes[i])) allowed=1;
     if (!allowed) return 2;
     /* Limit only this fresh host fixture process; actual Android limits are
