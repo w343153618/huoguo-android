@@ -160,8 +160,29 @@ class ScopeJournal:
                 or type(result['xml_bytes']) is not int
                 or not 0 < result['xml_bytes'] < 1048576):
             raise ValueError('scope_journal_consistency_rejected')
+        self._record_consistency(ticket, result, 'owned-source-consistency-observed-v1')
+
+    def record_retirement_consistency(self, ticket, result):
+        # Explicit six-file schema only; no promotion of normal return to a lease.
+        if type(result) is not dict:
+            raise ValueError('scope_journal_retirement_rejected')
+        result = dict(result)
+        true_flags = (*RESULT_FLAGS[:5], 'six_file_metadata_consistent',
+                      'normal_framework_start_return_reported')
+        false_flags = (*UNVERIFIED, 'installed_framework_execution_verified')
+        if (set(result) != {'schema', 'xml_bytes', *true_flags, *false_flags}
+                or result['schema'] != 'owned-source-snapshot-retirement-binding-v1'
+                or any(type(result[k]) is not bool for k in (*true_flags, *false_flags))
+                or not all(result[k] for k in true_flags)
+                or any(result[k] for k in false_flags)
+                or type(result['xml_bytes']) is not int
+                or not 0 < result['xml_bytes'] < 1048576):
+            raise ValueError('scope_journal_retirement_rejected')
+        self._record_consistency(ticket, result, 'owned-source-retirement-consistency-observed-v1')
+
+    def _record_consistency(self, ticket, result, schema):
         self.assert_registered(ticket)
-        raw = _encoded({'schema': 'owned-source-consistency-observed-v1',
+        raw = _encoded({'schema': schema,
                         'nonce': ticket.nonce, 'binding': result,
                         'remote_scope_may_exist': True})
         fd, directory = self._open(ticket)

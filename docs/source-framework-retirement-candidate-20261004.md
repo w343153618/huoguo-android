@@ -66,3 +66,6 @@ diagnostics follow those gates; this work is not a UDP performance improvement.
 Preceding bbf142f7/run37185638482 was independently verified overall/build/UDP
 success. This candidate requires its own exact-SHA CI; preceding results are
 not later-source or real-device evidence.
+
+Exact a5bb8bf0/run37186685354 subsequently independently verified completed,
+overall/build/udp_candidate all success. It does not establish real UI execution.

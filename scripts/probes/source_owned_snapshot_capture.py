@@ -145,6 +145,18 @@ class OwnedSnapshotCapture:
         self.jar, self.native, self.journal = jar, native, journal
         self.possibly_retained = []
 
+    def _launch(self, nonce):
+        return launch_script(nonce, self.jar, self.native)
+
+    def _collect(self, nonce):
+        return collection_script(nonce, self.jar, self.native)
+
+    def _observe(self, raw, pid, start):
+        return observation(raw, uid=self.jar.uid, parent_pid=pid, parent_start_ticks=start)
+
+    def _record(self, ticket, result):
+        self.journal.record_consistency(ticket, result)
+
     def capture(self, nonce, reader, assert_current_authority):
         # A trusted validator raises on lost authority, returns None on success.
         # A JSON/boolean value is not an authority validator or a permission grant.
@@ -153,7 +165,7 @@ class OwnedSnapshotCapture:
         def check():
             if assert_current_authority() is not None:
                 raise ValueError('owned_snapshot_current_authority_rejected')
-        command = launch_script(nonce, self.jar, self.native)
+        command = self._launch(nonce)
         check()
         ticket = self.journal.register(nonce)
         self.possibly_retained.append(ticket)
@@ -166,15 +178,14 @@ class OwnedSnapshotCapture:
             pid, start = parent_identity(bytes(raw))
         finally: raw.clear()
         check()
-        raw, info = reader.read([collection_script(nonce, self.jar, self.native)], 1048576)
+        raw, info = reader.read([self._collect(nonce)], 1048576)
         xml = None
         try:
             if not info['command_ok'] or not info['child_reaped']:
                 raise ValueError('owned_snapshot_observation_command_unconfirmed')
-            result, xml = observation(bytes(raw), uid=self.jar.uid,
-                                      parent_pid=pid, parent_start_ticks=start)
+            result, xml = self._observe(bytes(raw), pid, start)
             check()
-            self.journal.record_consistency(ticket, result)
+            self._record(ticket, result)
             return xml, result
         except BaseException:
             if xml is not None: xml.clear()

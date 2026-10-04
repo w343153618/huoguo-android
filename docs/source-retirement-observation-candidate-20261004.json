@@ -1,0 +1,31 @@
+{
+  "schema": "source-retirement-observation-candidate-v1",
+  "source_SHA256": {
+    "scripts/probes/source_retirement_snapshot_capture.py": "3b92456ee39483f7eb95786db7c22f8e541bc6016b198e24664dd41ae4b7a212",
+    "scripts/probes/source_owned_snapshot_capture.py": "a59ef0b699330f1cca35ff20f25577bc57558e0b645be2076865264da5538246",
+    "scripts/probes/source_owned_scope_journal.py": "c13ae856855c6fcbd3e61d9eced92e6139fceb957340e2c7f2cfdacf9990740b"
+  },
+  "new_checks": 6,
+  "focused_checks": 37,
+  "focused_seconds": 1.568,
+  "launch_bytes_fixture": 2047,
+  "collection_bytes_fixture": 5099,
+  "constructor_IO": false,
+  "default_reader_changed": false,
+  "local_journal_actual_fixtures": true,
+  "fake_remote_reader_only": true,
+  "UI_runner_started": false,
+  "device_operations": 0,
+  "App_artifact_changed": false,
+  "actual_framework_retirement_verified": false,
+  "current_App_lease_integrated": false,
+  "remote_failure_boundary_complete": false,
+  "preceding_exact_CI": {
+    "SHA": "a5bb8bf0fc4c3ef6a4b548cf0b31c570a766211a",
+    "run": 37186685354,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  }
+}

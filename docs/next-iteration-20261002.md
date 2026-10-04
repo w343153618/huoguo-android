@@ -1,5 +1,13 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Explicit six-file observation/journal is now implemented, default factory
+unchanged:6 new and37 affected checks passed1.568s, local journal with fake remote
+reads only. See source-retirement-observation-candidate-20261004.md/json.
+No device UI, input or media. Next close actual failure/unknown retirement and
+current App/source lease before executing, then fresh M1 qualification and
+moving-public diagnosis. Do not equate normal receipt or local ADB reap with
+remote global quiescence.
+
 Latest default-OFF framework retirement candidate now implemented: installed
 framework7e35b4f6/DEXa7697e85 explicitly pins the compile-only runner ABI. The
 new custom runner writes a numeric sixth `retired` receipt only after normal

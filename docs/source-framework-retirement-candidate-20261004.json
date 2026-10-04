@@ -82,5 +82,13 @@
     "overall": "success",
     "build": "success",
     "udp_candidate": "success"
+  },
+  "exact_CI": {
+    "SHA": "a5bb8bf0fc4c3ef6a4b548cf0b31c570a766211a",
+    "run": 37186685354,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
   }
 }
