@@ -107,7 +107,20 @@
     "udp_candidate": "success",
     "applies_to_this_new_source": false
   },
-  "cloud_CI_for_this_source": null,
+  "cloud_CI_for_this_source": {
+    "sha": "e3a7bd15d111d35bcf76900c93fab5d26b89838e",
+    "run": 37226978314,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "build_job": 111508537209,
+    "udp_job": 111509157412,
+    "Linux_tests": 2161,
+    "Linux_elapsed_seconds": 107.661,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  },
   "source_SHA256": {
     "experiments/moonlight-v2/source-snapshot/helper_owner_read_gate.c": "e4b628d5edba2c82b5b9815a411eacd5a6ca9cc471f238e08ad7312f4bc4412c",
     "experiments/moonlight-v2/source-snapshot/helper_owner_native_driver.c": "5fea5ef83e835fb4edeaf882ff448155ca5de536597e7c6472dea32e1bfd7ebf",
@@ -122,5 +135,6 @@
     "seconds": 1.667,
     "actual_early_child_exit_before_payload_write": true,
     "same_Popen_and_dual_EOF_still_collected": true
-  }
+  },
+  "source_commit": "e3a7bd15d111d35bcf76900c93fab5d26b89838e"
 }

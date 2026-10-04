@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "NEW protected-layout stage creation/readback/writer-quiescence and exact owned remote process receipts, then NEW complete supervisor/dependency/environment/operator/source/phone/admission binding. No live partial binding. On actual phone availability first unchanged reviewed f0/d043 authenticated frame-only.",
+  "next_source_task": "NEW native-owned helper output/current captured Attempt/normal codec/audio/input sameprocess qualifiers, matching package/independent absence/privileged writers/same-created-FD retirement; host actual operator/source/phone/admission/gateway separately. No partial activation; unchanged reviewed f0/d043 first on actual phone return.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -4740,7 +4740,20 @@
       "udp_candidate": "success",
       "applies_to_this_new_source": false
     },
-    "cloud_CI_for_this_source": null,
+    "cloud_CI_for_this_source": {
+      "sha": "e3a7bd15d111d35bcf76900c93fab5d26b89838e",
+      "run": 37226978314,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "build_job": 111508537209,
+      "udp_job": 111509157412,
+      "Linux_tests": 2161,
+      "Linux_elapsed_seconds": 107.661,
+      "existing_platform_skips": 11,
+      "independently_read_back": true
+    },
     "source_SHA256": {
       "experiments/moonlight-v2/source-snapshot/helper_owner_read_gate.c": "e4b628d5edba2c82b5b9815a411eacd5a6ca9cc471f238e08ad7312f4bc4412c",
       "experiments/moonlight-v2/source-snapshot/helper_owner_native_driver.c": "5fea5ef83e835fb4edeaf882ff448155ca5de536597e7c6472dea32e1bfd7ebf",
@@ -4755,6 +4768,123 @@
       "seconds": 1.667,
       "actual_early_child_exit_before_payload_write": true,
       "same_Popen_and_dual_EOF_still_collected": true
+    },
+    "source_commit": "e3a7bd15d111d35bcf76900c93fab5d26b89838e"
+  },
+  "owner_native_helper_control_candidate_20261005": {
+    "schema": 1,
+    "candidate": "default_OFF_retained_host_native_control_schedule",
+    "checked_at_utc": "2026-10-04T19:33:45.900140+00:00",
+    "initial_new_checks": {
+      "tests": 18,
+      "seconds": 14.879,
+      "failures": 1,
+      "errors": 3,
+      "cause": "host malformed-wire fixture mistook idle with no pending request for response; following scopes reused after assertion failure",
+      "Android_or_App_failure": false
+    },
+    "preliminary_targeted": {
+      "tests": 46,
+      "seconds": 47.443,
+      "passed": true,
+      "new_control": 18,
+      "unchanged_driver_readgate": 28
+    },
+    "final_new_checks": {
+      "tests": 19,
+      "seconds": 14.825,
+      "passed": true,
+      "idle_poll_not_ACK_regression": true,
+      "malformed_wire_tests_wait_actual_native_refusal_and_parent_exit": true
+    },
+    "actual_host_Popen_control_dual_drains_and_native_child_wait": true,
+    "actual_five_second_host_driver": true,
+    "Android_eligibility_and_metadata": "synthetic",
+    "native_callbacks_supplied_in_same_process": true,
+    "host_boolean_serialized_as_native_permission": false,
+    "production_activation_available": false,
+    "actual_Android_stage_PM_driver": false,
+    "actual_Mac_gateway_admission_binding": false,
+    "host_fixture_activation_only": true,
+    "request_response_is_permission": false,
+    "idle_is_response_ACK": false,
+    "command_and_poll_max_seconds": 3,
+    "process_ceiling_seconds": 30,
+    "process_ceiling_includes_preparation": true,
+    "request_sequence_and_native_constructor_ceiling_preserved": true,
+    "unknown_retains_actual_host_Popen_control_and_drains": true,
+    "signals_or_unknown_destructor": false,
+    "uninstall_retirement_release_API": false,
+    "scope_retirement_or_server_quiescence_verified": false,
+    "numeric_result_validation": false,
+    "new_App_helper_JNI_or_release": false,
+    "original_five_fields_guard_or_buffer_or_NPS_changed": false,
+    "phone_get_state_once": "device-not-found",
+    "phone_repoll": false,
+    "host_readonly": {
+      "snapshot_only": true,
+      "original": {
+        "gateway_pid": 26875,
+        "gateway_start_id": "Sat_Oct_3_17:37:47_2026",
+        "gateway_source_sha256": "215a0a254d3f91e87c600c1455c8239f6d1e2d0208011612a43bd6e1370b3a9a",
+        "runtime_manifest_sha256": "b708399680cc9b4ff19a5cd2048e04dd70dbb75502c1a22cb3eae8419967844f",
+        "coverage_complete": true,
+        "owned_descendants": 0,
+        "hardware_process_groups": 0,
+        "packetizer_processes": 0,
+        "guest_control_processes": 0
+      },
+      "formal_clear": true,
+      "dedicated_ports_unoccupied": {
+        "45560": true,
+        "45963": true
+      },
+      "clients_started": 8,
+      "clients_reaped": 8,
+      "signals": 0,
+      "permission_or_lease": false
+    },
+    "Android_compile_only": {
+      "directory": "/var/folders/49/djlhnf712rsdyy4x4d7d_q7h0000gn/T/huoguo-native-control-yah2q1gi/arm64",
+      "schema": "inert-native-control-build-v1",
+      "NDK_revision": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "source_pins": {
+        "experiments/moonlight-v2/source-snapshot/helper_owner_control.c": "2b26cadd9b251f1cae6e7eba18955c6a2685b8573d7a43b05fc183b5f9e43b7b",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_native_driver.c": "5fea5ef83e835fb4edeaf882ff448155ca5de536597e7c6472dea32e1bfd7ebf",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_read_gate.c": "e4b628d5edba2c82b5b9815a411eacd5a6ca9cc471f238e08ad7312f4bc4412c",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_readonly.c": "3cb1463c87934b7d4384840e5a71557609ee81ccf65b25de4db56c7898fa7307",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_lifecycle.c": "ad54e7eeb50c658457dccc10b11fb5d574d8cf56e4ebdb02c50f204206a10d40",
+        "experiments/moonlight-v2/source-snapshot/helper_owner_channel.c": "6f7857ae77b56c199c754ac6e4b7087677173e63c219565b39504848fe5ff937",
+        "experiments/moonlight-v2/source-snapshot/helper_scope_owner.c": "21665809c3134a101acb7f2c683ccdc470b7053ea9e0307423d4ca80c69466ca",
+        "experiments/moonlight-v2/source-snapshot/helper_scope_crypto.h": "d8d3ef8562d2d5d552445ae16b0543e534e3fc30a24d66478fb74934a997335d"
+      },
+      "binary_bytes": 52656,
+      "binary_sha256": "0008e8691087a1c3bb343778eddac65e8c5feca3000dd9947aa38720f8ee32fc",
+      "fixture_macro_enabled": false,
+      "production_activation_available": false,
+      "actual_Android_stage_PM_or_driver": false,
+      "actual_Mac_coordinator_bridge": false,
+      "App_helper_JNI_or_release_changed": false,
+      "reservation_release_authorized": false
+    },
+    "source_SHA256": {
+      "experiments/moonlight-v2/source-snapshot/helper_owner_control.c": "2b26cadd9b251f1cae6e7eba18955c6a2685b8573d7a43b05fc183b5f9e43b7b",
+      "scripts/probes/owner_native_control_fixture.py": "4bb023e5add8ca9e23131c95d6eac1eb106c0882d8aed16374af7a5244eec0ed",
+      "scripts/probes/build_helper_owner_control.py": "0e424c1e7b2416ee259b23d914042687da7746508c673e5d9be7f0546555e30c",
+      "tests/fixtures/helper_owner_control_fixture.c": "2bb2a8a7165222bc89cfbe65c678ce83d40840eab208b5af958b132eb470fc0f",
+      "tests/test_owner_native_control.py": "002d1ddb12819784ac760517a7da1304803222166d65deed9c160f2a6ce4db97"
+    },
+    "exact_CI": "pending_for_new_SHA",
+    "independent_root_review": {
+      "exact_environment_no_loader_proxy_ADB_override": true,
+      "production_activation_off": true,
+      "one_outstanding_request_and_actual_objects": true,
+      "host_and_native_callbacks_separate": true,
+      "whole_actual_Android_qualifiers_missing": true,
+      "idle_response_ambiguity_corrected": true
     }
   }
 }

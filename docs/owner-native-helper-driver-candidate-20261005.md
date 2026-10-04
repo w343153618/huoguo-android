@@ -113,3 +113,10 @@ remote quiescence from local EOF. Only the existing complete gateway/reaper/
 roles/original/formal plus independent phone/helper/input/scope boundary can
 project the original five fields and explicitly release. Partial activation is
 still prohibited. No new App/helper/JNI release or performance claim is made.
+
+Exact sourcee3a7bd15d111d35bcf76900c93fab5d26b89838e/run37226978314 was
+independently read back completed/overall/build/UDP success. Linux2161 tests
+passed107.661s with11 existing skips. This validates this source and synthetic/
+host layers only; no Android deployment or phone acceptance followed. Do not
+poll this accepted run again or use it for a later SHA. This cloud appendix is
+local for the next meaningful source push, not another doc-only CI.
