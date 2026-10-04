@@ -113,6 +113,7 @@ class OwnedGateway:
         self.drains = []
         self.state = 'new'
         self.signals = 0
+        self.kill_calls = 0
         self.deadline = None
         self.projection_accepted = False
 
@@ -194,13 +195,32 @@ class OwnedGateway:
             raise LifecycleError('native_gateway_owned_terminate_unverified') from None
         return True  # A method return is not child exit or remote quiescence.
 
+    def kill_owned(self):
+        """Explicit escalation for this still-owned Popen only.
+
+        Forced exit does not satisfy finish(): a nonzero exit or missing
+        native footer retains the reservation. No group/PID adoption API.
+        """
+        if self.process is None or self.state == 'released':
+            raise LifecycleError('native_gateway_owned_Popen_required')
+        if self.process.poll() is not None:
+            return False
+        try:
+            self.process.kill()
+            self.kill_calls += 1
+        except Exception:
+            self.state = 'cleanup_required'
+            raise LifecycleError('native_gateway_owned_kill_unverified') from None
+        self.state = 'cleanup_required'
+        return True
+
     def finish(self):
         """Actual exit+EOF+footer+full roles+fresh original before five fields."""
         if self.process is None or self.state == 'released':
             raise LifecycleError('native_gateway_owned_Popen_required')
         try:
             code = self.process.poll()
-            if type(code) is not int or code != 0:
+            if type(code) is not int or code != 0 or self.kill_calls:
                 raise LifecycleError('native_gateway_exit_unverified')
             deadline = time.monotonic() + 2
             try:
@@ -234,5 +254,6 @@ class OwnedGateway:
         return dict(event='native_gateway_parent_receipt', gateway_pid=self.process.pid,
             gateway_exit_observed=code, stdout_and_stderr_EOF_confirmed=True,
             owned_roles_and_original_postcheck_verified=True, reservation_release_confirmed=True,
-            parent_gateway_terminate_calls=self.signals, exit_zero_no_parent_terminate_call=self.signals == 0,
+            parent_gateway_terminate_calls=self.signals, exit_zero_no_parent_terminate_call=self.signals == 0 and self.kill_calls == 0,
+            parent_gateway_kill_calls=self.kill_calls,
             phone_ART_native_producer_or_full_pipeline_acceptance=False)

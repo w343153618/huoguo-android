@@ -137,6 +137,24 @@ class NativeOwnedLifecycleChecks(unittest.TestCase):
         with self.assertRaises(lifecycle.LifecycleError):owned.finish()
         self.assertFalse(sock.closed)
 
+    def test_actual_ignored_TERM_owned_KILL_reaps_but_never_releases(self):
+        owned,sock,_,_=self.make()
+        self.launch(owned,'import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); print("{}",flush=True); time.sleep(5)')
+        end=time.monotonic()+2
+        while b'{}\n' not in bytes(owned.drains[0].data) and time.monotonic()<end:time.sleep(.005)
+        self.assertIn(b'{}\n',bytes(owned.drains[0].data))
+        self.assertTrue(owned.terminate_owned());self.assertIsNone(owned.wait(.03))
+        self.assertTrue(owned.kill_owned());self.assertLess(owned.wait(2),0)
+        self.assertEqual(owned.kill_calls,1)
+        with self.assertRaisesRegex(lifecycle.LifecycleError,'^native_gateway_exit_unverified$'):owned.finish()
+        self.assertFalse(sock.closed);self.assertEqual(owned.state,'cleanup_required')
+        # A forged successful footer or return code cannot bless forced exit.
+        with patch.object(owned.process,'poll',return_value=0):
+            with self.assertRaises(lifecycle.LifecycleError):owned.finish()
+        fresh,other,_,_=self.make()
+        with self.assertRaises(lifecycle.LifecycleError):fresh.kill_owned()
+        self.assertFalse(other.closed)
+
     def test_closed_unique_footer_rejects_foreign_duplicate_boolean_or_unknown(self):
         cases=[b'',json.dumps(FOOTER).encode()+b'\n'+json.dumps(FOOTER).encode(),
             b'{"event":"candidate_shutdown","event":"candidate_shutdown"}',b'not JSON',b'[]',

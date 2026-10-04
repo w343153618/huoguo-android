@@ -1,5 +1,33 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF M1 gateway/driver fixed entry binding and bounded readonly probes
+are implemented;16new/61affected checks PASS2.225s. Actual hostchildren only,
+inert admission/phone callbacks. Owned gateway ignoredTERM→KILL fixture reaped
+but cannot release/claim successful teardown. Driver timeout never signals or
+releases; actual exit/EOF plus independent phone cleanup, samegateway exit0/
+nativefooter/fullroles/original/formal still precede unchanged5field release.
+Actual readonly original/fullroles/formal probe passed0.399s/6clients allreaped/
+0signals, after preserved flattened-ps path refusal corrected by spaces fixture.
+No reservation/auth/newgateway/phone/media/UI/RPC. OP12once unavailable, no repoll.
+Read owner-native-gateway-entry-candidate-20261004.md/json. Next NEW private pinned
+launcher+runtime/environment/finite witness/unknown-live-hold fixtures; no live
+before freshphone and old reviewed f0/d043 eligibility. App/helper unchanged.
+Own exact CI pending after meaningfulsourcepush;3fgreen only covers3f.
+
+Exact NEW kernel3f24728f3acb79205479f6a3ce25c4a6136fab24/run37203281599 now
+independently completed/overall/build/UDPsuccess, Linux1965/81.844s/11existing
+skips. No repeat thisrun or borrow itsgreen for anotherSHA. NEW1074tracked/
+346Python fullsource freeze no.git/allblobs+pins match,23targeted PASS0.655s;
+actualhostPython children/inertadmission only. Olda597/84b/f0/3d/helperbuilds
+unchanged. No livecontroller/highportTLS/App install/phone/ART/native acceptance.
+Next immediately integrate actual private finite gateway+driver entries/trusted
+bounded original/formal/fullroles probes and owned ignoredTERM cleanup boundary,
+sourcefixtures before live. Retainedsupervisor/socket on unknown, not destructor
+release. Latest private design and exactnewfreeze pointers in iteration-state.
+Phone still unavailable/onequery thisturn, no repeatpoll. oldreviewed f0/d043 first
+when eligible. Clouddocs appendedlocally for next meaningfulsourcepush/no docCI.
+
+
 NEW default-OFF owned gateway lifecycle kernel is implemented.10new/59affected
 actual host-Python Popen/inert admission checks PASS1.235s. No device/listener/
 TLS/auth/media/native producer acceptance. Original reserve/witness/fullroles/

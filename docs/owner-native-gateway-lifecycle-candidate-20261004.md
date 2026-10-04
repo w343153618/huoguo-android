@@ -65,3 +65,18 @@ this independent LAN path and must not block an original public-worker test.
 Existing public/Tailnet/NPS defaults, rings/Inbox/FEC/80ms/wait and native footer
 acceptance remain unchanged. The preceding a597/run37201580730 cloud result
 covers only that factory source; this NEW kernel source requires its own CI.
+
+Exact source3f24728f3acb79205479f6a3ce25c4a6136fab24/run37203281599 was
+independently read back completed/overall/build/UDPsuccess, Linux1965tests/
+81.844s/11existing platform skips. Android compile/lint and isolated APK/JNI
+checks passed; this is cloud source/build acceptance only. The accepted run
+needs no further polling; a later SHA needs its own result. This cloud append
+stays local until the next meaningful source push, without doc-only CI.
+
+A NEW exact3f freeze has1074 tracked files/346Python and no.git. All Git blobs
+and post-check source hashes match. Its23 targeted lifecycle/factory/original
+fixture checks passed0.655s, with host Python children and inert admission only.
+The previousa597/84b/f0 freezes and App/helper build bytes are unchanged. Updated
+private next-design pointer binds this kernel to the NEW freeze but is still
+design-only for live high-port gateway/driver/probe/ignored-TERM integration.
+No new permission, phone operation, native sample or producer closure follows.

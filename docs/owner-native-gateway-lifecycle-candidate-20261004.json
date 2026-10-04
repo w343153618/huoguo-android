@@ -38,7 +38,17 @@
     "scripts/probes/owner_native_gateway_lifecycle.py": "56219459009fcc2e9405f915c71dc3ea347799e0c08d092c1a084931791d3d3d",
     "tests/test_owner_native_gateway_lifecycle.py": "4f96178547a9575bc24b4d6e3fbe2b1be631a7aff3d861219314df7b7a51e108"
   },
-  "cloud_CI_for_this_source": "not_pushed_yet",
+  "cloud_CI_for_this_source": {
+    "sha": "3f24728f3acb79205479f6a3ce25c4a6136fab24",
+    "run": 37203281599,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1965,
+    "Linux_elapsed_seconds": 81.844,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  },
   "preceding_factory_exact_CI": {
     "sha": "a597f47ef649aa48bb184d7c2eae6d6723330f9e",
     "run": 37201580730,
@@ -48,5 +58,16 @@
     "Linux_tests": 1955,
     "Linux_elapsed_seconds": 73.695,
     "existing_platform_skips": 11
+  },
+  "source_commit": "3f24728f3acb79205479f6a3ce25c4a6136fab24",
+  "NEW_full_source_freeze": {
+    "files": 1074,
+    "Python_files": 346,
+    "no_git": true,
+    "all_git_blobs_and_pins_verified": true,
+    "targeted_checks": 23,
+    "targeted_elapsed_seconds": 0.655,
+    "actual_host_children_inert_admission_only": true,
+    "no_gateway_phone_RPC_or_nativeART": true
   }
 }
