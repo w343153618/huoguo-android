@@ -1,0 +1,252 @@
+{
+  "schema": "owner-code40-paused-public-readback-v1",
+  "artifact_source_revision": "22f16fa892180901911200cbdc7a2558439be1e8",
+  "environment": "owner nonisolated M1 + CPU-limited OnePlus12, same-home WiFi via public NPS",
+  "moving_video_performance_acceptance": false,
+  "source_controls": 0,
+  "source_paused_descriptor_after": {
+    "schema": "owner-source-stats-gate-v1",
+    "evidence_kind": "fresh_player_Stats_UI_descriptor",
+    "native_clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "native_started_ns": 322772935842000,
+    "native_finished_ns": 322775362655000,
+    "collector_clock_domain": "python_time_monotonic_ns",
+    "collector_started_ns": 322777961557875,
+    "collector_finished_ns": 322780388336041,
+    "listener_ready_ns": null,
+    "identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "required_state": "paused",
+    "video_id": "aqz-KE-bpKQ",
+    "video_format": {
+      "itag": 299,
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "descriptor_fps": 60.0
+    },
+    "audio_format": {
+      "itag": 251,
+      "codec": "opus"
+    },
+    "position_ui_seconds": 410,
+    "position_before_ms": 410285,
+    "position_after_ms": 410285,
+    "dropped_frames_cumulative": {
+      "dropped": 463,
+      "total": 21150
+    },
+    "process_session_focus_bracket_verified": true,
+    "visual_motion_observed": null,
+    "decoded_or_presented_fps": null,
+    "continuous_content_coverage_verified": false,
+    "collection_or_overlay_overhead_measured": false
+  },
+  "scope": {
+    "app_control": "HTTPS49556",
+    "app_media": "UDP15556",
+    "NPC_outer_QUIC_is_not_QUIC_Datagram_or_P2P": true,
+    "actual_outer_packet_route_or_domestic_geography_verified": false
+  },
+  "candidate_install": {
+    "installed_APK_SHA": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "installed_JNI_SHA": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+    "installed_version_code": 40,
+    "installed_helper_SHA": "8c34c233b3520dd9a17a79d02756c114bd5fee0df3f4176f0b72d786d3df5f35",
+    "preserve_user_data_same_signer_upgrade": true
+  },
+  "result": {
+    "driver_exit": 1,
+    "supervisor_exit": 2,
+    "driver_failure_label": "steady_media_progress_stalled_or_unverified",
+    "instrumentation_exit_code": 0,
+    "sampler_exit_codes": [
+      0
+    ],
+    "normal_public_auth_readback": true,
+    "saved_UI_readback": true,
+    "exit_confirmation_readback": true,
+    "audio_cleanup_first": 1,
+    "audio_cleanup_second": 1,
+    "first_leave_audio_threads_alive": 0,
+    "second_leave_audio_threads_alive": 0,
+    "steady_worker_progress_healthy": false,
+    "steady_worker_max_idle_ns": 10766293330,
+    "first_report_actual_json_bytes": 13772,
+    "second_report_actual_json_bytes": 12657
+  },
+  "numeric_transport_readback": {
+    "first": {
+      "schema_version": 1,
+      "available": 1,
+      "capacity": 64,
+      "recorded_count": 49,
+      "exported_count": 49,
+      "omitted_prefix_following_count": 0,
+      "all_recorded_samples_exported": 1,
+      "all_session_observations_covered": 0,
+      "timestamp_is_exact_packet_arrival": 0,
+      "physical_route_or_latency_verified": 0
+    },
+    "second": {
+      "schema_version": 1,
+      "available": 1,
+      "capacity": 64,
+      "recorded_count": 28,
+      "exported_count": 28,
+      "omitted_prefix_following_count": 0,
+      "all_recorded_samples_exported": 1,
+      "all_session_observations_covered": 0,
+      "timestamp_is_exact_packet_arrival": 0,
+      "physical_route_or_latency_verified": 0
+    }
+  },
+  "first_complete_report_summary": {
+    "received_media_frames": 22,
+    "queued_media_frames": 21,
+    "codec_callback_count": 20,
+    "udp_packets": 6669,
+    "native_fec": {
+      "packets": 4339,
+      "wire_bytes": 4672244,
+      "invalid": 0,
+      "duplicate": 667,
+      "settled_packets": 89,
+      "expired_packets": 0,
+      "frames_expired": 21,
+      "frames_delivered": 22,
+      "recovered_shards": 0,
+      "reference_lost": 21,
+      "keyframe_requests": 8,
+      "dependency_dropped": 0,
+      "memory_rejected": 0,
+      "clock_mapping_rejected": 0,
+      "clock_mappings_active": 0,
+      "clock_mapping_evictions": 0,
+      "clock_mapping_expired": 21,
+      "logical_body_rejected": 0,
+      "completed_bodies": 22,
+      "needs_keyframe": 0,
+      "max_assembly_latency_us": 79366
+    },
+    "video_input_queue": {
+      "capacity_frames": 4,
+      "capacity_bytes": 2097152,
+      "maximum_depth": 1,
+      "maximum_bytes": 117528,
+      "admitted_frames": 22,
+      "overflow_events": 0,
+      "overflow_rejected_frames": 0,
+      "queue_cleared_frames": 0,
+      "waiting_idr_admission_drops": 0,
+      "oversize_admission_drops": 0,
+      "closing_drops": 0,
+      "recovery_epochs": 1,
+      "recovery_idrs_completed": 1,
+      "needs_idr": 0,
+      "pending_frames": 0,
+      "pending_bytes": 0,
+      "epoch_event_capacity": 256,
+      "epoch_events_evicted": 0,
+      "epoch_events_enabled": 0,
+      "epoch_events_retained": 0
+    },
+    "receive_loop_max_ms": 35.672344,
+    "receive_processing_max_ms": 16.708281,
+    "session_end_reason_code": 0
+  },
+  "paired_prefix_analysis": {
+    "schema": "phone-transport-progress-analysis-v1",
+    "same_attempt_phone_clock_verified_by_caller": true,
+    "RX_is_before_Inbox": true,
+    "worker_is_after_Inbox_before_codec_input": true,
+    "timestamp_is_exact_packet_arrival": false,
+    "timestamp_counter_snapshot_delay_bound_known": false,
+    "whole_session_or_physical_network_loss_verified": false,
+    "codec_or_Surface_root_cause_proven": false,
+    "retained_RX_rows": 49,
+    "retained_worker_rows": 23,
+    "plateaus": [
+      {
+        "worker_start_ns": 256776803427202,
+        "worker_end_ns": 256786818667458,
+        "worker_observed_plateau_ns": 10015240256,
+        "interior_RX_rows": 10,
+        "classification": "authenticated_video_continues_RX_completion_flat",
+        "RX_interior_start_ns": 256777063330118,
+        "RX_interior_end_ns": 256786129677198,
+        "RX_interior_span_ns": 9066347080,
+        "RX_max_observed_sample_gap_ns": 1019926614,
+        "deltas": {
+          "udp_packets": 1210,
+          "authenticated_packets": 1210,
+          "authenticated_video_packets": 770,
+          "received_media_frames": 0,
+          "codec_callback_count": 0,
+          "FEC_packets": 770,
+          "FEC_frames_expired": 7,
+          "FEC_reference_lost": 7,
+          "FEC_dependency_dropped": 0,
+          "FEC_keyframe_requests": 1
+        }
+      },
+      {
+        "worker_start_ns": 256789826504384,
+        "worker_end_ns": 256794833217559,
+        "worker_observed_plateau_ns": 5006713175,
+        "interior_RX_rows": 5,
+        "classification": "authenticated_video_continues_RX_completion_flat",
+        "RX_interior_start_ns": 256790172549071,
+        "RX_interior_end_ns": 256794208989330,
+        "RX_interior_span_ns": 4036440259,
+        "RX_max_observed_sample_gap_ns": 1016519999,
+        "deltas": {
+          "udp_packets": 511,
+          "authenticated_packets": 511,
+          "authenticated_video_packets": 312,
+          "received_media_frames": 0,
+          "codec_callback_count": 0,
+          "FEC_packets": 312,
+          "FEC_frames_expired": 3,
+          "FEC_reference_lost": 3,
+          "FEC_dependency_dropped": 0,
+          "FEC_keyframe_requests": 1
+        }
+      }
+    ],
+    "correlation_status": "retained_prefix_only"
+  },
+  "cleanup": {
+    "helper_uninstalled": true,
+    "original_after": {
+      "gateway_pid": 26875,
+      "gateway_start_id": "Sat_Oct_3_17:37:47_2026",
+      "gateway_source_sha256": "215a0a254d3f91e87c600c1455c8239f6d1e2d0208011612a43bd6e1370b3a9a",
+      "runtime_manifest_sha256": "b708399680cc9b4ff19a5cd2048e04dd70dbb75502c1a22cb3eae8419967844f",
+      "coverage_complete": true,
+      "owned_descendants": 0,
+      "hardware_process_groups": 0,
+      "packetizer_processes": 0,
+      "guest_control_processes": 0
+    },
+    "original_idle_and_identity_verified": true,
+    "target_absent": true,
+    "helper_absent": true,
+    "input_absent": true
+  },
+  "source_not_force_stopped_or_restarted": true,
+  "M5_NPS_other_NPC_or_nodes_operated": false,
+  "APK_published": false,
+  "focus_before_test": "WeChat foreground retained; authorized dedicated owner test phone, unrelated package not force-stopped",
+  "limitations": [
+    "Paused source intentionally has low fresh frame supply; the helper 3-second moving-media liveness criterion failed and is not waived.",
+    "Authenticated video counter growth during retained RX-completion plateaus rules out zero packet progress in those samples, not selective loss, source gaps, scheduling or relay head-of-line delay.",
+    "RX-complete stalls occur before codec input; later Surface/codec stalls may coexist and are not disproven for historical moving-video runs.",
+    "Same-phone sample timestamps are not atomic counter timestamps or exact datagram arrivals; prefix is not full-session coverage.",
+    "New native hash measured, not equated with old alpha8 binary.",
+    "No MTK V50, cellular, remote friend, acoustic/optical or actual one-hour soak acceptance."
+  ]
+}

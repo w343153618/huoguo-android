@@ -1396,7 +1396,7 @@
     }
   ],
   "boundaries": [
-    "Phone progress is complete-frame receive and codec callback, not raw packet ingress or optical display.",
+    "Phone helper progress is input-worker-admitted frames/callback, not RX-complete frames, packet ingress or optical display.",
     "Source paused endpoints bracket wider sequence; same format/ID does not prove continuous window content; overlay cost unmeasured.",
     "SF prefix/poll coverage retains unknown tails; callback target echo is not independent presentation.",
     "Host pipeline bins are wider than the phone/SF sampler window and do not prove same-frame association.",

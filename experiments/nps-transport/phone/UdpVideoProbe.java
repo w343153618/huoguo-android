@@ -1215,8 +1215,9 @@ public final class UdpVideoProbe extends Instrumentation {
     }
     /** Existing RX-owned one-second samples; export after receive ends only.
      * No live cross-thread sampling or per-packet clocks/JSON are introduced.
-     * t_ns is the iteration-start clock, before its receive/processing calls;
-     * it is NOT the exact arrival timestamp of the counters below.
+     * t_ns is refreshed after socket receive and primary body processing, before
+     * nativeExpire/audio/statistics and the later sample counter snapshots.
+     * It is NOT an atomic counter timestamp or exact packet arrival time.
      */
     static JSONObject numericTransportSamples(JSONObject report)throws Exception{
         final int capacity=64;

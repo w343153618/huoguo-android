@@ -97,7 +97,7 @@
   "renderer": "skiavk",
   "renderer_persistence": "2026-10-04 single M1 emulator boot maintenance completed: append-userspace-opt androidboot.debug.hwui.renderer=skiavk, boot/runtime skiavk and actual source Vulkan independently read back. RE skiaglthreaded remains. See M1_renderer_boot_deployment_20261004 and subsequent source observations; no performance gain inferred.",
   "final_health_evidence": "evidence/authenticated-lan-udp-followup-20261002/final-health.json",
-  "independent_experimental_app_sha256": "f5cf8bbf69f9e7fe1f3babb78700abc6f254ce41b71c75f324765d9fa945da85",
+  "independent_experimental_app_sha256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
   "latest_campaign": {
     "evidence": "evidence/overnight-20261002/real-video-summary.json",
     "real_video_sessions": 33,
@@ -540,7 +540,7 @@
       "no_runtime_security_checks_disabled": true
     }
   },
-  "independent_experimental_app_sha_scope": "Current alpha5/code36 same actual base.apk verified on OnePlus12 for startup and owner ENOBUFS normal-path observations; historical alpha4/alpha3/alpha1 fields retain their recorded evidence",
+  "independent_experimental_app_sha_scope": "Owner test phone installed same-signer frozen22f code40; source/runtime/release default unchanged. Public release remains alpha8/code39; paused public liveness failed.",
   "latest_owner_tailnet_media": {
     "report": "tailnet-owner-media-20261003.md",
     "evidence": "evidence/tailnet-owner-media-20261003-attempt7",
@@ -646,7 +646,7 @@
     }
   },
   "updated_evidence_utc": "2026-10-03T18:09:33.654400+00:00",
-  "independent_experimental_app_version": "1.31-alpha.5",
+  "independent_experimental_app_version": "1.31-alpha.9",
   "latest_surface_submit_experiment": {
     "evidence": "docs/evidence/surface-submit-20261003",
     "summary": "docs/surface-submit-real-video-20261003.json",
@@ -1053,7 +1053,7 @@
     "full_checks": 982,
     "next_factor": "Explicit deadline-bounded owned sender ENOBUFS handling; keep startupOFF and all original frame/priority/clock policies"
   },
-  "instrumentation_package_state": "matching helper removed after two real observations",
+  "instrumentation_package_state": "Matching frozen22f helper installed for this owner trial and uninstalled after actual cleanup.",
   "latest_enobufs_retry_observation": {
     "record": "docs/udp-enobufs-real-video-20261003.json",
     "same_apk_version": "1.31-alpha.5/code36",
@@ -2195,5 +2195,21 @@
       "udp_candidate": "success",
       "overall": "success"
     }
+  },
+  "M1_code40_paused_public_20261004": {
+    "record": "docs/code40-paused-public-ingress-readback-20261004.json",
+    "phone_installed_code": 40,
+    "phone_APK_sha256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "phone_JNI_sha256": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+    "public_release_unchanged": true,
+    "moving_video_test": false,
+    "driver_exit": 1,
+    "liveness_failed": true,
+    "normal_auth_exit_reconnect_and_audio_cleanup_verified": true,
+    "RX_columns_actual_readback": true,
+    "source_paused": true,
+    "credentials_read_or_exported": false,
+    "source_controls": 0,
+    "next": "Authenticated in-session source controls and per-frame assembly audit; no blind re-run or release."
   }
 }
