@@ -1,0 +1,63 @@
+{
+  "schema": "owner-media-normal-path-source-candidate-v1",
+  "source_base": "472048976ce53ed5fc86b3d262a90b8af10a35c5",
+  "new_actual_JVM_checks": 33,
+  "final_new_seconds": 3.121,
+  "prior_affected_checks": 40,
+  "prior_affected_seconds": 9.764,
+  "unique_affected_checks": 46,
+  "actual_threads_and_receiver_sources": true,
+  "Android_media_resources": "synthetic API substitutes; Probe owner wrapper extracted verbatim, receive body synthetic",
+  "initial_actual_audio_fixture_failures": {
+    "checks": 24,
+    "seconds": 2.191,
+    "failures": 4,
+    "reason": "nonnull drain was visible before epoch publication/start; closing boundary rejected, fixture now waits actual output-thread start"
+  },
+  "default": "no ownerPrepareResources callsite; normal App/helper paths nullable observation; no activation/transport/report or native qualifier",
+  "normal_behavior": "all original codec/audio/worker/socket/Activity close calls, joins, interrupts, reconnect/report/cancel policy unchanged",
+  "source_pins": {
+    "app/src/main/java/local/remoteandroid/direct/OwnerMediaObservation.java": "23b3b274909609f08c00391787579c3dca98efd3b4013367dd22e3e39b8e139a",
+    "experiments/nps-transport/phone/UdpVideoProbe.java": "c8c72302a457913b4441be4381128478287f920caa07b878599361aceef30016",
+    "experiments/nps-transport/phone/UdpAudioReceiver.java": "e4c4c66965348ebfc0579b179434506041683c18e50a5be5c39d1514450d42e1",
+    "tests/test_owner_media_observation.py": "0f4b9f033c15eccd19ec97a0a4d3ad3cb2e136fc215874f372c739db30014f15",
+    "tests/fixtures/OwnerMediaFixture.java": "3534e388e82b0c79897f581b90153e90dd5632eca7d7f64f1a1bbf345fb5d543",
+    "tests/fixtures/ActualOwnerAudioFixture.java": "4814b6ec0c8d1e052aaa16b283b27a83c2f0d723273a43492146affa49df072f",
+    "tests/fixtures/OwnerProbeWrapperFixture.java.txt": "efe4b8c8b8fe8dab63a8a66951a2c521f2492d270812e3bad3645806987fa35f",
+    "tests/test_udp_audio_retirement.py": "480187ab71e223fc11b5da53398a6913eb7fe1dd4ce0d3b9c10657c897eb3e14",
+    "tests/test_udp_completion_receipt.py": "bfec290d7ea76be40e1f2973419aab79ebfe7f537a0c21754e2a87c78400f8d3",
+    "tests/test_udp_completion_observer_boundary.py": "c475a83bf1eb14957adbef555dd2c1dc40e857a27b63dbaae8501fffebb94afe"
+  },
+  "API37": {
+    "full_exit": 0,
+    "changed_exit": 0,
+    "sources": 44,
+    "classes": 118,
+    "seconds": 2.174,
+    "pins_after_match": true,
+    "compile_only": true
+  },
+  "constraints": {
+    "command_seconds": 3,
+    "capture_end_seconds_max": 30,
+    "audio_epoch_diagnostic_bound": 64,
+    "whole_report_limit": 65536,
+    "ordinary_queue_buffer_deadlines_unchanged": true
+  },
+  "observations": [
+    "same actual onStart runner publishes graph before receive; cannot adopt existing PID/JSON/owner",
+    "actual audio input worker publishes codec/track/handoff/output/PCM Thread refs before starts; keep each epoch",
+    "normal close returned / audio claim / socket close / nativeDestroy returned / listener enter-return / run return / actual Thread.TERMINATED separate",
+    "tryLock only for media-owner writes; contention makes UNKNOWN without waiting/signalling",
+    "late preparation/repeated/foreign/phase/deadline/failure stay UNKNOWN; actual refs retained"
+  ],
+  "remaining_unknown": [
+    "partial unpublished codec/track allocations and actual release evidence",
+    "capturedAttempt/receiver/Surface/phoneclock/generation association and actual normal Activity codec/input cleanup",
+    "genuine AppUID-to-root native qualifier and operator/source/phone/server admission",
+    "matching package/PM/helper/input/independent absence/privileged writers/same-created FD retirement"
+  ],
+  "ART_native_permission_release": false,
+  "App_helper_JNI_build_install_publish": false,
+  "phone_actions_this_round": false
+}

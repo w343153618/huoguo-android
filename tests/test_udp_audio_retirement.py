@@ -100,6 +100,7 @@ class UdpAudioRetirementCheck(unittest.TestCase):
             sources.append(policy)
             sources.extend(ROOT/relative for relative in (
                 'experiments/nps-transport/phone/UdpAudioReceiver.java',
+                'app/src/main/java/local/remoteandroid/direct/OwnerMediaObservation.java',
                 'experiments/nps-transport/phone/UdpAudioAssembler.java',
                 'experiments/nps-transport/phone/BoundedPcmQueue.java',
                 'app/src/main/java/local/remoteandroid/direct/PlaybackClock.java',

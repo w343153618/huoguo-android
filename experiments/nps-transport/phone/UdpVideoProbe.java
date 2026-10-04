@@ -321,6 +321,17 @@ public final class UdpVideoProbe extends Instrumentation {
     private NpsPhysicalNetwork appPhysicalNetwork;
     private volatile boolean appCancelled;
     private volatile int appGeneration=-1;
+    private final java.util.concurrent.atomic.AtomicBoolean ownerStarted=new java.util.concurrent.atomic.AtomicBoolean();
+    private final java.util.concurrent.atomic.AtomicReference<OwnerMediaObservation> ownerResources=new java.util.concurrent.atomic.AtomicReference<>();
+    /** Same-package future cooperative caller only; no preparation callsite in
+     * normal App/helper paths. Must precede the actual runner start. */
+    OwnerMediaObservation ownerPrepareResources(long endNs){
+        if(ownerStarted.get())throw new IllegalStateException("owner_media_already_started");
+        OwnerMediaObservation value=OwnerMediaObservation.prepare(this,endNs);
+        if(!ownerResources.compareAndSet(null,value))throw new IllegalStateException("owner_media_already_prepared");
+        if(ownerStarted.get())value.invalidate();
+        return value;
+    }
     public interface AppListener { void complete(JSONObject numericReport, boolean failed, CompletionReceipt completion); }
     public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,AppListener listener)throws Exception {
         return startApp(activity,descriptor,false,listener);
@@ -364,6 +375,14 @@ public final class UdpVideoProbe extends Instrumentation {
     public void onCreate(Bundle args){super.onCreate(args);start();}
 
     public void onStart(){
+        ownerStarted.set(true);OwnerMediaObservation observation=ownerResources.get();
+        if(observation!=null)observation.started(this);
+        boolean normalReturn=false;
+        try{runOwnerStart();normalReturn=true;}
+        finally{if(observation!=null)observation.returned(this,normalReturn);}
+    }
+    private void runOwnerStart(){
+        OwnerMediaObservation observation=ownerResources.get();
         Bundle result=new Bundle();JSONObject report=new JSONObject();MainActivity activity=null;
         File keyFile=appActivity==null?new File(getTargetContext().getFilesDir(),SESSION):null;
         DatagramSocket socket=null;Session session=null;UdpVideoSecurity security=null;long nativeHandle=0;JSONObject appReport=null;
@@ -451,13 +470,15 @@ public final class UdpVideoProbe extends Instrumentation {
             socket.setReceiveBufferSize(4*1024*1024);socket.bind(new InetSocketAddress(session.bindPort));socket.setSoTimeout(20);
             report.put("socket_receive_buffer_bytes",socket.getReceiveBufferSize());
             security=new UdpVideoSecurity(session.key,session.tag);
-            if(session.audioEnabled)audioReceiver=new UdpAudioReceiver(activity,generation[0],session.boundedPcmQueueEnabled);
+            if(session.audioEnabled)audioReceiver=new UdpAudioReceiver(activity,generation[0],session.boundedPcmQueueEnabled,observation);
             if(session.touchEnabled){
                 DatagramSocket sharedSocket=socket;Session sharedSession=session;MainActivity target=activity;UdpVideoSecurity sharedSecurity=security;
                 mainSync(()->touchControl=new UdpTouchControl(target.screen,
                     plaintext->sendPayload(sharedSocket,sharedSession,sharedSecurity,plaintext)));
             }
             if(session.asyncVideo)startVideoWorker(activity,generation[0]);
+            if(observation!=null)observation.published(this,activity,generation[0],socket,nativeHandle,
+                audioReceiver,touchControl,videoInbox,videoWorker);
             receive(activity,generation[0],socket,session,security,nativeHandle);
             completed="receive_window_complete";
             finishVideoWorker(true);checkVideoWorker();
@@ -473,8 +494,10 @@ public final class UdpVideoProbe extends Instrumentation {
             result.putString("failure","UdpVideoProbe "+failure.getClass().getSimpleName());
             try{report.put("failure_class",failure.getClass().getSimpleName());}catch(Exception ignored){}
         }finally{
+            if(observation!=null)observation.closing(this);
+            boolean observedVideoCloseReturned=false;
             completionEndReason=CompletionReceipt.fromLocalExit(sessionEndReasonCode,sessionLimitReached,appCancelled,runnerFailed);
-            try{finishVideoWorker(false);checkVideoWorker();}
+            try{finishVideoWorker(false);checkVideoWorker();observedVideoCloseReturned=true;}
             catch(Throwable failure){result.putString("failure","UdpVideoProbe video worker "+failure.getClass().getSimpleName());
                 try{report.put("video_worker_failure_class",failure.getClass().getSimpleName());}catch(Exception ignored){}}
             if(touchControl!=null){try{touchControl.close();}catch(Exception ignored){}}
@@ -484,6 +507,7 @@ public final class UdpVideoProbe extends Instrumentation {
                 for(int i=0;i<3;i++)try{sendPayload(socket,session,security,"STOP".getBytes(StandardCharsets.US_ASCII));}catch(Exception ignored){}
             }
             if(socket!=null)socket.close();
+            if(observation!=null)observation.closeReturns(this,observedVideoCloseReturned,audioCleanupState,socket!=null);
             try{
                 report.put("last_completed_stage",completed).put("start_ns",startNs).put("first_server_packet_ns",firstServerNs)
                     .put("session_limit_reached",sessionLimitReached?1:0).put("session_end_reason_code",sessionEndReasonCode).put("receive_end_ns",endNs).put("observation_end_ns",System.nanoTime())
@@ -565,7 +589,8 @@ public final class UdpVideoProbe extends Instrumentation {
                 else appReport=numericAppSummary(report);
             }catch(Throwable failure){appReportFailure=failure;result.putString("failure","UdpVideoProbe report "+failure.getClass().getSimpleName());}
             finally{
-                if(nativeHandle!=0)NativeUdpFec.nativeDestroy(nativeHandle);
+                if(nativeHandle!=0){NativeUdpFec.nativeDestroy(nativeHandle);
+                    if(observation!=null)observation.nativeDestroyed(this,nativeHandle);}
                 if(session!=null)Arrays.fill(session.key,(byte)0);
                 // Fixed temporary test key file only. Never delete arbitrary app files.
                 if(keyFile!=null&&keyFile.exists()&&!keyFile.delete())result.putString("key_cleanup","fixed_session_delete_failed");
@@ -583,8 +608,12 @@ public final class UdpVideoProbe extends Instrumentation {
             }
         }
         if(appActivity==null)finish(result.containsKey("failure")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
-        else if(appListener!=null)appListener.complete(appReport==null?new JSONObject():appReport,result.containsKey("failure"),
-            CompletionReceipt.afterReport(audioCleanupState,appReport,appReportFailure,completionEndReason,session==null?0:session.seconds));
+        else if(appListener!=null){
+            if(observation!=null)observation.listener(this,false);
+            appListener.complete(appReport==null?new JSONObject():appReport,result.containsKey("failure"),
+                CompletionReceipt.afterReport(audioCleanupState,appReport,appReportFailure,completionEndReason,session==null?0:session.seconds));
+            if(observation!=null)observation.listener(this,true);
+        }
     }
 
     /** Window-only experiment request; never changes global display settings. */

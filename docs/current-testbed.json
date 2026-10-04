@@ -5593,6 +5593,43 @@
     },
     "hour_fixture_repair_checks": 9,
     "hour_fixture_repair_seconds": 4.95,
-    "new_CI_pending": true
+    "new_CI_pending": false,
+    "exact_source_CI": {
+      "sha": "472048976ce53ed5fc86b3d262a90b8af10a35c5",
+      "run": 37241448842,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "UDP": "success",
+      "build_job": 111550814817,
+      "UDP_job": 111551578489,
+      "Linux_tests": 2329,
+      "Linux_seconds": 158.015,
+      "existing_skips": 11,
+      "actual_test_summaries": [
+        [
+          "2329",
+          "158.015"
+        ]
+      ],
+      "verdicts": [
+        "OK (skipped=11)"
+      ],
+      "build_log_SHA256": "df8345d32b462b2079b77d91dd562c4ee9e7c6816414cac240b11729d5a0424c",
+      "build_log_bytes": 76645,
+      "independent_exact_source_and_jobs_verified": true,
+      "original_signer_APK_release": false
+    }
+  },
+  "owner_Probe_resource_observation_candidate_20261005": {
+    "evidence": "docs/owner-Probe-resource-observation-candidate-20261005.json",
+    "new_checks": 33,
+    "new_seconds": 3.121,
+    "unique_affected_checks": 46,
+    "API37_compile_only": true,
+    "default_OFF_unwired": true,
+    "normal_cleanup_permission_release_qualified": false,
+    "phone_actions": false,
+    "next": "allocated/unpublished resources + actual normal release evidence + captured Attempt association"
   }
 }

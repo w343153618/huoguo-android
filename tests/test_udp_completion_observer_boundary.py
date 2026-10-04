@@ -96,7 +96,7 @@ class CompletionObserverBoundaryChecks(unittest.TestCase):
                    .split('    static int closeOwnedAudio(', 1)[0])
         listener = source.split('    public interface AppListener {', 1)[1].split('}', 1)[0]
         tail = ('if(appListener!=null)appListener.complete('
-                + source.split('else if(appListener!=null)appListener.complete(', 1)[1]
+                + source.split('            appListener.complete(', 1)[1]
                 .split(';', 1)[0] + ';')
         fixture = '''package local.remoteandroid.direct;
 import org.json.JSONObject;

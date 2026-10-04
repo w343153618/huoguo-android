@@ -113,5 +113,32 @@
     "type_only_dependency": "unconstructible fixture-only OwnerInputObservation, hour-policy methods never activate it; actual observer implementation remains separately tested in39 and API37 compile",
     "workflow_guards_production_source_deadlines_skips_changed": false,
     "new_CI_required": true
+  },
+  "CI": "accepted_exact_repair_source_only_no_APK_release",
+  "exact_source_CI": {
+    "sha": "472048976ce53ed5fc86b3d262a90b8af10a35c5",
+    "run": 37241448842,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP": "success",
+    "build_job": 111550814817,
+    "UDP_job": 111551578489,
+    "Linux_tests": 2329,
+    "Linux_seconds": 158.015,
+    "existing_skips": 11,
+    "actual_test_summaries": [
+      [
+        "2329",
+        "158.015"
+      ]
+    ],
+    "verdicts": [
+      "OK (skipped=11)"
+    ],
+    "build_log_SHA256": "df8345d32b462b2079b77d91dd562c4ee9e7c6816414cac240b11729d5a0424c",
+    "build_log_bytes": 76645,
+    "independent_exact_source_and_jobs_verified": true,
+    "original_signer_APK_release": false
   }
 }

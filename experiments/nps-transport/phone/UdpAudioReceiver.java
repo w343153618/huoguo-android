@@ -22,6 +22,7 @@ import org.json.JSONObject;
  */
 final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup {
     private final MainActivity activity;private final int generation;
+    private final OwnerMediaObservation ownerObservation;
     private final UdpAudioAssembler assembler=new UdpAudioAssembler();
     private final ArrayBlockingQueue<UdpAudioAssembler.Frame> queue=new ArrayBlockingQueue<>(8);
     private final Thread worker;private volatile Thread drain,pcmWorker;
@@ -113,9 +114,13 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
     /** Existing callers retain the original codec-held output scheduler. */
     UdpAudioReceiver(MainActivity activity,int generation){this(activity,generation,false);}
     UdpAudioReceiver(MainActivity activity,int generation,boolean boundedPcmQueueEnabled){
+        this(activity,generation,boundedPcmQueueEnabled,null);
+    }
+    UdpAudioReceiver(MainActivity activity,int generation,boolean boundedPcmQueueEnabled,OwnerMediaObservation observation){
+        ownerObservation=observation;
         this.activity=activity;this.generation=generation;
         this.boundedPcmQueueEnabled=boundedPcmQueueEnabled;
-        worker=new Thread(this::decode,"udp-audio-input");worker.start();
+        worker=new Thread(this::decode,"udp-audio-input");if(ownerObservation!=null)ownerObservation.audioCreated(this,worker);worker.start();
     }
     private boolean active(){return !closed&&activity.running&&activity.generation==generation;}
     synchronized void accept(byte[] plaintext,long nowNs){
@@ -190,13 +195,16 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
                     synchronized(pcmQueueTotals){pcmHandoff=handoff;}
                     pcmWorker=new Thread(()->playQueuedPcm(owned,track,epoch,handoff),"udp-audio-pcm");
                     drain=new Thread(()->copyDecodedPcm(owned,handoff),"udp-audio-output");
+                    if(ownerObservation!=null)ownerObservation.audioEpoch(this,owned,track,handoff,drain,pcmWorker);
                     pcmWorker.start();drain.start();
                 }
             }else{
                 decoder=next;output=nextOutput;activity.audio=next;activity.track=nextOutput;
                 config=asc.clone();configured=true;lastInputPts=-1;decoderName=next.getName();configurations.incrementAndGet();
                 int epoch=activity.presentationMetrics.resetAudio();
-                drain=new Thread(()->render(owned,track,epoch),"udp-audio-output");drain.start();
+                drain=new Thread(()->render(owned,track,epoch),"udp-audio-output");
+                if(ownerObservation!=null)ownerObservation.audioEpoch(this,owned,track,null,drain,null);
+                drain.start();
             }
         }catch(Throwable error){
             if(boundedPcmQueueEnabled&&ownershipTransferred){releaseQueuedCurrent();}
@@ -444,7 +452,11 @@ final class UdpAudioReceiver implements AutoCloseable,UdpVideoProbe.AudioCleanup
             return UdpVideoProbe.CompletionReceipt.AUDIO_CONFIRMED;
         }
     }
-    public void close(){closeFinished=false;closed=true;worker.interrupt();
+    public void close(){
+        if(ownerObservation!=null)ownerObservation.audioClose(this,false);
+        closeFinished=false;closed=true;worker.interrupt();
         if(!boundedPcmQueueEnabled){try{worker.join(500);}catch(InterruptedException ignored){}}
-        queue.clear();releaseCurrent();if(config!=null)Arrays.fill(config,(byte)0);closeFinished=true;}
+        queue.clear();releaseCurrent();if(config!=null)Arrays.fill(config,(byte)0);closeFinished=true;
+        if(ownerObservation!=null)ownerObservation.audioClose(this,true);}
+
 }

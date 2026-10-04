@@ -193,6 +193,7 @@ class CompletionReceiptChecks(unittest.TestCase):
         cls.write(audio_folder, 'local/remoteandroid/direct/UdpVideoProbe.java', 'package local.remoteandroid.direct;import org.json.JSONObject;final class UdpVideoProbe {'+policy+'}')
         cls.write(audio_folder, 'ActualAudioCompletionCheck.java', AUDIO_HARNESS)
         cls.compile(audio_folder, [ROOT/path for path in ('experiments/nps-transport/phone/UdpAudioReceiver.java',
+                'app/src/main/java/local/remoteandroid/direct/OwnerMediaObservation.java',
                      'experiments/nps-transport/phone/UdpAudioAssembler.java', 'experiments/nps-transport/phone/BoundedPcmQueue.java',
                      'app/src/main/java/local/remoteandroid/direct/PlaybackClock.java',
                      'app/src/main/java/local/remoteandroid/direct/AudioSubmissionClock.java', 'app/src/main/java/local/remoteandroid/direct/PcmGain.java')])
