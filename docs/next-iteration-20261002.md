@@ -1,5 +1,29 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF helper FD retirement kernel:23actualhostchecks within
+61affected/6.591s PASS, arm64/API30 NDK build/ELF/nohosthooks verified only.
+No Android stage/run/PM/phone. `unlinkat` is not atomic compare-and-unlink:
+old shell-writable flat tmp binding remains incompatible, unchanged/nonlive.
+NEW layout requires captured root/nonowner-nonwritable `/data/local` base plus
+root:shell0710 parent, shell0700 child, rootseal+rehash. No base chmod. Trusted
+caller must exclude privileged writers and remaining writeFDs; mode/hash are
+not atomic holds. Wrong/foreign/raced/partial scope refuses; no recursive rm.
+Receipt never authorizes PM/ownership/release. Next NEW protected staging/readback
+and owned remote exit/writer receipts then wholebinding, not partial execution.
+Phoneonce unavailable/no repoll/rootexecnull. Oldf0/d043 first on actual return.
+New source needs own exact CI;5bbe accepted only for5bbe. No APK/release/default
+change. Read helper-FD-retirement candidate doc/json and newest privatecheckpoint.
+
+Exact5bbeb767/run37209710122 independently overall/build/UDPsuccess2018/86.098/11.
+No repeat. NEW private helper receipt binding13actualhost/syntheticAndroid checks
+PASS1.914s, closedstage/push/install/helddriverEOF/uninstall and exactenv. No
+readoption of replaced package, timeout nosignals/heldclient. No scope retirement;
+idle-for-release always refuses. Not complete liveinstaller/rooteligibility or
+phone/PM. Next owned FD-based exact scope retirement/unknown receipts+fixtures,
+then NEW whole supervisor/dependency/root/source/phone binding. Oldf0/d043 first
+when phone actually returns; once unavailable/no repoll. Rootexecnull/oldpins
+unchanged. Clouddocs localappend next meaningfulsourcepush, not doc-onlyCI.
+
 NEW default-OFF helper scope/user0 package readonly receipts and actual held-driver
 exit/EOF gate implemented:19new/63affected PASS4.488s. Synthetic Android metadata,
 actual host driver/live/overflow/pipe-inheritance/env fixtures and shell syntax,

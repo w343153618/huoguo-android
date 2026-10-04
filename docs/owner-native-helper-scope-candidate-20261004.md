@@ -67,3 +67,27 @@ Exact preceding1fa0b099/run37207680721 was independently overall/build/UDPsucces
 Linux1999tests/68.080s/11existing skips. This new source requires its own CI; no
 old run was repeated or borrowed. Source push and cloud checks are not a signed
 APK release or a new moving-public performance result.
+
+Exact5bbeb767411a335781f5eaeef125dd8b5a5e2250/run37209710122 now independently
+completed/overall/build/UDPsuccess. The actual Linux build log records2018tests/
+86.098s/11existing skips. Do not repeat or apply this result to a later source.
+Cloud readback joins the next meaningful source push, without doc-only CI.
+
+The immediate NEW private follow-on binds the unchanged copied actual mutation
+client kernel to concrete scope/package/phone receipts and a held coordinator
+driver. Thirteen host-child/synthetic-Android checks passed1.914s after an initial
+11checks/1.737s. Stage→push→install→owned-driver-exit/EOF→uninstall observations
+have a closed order. Preexisting scopes/helper, directory/file/package inode
+changes, a running/foreign driver, unknown post-readback or checkpoint refuse.
+Only the same actual client can be collected; repeated collection cannot adopt
+a later package replacement. Both readonly clients and mutations require the
+exact isolated environment. Timeout retains the actual client without signals.
+This is not real ADB/PM/phone or a complete supervisor, and is outside5bbe CI.
+
+Even normal helper absence retains its staging scope. There is no scope-removal
+implementation, and idle-for-release always refuses. The next independent work
+is exact owned remote FD-based scope retirement and uncertainty receipts, with
+fixtures before Android binding, then NEW whole eligibility/dependency review.
+Root/operator/original/formal/source/device callbacks in these fixtures are
+synthetic; no partial live execution is permitted. Old freezes and the old6f
+ambient binding were not edited or executed.

@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Implement a separate explicit bounded M1 LAN coordinator/trusted worker factory and private eligibility handoff using NEW full-source freeze; keep all public/persistent/Tailnet defaults OFF. When phone actually returns, first use unchanged reviewed f0/d043 frame-only qualification, not this uninstalled 3d/new helper.",
+  "next_source_task": "NEW protected-layout stage creation/readback/writer-quiescence and exact owned remote process receipts, then NEW complete supervisor/dependency/environment/operator/source/phone/admission binding. No live partial binding. On actual phone availability first unchanged reviewed f0/d043 authenticated frame-only.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -3814,7 +3814,159 @@
       "seconds": 68.08,
       "existing_skips": 11
     },
-    "this_candidate_CI": null,
-    "next": "Bind actual held mutation clients/package/scope ownership and supervisor cleanup in NEW whole binding; no partial kernel live execution. Old reviewed f0/d043 first when phone is available."
+    "this_candidate_CI": {
+      "SHA": "5bbeb767411a335781f5eaeef125dd8b5a5e2250",
+      "run": 37209710122,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 2018,
+      "seconds": 86.098,
+      "existing_skips": 11
+    },
+    "next": "Bind actual held mutation clients/package/scope ownership and supervisor cleanup in NEW whole binding; no partial kernel live execution. Old reviewed f0/d043 first when phone is available.",
+    "private_followon_binding": {
+      "final_checks": 13,
+      "final_seconds": 1.914,
+      "status": "private_partial_readback_binding_not_live_installer_or_complete_supervisor",
+      "validation": "actual bounded host mutation-client stand-ins plus synthetic Android ScopeProbes and phone/root callbacks; actual host coordinator driver/pipe checks",
+      "scope_retirement_implemented": false,
+      "idle_for_release_unconditionally_refuses": true,
+      "full_actual_root_operator_admission_source_deps_and_device_binding_verified": false,
+      "next": "Design/implement owned remote FD-based exact scope retirement and uncertainty receipts/fixtures; then NEW whole supervisor eligibility/dependency/environment binding. No partial live execution. Old unchanged f0/d043 first on actual phone availability."
+    }
+  },
+  "owner_native_helper_FD_retirement_candidate_20261004": {
+    "schema": "owner-native-helper-FD-retirement-candidate-v1",
+    "status": "default_OFF_source_actual_host_FD_fixtures_and_Android_compile_only",
+    "default_enabled": false,
+    "source_based_on_commit": "5bbeb767411a335781f5eaeef125dd8b5a5e2250",
+    "source_SHA256": {
+      "experiments/moonlight-v2/source-snapshot/helper_scope_retire.c": "ab1c6f2e9460c8a0023c07f06662f5988f34cb44fb88a0d9f08e39570e3bb754",
+      "scripts/probes/build_helper_scope_retire.py": "2e46b730d041779c7f08a3c6966b25e8904f0c9e45507e1ce5965d8f6ff29259",
+      "tests/test_helper_scope_retire.py": "c8916b5c1b33d8fde482a505e0196c17228fdf32e4ac614a4495170cd5207f29"
+    },
+    "new_checks": 23,
+    "new_checks_seconds": null,
+    "affected_checks": 61,
+    "affected_seconds": 6.591,
+    "initial_fixture_argument_failure": {
+      "cause": "closed basename prefix length miscount; rejected before any scope operation",
+      "resolved": true,
+      "real_device_or_production_failure": false
+    },
+    "actual_host_scope_and_FD_operations": true,
+    "host_fixture_uses_current_UID_GID_not_Android_root_shell_DAC": true,
+    "Android_compile": {
+      "schema": "helper-scope-retirement-build-v1",
+      "source_sha256": "ab1c6f2e9460c8a0023c07f06662f5988f34cb44fb88a0d9f08e39570e3bb754",
+      "compiler_sha256": "cf2d40be93fb6051d3a66f5d6bdd24ccbe6595913040460f3607a241d562af76",
+      "binary_sha256": "b33a84c03638410d075ee335366cb1c049713493ff1b9cedfe541ff2929861a8",
+      "binary_bytes": 18176,
+      "NDK_revision": "29.0.14206865",
+      "API": 30,
+      "ABI": "arm64-v8a",
+      "ELF_AArch64_verified": true,
+      "fixture_macro_enabled": false,
+      "required_base": "/data/local",
+      "old_shell_writable_tmp_scope_compatible": false,
+      "remote_DAC_or_PM_verified": false,
+      "device_operations": 0,
+      "remote_deletions": 0,
+      "App_helper_JNI_artifacts_changed": false,
+      "reservation_release_authorized": false
+    },
+    "Android_binary_staged_or_executed": false,
+    "required_NEW_layout": {
+      "base": "/data/local",
+      "base_uid": 0,
+      "base_nonowner_write_or_special_mode_bits_allowed": false,
+      "base_permissions_modified": false,
+      "protected_parent": "/data/local/huoguo-helper-root-<24-lowercase-hex>",
+      "parent_uid_gid": [
+        0,
+        2000
+      ],
+      "parent_mode": "0710",
+      "child_name": "stage",
+      "child_initial_uid_gid": [
+        2000,
+        2000
+      ],
+      "child_initial_mode": "0700",
+      "APK_name": "owned.apk",
+      "APK_initial_uid_gid": [
+        2000,
+        2000
+      ],
+      "APK_initial_mode": "0600",
+      "APK_SHA256": "28db54c6582fa6c855cb20eeb2163b2aa9bcccf8d4d675d111a8c98f54a9e425",
+      "APK_bytes": 86419,
+      "captured_base_parent_child_file_dev_inode_required": true,
+      "nofollow_FDs_and_closed_entries_required": true,
+      "root_sealing_then_rehash_and_named_inode_brackets": true,
+      "old_flat_tmp_scope_or_private_binding_compatible": false
+    },
+    "retirement_contract": {
+      "FD_relative_unlink_is_atomic_compare_and_unlink": false,
+      "concurrent_privileged_actor_excluded_by_trusted_caller_required": true,
+      "remaining_writable_FDs_excluded_by_independent_caller_required": true,
+      "chmod_revokes_existing_write_FD": false,
+      "partial_progress_and_possible_scope_preserved_on_failure": true,
+      "root_base_remains_and_unrelated_entries_untouched": true,
+      "internal_cooperative_budget_ms": 1800,
+      "caller_single_command_budget_seconds_unchanged": 3,
+      "filesystem_syscalls_have_absolute_wallclock_bound": false,
+      "requires_complete_NEW_installer_and_owned_remote_lifecycle_binding": true,
+      "JSON_or_metadata_grants_operator_install_ownership_PM_quiescence_or_release": false
+    },
+    "fixture_coverage": [
+      "default inert production/host builds",
+      "SHA256 vs independent hashlib block/padding/4KiB/max boundaries",
+      "all four dev/inode brackets",
+      "writable base/parent rejection",
+      "wrong mode/hash/size",
+      "extra entries retained",
+      "symlink base/parent/child file and hardlink rejection",
+      "FIFO nonblocking rejection",
+      "stage replacement retained",
+      "file replacement retained",
+      "same inode growth after seal bounded and retained",
+      "foreign entry after partial unlink retained"
+    ],
+    "phone_readback": {
+      "get_state_attempts_this_turn": 1,
+      "result": "device-not-found",
+      "repoll": false,
+      "fresh_installed_or_process_absence_known": false
+    },
+    "live_operations": {
+      "phone_mutations": 0,
+      "helper_install_uninstall": 0,
+      "auth_media_RPC_UI_input": 0,
+      "remote_scope_changes": 0,
+      "reservation_started": false,
+      "original_or_NPS_signals": 0
+    },
+    "App_helper_JNI_or_release_changed": false,
+    "old_private_flat_scope_binding_unchanged_and_still_not_live": true,
+    "preceding_exact_CI": {
+      "commit": "5bbeb767411a335781f5eaeef125dd8b5a5e2250",
+      "run_id": 37209710122,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 2018,
+      "Linux_seconds": 86.098,
+      "existing_skips": 11,
+      "covers_this_NEW_source": false
+    },
+    "this_candidate_CI": {
+      "status": "not_yet_pushed_or_cloud_verified"
+    },
+    "next": "NEW protected-layout stage creation/readback/writer-quiescence and exact owned remote process receipts, then NEW complete supervisor/dependency/environment/operator/source/phone/admission binding. No live partial binding. On actual phone availability first unchanged reviewed f0/d043 authenticated frame-only.",
+    "preceding_22_check_seconds": 1.79,
+    "preceding_60_affected_seconds": 5.304
   }
 }

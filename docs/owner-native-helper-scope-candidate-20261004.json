@@ -72,6 +72,26 @@
     "seconds": 68.08,
     "existing_skips": 11
   },
-  "this_candidate_CI": null,
-  "next": "Bind actual held mutation clients/package/scope ownership and supervisor cleanup in NEW whole binding; no partial kernel live execution. Old reviewed f0/d043 first when phone is available."
+  "this_candidate_CI": {
+    "SHA": "5bbeb767411a335781f5eaeef125dd8b5a5e2250",
+    "run": 37209710122,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 2018,
+    "seconds": 86.098,
+    "existing_skips": 11
+  },
+  "next": "Bind actual held mutation clients/package/scope ownership and supervisor cleanup in NEW whole binding; no partial kernel live execution. Old reviewed f0/d043 first when phone is available.",
+  "private_followon_binding": {
+    "final_checks": 13,
+    "final_seconds": 1.914,
+    "status": "private_partial_readback_binding_not_live_installer_or_complete_supervisor",
+    "validation": "actual bounded host mutation-client stand-ins plus synthetic Android ScopeProbes and phone/root callbacks; actual host coordinator driver/pipe checks",
+    "scope_retirement_implemented": false,
+    "idle_for_release_unconditionally_refuses": true,
+    "full_actual_root_operator_admission_source_deps_and_device_binding_verified": false,
+    "next": "Design/implement owned remote FD-based exact scope retirement and uncertainty receipts/fixtures; then NEW whole supervisor eligibility/dependency/environment binding. No partial live execution. Old unchanged f0/d043 first on actual phone availability."
+  }
 }
