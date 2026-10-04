@@ -198,7 +198,36 @@ def handler_for(registry, worker_factory, host, busy=formal_busy, *, scope=None)
     return Handler
 
 
-def main():
+def registry_and_factory(args, host, scope, *, owner_native_window=None,
+                         registry_type=None, worker_type=None, busy=None):
+    """Bind the same trusted selection to registry and its owned worker factory.
+
+    This constructor is not an operator/admission lease. Default CLI paths do
+    not import or select the private diagnostic adapter.
+    """
+    plan = None
+    registry_type = UdpLanSessions if registry_type is None else registry_type
+    worker_type = LanMediaWorker if worker_type is None else worker_type
+    busy = formal_busy if busy is None else busy
+    if owner_native_window is not None:
+        from scripts.probes.owner_native_window import gateway_plan
+        plan = gateway_plan(args, owner_native_window)
+        if host != args.host or scope.name != 'lan':
+            raise ValueError('native_window_verified_gateway_scope_required')
+    registry = registry_type(host, args.udp_port, network_scope=scope.name,
+        scope_guard=scope.healthy, allow_owner_surface_submit_lead=args.allow_owner_surface_submit_lead,
+        owner_native_diagnostic_plan=plan)
+    def factory(config, peer):
+        return worker_type(config, peer, host, args.interface, args.runtime,
+            args.packetizer, args.native_encoder, registry, args.evidence_dir, busy=busy,
+            enobufs_retry_enabled=args.allow_owner_enobufs_retry, capture_trace_dir=args.capture_trace_dir,
+            raw_queue_policy=args.owner_raw_queue_policy, raw_submit_fps=args.owner_raw_submit_fps,
+            owner_native_diagnostic_plan=plan,
+            **({'guest_serial':'emulator-5556', 'guest_avd':'RemoteAndroid17Compare'} if plan is not None else {}))
+    return registry, factory
+
+
+def main(*, owner_native_window=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', required=True)
     parser.add_argument('--interface', required=True)
@@ -222,6 +251,13 @@ def main():
                         help='LAN trace experiment only: raw-input budget; native/phone FPS are unchanged')
     parser.add_argument('--max-runtime', type=int, default=600)
     args = parser.parse_args()
+    if owner_native_window is not None:
+        # Explicit private Python call only; no corresponding CLI/HTTP/env flag.
+        from scripts.probes.owner_native_window import gateway_plan
+        try:
+            gateway_plan(args, owner_native_window)
+        except ValueError:
+            parser.error('Explicit finite M1 LAN native window options required')
     if args.https_port != 45560 or args.udp_port != 45963 or not 30 <= args.max_runtime <= 3600:
         parser.error('fixed isolated ports and bounded lifetime required')
     try:
@@ -240,17 +276,7 @@ def main():
             host = scope.host
     except (ValueError, ScopeUnavailable) as error:
         parser.error(str(error))
-    registry = UdpLanSessions(host, args.udp_port, network_scope=scope.name,
-                              scope_guard=scope.healthy,
-                              allow_owner_surface_submit_lead=args.allow_owner_surface_submit_lead)
-    def factory(config, peer):
-        return LanMediaWorker(config, peer, host, args.interface, args.runtime,
-                              args.packetizer, args.native_encoder, registry,
-                              args.evidence_dir, busy=formal_busy,
-                              enobufs_retry_enabled=args.allow_owner_enobufs_retry,
-                              capture_trace_dir=args.capture_trace_dir,
-                              raw_queue_policy=args.owner_raw_queue_policy,
-                              raw_submit_fps=args.owner_raw_submit_fps)
+    registry, factory = registry_and_factory(args, host, scope, owner_native_window=owner_native_window)
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(CERT, KEY)
@@ -290,6 +316,11 @@ def main():
                       'owner_raw_queue_policy_requested': args.owner_raw_queue_policy,
                       'owner_raw_submit_fps_requested': args.owner_raw_submit_fps,
                       'owner_enobufs_retry_enabled': args.allow_owner_enobufs_retry}), flush=True)
+    if owner_native_window is not None:
+        print(json.dumps({'event':'owner_native_window_selection', 'diagnostic_events_requested':True,
+            'descriptor_seconds_ceiling':owner_native_window.plan.sample_seconds,
+            'process_seconds_ceiling':owner_native_window.plan.process_max_seconds,
+            'operator_or_server_lease_established_by_this_record':False}), flush=True)
     try:
         server.serve_forever(poll_interval=.1)
     finally:
@@ -298,8 +329,19 @@ def main():
             server.server_close()
         finally:
             outcome = shutdown_registry(registry)
-            print(json.dumps(outcome), flush=True)
-            thread.join(timeout=2)
+            if owner_native_window is not None:
+                thread.join(timeout=2)
+                outcome['owned_reaper_exit_confirmed'] = not thread.is_alive()
+                if not outcome['owned_reaper_exit_confirmed']:
+                    outcome['quiescence_confirmed'] = False
+                    outcome['reason'] = 'udp_native_reaper_exit_unconfirmed'
+                elif outcome.get('stop_failures',0) != 0:
+                    outcome['quiescence_confirmed'] = False
+                    outcome['reason'] = 'udp_cleanup_failed'
+                print(json.dumps(outcome), flush=True)
+            else:
+                print(json.dumps(outcome), flush=True)
+                thread.join(timeout=2)
             if not outcome['quiescence_confirmed']:
                 raise SystemExit(1)
 

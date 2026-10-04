@@ -3374,6 +3374,72 @@
       "fixture_EditText_String_shadow",
       "AAPT_namespace_pattern_mismatch"
     ],
-    "cloud_CI_for_this_source": "not_pushed_yet"
+    "cloud_CI_for_this_source": {
+      "sha": "ec15e4e60624cf5cfd49bb7d02efb1acd963dfd8",
+      "run": 37200892526,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1948,
+      "Linux_elapsed_seconds": 82.167,
+      "existing_platform_skips": 11,
+      "independently_read_back": true
+    }
+  },
+  "owner_native_finite_gateway_factory_20261004": {
+    "schema": 1,
+    "candidate": "default_OFF_trusted_M1_LAN_finite_gateway_factory",
+    "checked_at_utc": "2026-10-04T12:16:48.049801+00:00",
+    "new_checks": 7,
+    "affected_checks": 64,
+    "affected_elapsed_seconds": 0.594,
+    "checks_passed": true,
+    "fake_TLS_and_server": true,
+    "actual_empty_registry_and_owned_reaper_thread": true,
+    "real_listener_Popen_or_phone": false,
+    "registry_and_worker_same_local_Plan": true,
+    "local_Window_only": true,
+    "no_CLI_HTTP_environment_account_selection": true,
+    "M1_guest": "emulator-5556/RemoteAndroid17Compare",
+    "physical_host_required": "192.168.9.128",
+    "interface_allowlist": [
+      "en7",
+      "en0"
+    ],
+    "HTTPS_port": 45560,
+    "media_UDP_port": 45963,
+    "process_seconds_equal_Plan": true,
+    "process_bounds_seconds": [
+      30,
+      3600
+    ],
+    "descriptor_seconds_required": 30,
+    "helper_sha256": "28db54c6582fa6c855cb20eeb2163b2aa9bcccf8d4d675d111a8c98f54a9e425",
+    "helper_unchanged_installed": false,
+    "unconfirmed_owned_reaper_requires_nonzero_process_and_false_quiescence": true,
+    "original_public_Tailnet_NPS_defaults_unchanged": true,
+    "actual_operator_admission_and_server_lease_verified": false,
+    "actual_gateway_coordinator_Popen_implemented": false,
+    "LAN_saved_credential_verified_on_phone": false,
+    "ART_native_events_or_overhead_verified": false,
+    "phone_get_state_this_turn": "device_not_found",
+    "device_queries_this_turn": 1,
+    "source_pins": {
+      "udp_lan_gateway.py": "92d883cbc044276ab054085e70ddc33829b9d79c4cf03956a319bc0fde2d9487",
+      "scripts/probes/owner_native_window.py": "3e8701d163e238255b992366f191dbbedadbd237e7de00a259e65c9ad99ae07c",
+      "tests/test_owner_native_gateway_factory.py": "760bf3e78b20ac2e230639c44b990bab24d09599ee9c76adedb3e1ed4b9f3e6e"
+    },
+    "cloud_CI_for_this_source": "not_pushed_yet",
+    "preceding_single_window_exact_CI": {
+      "sha": "ec15e4e60624cf5cfd49bb7d02efb1acd963dfd8",
+      "run": 37200892526,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1948,
+      "Linux_elapsed_seconds": 82.167,
+      "existing_platform_skips": 11,
+      "independently_read_back": true
+    }
   }
 }

@@ -1,5 +1,21 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF finite M1 LAN gateway factory binding is implemented.7new/
+64affected inert checks PASS0.594s, fake TLS/server with actual empty registry/
+owned reaper thread. Same explicit local Window/Plan reaches registry and M1
+worker, no CLI/HTTP/env/account opt-in, exact physical45560/45963/finite budget,
+no rawtrace/lead/retry/queue/FPS override. Unique native shutdown records follow
+actual reaper join; unconfirmed thread => false quiescence/nonzero exit. Not
+actual Popen/admission/server lease/ART/phone acceptance. Helper28db unchanged,
+no install/App release. Read owner-native-finite-gateway-factory-20261004.md/json.
+Exact preceding ec15/run37200892526 independently overall/build/UDPsuccess,
+Linux1948/82.167s/11existing skips; new factory source needs its own CI. NEW full
+source freeze/private finite coordinator next; do not edit old84b/f0 freezes.
+Phone's only get-state this turn device-not-found; no live actions. Old reviewed
+f0/d043 frame-only first when fresh phone returns, then newartifact/LAN savedUI
+credential/currentAttempt/operator/formal/original/continuous reserve admission.
+
+
 NEW default-OFF M1 LAN saved-UI/single-window helper/driver is implemented.
 11new/128affected/API37/JVM PASS7.887s; original-signed helper28db54c6/86419B
 against106 unchanged exact3d App classes, not installed. Actual LAN restore only;

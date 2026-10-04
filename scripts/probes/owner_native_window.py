@@ -50,6 +50,27 @@ def select(args, window=None):
     return True
 
 
+def gateway_plan(args, window=None):
+    """Trusted constructor selection only, before TLS/files/listeners.
+
+    A coordinator still must own the actual finite gateway Popen and admission;
+    a matching Window is never that permission or a shutdown receipt.
+    """
+    if window is None:
+        return None
+    if type(window) is not Window:
+        raise ValueError('native_window_local_selection_required')
+    window.__post_init__()
+    exact = {'network_scope':'lan', 'host':'192.168.9.128', 'https_port':45560, 'udp_port':45963,
+        'max_runtime':window.plan.process_max_seconds, 'allow_owner_surface_submit_lead':False,
+        'allow_owner_enobufs_retry':False, 'owner_raw_queue_policy':'fifo', 'owner_raw_submit_fps':None,
+        'capture_trace_dir':None}
+    if (type(getattr(args,'interface',None)) is not str or args.interface not in ('en7','en0')
+            or any(type(getattr(args,k,None)) is not type(v) or getattr(args,k,None) != v for k,v in exact.items())):
+        raise ValueError('native_window_finite_gateway_options_required')
+    return window.plan
+
+
 def _ns(value):
     if type(value) is not int or not 0 < value <= MAX_NS:
         raise ValueError('native_window_phone_clock_required')

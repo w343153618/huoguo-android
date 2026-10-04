@@ -57,5 +57,15 @@
     "fixture_EditText_String_shadow",
     "AAPT_namespace_pattern_mismatch"
   ],
-  "cloud_CI_for_this_source": "not_pushed_yet"
+  "cloud_CI_for_this_source": {
+    "sha": "ec15e4e60624cf5cfd49bb7d02efb1acd963dfd8",
+    "run": 37200892526,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1948,
+    "Linux_elapsed_seconds": 82.167,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  }
 }

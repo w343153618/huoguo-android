@@ -84,3 +84,9 @@ Then qualify new artifacts/helper, actual LAN credential availability, current
 Attempt, private evidence, formal/original protection and the finite gateway
 factory before this new native collection. An unavailable LAN saved entry is a
 remaining live prerequisite, not permission to copy a public password.
+
+Exact source ec15e4e60624cf5cfd49bb7d02efb1acd963dfd8/run37200892526 was independently
+read back completed/overall/build/udp_candidate success. Linux1948tests/82.167s/
+11 existing platform skips; Android compile/lint and isolated APK/JNI checks
+passed. This is cloud source/build acceptance for that SHA, not phone, ART,
+source playback, input or performance acceptance. No re-run was requested.
