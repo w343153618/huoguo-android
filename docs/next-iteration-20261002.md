@@ -1,5 +1,37 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF owned gateway lifecycle kernel is implemented.10new/59affected
+actual host-Python Popen/inert admission checks PASS1.235s. No device/listener/
+TLS/auth/media/native producer acceptance. Original reserve/witness/fullroles/
+formal precede mark/actualPopen; bounded64KiB prefixes bothpipes/actualEOFjoin,
+unique native reapertrue/stop0 footer + samePopenexit0 + ownedfullroles0/fresh
+original+formal post precede unchanged5field projection and explicitrelease.
+Timeout/unknown/nonzero/overflow/failedclose cannot PASS; retainedguard/object,
+caller must stayalive. Close retry fresh checks, noPID/group/original signals.
+No CLI, helper/App change or live integrated entry. Bound actual high-port
+coordinator/driver/preflight/probes and ignoredTERM handling next, then NEWfreeze/
+fixtures; never use footerJSON or localmetadata as permission. OP12onlygetstate
+stilldevice-not-found; no follow-up poll. Old reviewed f0/d043 first on availability.
+Read owner-native-gateway-lifecycle-candidate-20261004.md/json. Preceding a597CI
+append included with next meaningful kernel source; newSHA needs ownCI.
+
+
+Exact NEW factory a597f47ef649aa48bb184d7c2eae6d6723330f9e/run37201580730 now
+independently overall/build/UDPsuccess, Linux1955/73.695s/11existing skips. Do not
+repeat this run or borrow it for future SHA. NEW1070tracked/344Python no.git source
+freeze/all Git blobs+pins verified,22targeted PASS0.624s. NEW private preparation
+dryrun0 verifies same Window gateway/driver and actual local App f97b/JNI447f/
+helper28db bytes; noexecute mode, explicit --execute rejected2. Initial wrongJNI
+ZIP entry failure retained, corrected exact libhuoguo_udp_fec name. No actual
+Popen supervisor/phone/lease/RPC/events/ART readback. Immediate next implement
+actual finite coordinator lifecycle with existing full admission/mark before
+Popen and bound native shutdown+reaper+actual exit/fullroles before original
+closed5field quiescence projection/release. Do not loosen guard schemas or treat
+metadata/preparation as permission. Phone unavailable, old reviewed f0/d043 first
+when eligible; no repeated poll. Cloud docs local append joins next meaningful
+source push, no doc-only CI. Read latest factory doc/json and private pointers.
+
+
 NEW default-OFF finite M1 LAN gateway factory binding is implemented.7new/
 64affected inert checks PASS0.594s, fake TLS/server with actual empty registry/
 owned reaper thread. Same explicit local Window/Plan reaches registry and M1

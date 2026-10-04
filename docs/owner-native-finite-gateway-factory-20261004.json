@@ -41,7 +41,17 @@
     "scripts/probes/owner_native_window.py": "3e8701d163e238255b992366f191dbbedadbd237e7de00a259e65c9ad99ae07c",
     "tests/test_owner_native_gateway_factory.py": "760bf3e78b20ac2e230639c44b990bab24d09599ee9c76adedb3e1ed4b9f3e6e"
   },
-  "cloud_CI_for_this_source": "not_pushed_yet",
+  "cloud_CI_for_this_source": {
+    "sha": "a597f47ef649aa48bb184d7c2eae6d6723330f9e",
+    "run": 37201580730,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1955,
+    "Linux_elapsed_seconds": 73.695,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  },
   "preceding_single_window_exact_CI": {
     "sha": "ec15e4e60624cf5cfd49bb7d02efb1acd963dfd8",
     "run": 37200892526,
@@ -52,5 +62,23 @@
     "Linux_elapsed_seconds": 82.167,
     "existing_platform_skips": 11,
     "independently_read_back": true
+  },
+  "NEW_full_source_freeze": {
+    "files": 1070,
+    "Python_files": 344,
+    "no_git": true,
+    "all_git_blobs_and_full_pins_verified": true,
+    "targeted_tests": 22,
+    "elapsed_seconds": 0.624,
+    "passed": true,
+    "no_gateway_phone_or_RPC": true
+  },
+  "private_next_preparation": {
+    "status": "metadata_dry_run_only_no_execute_mode",
+    "dry_run_exit": 0,
+    "execute_option_rejected_exit": 2,
+    "exact_local_App_helper_JNI_and_same_Plan_driver_gateway_selection_verified": true,
+    "actual_operator_phone_admission_AppAttempt_lease_or_quiescence": false,
+    "initial_wrong_JNI_archive_entry_failure_preserved": true
   }
 }

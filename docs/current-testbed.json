@@ -3429,7 +3429,17 @@
       "scripts/probes/owner_native_window.py": "3e8701d163e238255b992366f191dbbedadbd237e7de00a259e65c9ad99ae07c",
       "tests/test_owner_native_gateway_factory.py": "760bf3e78b20ac2e230639c44b990bab24d09599ee9c76adedb3e1ed4b9f3e6e"
     },
-    "cloud_CI_for_this_source": "not_pushed_yet",
+    "cloud_CI_for_this_source": {
+      "sha": "a597f47ef649aa48bb184d7c2eae6d6723330f9e",
+      "run": 37201580730,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1955,
+      "Linux_elapsed_seconds": 73.695,
+      "existing_platform_skips": 11,
+      "independently_read_back": true
+    },
     "preceding_single_window_exact_CI": {
       "sha": "ec15e4e60624cf5cfd49bb7d02efb1acd963dfd8",
       "run": 37200892526,
@@ -3440,6 +3450,76 @@
       "Linux_elapsed_seconds": 82.167,
       "existing_platform_skips": 11,
       "independently_read_back": true
+    },
+    "NEW_full_source_freeze": {
+      "files": 1070,
+      "Python_files": 344,
+      "no_git": true,
+      "all_git_blobs_and_full_pins_verified": true,
+      "targeted_tests": 22,
+      "elapsed_seconds": 0.624,
+      "passed": true,
+      "no_gateway_phone_or_RPC": true
+    },
+    "private_next_preparation": {
+      "status": "metadata_dry_run_only_no_execute_mode",
+      "dry_run_exit": 0,
+      "execute_option_rejected_exit": 2,
+      "exact_local_App_helper_JNI_and_same_Plan_driver_gateway_selection_verified": true,
+      "actual_operator_phone_admission_AppAttempt_lease_or_quiescence": false,
+      "initial_wrong_JNI_archive_entry_failure_preserved": true
+    }
+  },
+  "owner_native_gateway_lifecycle_candidate_20261004": {
+    "schema": 1,
+    "candidate": "default_OFF_trusted_M1_LAN_owned_gateway_lifecycle_kernel",
+    "checked_at_utc": "2026-10-04T12:44:29.352584+00:00",
+    "new_checks": 10,
+    "affected_checks": 59,
+    "affected_elapsed_seconds": 1.235,
+    "checks_passed": true,
+    "actual_host_Python_Popen_fixtures": true,
+    "admission_socket_HTTP_roles_and_formal_callbacks": "inert_fixture_only",
+    "production_socket_or_gateway_emulator_phone_media": false,
+    "construction_inert": true,
+    "no_CLI_HTTP_environment_account_selection": true,
+    "same_explicit_Window_and_real_OwnerLanAdmission_required": true,
+    "mark_precedes_actual_Popen": true,
+    "public_PID_or_Popen_adoption_setter": false,
+    "bounded_stdout_and_stderr_prefix_bytes_each": 65536,
+    "overflow_or_EOF_unverified_blocks_release": true,
+    "unique_closed_native_footer_and_actual_same_Popen_exit_required": true,
+    "native_footer_only_establishes_ownership": false,
+    "full_owned_roles_original_identity_and_formal_postchecks_required": true,
+    "original_closed_five_field_admission_schema_unchanged": true,
+    "release_failure_cannot_return_PASS": true,
+    "release_retry_rechecks_fresh_postchecks": true,
+    "parent_only_owned_Popen_terminate_calls": true,
+    "group_PIDs_or_original_service_signals": false,
+    "unknown_cleanup_retains_object_and_guard_socket": true,
+    "hard_Popen_creation_or_probe_filesystem_deadline_claimed": false,
+    "live_gateway_entry_driver_preflight_supervisor_integrated": false,
+    "ignore_TERM_escalation_integrated": false,
+    "phone_ART_events_overhead_performance_accepted": false,
+    "helper_App_or_public_release_changed": false,
+    "helper_sha256_unchanged": "28db54c6582fa6c855cb20eeb2163b2aa9bcccf8d4d675d111a8c98f54a9e425",
+    "phone_get_state_this_turn": "device_not_found",
+    "device_queries_this_turn": 1,
+    "active_phone_media_exec": null,
+    "source_pins": {
+      "scripts/probes/owner_native_gateway_lifecycle.py": "56219459009fcc2e9405f915c71dc3ea347799e0c08d092c1a084931791d3d3d",
+      "tests/test_owner_native_gateway_lifecycle.py": "4f96178547a9575bc24b4d6e3fbe2b1be631a7aff3d861219314df7b7a51e108"
+    },
+    "cloud_CI_for_this_source": "not_pushed_yet",
+    "preceding_factory_exact_CI": {
+      "sha": "a597f47ef649aa48bb184d7c2eae6d6723330f9e",
+      "run": 37201580730,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1955,
+      "Linux_elapsed_seconds": 73.695,
+      "existing_platform_skips": 11
     }
   }
 }
