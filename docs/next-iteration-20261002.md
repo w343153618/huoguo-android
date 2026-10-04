@@ -1,5 +1,40 @@
+## 2026-10-04 latest: explicit playing-source Pause/direct reader integration; no runtime UI/input yet
+
+Default-OFF `pause-only` M1/nps_owner/saved-UI/media-only source recovery now
+uses one captured authenticated App Attempt and a fresh qualified playing Pause
+target, then independently confirms paused state. It does not dispatch steady
+samplers or reconnect and cannot be counted as performance/steady acceptance.
+Direct reader is explicitly selected by an owned0600 closed JAR descriptor;
+current JAR a19c remains staged and has not been run. New matching helper
+9b1cc1434e45e58ad45f0787f8931783de84e48b78a2c5dbbd236eff92d19d05 /
+78227B has actual SDK37/DEX/signature verification against all106 exact22f
+App classes; it is not installed. Installed App40 d043/JNI4bf and public39 are
+unchanged. 98 focused/API37/JVM checks passed. Initial selection of three
+nonexistent test-module names was a command import failure, not App failure;
+the corrected complete focused invocation is the recorded PASS.
+
+Readonly original gateway identity/four-role-zero and phone target/helper
+absence were verified; fresh exact3470/10235/start1952 focus/owner/playing
+numeric bracket passed. Current format was not reread. System uiautomator
+wrapper actual588f4e89 uses exec app_process: useful ownership design evidence,
+not a runtest, input, permission lease or latency result.
+
+Next immediately finish actual owned remote-runner startup/exit handling and
+private scope journal BEFORE executing the new UI adapter under the helper's
+bounded App lease. Empty/truncated ADB output now conservatively retains the
+exact candidate scope; local child reap must not be called remote quiescence.
+The new route is source/build verified, not accepted for real execution until
+that failure boundary is resolved. Do not install/run old a575 native or old
+paused-first campaigns, guess a Pause coordinate, take a password from a store,
+extend3/6/15-second budgets, kill the source player, or rerun collector/menu-only
+checks. Then NEW fresh current-source readonly qualification and authenticated
+Pause, and later moving-video public window. No agent/exec/phone/media active.
+Read authenticated-source-pause-reader-candidate-20261004.md/json.
+
 ## 2026-10-04 latest: standalone active-source snapshot candidate built; no UI execution yet
 
+Exactd01aa22a9c354c38c0d257bbf6e8054ab7532379/run37173330611 now independently
+verified overall/build/UDPsuccess, Linux1765tests/65.960s/11existing skips.
 Default-OFF legacy runtest direct-dump JAR and closed-path/receipt reader now
 implemented.57 focused/API37/JVM checks passed; actual DEX/JAR5888B SHAa19c50f5
 built privately. Three scoped ADB file-staging commands all reaped; original

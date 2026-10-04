@@ -35,7 +35,14 @@ public final class OwnerSourceTapCheck {
  static OwnerSourceTap.Command command(){return OwnerSourceTap.Command.parse("1 77 32768 32768 1080 1920\n".getBytes(StandardCharsets.US_ASCII),1,77);}
  public static void main(String[] args)throws Exception {
   String mode=args[0];
-  if(mode.equals("commands")){
+  if(mode.equals("modes")){
+   ok(!OwnerSourceTap.enabled("off")&&!OwnerSourceTap.pauseOnly("off"));
+   ok(OwnerSourceTap.enabled("native")&&!OwnerSourceTap.pauseOnly("native"));
+   ok(OwnerSourceTap.enabled("pause-only")&&OwnerSourceTap.pauseOnly("pause-only"));
+   for(String bad:new String[]{null,"", "on", "pause", "native ", "PAUSE-ONLY"}){
+    try{OwnerSourceTap.enabled(bad);throw new AssertionError("accepted mode");}catch(IllegalArgumentException expected){}
+   }
+  }else if(mode.equals("commands")){
    String[] bad={"1 78 1 1 1080 1920\n","2 77 1 1 1080 1920\n","1 77 -1 1 1080 1920\n",
     "1 77 65536 1 1080 1920\n","1 77 1 1 0 1920\n","1 77 1 1 8193 1920\n","1 77 1 1 1080 1920 extra\n",
     "1 77 1 1 1080 1920", "1 77 1 1 1080 1920\n1 77 1 1 1080 1920\n","1 9223372036854775808 1 1 1080 1920\n",
@@ -100,6 +107,7 @@ class OwnerSourceTapChecks(unittest.TestCase):
     def test_up_failure_keeps_failure_and_cancels_partial_gesture(self): self.case('up_failure')
     def test_source_aspect_change_rejected_before_ownership_or_input(self): self.case('aspect')
     def test_numeric_phase_nonce_schema_and_byte_bound_reject_stale_or_malformed(self): self.case('commands')
+    def test_closed_modes_preserve_default_and_explicit_one_phase_pause(self): self.case('modes')
 
     def test_helper_opt_in_retains_auth_default_and_main_thread_identity_checks(self):
         source = (SOURCE.parent/'LanUiAcceptance.java').read_text()

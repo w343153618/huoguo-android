@@ -7,7 +7,7 @@ The matching helper rechecks that ownership inside every native dispatch.
 import json
 import time
 
-HELPER_SHA256 = 'a575abeda09383b247043fe5bb8c90c1d90229f7cd117ca22d6522f60bfe67b0'
+HELPER_SHA256 = '9b1cc1434e45e58ad45f0787f8931783de84e48b78a2c5dbbd236eff92d19d05'
 LABELS = frozenset(('source_input_ready_schema', 'source_input_target_unqualified',
     'source_input_identity_changed', 'source_input_geometry_changed',
     'source_input_target_stale', 'source_input_attempt_changed',
@@ -63,13 +63,21 @@ def nonce_body(ready):
     return (str(ready['nonce']) + '\n').encode('ascii')
 
 
-def helper_readback(value):
+def helper_readback(value, *, mode='native'):
+    if mode not in ('native', 'pause-only'):
+        return False
     if (type(value) is not dict or 'failure_class' in value
             or value.get('requested_authenticated_source_input') is not True
             or value.get('helper_owned_attempt_started') is not True
             or value.get('source_owned_marker_cleanup_failed', False) is not False):
         return False
-    for phase in (1, 2):
+    if mode == 'pause-only' and (value.get('source_pause_only_recovery') is not True
+            or value.get('source_recovery_no_steady_window') is not True
+            or value.get('source_recovery_no_reconnect') is not True
+            or any(key in value for key in ('source_phase_2_local_tap',
+                'source_phase_2_external_observer_confirmation'))):
+        return False
+    for phase in ((1, 2) if mode == 'native' else (1,)):
         if value.get('source_phase_%d_external_observer_confirmation' % phase) is not True:
             return False
         receipt = value.get('source_phase_%d_local_tap' % phase)
@@ -84,7 +92,9 @@ def helper_readback(value):
     return True
 
 
-def command(ready, observed, expected_identity, now_ns):
+def command(ready, observed, expected_identity, now_ns, *, mode='native'):
+    _require(mode in ('native', 'pause-only') and
+             (mode != 'pause-only' or ready['phase'] == 1), 'source_input_phase_order')
     _require(type(observed) is dict and observed.get('target_qualified') is True
              and observed.get('source_process_bracket_verified') is True
              and observed.get('target_from_same_Stats_snapshot') is True
@@ -105,8 +115,9 @@ def command(ready, observed, expected_identity, now_ns):
     _require(type(started) is int and type(finished) is int and type(now_ns) is int
              and 0 <= finished - started <= 6_000_000_000
              and 0 <= now_ns - finished <= 1_000_000_000, 'source_input_target_stale')
-    state = 'paused' if ready['phase'] == 1 else 'playing'
-    _require(target.get('action_code') == ready['phase'] and target.get('required_state') == state
+    state = 'playing' if mode == 'pause-only' else ('paused' if ready['phase'] == 1 else 'playing')
+    action_code = 2 if state == 'playing' else 1
+    _require(target.get('action_code') == action_code and target.get('required_state') == state
              and source.get('required_state') == state, 'source_input_target_unqualified')
     width, height = target.get('reference_width'), target.get('reference_height')
     _require(type(width) is int and type(height) is int and 16 <= width <= 8192
@@ -123,7 +134,8 @@ def command(ready, observed, expected_identity, now_ns):
 class Coordinator:
     """Two ordered phases; callbacks must use bounded matching-owner operations."""
     def __init__(self, markers, observe_target, observe_transition, expected_identity,
-                 *, clock=time.monotonic_ns):
+                 *, clock=time.monotonic_ns, mode='native'):
+        _require(mode in ('native', 'pause-only'), 'source_input_phase_order')
         _require(type(expected_identity) is dict
                  and set(expected_identity) == {'pid', 'uid', 'start_ticks'}
                  and all(type(v) is int and (0 if k == 'uid' else 1) <= v
@@ -133,6 +145,7 @@ class Coordinator:
         self.expected_identity, self.clock = dict(expected_identity), clock
         self.phase, self.ready, self.first_ready = 1, None, None
         self.completed, self.observations = [], {}
+        self.mode = mode
 
     def advance(self, *, samplers_completed=False):
         if self.phase == 3:
@@ -149,9 +162,10 @@ class Coordinator:
                              if k not in ('phase', 'nonce')), 'source_input_attempt_changed')
                 _require(self.ready['nonce'] != self.first_ready['nonce'], 'source_input_nonce_changed')
             before = self.clock()
-            observed = self.observe_target('paused' if self.phase == 1 else 'playing')
+            observed = self.observe_target('playing' if self.mode == 'pause-only'
+                                           else ('paused' if self.phase == 1 else 'playing'))
             _require(0 <= self.clock() - before <= 6_000_000_000, 'source_input_observer_budget')
-            raw_command = command(self.ready, observed, self.expected_identity, self.clock())
+            raw_command = command(self.ready, observed, self.expected_identity, self.clock(), mode=self.mode)
             # No retry: ambiguous publication is a failed owned attempt.
             self.observations[str(self.phase)] = {'target': observed, 'command_publication_attempted': True}
             self.markers.publish(files['command'], raw_command)
@@ -162,7 +176,8 @@ class Coordinator:
             return False
         _require(dispatched == nonce_body(self.ready), 'source_input_nonce_changed')
         before = self.clock()
-        transition = self.observe_transition('playing' if self.phase == 1 else 'paused',
+        transition = self.observe_transition('paused' if self.mode == 'pause-only'
+                                              else ('playing' if self.phase == 1 else 'paused'),
                                               self.expected_identity)
         _require(0 <= self.clock() - before <= 6_000_000_000, 'source_input_observer_budget')
         _require(type(transition) is dict and transition.get('verified') is True
@@ -174,6 +189,6 @@ class Coordinator:
         self.completed.append(self.phase)
         if self.phase == 1:
             self.first_ready = self.ready
-        self.phase += 1
+        self.phase = 3 if self.mode == 'pause-only' else self.phase + 1
         self.ready = None
         return True

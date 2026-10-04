@@ -42,7 +42,7 @@ from udp_nps_profile import planned_profile
 from scripts.probes import owner_source_gate
 from scripts.probes import owner_source_stats_gate, source_window_control
 from scripts.probes import source_authenticated_driver, source_authenticated_observation
-from scripts.probes import source_remote_observation, source_phone_markers
+from scripts.probes import source_remote_observation, source_phone_markers, source_snapshot_selection
 from scripts.probes.owner_trace_prefix import TracePrefixReader, SourceTraceError, LABELS as TRACE_LABELS
 
 
@@ -80,7 +80,8 @@ def target_user0_uid(result):
     return match[1]
 
 
-def verify_credential_source_readback(result, expected_source):
+def verify_credential_source_readback(result, expected_source, *, stages=('first', 'second')):
+    if stages not in (('first',), ('first', 'second')): return False
     if not isinstance(result, dict) or 'failure_class' in result:
         return False
     if expected_source == 'private-file':
@@ -90,24 +91,25 @@ def verify_credential_source_readback(result, expected_source):
         return False
     if result.get('saved_UI_private_input_touched') is not False or result.get('saved_UI_secret_exported') is not False:
         return False
-    return all(result.get(stage + '_' + field) is True for stage in ('first', 'second')
+    return all(result.get(stage + '_' + field) is True for stage in stages
         for field in ('saved_UI_route_verified', 'saved_UI_allowed_account_verified',
                       'saved_UI_nonempty_credential_verified', 'saved_UI_normal_restore_used'))
 
 
-def verify_nps_network_readback(result, node):
+def verify_nps_network_readback(result, node, *, stages=('first', 'second')):
     """Check the App's current attempt and parsed receiver, not requested settings.
 
     This establishes selected public tuples only. NPC outer transit, geography,
     independent content presentation and physical latency need separate evidence.
     """
+    if stages not in (('first',), ('first', 'second')): return False
     if not isinstance(result, dict) or 'failure_class' in result or node not in ('m1', 'm5'):
         return False
     profile = planned_profile(node)
     if (result.get('requested_network_scope') != 'nps_owner'
             or result.get('requested_node') != node):
         return False
-    for stage in ('first', 'second'):
+    for stage in stages:
         expected = {'actual_network_scope': 'nps_owner', 'actual_node': node,
             'actual_control_host': profile.public_control.host,
             'actual_control_port': profile.public_control.port,
@@ -126,11 +128,12 @@ def verify_nps_network_readback(result, node):
     return True
 
 
-def verify_v50_profile_readback(result, expected_enabled):
+def verify_v50_profile_readback(result, expected_enabled, *, stages=('first', 'second')):
     """ON needs actual preset click plus parsed session and decoded frame geometry.
 
     Legacy OFF reports remain readable; no callback count is a physical FPS claim.
     """
+    if stages not in (('first',), ('first', 'second')): return False
     if type(expected_enabled) is not bool or not isinstance(result,dict) or 'failure_class' in result:
         return False
     if not expected_enabled and 'requested_v50_profile' not in result:
@@ -138,7 +141,7 @@ def verify_v50_profile_readback(result, expected_enabled):
     if result.get('requested_v50_profile') is not expected_enabled:
         return False
     previous_clicks=0
-    for stage in ('first','second'):
+    for stage in stages:
         if (result.get(stage+'_video_profile_readback_verified') is not True
                 or result.get(stage+'_video_profile_is_presented_FPS') is not False
                 or result.get(stage+'_v50_profile_button_clicked') is not expected_enabled):
@@ -159,13 +162,14 @@ def verify_v50_profile_readback(result, expected_enabled):
     return True
 
 
-def verify_exit_confirmation_readback(result):
+def verify_exit_confirmation_readback(result, *, stages=('first', 'second')):
     """Both sessions must execute Continue then Exit using real App dialog listeners."""
+    if stages not in (('first',), ('first', 'second')): return False
     if not isinstance(result,dict) or 'failure_class' in result:return False
     fields=('exit_dialog_shown','exit_repeated_back_same_dialog','exit_continue_preserved_attempt',
             'exit_continue_media_progress','exit_positive_button_clicked','exit_captured_attempt_cancelled',
             'exit_used_actual_UI_buttons','exit_UI_callbacks_observed')
-    return all(result.get(stage+'_'+field) is True for stage in ('first','second') for field in fields)
+    return all(result.get(stage+'_'+field) is True for stage in stages for field in fields)
 
 
 def verify_credential_save_readback(result, expected_enabled):
@@ -176,10 +180,11 @@ def verify_credential_save_readback(result, expected_enabled):
     return all(result.get(key) is True for key in fields) and result.get('credential_secret_exported') is False and result.get('credential_other_package_modified') is False
 
 
-def verify_nps_physical_network_binding(result):
+def verify_nps_physical_network_binding(result, *, stages=('first', 'second')):
     """API identity/bind evidence only; this cannot prove packet path or country."""
+    if stages not in (('first',), ('first', 'second')): return False
     if not isinstance(result,dict) or 'failure_class' in result:return False
-    for stage in ('first','second'):
+    for stage in stages:
         if result.get(stage+'_physical_network_same_lease') is not True:return False
         for field,floor,ceiling in (('physical_network_handle',1,None),('physical_network_transport',1,2),
                 ('physical_https_bind_calls',1,None),('physical_udp_bind_calls',1,1)):
@@ -190,14 +195,15 @@ def verify_nps_physical_network_binding(result):
     return True
 
 
-def verify_surface_submit_readback(result, expected_lead):
+def verify_surface_submit_readback(result, expected_lead, *, stages=('first', 'second')):
     """Require actual per-session execution evidence, never descriptor/request echo alone."""
+    if stages not in (('first',), ('first', 'second')): return False
     if (type(expected_lead) is not int or expected_lead not in (0, 16)
             or not isinstance(result, dict) or 'failure_class' in result
             or type(result.get('requested_surface_submit_lead_ms')) is not int
             or result['requested_surface_submit_lead_ms'] != expected_lead):
         return False
-    for stage in ('first', 'second'):
+    for stage in stages:
         if result.get(stage+'_surface_submit_execution_verified') is not True:
             return False
         keys = ('surface_submit_lead_ms', 'surface_submit_status_code',
@@ -229,11 +235,12 @@ def verify_steady_window_readback(result, expected_seconds):
         and abs(wait_ms-(finished-started)/1e6) <= .001)
 
 
-def verify_stage_diagnostics_readback(result, expected_enabled):
+def verify_stage_diagnostics_readback(result, expected_enabled, *, stages=('first', 'second')):
+    if stages not in (('first',), ('first', 'second')): return False
     if (type(expected_enabled) is not bool or not isinstance(result,dict)
             or 'failure_class' in result or result.get('requested_stage_diagnostics_enabled') is not expected_enabled):
         return False
-    for stage in ('first','second'):
+    for stage in stages:
         value=result.get(stage+'_stage_diagnostics_enabled')
         if (type(value) is not int or value != int(expected_enabled)
                 or result.get(stage+'_stage_diagnostics_verified') is not True):
@@ -241,13 +248,14 @@ def verify_stage_diagnostics_readback(result, expected_enabled):
     return True
 
 
-def verify_codec_startup_readback(result, expected_enabled):
+def verify_codec_startup_readback(result, expected_enabled, *, stages=('first', 'second')):
     """Require ended sessions' mode and committed gate execution, not an option echo."""
+    if stages not in (('first',), ('first', 'second')): return False
     if (type(expected_enabled) is not bool or not isinstance(result, dict)
             or 'failure_class' in result
             or result.get('requested_codec_startup_ready_enabled') is not expected_enabled):
         return False
-    for stage in ('first', 'second'):
+    for stage in stages:
         if (type(result.get(stage+'_codec_startup_ready_enabled')) is not int
                 or result[stage+'_codec_startup_ready_enabled']!=int(expected_enabled)
                 or result.get(stage+'_codec_startup_readback_verified') is not True):
@@ -286,6 +294,28 @@ def verify_steady_media_progress(result):
     minimum_span_ns=max(19,seconds-5)*1000000000
     return (rows[-1]['phone_ns']-rows[0]['phone_ns']>=minimum_span_ns and
             any(rows[-1][k]>rows[0][k] for k in ('worker_received_frames','codec_callback_count')))
+
+
+def verify_pause_recovery(result, args, driver_report):
+    """One actual first-session close; never imply steady/reconnect acceptance."""
+    if (not source_authenticated_driver.helper_readback(result, mode='pause-only')
+            or driver_report.get('phone_sampler_started') is not False
+            or driver_report.get('touch_source_switched') is not False
+            or result.get('first_leave_audio_threads_alive') != 0
+            or type(result.get('first_leave_audio_threads_alive')) is not int
+            or any(name in result for name in ('steady_media_started_ns',
+                      'steady_sampler_completion_observed', 'normal_UI_reconnected_received_media'))):
+        return False
+    stages = ('first',)
+    return all((verify_credential_source_readback(result, 'saved-ui', stages=stages),
+        verify_credential_save_readback(result, False),
+        verify_v50_profile_readback(result, args.v50_profile == 'on', stages=stages),
+        verify_exit_confirmation_readback(result, stages=stages),
+        verify_nps_physical_network_binding(result, stages=stages),
+        verify_nps_network_readback(result, 'm1', stages=stages),
+        verify_surface_submit_readback(result, args.surface_submit_lead_ms, stages=stages),
+        verify_stage_diagnostics_readback(result, args.stage_diagnostics == 'on', stages=stages),
+        verify_codec_startup_readback(result, args.codec_startup == 'on', stages=stages)))
 
 
 def record_cleanup_failure(report, operation, failure=None, returncode=None):
@@ -429,6 +459,7 @@ def instrumentation_cleanup_diagnostic(output):
                 raise ValueError('bool_required')
             projected['helper_owned_attempt_started'] = value['helper_owned_attempt_started']
         for name in ('requested_authenticated_source_input', 'source_owned_marker_cleanup_failed',
+                     'source_pause_only_recovery', 'source_recovery_no_steady_window', 'source_recovery_no_reconnect',
                      'source_phase_1_external_observer_confirmation', 'source_phase_2_external_observer_confirmation'):
             if name in value:
                 if type(value[name]) is not bool:
@@ -510,8 +541,10 @@ def parse_arguments(argv=None):
                    help='Fresh private empty root for this owned listener; never a historical trace directory')
     p.add_argument('--source-stats-window', choices=['off','on'], default='off',
                    help='Explicit protected M1 owner experiment: paused Stats endpoints around owned playback')
-    p.add_argument('--source-input', choices=['off', 'native'], default='off',
+    p.add_argument('--source-input', choices=['off', 'native', 'pause-only'], default='off',
                    help='Explicit M1 saved-UI owner trial: current authenticated helper native play/pause')
+    p.add_argument('--source-snapshot-deployment', type=Path, default=None,
+                   help='Explicit pause-only trial: private pinned standalone readonly JAR descriptor')
     p.add_argument('--source-input-identity', default=None,
                    help='Exact fresh source PID:UID:start_ticks; never a cached target-coordinate file')
     args = p.parse_args(argv)
@@ -552,7 +585,7 @@ def parse_arguments(argv=None):
             p.error('Explicit source guest must match the fixed public node profile')
     else:
         args.guest = args.guest or 'emulator-5556'
-    if args.source_input == 'native':
+    if args.source_input != 'off':
         if (args.network_scope != 'nps_owner' or args.node != 'm1' or not args.media_only
                 or args.phone_only_sampler or args.credential_source != 'saved-ui'
                 or args.owner_source_guard != 'off' or args.source_stats_window != 'off'
@@ -568,6 +601,9 @@ def parse_arguments(argv=None):
         args.source_input_identity = dict(zip(('pid', 'uid', 'start_ticks'), values))
     elif args.source_input_identity is not None:
         p.error('Native source input identity requires explicit opt-in')
+    if ((args.source_input == 'pause-only') != (args.source_snapshot_deployment is not None)
+            or (args.source_snapshot_deployment is not None and not args.source_snapshot_deployment.is_absolute())):
+        p.error('Direct snapshot selection requires the explicit bounded pause-only owner trial')
     return args
 
 
@@ -583,7 +619,7 @@ def main():
         return adb(args.phone, 'su -c '+shlex.quote(command), check)
 
     def app_uid():
-        if args.owner_source_guard != 'off' or args.source_input == 'native':
+        if args.owner_source_guard != 'off' or args.source_input != 'off':
             return target_user0_uid(adb(args.phone,
                 'cmd package list packages --user 0 -U '+TARGET_PACKAGE))
         return adb(args.phone,'cmd package list packages -U '+TARGET_PACKAGE).stdout.split('uid:',1)[1].split(',',1)[0].strip()
@@ -591,7 +627,7 @@ def main():
     flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
     proc = None
     source_reader = source_gate = source_stats_before = None
-    source_native = source_markers = None
+    source_native = source_markers = snapshot_selection = None
     instrumentation_reaped = False
     samplers=[]
     scope_label = ('physical LAN' if args.network_scope == 'lan' else 'registered Tailnet'
@@ -633,7 +669,10 @@ def main():
             raise RuntimeError('target_App_process_active_skip' if state == 'active'
                                else 'target_App_process_check_unavailable_skip')
         report['preinstrument_target_process_absent_verified'] = True
-        if args.source_input == 'native':
+        if args.source_input != 'off':
+            if args.source_snapshot_deployment is not None:
+                snapshot_selection = source_snapshot_selection.Selection(
+                    source_snapshot_selection.read_private(args.source_snapshot_deployment))
             def marker_root(command):
                 return subprocess.run(['adb', '-s', args.phone, 'shell', 'su -c '+shlex.quote(command)],
                     capture_output=True, text=True, timeout=1)
@@ -652,10 +691,13 @@ def main():
                         or digest.stdout != expected_sha+'  '+match[1]+'\n'):
                     raise source_authenticated_driver.Rejected('source_input_helper_unmatched')
             report['source_input_matching_installed_artifacts_verified'] = True
-            def observe_target(state):
+            def collect_target(state, timeout):
+                kwargs = {'reader_factory': snapshot_selection.factory} if snapshot_selection is not None else {}
                 return source_remote_observation.collect('adb', args.guest, 'aqz-KE-bpKQ',
                     required_state=state, display_width=1080, display_height=1920,
-                    require_display=True, timeout=6)
+                    require_display=True, timeout=timeout, **kwargs)
+            def observe_target(state):
+                return collect_target(state, 6)
             def observe_transition(state, identity):
                 begin = time.monotonic_ns()
                 value = source_authenticated_observation.collect_state('adb', args.guest, identity,
@@ -664,9 +706,7 @@ def main():
                     remaining = 6 - (time.monotonic_ns()-begin)/1e9
                     if remaining < 3:
                         raise source_authenticated_driver.Rejected('source_input_observer_budget')
-                    post = source_remote_observation.collect('adb', args.guest, 'aqz-KE-bpKQ',
-                        required_state='paused', display_width=1080, display_height=1920,
-                        require_display=True, timeout=min(6, remaining))
+                    post = collect_target('paused', min(6, remaining))
                     # Qualify the current snapshot before interpreting its fields.
                     ready = dict(source_native.ready, phase=1)
                     source_authenticated_driver.command(ready, post, identity, time.monotonic_ns())
@@ -678,7 +718,7 @@ def main():
                     value['endpoint_formats_match'] = True
                 return value
             source_native = source_authenticated_driver.Coordinator(source_markers, observe_target,
-                observe_transition, args.source_input_identity)
+                observe_transition, args.source_input_identity, mode=args.source_input)
         if args.credential_source == 'private-file' and root('test -s '+PRIVATE+'udp-test-login.json',False).returncode:
             raise RuntimeError('private_login_missing')
         root('rm -f '+PRIVATE+'udp-app-last-report.json '+PRIVATE+'udp-app-first-report.json '+' '.join(PRIVATE+f for f in flags))
@@ -728,7 +768,7 @@ def main():
                 if source_native.phase == 1 or (source_native.phase == 2 and report.get('steady_samplers_completed_before_leave')):
                     source_native.advance(samplers_completed=bool(report.get('steady_samplers_completed_before_leave')))
                     report['authenticated_source_phases'] = source_native.observations
-                if source_native.phase == 1:
+                if args.source_input == 'pause-only' or source_native.phase == 1:
                     time.sleep(.1)
                     continue
             if source_gate is not None and not report['source_first_capture_freshness_verified']:
@@ -871,61 +911,82 @@ def main():
             report['saved_UI_unavailable_skip'] = True
             report['saved_UI_declined_before_owned_attempt'] = ui_result.get('helper_owned_attempt_started') is False
             raise RuntimeError(ui_result['bounded_failure_label'])
-        report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on')
+        stages = ('first',) if args.source_input == 'pause-only' else ('first', 'second')
+        report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on',stages=stages)
         report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
-        report['credential_source_readback_verified']=verify_credential_source_readback(report.get('ui_result'),args.credential_source)
+        report['credential_source_readback_verified']=verify_credential_source_readback(report.get('ui_result'),args.credential_source,stages=stages)
         if source_native is not None:
             ui_source = report.get('ui_result', {})
-            report['authenticated_source_phases_complete'] = (source_native.completed == [1, 2]
-                and source_authenticated_driver.helper_readback(ui_source))
+            report['authenticated_source_phases_complete'] = (source_native.completed ==
+                ([1] if args.source_input == 'pause-only' else [1, 2])
+                and source_authenticated_driver.helper_readback(ui_source, mode=args.source_input))
             if not report['authenticated_source_phases_complete']:
                 raise source_authenticated_driver.Rejected('source_input_transition_unverified')
-        report['exit_confirmation_readback_verified']=verify_exit_confirmation_readback(report.get('ui_result'))
-        report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
-        report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
-        report['codec_startup_readback_verified']=verify_codec_startup_readback(report.get('ui_result'),args.codec_startup=='on')
-        report['steady_media_progress_verified']=verify_steady_media_progress(report.get('ui_result'))
-        report['steady_window_readback_verified']=verify_steady_window_readback(report.get('ui_result'),args.steady_seconds)
-        if args.network_scope == 'nps_owner':
-            report['nps_physical_network_binding_verified']=verify_nps_physical_network_binding(report.get('ui_result'))
-            report['nps_network_profile_readback_verified'] = verify_nps_network_readback(
-                report.get('ui_result'), args.node)
-        reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
-                 ('App-first',args.phone,PRIVATE+'udp-app-first-report.json')]
-        if not args.media_only:
-            reports.append(('guest_touch',args.guest,'/data/user/0/local.huoguo.touchreceipt/files/touch-receipt.json'))
+        if args.source_input == 'pause-only':
+            report['source_pause_recovery_verified'] = verify_pause_recovery(
+                report.get('ui_result'), args, report)
+            report['steady_media_progress_verified'] = None
+            report['steady_window_readback_verified'] = None
+            report['reconnect_acceptance_exercised'] = False
+            if not report['source_pause_recovery_verified']:
+                raise source_authenticated_driver.Rejected('source_input_transition_unverified')
+            result = root('cat '+PRIVATE+'udp-app-last-report.json', False)
+            if result.returncode != 0 or result.stderr or not 0 < len(result.stdout.encode('utf-8')) <= 65536:
+                raise RuntimeError('source_recovery_report_unverified')
+            actual = json.loads(result.stdout)
+            if type(actual) is not dict or type(actual.get('audio_cleanup_confirmed')) is not int or actual['audio_cleanup_confirmed'] != 1:
+                raise RuntimeError('source_recovery_audio_cleanup_unverified')
+            (args.output/'App-report.json').write_text(json.dumps(actual,indent=2)+'\n')
+            report['App_report_read'] = True
+            report['App_actual_json_bytes'] = len(result.stdout.encode('utf-8'))
+            report['source_recovery_audio_cleanup_verified'] = True
         else:
-            report['guest_touch_not_exercised']=True
-        for name,serial,path in reports:
-            result=root('cat '+path,False) if serial==args.phone else adb(serial,'run-as local.huoguo.touchreceipt cat files/touch-receipt.json',False)
-            if result.returncode==0 and 0<len(result.stdout)<=65536:
-                report[name+'_actual_json_bytes']=len(result.stdout.encode('utf-8'))
-                (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')
-                report[name+'_report_read']=True
-        if not report['v50_profile_readback_verified']:
-            raise RuntimeError('v50_profile_readback_unverified')
-        if not report['credential_save_readback_verified']:
-            raise RuntimeError('credential_save_readback_unverified')
-        if not report['credential_source_readback_verified']:
-            raise RuntimeError('credential_source_readback_unverified')
-        if not report['exit_confirmation_readback_verified']:
-            raise RuntimeError('exit_confirmation_readback_unverified')
-        if args.network_scope == 'nps_owner' and not report['nps_physical_network_binding_verified']:
-            raise RuntimeError('nps_physical_network_binding_unverified')
-        if not report['surface_submit_execution_verified']:
-            raise RuntimeError('surface_submit_readback_unverified')
-        if args.network_scope == 'nps_owner' and not report['nps_network_profile_readback_verified']:
-            raise RuntimeError('nps_network_profile_readback_unverified')
-        if not report['steady_window_readback_verified']:
-            raise RuntimeError('steady_window_readback_unverified')
-        if not report['stage_diagnostics_readback_verified']:
-            raise RuntimeError('stage_diagnostics_readback_unverified')
-        if not report['codec_startup_readback_verified']:
-            raise RuntimeError('codec_startup_readback_unverified')
-        if not report['steady_media_progress_verified']:
-            raise RuntimeError('steady_media_progress_stalled_or_unverified')
-        if source_gate is not None and not report['source_first_capture_freshness_verified']:
-            raise owner_source_gate.SourceGateError('source_first_capture_missing')
+            report['exit_confirmation_readback_verified']=verify_exit_confirmation_readback(report.get('ui_result'))
+            report['surface_submit_execution_verified']=verify_surface_submit_readback(report.get('ui_result'),args.surface_submit_lead_ms)
+            report['stage_diagnostics_readback_verified']=verify_stage_diagnostics_readback(report.get('ui_result'),args.stage_diagnostics=='on')
+            report['codec_startup_readback_verified']=verify_codec_startup_readback(report.get('ui_result'),args.codec_startup=='on')
+            report['steady_media_progress_verified']=verify_steady_media_progress(report.get('ui_result'))
+            report['steady_window_readback_verified']=verify_steady_window_readback(report.get('ui_result'),args.steady_seconds)
+            if args.network_scope == 'nps_owner':
+                report['nps_physical_network_binding_verified']=verify_nps_physical_network_binding(report.get('ui_result'))
+                report['nps_network_profile_readback_verified'] = verify_nps_network_readback(
+                    report.get('ui_result'), args.node)
+            reports=[('App',args.phone,PRIVATE+'udp-app-last-report.json'),
+                     ('App-first',args.phone,PRIVATE+'udp-app-first-report.json')]
+            if not args.media_only:
+                reports.append(('guest_touch',args.guest,'/data/user/0/local.huoguo.touchreceipt/files/touch-receipt.json'))
+            else:
+                report['guest_touch_not_exercised']=True
+            for name,serial,path in reports:
+                result=root('cat '+path,False) if serial==args.phone else adb(serial,'run-as local.huoguo.touchreceipt cat files/touch-receipt.json',False)
+                if result.returncode==0 and 0<len(result.stdout)<=65536:
+                    report[name+'_actual_json_bytes']=len(result.stdout.encode('utf-8'))
+                    (args.output/(name+'-report.json')).write_text(json.dumps(json.loads(result.stdout),indent=2)+'\n')
+                    report[name+'_report_read']=True
+            if not report['v50_profile_readback_verified']:
+                raise RuntimeError('v50_profile_readback_unverified')
+            if not report['credential_save_readback_verified']:
+                raise RuntimeError('credential_save_readback_unverified')
+            if not report['credential_source_readback_verified']:
+                raise RuntimeError('credential_source_readback_unverified')
+            if not report['exit_confirmation_readback_verified']:
+                raise RuntimeError('exit_confirmation_readback_unverified')
+            if args.network_scope == 'nps_owner' and not report['nps_physical_network_binding_verified']:
+                raise RuntimeError('nps_physical_network_binding_unverified')
+            if not report['surface_submit_execution_verified']:
+                raise RuntimeError('surface_submit_readback_unverified')
+            if args.network_scope == 'nps_owner' and not report['nps_network_profile_readback_verified']:
+                raise RuntimeError('nps_network_profile_readback_unverified')
+            if not report['steady_window_readback_verified']:
+                raise RuntimeError('steady_window_readback_unverified')
+            if not report['stage_diagnostics_readback_verified']:
+                raise RuntimeError('stage_diagnostics_readback_unverified')
+            if not report['codec_startup_readback_verified']:
+                raise RuntimeError('codec_startup_readback_unverified')
+            if not report['steady_media_progress_verified']:
+                raise RuntimeError('steady_media_progress_stalled_or_unverified')
+            if source_gate is not None and not report['source_first_capture_freshness_verified']:
+                raise owner_source_gate.SourceGateError('source_first_capture_missing')
     except (Exception, KeyboardInterrupt) as failure:
         report['driver_failure_class']=type(failure).__name__
         labels = {'formal_gate_failed','formal_session_active','private_login_missing',
@@ -945,7 +1006,8 @@ def main():
         labels.update(owner_source_gate.SOURCE_GATE_LABELS, TRACE_LABELS)
         labels.update(owner_source_stats_gate.LABELS)
         labels.update(source_window_control.LABELS)
-        labels.add('source_Stats_endpoint_mismatch')
+        labels.update(('source_Stats_endpoint_mismatch', 'source_recovery_report_unverified',
+                       'source_recovery_audio_cleanup_unverified', 'snapshot_selection_rejected'))
         labels.update(source_authenticated_driver.LABELS)
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
@@ -979,6 +1041,10 @@ def main():
         for sampler in samplers:
             reap_owned_process(sampler, report, 'sampler', 1 if failed else args.steady_seconds+5, terminate=failed)
             report.setdefault('sampler_exit_codes',[]).append(sampler.returncode)
+        if snapshot_selection is not None:
+            report['direct_source_snapshot'] = snapshot_selection.status()
+            if not report['direct_source_snapshot']['remote_scope_clear_verified']:
+                record_cleanup_failure(report, 'source_snapshot_remote_scope_unconfirmed')
         if source_reader is not None:
             try:
                 source_reader.close()

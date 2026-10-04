@@ -77,3 +77,10 @@ a socket snapshot. Requalify a fresh native Pause target from the currently-play
 source and independently confirm its authenticated transition before preparing
 the next moving-video window. Do not reuse paused-first scripts or historical
 coordinates. The existing80ms/FIFO/session-FPS/default flags remain.
+
+Exact source commit d01aa22a9c354c38c0d257bbf6e8054ab7532379,
+GitHub run37173330611 independently completed with overall/build/udp_candidate
+success. The Linux job ran1765 tests in65.960s with11 existing platform skips;
+compile/lint and the UDP candidate job passed. These are CI/source checks, not
+execution of the staged guest UI runner or an App release. This cloud acceptance
+appendix is local to include with the next meaningful source commit.

@@ -56,10 +56,11 @@ public final class LanUiAcceptance extends Instrumentation {
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
     /** Helper-only opt-in; never enabled by the App, saved preferences or defaults. */
     private boolean sourceInput(){String value=arguments.getString("source_input","off");
-        if(!value.equals("off")&&!value.equals("native"))throw new IllegalArgumentException("source_input_bound");
-        if(value.equals("native")&&(!mediaOnly()||!networkScope().equals("nps_owner")
+        boolean enabled=OwnerSourceTap.enabled(value);
+        if(enabled&&(!mediaOnly()||!networkScope().equals("nps_owner")
                 ||!node().equals("m1")||!savedUiCredentials()))throw new IllegalArgumentException("source_input_owner_scope");
-        return value.equals("native");}
+        return enabled;}
+    private boolean sourcePauseOnly(){return OwnerSourceTap.pauseOnly(arguments.getString("source_input","off"));}
     private String networkScope(){String value=arguments.getString("network_scope","lan");
         if(!value.equals("lan")&&!value.equals("tailnet")&&!value.equals("nps_owner"))throw new IllegalArgumentException("scope_bound");return value;}
     private String node(){String value=arguments.getString("node","");
@@ -657,6 +658,7 @@ public final class LanUiAcceptance extends Instrumentation {
             report.put("requested_codec_startup_ready_enabled",codecStartup());
             report.put("requested_steady_seconds",steadySeconds());
             final boolean sourceWindow=sourceInput();report.put("requested_authenticated_source_input",sourceWindow);
+            report.put("source_pause_only_recovery",sourcePauseOnly());
             report.put("requested_network_scope",networkScope()).put("requested_node",node())
                 .put("requested_scope_index",scopeIndex()).put("physical_FPS_acceptance",false);
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
@@ -715,6 +717,17 @@ public final class LanUiAcceptance extends Instrumentation {
             }
             report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");Thread.sleep(3000);
             if(sourceWindow)sourceInputPhase(target,ownedAttempt[0],1,report);
+            if(sourcePauseOnly()){
+                // Phase1 is a fresh native Pause target in this explicit mode.
+                // The host independently confirms the remote transition before
+                // this branch can leave; no steady marker or reconnect follows.
+                report.put("source_recovery_no_steady_window",true).put("source_recovery_no_reconnect",true);
+                leaveThroughConfirmation(target,report,"first");
+                File recoveryReport=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");
+                waitReport(recoveryReport);verifySurfaceReadback(recoveryReport,report,"first");
+                waitAudioThreadsGone(report,"first_leave");
+                report.put("left_through_App_back",true).put("activity_running_after_leave",target.running);
+            }else{
             long steadyStart=System.nanoTime();report.put("steady_media_started_ns",steadyStart);
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
             waitSteady(target,report,steadyStart);
@@ -795,6 +808,7 @@ public final class LanUiAcceptance extends Instrumentation {
             verifySurfaceReadback(first,report,"second");
             waitAudioThreadsGone(report,"second_leave");
             report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
+            }
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
         finally{for(File marker:sourceMarkers)if(marker.exists()&&!marker.delete())try{
                 report.put("source_owned_marker_cleanup_failed",true);

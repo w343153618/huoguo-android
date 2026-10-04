@@ -67,6 +67,44 @@ class SourceAuthenticatedDriverChecks(unittest.TestCase):
     def test_missing_ready_is_quiet_and_never_observes_or_sends(self):
         c, bus = self.coordinator(); self.assertFalse(c.advance()); self.assertFalse(bus.writes)
 
+    def test_pause_only_requires_fresh_playing_target_and_ends_after_verified_pause(self):
+        bus = Markers(); calls = []
+        def observed(state): calls.append(('target', state)); return target(state)
+        def transition(state, identity):
+            calls.append(('transition', state))
+            return {'verified': True, 'identity': identity, 'all_local_children_reaped': True}
+        c = m.Coordinator(bus, observed, transition, IDENTITY, clock=lambda: NOW, mode='pause-only')
+        self.offer(bus, 1); self.assertTrue(c.advance())
+        self.assertEqual(calls, [('target', 'playing')])
+        self.assertEqual(bus.writes[0][1], b'1 77 32768 14745 1080 1920\n')
+        bus.rows[m.names(1)['dispatched']] = b'77\n'; self.assertTrue(c.advance())
+        self.assertEqual(calls[-1], ('transition', 'paused'))
+        self.assertEqual(c.completed, [1]); self.assertEqual(c.phase, 3)
+        self.assertFalse(c.advance()); self.assertEqual(len(bus.writes), 2)
+        with self.assertRaises(m.Rejected): m.command(ready(), target(), IDENTITY, NOW, mode='pause-only')
+        with self.assertRaises(m.Rejected): m.command(ready(2), target('playing'), IDENTITY, NOW, mode='pause-only')
+
+    def test_pause_target_failure_never_sends_or_counts_remote_state(self):
+        bus = Markers()
+        c = m.Coordinator(bus, lambda _: target(), lambda *_: (_ for _ in ()).throw(AssertionError()),
+                          IDENTITY, clock=lambda: NOW, mode='pause-only')
+        self.offer(bus, 1)
+        with self.assertRaises(m.Rejected): c.advance()
+        self.assertFalse(bus.writes); self.assertEqual(c.completed, [])
+
+    def test_pause_only_direct_reader_selection_is_explicit_and_scope_closed(self):
+        common = ['--output', '/tmp/inert-output']
+        options = common + ['--source-input', 'pause-only', '--network-scope', 'nps_owner', '--node', 'm1',
+            '--media-only', '--credential-source', 'saved-ui', '--source-input-identity', '3470:10235:1952',
+            '--source-snapshot-deployment', '/tmp/inert.json']
+        self.assertEqual(driver.parse_arguments(options).source_input, 'pause-only')
+        for extra in (['--source-input', 'native'], ['--source-input', 'off'],
+                      ['--node', 'm5'], ['--source-snapshot-deployment', 'relative.json']):
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                driver.parse_arguments(options + extra)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            driver.parse_arguments(options[:-2])
+
     def test_nonce_ack_cannot_be_used_as_playback_verification(self):
         c, bus = self.coordinator(verified=False); self.offer(bus, 1); c.advance()
         bus.rows[m.names(1)['dispatched']] = b'77\n'

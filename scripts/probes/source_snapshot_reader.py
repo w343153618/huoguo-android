@@ -217,8 +217,10 @@ class DirectDumpReader:
             return self._failed(decoder.command_info())
         self.serialization_verified = False
         self.runner_exit_verified = False
+        # Even an empty/truncated ADB result does not prove mkdir/runner never
+        # ran. Register the exact candidate scope before the owned command.
+        self.possibly_retained.append(protocol.namespace(nonce))
         raw, info = self.reader.read([snapshot_script(nonce, self.deployed)], byte_limit)
-        if raw.startswith(DIR): self.possibly_retained.append(protocol.namespace(nonce))
         try:
             if not info['command_ok'] or not info['child_reaped']:
                 return self._failed(info)

@@ -92,6 +92,13 @@ class SnapshotReaderChecks(unittest.TestCase):
             self.assertEqual(len(raw.arguments), 1)
             self.assertNotIn('rm -f', raw.arguments[0][0][0])
 
+    def test_empty_timeout_output_is_not_proof_no_remote_runner_or_directory(self):
+        adapter, raw = self.reader([(b'', 2)])
+        content, info = adapter.read([stats.snapshot_script(NONCE)])
+        self.assertFalse(content); self.assertFalse(info['command_ok'])
+        self.assertTrue(info['snapshot_owned_scope_may_remain'])
+        self.assertEqual(adapter.possibly_retained, [m.protocol.namespace(NONCE)])
+
     def test_live_runner_or_unreadable_proc_never_allows_deletion(self):
         suffix = b'S ' + b' '.join([b'0'] * 18) + b' 567\n'
         for proc in (b'123 (uiautomator) ' + suffix, (b'', 4), b'foreign stat'):

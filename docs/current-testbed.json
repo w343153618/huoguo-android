@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30\u219219 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -2274,6 +2274,97 @@
     "real_phone_performance_claim": false,
     "App_release_or_manifest_changed": false,
     "unconfirmed_runner_policy": "retain_owned_scope_and_fail_not_delete_or_extend_timeout",
-    "document": "docs/source-active-snapshot-candidate-20261004.md"
+    "document": "docs/source-active-snapshot-candidate-20261004.md",
+    "exact_source_CI": {
+      "head_sha": "d01aa22a9c354c38c0d257bbf6e8054ab7532379",
+      "run": 37173330611,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "build",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "name": "udp_candidate",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "verified_success": true,
+      "log_test_summaries": [
+        [
+          "1765",
+          "65.960"
+        ]
+      ],
+      "existing_platform_skips": [
+        "11"
+      ]
+    }
+  },
+  "owner_authenticated_source_pause_reader_candidate": {
+    "schema": "authenticated-source-pause-reader-candidate-v1",
+    "default_enabled": false,
+    "scope": "M1/nps_owner/saved_UI/media_only/current_captured_App_Attempt",
+    "driver_reader_integrated": true,
+    "pause_only_recovery_implemented": true,
+    "native_default_two_phase_policy_unchanged": true,
+    "new_helper_sha256": "9b1cc1434e45e58ad45f0787f8931783de84e48b78a2c5dbbd236eff92d19d05",
+    "new_helper_bytes": 78227,
+    "target_APK_SHA256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "target_JNI_SHA256": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+    "classpath_files_count": 106,
+    "original_signer_verified": true,
+    "build_compile_DEX_link_align_sign_verify_success": true,
+    "helper_installed": false,
+    "UI_runner_executed": false,
+    "source_input_sent": false,
+    "App_auth_media_started": false,
+    "SF_samplers_started": false,
+    "service_signals": 0,
+    "source_SHA256": {
+      "scripts/probes/run_authenticated_lan_ui.py": "05b81b4068a3ab24e6efa05c018f5f4b6b3f478cd678b567f1c5c20bcb88ae9f",
+      "scripts/probes/source_authenticated_driver.py": "bbcc565b1b024e98c06c674a61f39ba3a84e172bd07183d266ce1753ecefea98",
+      "scripts/probes/source_snapshot_reader.py": "f65c06787f0c5f1ccbf3054d9a1f2ecc0f3a075e9e8f89736da2814b63299319",
+      "scripts/probes/source_snapshot_selection.py": "29729507e5f17d654d7d95bacf81e84aaecc2dbc258b2281a559414e3b6af73f",
+      "experiments/moonlight-v2/authenticated-lan/LanUiAcceptance.java": "54a56b04c5d34e73d728c59d0846edb3c2b701ba0e1ab78c2a529c80f103e7a7",
+      "experiments/moonlight-v2/authenticated-lan/OwnerSourceTap.java": "244a17d54635d2158d2b936d42909970cbf11bf0ffdb56e29f199739a959eeb0"
+    },
+    "focused_checks": 98,
+    "initial_test_command_import_only_errors": 3,
+    "subsequent_correct_complete_focused_run_passed": true,
+    "actual_readonly_preflight": {
+      "schema": "source-pause-candidate-readonly-v1",
+      "original_gateway_and_four_roles_zero": true,
+      "phone_target_absent": true,
+      "phone_helper_absent": true,
+      "device_UI_session_started": false,
+      "input_sent": false,
+      "auth_or_media_started": false,
+      "services_signalled": false,
+      "uiautomator_wrapper_sha256": "588f4e89975e626c1ae185c350389e4fad005b2cb9525834a42dfa7dfd548545",
+      "uiautomator_wrapper_bytes": 4173,
+      "wrapper_uses_exec_app_process": true,
+      "source_identity_focus_owner_playing_verified": true,
+      "source_identity": {
+        "pid": 3470,
+        "uid": 10235,
+        "start_ticks": 1952
+      },
+      "source_readonly_commands_reaped": true,
+      "source_format_requalified": false
+    },
+    "fixed_UI_command_budget_seconds": 3,
+    "fixed_source_phase_budget_seconds": 6,
+    "fixed_source_collector_max_seconds": 15,
+    "readonly_format_or_actual_pause_verified": false,
+    "runtime_remote_runner_failure_quiescence_accepted": false,
+    "new_App_release_or_manifest": false,
+    "real_phone_performance_claim": false,
+    "next_required": "Before first runtest: independently validate known owned runner startup/actual exit and private pending-scope journal so helper cancellation cannot release a source lease while remote UI quiescence remains unknown; then NEW current-source authenticated Pause qualification, no stale target or old campaign rerun.",
+    "document": "docs/authenticated-source-pause-reader-candidate-20261004.md",
+    "private_build": "/private/tmp/huoguo-source-pause-helper-f_80lxsw"
   }
 }
