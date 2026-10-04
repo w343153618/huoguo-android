@@ -70,3 +70,48 @@ keeps its supervisor alive on unknown cleanup, and qualifies actual phone/LAN
 saved UI independently. Phone availability first uses the unchanged reviewed
 f0/d043 current-Attempt frame-only route; do not silently replace that freeze
 with the new App or helper. Source/build success is not a signed App release.
+
+Exact6fda696711801a82bc37ab562e35dae2564c324d/run37205328297 independently
+completed overall/build/UDPsuccess. Linux1981tests/74.328s/11existing platform
+skips, Androidcompile/lint and isolatedAPK/JNI checks passed. Do not repeat this
+accepted run or borrow itsgreen for a laterSHA; cloud result is appended locally
+for the next meaningful source push, not a separate doc-only CI.
+
+A NEW full source freeze has1080tracked files/350Python, no.git, all Git blob
+and final hashes match. Frozen-only26checks passed1.591s with actual host
+children/inert admission. A NEW restricted private library launcher binds the
+fixed entries, MacProbes, OwnerLanAdmission and owned kernel to that freeze.
+Preparation exit0 and five preparation/mocked witness checks passed0.064s;
+CLI has no execute option (refused2). A bounded single raw HTTPS error-witness
+implementation holds its supplied huoguo password only in memory, pins the
+existing certificate and literal loopback45561, requires closed error JSON/
+Content-Length and updates its remaining5s socket budget. No actual socket,
+TLS/authentication or original-registry witness was executed. Source/library
+checks do not establish operator permission. Fresh trusted root callbacks must
+qualify source/device/artifacts, old f0 eligibility and normal saved LAN UI.
+
+The launcher copies required readonly binaries/JAR/proto bytes into a NEW private
+runtime and keeps the existing venv reference; old frozen worker/audio logs are
+not reused as output. Bind-time review found that the original plist has no
+DIRECT_CERT/KEY override. The launcher now references the exact existing defaults
+from pinned gateway.py, preserving its existing auth-file/backend references;
+no credential, key or store content was copied. Runtime/source pins still match.
+The future live caller's checkpoint/retained-supervisor hold loop and complete
+qualification callbacks remain unimplemented/unverified; do not start this
+partial binding and let interpreter exit on unknown cleanup. All older freezes,
+App/helper artifacts and failed UI retirement gates remain unchanged.
+
+The subsequent NEW private supervisor library now binds the actual owned
+coordinator objects to a closed private checkpoint and retained live-hold loop.
+Five actual host-child/inert-guard checks passed0.327s, covering pre-Popen
+possible-start persistence, actual PID association from held objects, normal
+release, unknown phone cleanup and reviewed in-memory retry, startup-failure
+reservation retention, foreign inode/symlink refusal, checkpoint write failure
+and KeyboardInterrupt while holding. No JSON/PID file or socket snapshot can
+adopt ownership or request release. A checkpoint error does not drop a marked
+guard or report supervisor success. A separately verified actual release remains
+separate from failed checkpoint persistence. Unknown startup/forced-exit recovery
+remains gated. No real gateway, original reservation, phone, helper or witness
+was started. Concrete fresh phone/operator/artifact/saved-LAN eligibility and
+helper ownership callbacks still need independent full-binding review/fixtures
+before real use; this update replaces only the earlier unimplemented-hold note.

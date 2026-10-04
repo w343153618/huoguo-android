@@ -1,5 +1,40 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Latest NEW default-OFF phone readonly qualification and exact child environment
+are implemented:18new/83affected checks PASS6.055s, synthetic Android reads and
+existing actual API37/JVM fixtures, not fresh phone/ART. Fixed children use
+isolated Python imports; pure environment references only reviewed auth/cert/key
+and fixed M1 paths, no inherited PATH/Python/loader/proxy/DIRECT overrides.
+Old6f private binding copied ambient env, so NEW binding must use these before
+live; old frozen/private pins unchanged. Snapshot never proves helper ownership,
+operator/currentAttempt/serverlease or LAN saved credential. Matched helper
+normal restore still refuses destination/account/nonempty mismatch beforeconnect.
+Phoneonce device-not-found, no repoll/mutation. Next concrete owned-helper remote
+uncertainty lifecycle and whole NEW callback binding fixtures; old f0/d043 first
+on actual availability. No source input/UI/RPC/media/App release. NewSHA own CI.
+
+Latest private follow-on: NEW supervisor library/closed checkpoint/live hold now
+implemented,5actual host-Popen/inertguard checks PASS0.327s. Persist possible
+start before Popen; use held objects, noPID adoption; unknown phone/failedstart
+retain guard; foreign inode/checkpoint error/KeyboardInterrupt cannot drop it
+or bless supervisor success. No realgateway/reserve/auth/phone/helper. Concrete
+freshoperator/artifact/phone/LAN savedUI+ownedhelper callbacks and independent
+whole-binding review/fixtures remain next. Earlier hold-NOTimplemented is only
+history; newest private pointer/receipt takes priority. Exact6f CI alreadygreen,
+no repeat sourcefreeze/prepare/CI or phonepoll. Clouddocs pending nextsourcepush.
+
+Exact NEW entry6fda696711801a82bc37ab562e35dae2564c324d/run37205328297 now
+independently overall/build/UDPsuccess, Linux1981/74.328s/11existing skips.
+Do not repeat. NEW1080source/350Python freeze/allpins,26targeted PASS1.591s.
+NEW private library entry prepares0/5mock+pin checks.064s/executeCLI refused2,
+binds fixedentries/MacProbes/admission/kernel and source-only bounded memory
+witness; no realTLS/auth/phone/gateway. NEW runtime copied required readonly
+bytes, oldlogs frozen; originalCERT/KEY absent overrides use exact existing
+pinned defaults. No secret/store copied. Future caller live-hold/checkpoint and
+full freshoperator/phone/LAN savedUI qualification still required: implement
+those next before live. Old reviewed f0/d043 first on actual availability; no
+repoll/freeze/prepare/acceptedCI repetition. Docs localappend, next meaningfulpush.
+
 NEW default-OFF M1 gateway/driver fixed entry binding and bounded readonly probes
 are implemented;16new/61affected checks PASS2.225s. Actual hostchildren only,
 inert admission/phone callbacks. Owned gateway ignoredTERM→KILL fixture reaped

@@ -55,6 +55,49 @@
     "Linux_elapsed_seconds": 81.844,
     "existing_platform_skips": 11
   },
-  "cloud_CI_for_this_source": "pending_own_exact_SHA_after_push",
-  "actual_driver_start_marker_not_fixed_sleep_fixture": true
+  "cloud_CI_for_this_source": {
+    "sha": "6fda696711801a82bc37ab562e35dae2564c324d",
+    "run": 37205328297,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1981,
+    "Linux_elapsed_seconds": 74.328,
+    "existing_platform_skips": 11,
+    "independently_read_back": true
+  },
+  "actual_driver_start_marker_not_fixed_sleep_fixture": true,
+  "source_commit": "6fda696711801a82bc37ab562e35dae2564c324d",
+  "NEW_full_source_freeze": {
+    "files": 1080,
+    "Python_files": 350,
+    "no_git": true,
+    "all_git_blobs_and_post_pins_verified": true,
+    "targeted_checks": 26,
+    "targeted_seconds": 1.591,
+    "actual_host_children_inert_admission_only": true
+  },
+  "NEW_private_library_entry_binding": {
+    "preparation_exit": 0,
+    "execute_cli_refused_exit": 2,
+    "mock_checks": 5,
+    "mock_seconds": 0.064,
+    "actualgateway_phone_TLS_auth": false,
+    "new_runtime_scope_preserves_old_logs": true,
+    "caller_unknown_live_hold_not_yet_integrated": false,
+    "original_known_CERT_KEY_defaults": true
+  },
+  "NEW_private_supervisor_binding": {
+    "source_implemented": true,
+    "checkpoint_before_possible_Popen": true,
+    "unknown_guard_live_hold": true,
+    "checkpoint_not_PID_ownership": true,
+    "foreign_inode_symlink_refusal": true,
+    "checkpoint_failure_or_keyboard_interrupt_not_guard_release": true,
+    "checkpoint_failure_supervisor_success": false,
+    "actual_host_Popen_inert_guard_checks": 5,
+    "elapsed_seconds": 0.327,
+    "real_gateway_phone_execution": false,
+    "fresh_operator_artifact_phone_qualification_callbacks_integrated": false
+  }
 }

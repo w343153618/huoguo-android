@@ -3600,7 +3600,121 @@
       "Linux_elapsed_seconds": 81.844,
       "existing_platform_skips": 11
     },
-    "cloud_CI_for_this_source": "pending_own_exact_SHA_after_push",
-    "actual_driver_start_marker_not_fixed_sleep_fixture": true
+    "cloud_CI_for_this_source": {
+      "sha": "6fda696711801a82bc37ab562e35dae2564c324d",
+      "run": 37205328297,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1981,
+      "Linux_elapsed_seconds": 74.328,
+      "existing_platform_skips": 11,
+      "independently_read_back": true
+    },
+    "actual_driver_start_marker_not_fixed_sleep_fixture": true,
+    "source_commit": "6fda696711801a82bc37ab562e35dae2564c324d",
+    "NEW_full_source_freeze": {
+      "files": 1080,
+      "Python_files": 350,
+      "no_git": true,
+      "all_git_blobs_and_post_pins_verified": true,
+      "targeted_checks": 26,
+      "targeted_seconds": 1.591,
+      "actual_host_children_inert_admission_only": true
+    },
+    "NEW_private_library_entry_binding": {
+      "preparation_exit": 0,
+      "execute_cli_refused_exit": 2,
+      "mock_checks": 5,
+      "mock_seconds": 0.064,
+      "actualgateway_phone_TLS_auth": false,
+      "new_runtime_scope_preserves_old_logs": true,
+      "caller_unknown_live_hold_not_yet_integrated": false,
+      "original_known_CERT_KEY_defaults": true
+    },
+    "NEW_private_supervisor_binding": {
+      "source_implemented": true,
+      "checkpoint_before_possible_Popen": true,
+      "unknown_guard_live_hold": true,
+      "checkpoint_not_PID_ownership": true,
+      "foreign_inode_symlink_refusal": true,
+      "checkpoint_failure_or_keyboard_interrupt_not_guard_release": true,
+      "checkpoint_failure_supervisor_success": false,
+      "actual_host_Popen_inert_guard_checks": 5,
+      "elapsed_seconds": 0.327,
+      "real_gateway_phone_execution": false,
+      "fresh_operator_artifact_phone_qualification_callbacks_integrated": false
+    }
+  },
+  "owner_native_phone_qualification_candidate_20261004": {
+    "schema": 1,
+    "candidate": "default_OFF_readonly_M1_phone_qualification_and_fixed_child_environment",
+    "checked_at_utc": "2026-10-04T14:00:15.499268+00:00",
+    "new_checks": 18,
+    "affected_checks": 83,
+    "affected_elapsed_seconds": 6.055,
+    "checks_passed": true,
+    "phone_reads_in_fixtures": "synthetic Android output via finite readonly runner callbacks",
+    "actual_API37_saved_UI_fixture_in_affected_suite": true,
+    "actual_device_snapshot_by_new_adapter": false,
+    "constructor_inert": true,
+    "fixed_phone_serial": "f7fc9469",
+    "phone_operation_bounds_seconds": {
+      "one_command": 3,
+      "aggregate_read_budget": 15
+    },
+    "phone_scope": [
+      "actual get-state",
+      "full PID UID NAME before and after",
+      "user0 package path/hash/path bracket",
+      "unique version code/name",
+      "root id readonly",
+      "preexisting private input existence only",
+      "CPU min/max/current read",
+      "system min/peak refresh120"
+    ],
+    "installed_APK_matches_preverified_signed_local_bytes": true,
+    "remote_JNI_or_signature_extraction": false,
+    "same_APK_derives_existing_local_JNI_signature_binding": true,
+    "phone_snapshot_is_atomic_hold": false,
+    "phone_snapshot_is_operator_or_server_lease": false,
+    "phone_snapshot_reads_password_or_store": false,
+    "phone_snapshot_installs_or_uninstalls_helper": false,
+    "normal_saved_UI_credential_or_currentAttempt_verified": false,
+    "saved_UI_gate_stays_in_matching_helper_before_connect": true,
+    "pure_environment_references_existing_auth_cert_key_only": true,
+    "inherited_PATH_PYTHONPATH_loader_proxy_DIRECT_overrides_accepted": false,
+    "fixed_children_isolated_Python_imports": true,
+    "private_6f_launch_environment_still_needs_NEW_binding": true,
+    "existing_private_freezes_not_edited": true,
+    "actual_phone_get_state_once": "device_not_found",
+    "device_queries_this_turn": 1,
+    "new_helper_install_auth_media_RPC_UI_input": false,
+    "actual_host_media_or_gateway_started": false,
+    "new_App_or_helper_bytes_changed": false,
+    "new_App_release": false,
+    "old_reviewed_f0_d043_first_on_availability_preserved": true,
+    "whole_private_binding_review_findings": [
+      "Old private launch copies os.environ and whole plist; fixed exact environment/import isolation must be used in NEW binding. No accepted old live execution occurred.",
+      "Current fresh phone/artifact callback can be concrete readonly; actual helper ownership/installer lifecycle and trusted operator/source/dependency/private evidence are still separate.",
+      "Normal saved-LAN qualification cannot be inferred from pm metadata or existing public credential; actual matching helper native restore still refuses mismatched destination/account/nonempty credential.",
+      "Unknown helper or phone cleanup cannot be promoted to coordinator release; old supervisor holds actual object/guard."
+    ],
+    "remaining": [
+      "Concrete bounded owned helper lifecycle with remote uncertain install cleanup",
+      "NEW private full-binding of fixed environment and actual fresh callbacks",
+      "Fresh original/formal/admission and actual device eligibility",
+      "Old reviewed f0 normal saved-UI currentAttempt frame-only first, then explicit new artifact/LAN eligibility",
+      "Actual ART/native events/overhead and later qualified moving public window"
+    ],
+    "source_pins": {
+      "scripts/probes/owner_native_phone_probes.py": "6a760645e7bde49ef4490a70a3948f4b70a19b35a2ae755e3b769c6e7e6f178e",
+      "scripts/probes/owner_native_gateway_environment.py": "3d18b1f6a778f8b68746e94cc39654acbc663db55cde7089aefa044a3e4e4fe4",
+      "scripts/probes/owner_native_gateway_coordinator.py": "d491db6a38ebb08b29057e2def877a96b2a5807bd40129ec09b49d0e8e4c219e",
+      "tests/test_owner_native_phone_probes.py": "b365241e79511d2f2f6e4d9845776037345ae996d29e0e7899f1038e78f7e32d",
+      "tests/test_owner_native_gateway_environment.py": "8947345ce31fc2eaf99afa8e071f5a25af846e5028aac1d576463059ac97d0de",
+      "tests/test_owner_native_gateway_coordinator.py": "2454004d51ff717ffb1262fdef0a47e32a4f0f59fe957eaa5aa09a2b9110b116"
+    },
+    "cloud_CI_for_this_source": null
   }
 }

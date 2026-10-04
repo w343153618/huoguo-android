@@ -60,10 +60,19 @@ class Entries:
                 '--media-only','--credential-source','saved-ui','--credential-save','off',
                 '--v50-profile','on','--stage-diagnostics','off','--pcm-queue','off',
                 '--codec-startup','off','--surface-submit-lead-ms','0')
-        argv = (str(self.python),'-u','-c',program) + options
+        # A fresh isolated interpreter imports only the explicit reviewed root,
+        # not an inherited PYTHONPATH or user-site shadow of that source.
+        argv = (str(self.python),'-I','-u','-c',program) + options
         if len(argv)>64 or sum(map(len,argv))>8192 or any('\0' in x for x in argv):
             raise ValueError('native_coordinator_entry_bound')
         return argv
+
+    def environment(self, home, state, original):
+        """Pure exact child environment; referenced bytes still need review."""
+        self.__post_init__()
+        from scripts.probes.owner_native_gateway_environment import select
+        return select(home, home / 'Library/Android/sdk/platform-tools/adb',
+                      state, self.evidence, original)
 
 
 def _ready(raw, window, interface):

@@ -70,10 +70,12 @@ class CoordinatorChecks(unittest.TestCase):
         with patch.object(subprocess,'Popen') as popen:
             for kind in ('gateway','driver'):
                 argv=item.entries.argv(item.gateway.window,kind)
-                module=ast.parse(argv[3]);window=module.body[-2].value
+                program=argv[argv.index('-c')+1]
+                module=ast.parse(program);window=module.body[-2].value
                 self.assertEqual(ast.literal_eval(window.args[0].keywords[0].value),vars(item.gateway.window.plan))
                 self.assertEqual(ast.literal_eval(window.args[1]),5)
-                self.assertNotIn('password',argv[3]);self.assertNotIn('--owner-native',argv)
+                self.assertNotIn('password',program);self.assertNotIn('--owner-native',argv)
+                self.assertIn('-I',argv)
                 self.assertEqual(argv[0],sys.executable)
                 self.assertNotIn('--capture-trace-dir',argv)
             popen.assert_not_called()
