@@ -1,0 +1,31 @@
+{
+  "source_revision": "22f16fa892180901911200cbdc7a2558439be1e8",
+  "version": "1.31-alpha.9",
+  "code": 40,
+  "scope": "local frozen22f transport-progress candidate build only",
+  "APK": {
+    "application_id": "local.remoteandroid.direct.experiment",
+    "application_label": "\u7ed9\u706b\u9505\u7684\u5b89\u5353 \u00b7 \u5b9e\u9a8c\u7248",
+    "apk_size": 7245430,
+    "sha256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "signing_certificate_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da"
+  },
+  "jni_sha256": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+  "helper_sha256": "8c34c233b3520dd9a17a79d02756c114bd5fee0df3f4176f0b72d786d3df5f35",
+  "helper_signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+  "helper_same_source_compiled": true,
+  "typed_receipt_late_observer_boundary_remains": true,
+  "assemble_debug_release_lint_passed": true,
+  "first_apksigner_validation_missing_JAVA_HOME_failed": true,
+  "validated_after_explicit_JAVA_HOME": true,
+  "focused_JVM_checks": 6,
+  "related_Inbox_JVM_checks": 10,
+  "related_completion_JVM_checks": 8,
+  "header_parser_checks": 16,
+  "installed": false,
+  "published": false,
+  "real_phone_measured_new_fields": false,
+  "sampling_overhead_measured": false,
+  "actual_one_hour_soak": false,
+  "published_alpha8_unchanged": true
+}

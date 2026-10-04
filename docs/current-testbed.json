@@ -2171,7 +2171,7 @@
   },
   "M1_App_transport_progress_candidate_20261004": {
     "source_sha256": "5f77969d503936198666b40f7e99247f1f6c32e0e7731597a6ab6a4d36c877e9",
-    "status": "source/JVM verified; no new build/install/deployment/release",
+    "status": "frozen22f local debug/release build and lint passed; same-signer APK/helper verified; not installed/released",
     "focused_JVM_checks": 6,
     "related_Inbox_JVM_checks": 10,
     "related_completion_checks": 8,
@@ -2179,6 +2179,12 @@
     "retention": "64 initial columns; explicit recording/export counts; no whole-session coverage",
     "timestamp": "iteration-start System.nanoTime before receive, not exact arrival",
     "previous_local_code40_APK_matches_new_source": false,
-    "next": "new matched candidate/helper build and owner public real acceptance; preserve published alpha8"
+    "next": "NEW coordinator scoped original-signer owner App upgrade after target absence; matching helper ordinary-public authenticated ingress/FEC comparison; no reuse gold39",
+    "artifact_source_revision": "22f16fa892180901911200cbdc7a2558439be1e8",
+    "new_APK_sha256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "new_JNI_sha256": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+    "new_helper_sha256": "8c34c233b3520dd9a17a79d02756c114bd5fee0df3f4176f0b72d786d3df5f35",
+    "build_evidence": "docs/app-transport-progress-local-build-20261004.json",
+    "typed_receipt_late_observer_boundary_remains": true
   }
 }
