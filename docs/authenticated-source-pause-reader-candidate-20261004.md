@@ -85,3 +85,10 @@ readonly qualification/Pause recovery. Only subsequently run a fresh moving
 video public window. No service signal, source input, App authentication/media
 or SF sampler was performed in this iteration; M5 and all NPS clients were
 untouched. No physical latency, audio, public stability or V50 claim is made.
+
+## Exact source CI readback
+
+Commit `ddcf05a962df0a2a7519db4ede83298cd4a4547a`, run37175124505, was
+independently read back completed/success with both build and udp_candidate
+success. This is this exact source's CI result, not a new App release or runtime
+UI acceptance. Do not repeat this run or use it to certify a subsequent SHA.

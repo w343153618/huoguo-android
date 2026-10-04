@@ -56,6 +56,7 @@ class NpsUdpAppContractChecks(unittest.TestCase):
         ui = UI.read_text()
         saved = '    private static int savedSelection' + ui.split('    private static int savedSelection', 1)[1].split('    private static boolean savedSound', 1)[0]
         selections = '    private static String selectedScope' + ui.split('    private static String selectedScope', 1)[1].split('    private static String savedAddress', 1)[0]
+        initial_scope = re.search(r'final int savedScope=(savedSelection\(saved,"scope",3,[0-3]\));', ui).group(1)
         source = r'''
 package local.remoteandroid.direct;
 import java.util.HashMap;
@@ -69,14 +70,14 @@ public final class UiSelectionsCheck {
 ''' + saved + selections + r'''
     public static void main(String[] args)throws Exception{
         SharedPreferences saved=new SharedPreferences();
-        if(savedSelection(saved,"scope",3,3)!=3)throw new AssertionError("fresh alpha6 not public M5");
+        if(CURRENT_SCOPE_SELECTION!=2)throw new AssertionError("fresh install not public M1");
         if(savedFpsSelection(saved)!=0)throw new AssertionError("fresh not stable30");
         for(int i=0;i<3;i++){saved.values.put("fps",i);if(savedFpsSelection(saved)!=(i==0?1:0))throw new AssertionError("legacy FPS migration drift");}
         saved.values.put("fps_value",60);if(savedFpsSelection(saved)!=1)throw new AssertionError("manual60 lost");
         saved.values.put("fps_value",30);if(savedFpsSelection(saved)!=0)throw new AssertionError("manual30 lost");
         saved.values.put("fps_value","60");if(savedFpsSelection(saved)!=0)throw new AssertionError("invalid FPS value accepted");
-        for(int i=0;i<4;i++){saved.values.put("scope",i);if(savedSelection(saved,"scope",3,3)!=i)throw new AssertionError("legacy valid preference reset");}
-        for(Object bad:new Object[]{-1,4,true,"3",3.0}){saved.values.put("scope",bad);if(savedSelection(saved,"scope",3,3)!=3)throw new AssertionError("invalid selection accepted");}
+        for(int i=0;i<4;i++){saved.values.put("scope",i);if(CURRENT_SCOPE_SELECTION!=i)throw new AssertionError("legacy valid preference reset");}
+        for(Object bad:new Object[]{-1,4,true,"3",3.0}){saved.values.put("scope",bad);if(CURRENT_SCOPE_SELECTION!=2)throw new AssertionError("invalid selection accepted");}
         if(!selectedScope(0).equals("lan")||!selectedScope(1).equals("tailnet")||!selectedScope(2).equals("nps_owner")||!selectedScope(3).equals("nps_owner"))throw new AssertionError("scope positions drift");
         if(!selectedNode(0).isEmpty()||!selectedNode(1).isEmpty()||!selectedNode(2).equals("m1")||!selectedNode(3).equals("m5"))throw new AssertionError("node positions drift");
         if(!publicAddress(2).equals("146.56.249.175:49556")||!publicAddress(3).equals("146.56.249.175:49558"))throw new AssertionError("public control tuple drift");
@@ -92,6 +93,7 @@ public final class UiSelectionsCheck {
     }
 }
 '''
+        source = source.replace('CURRENT_SCOPE_SELECTION', initial_scope)
         result = run_java('local.remoteandroid.direct.UiSelectionsCheck', [(CONTRACT, None), (ROOT/'app/src/udp/java/local/remoteandroid/direct/UdpLowLoadProfile.java',None), ('UiSelectionsCheck.java', source)])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('PASS actual scope and saved preference', result.stdout)

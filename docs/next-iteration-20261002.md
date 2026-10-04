@@ -1,4 +1,38 @@
+## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
+
+The user has explicitly moved all research, exploration and optimization to M1.
+Future stable releases use authenticated UDP and default to M1; M5 is retained
+as a selectable backup/test host. This supersedes the earlier M5-friend/M1-owner
+split. Existing active sessions, guest data sets and all identities/services
+remain protected. See m1-primary-udp-policy-20261004.md. A source policy/default
+change is not a released APK or friend/public isolation acceptance.
+
+M5's missing third-party APKs are being copied into M1 with package/version,
+byte-hash and original-signer checks. Existing M1 apps and both hosts' private
+account data are preserved. All16 missing apps are now installed and actual versions verified. M1
+data storage expanded10→32GiB offline; about20.1GiB remains after installation.
+TikTok47.0.3 starts but is at first-run birthday setup; no login/video acceptance.
+See m1-app-import-storage-20261004.md/json. Runtime RAM remains8GiB/6cores. Exact actual storage
+maintenance Popen and receipt are in the private iteration-state and
+m1-app-import-20261004 evidence; resume active execution, do not start a duplicate.
+Do not delete user files or restore16GiB RAM. Every M1 maintenance reboot invalidates
+old source PID3470/UID/start/format/playback witnesses, so later performance work
+needs fresh observations. M5 is read-only for APK extraction and is not a
+performance optimization host.
+
+Default-OFF owned source-snapshot parent is now implemented and has13 actual
+host ownership/timeout/output-bound checks, plus an actual Android arm64 build.
+It has not been staged/executed as an Android UiAutomation session; inherited
+ART environment, Java receipt binding, scope journal, permission lease and
+actual remote quiescence remain separate gates. Latest focused source-runner,
+reader and UDP preference checks:28 PASS/4.051s. A mistaken nonexistent test-module
+selection was a local command import error and was corrected, not an App crash.
+Current changes have not yet been pushed or given a new exact cloud CI run.
+
 ## 2026-10-04 latest: explicit playing-source Pause/direct reader integration; no runtime UI/input yet
+
+Exactddcf05a962df0a2a7519db4ede83298cd4a4547a/run37175124505 independently
+completed overall/build/UDPsuccess; no new Apprelease.
 
 Default-OFF `pause-only` M1/nps_owner/saved-UI/media-only source recovery now
 uses one captured authenticated App Attempt and a fresh qualified playing Pause

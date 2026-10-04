@@ -57,5 +57,16 @@
   "runtime_remote_runner_failure_quiescence_accepted": false,
   "new_App_release_or_manifest": false,
   "real_phone_performance_claim": false,
-  "next_required": "Before first runtest: independently validate known owned runner startup/actual exit and private pending-scope journal so helper cancellation cannot release a source lease while remote UI quiescence remains unknown; then NEW current-source authenticated Pause qualification, no stale target or old campaign rerun."
+  "next_required": "Before first runtest: independently validate known owned runner startup/actual exit and private pending-scope journal so helper cancellation cannot release a source lease while remote UI quiescence remains unknown; then NEW current-source authenticated Pause qualification, no stale target or old campaign rerun.",
+  "exact_source_CI": {
+    "head_sha": "ddcf05a962df0a2a7519db4ede83298cd4a4547a",
+    "run": 37175124505,
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": {
+      "build": "success",
+      "udp_candidate": "success"
+    },
+    "verified_success": true
+  }
 }

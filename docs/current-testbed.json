@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30\u219219 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -2365,6 +2365,68 @@
     "real_phone_performance_claim": false,
     "next_required": "Before first runtest: independently validate known owned runner startup/actual exit and private pending-scope journal so helper cancellation cannot release a source lease while remote UI quiescence remains unknown; then NEW current-source authenticated Pause qualification, no stale target or old campaign rerun.",
     "document": "docs/authenticated-source-pause-reader-candidate-20261004.md",
-    "private_build": "/private/tmp/huoguo-source-pause-helper-f_80lxsw"
+    "private_build": "/private/tmp/huoguo-source-pause-helper-f_80lxsw",
+    "exact_source_CI": {
+      "head_sha": "ddcf05a962df0a2a7519db4ede83298cd4a4547a",
+      "run": 37175124505,
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "build": "success",
+        "udp_candidate": "success"
+      },
+      "verified_success": true
+    }
+  },
+  "host_policy_20261004": {
+    "user_instruction": "All research, exploration and optimization on M1; future stable UDP defaults M1; M5 alternate backup/test host",
+    "supersedes": "host_roles_20261003 M5-friend/M1-owner split",
+    "research_host": "M1",
+    "future_stable_default_host": "M1",
+    "future_stable_media_transport": "authenticated UDP; no silent TCP fallback",
+    "M5_role": "selectable backup/test host",
+    "existing_sessions_protected": true,
+    "UI_fresh_scope_candidate": 2,
+    "valid_saved_scopes_retained": true,
+    "new_APK_published_for_this_policy": false,
+    "published_stable_history_not_relabelled": true,
+    "evidence": "docs/m1-primary-udp-policy-20261004.md"
+  },
+  "M1_app_import_20261004": {
+    "source_host": "M5 read-only APKs",
+    "destination_host": "M1",
+    "missing_apps": 16,
+    "installed_version_verified": 16,
+    "existing_apps_replaced": false,
+    "private_account_data_copied": false,
+    "status": "completed installed APK migration; individual playback/login not accepted",
+    "RAM_MiB": 8192,
+    "data_disk_GiB": 32,
+    "free_after_installs_KiB": 21122488,
+    "M5_or_NPS_restart": false,
+    "evidence": "docs/m1-app-import-storage-20261004.md"
+  },
+  "M1_data_storage_expansion_20261004": {
+    "virtual_data_disk_GiB_before": 10,
+    "virtual_data_disk_GiB_after": 32,
+    "filesystem_blocks_4KiB_after": 8388608,
+    "free_KiB_after_installs": 21122488,
+    "RAM_MiB": 8192,
+    "CPU_cores": 6,
+    "physical_resolution": [
+      1080,
+      1920
+    ],
+    "density": 480,
+    "active_refresh_Hz": 30.000002,
+    "HWUI": "skiavk",
+    "offline_backup_verified": true,
+    "pre_resize_logical_contents_equal": true,
+    "normal_unmount_only": true,
+    "all_observed_namespaces_unmounted": true,
+    "observed_namespaces_checked": 244,
+    "fsck_resize_postcheck_completed": true,
+    "normal_launch_job_restored": true,
+    "original_launch_plist_unchanged": true
   }
 }

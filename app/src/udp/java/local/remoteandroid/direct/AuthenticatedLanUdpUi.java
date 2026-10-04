@@ -64,9 +64,9 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         SharedPreferences saved=activity.getSharedPreferences(SETTINGS,0);
         boolean lowLoad=UdpDeviceCapabilities.lowLoadDefault();
         ownerStageDiagnosticsEnabled=!savedLowLoad(saved,lowLoad);
-        // Existing 0/1 selections retain their meaning. A fresh alpha6 install
-        // defaults to the user's explicitly requested M5 public owner trial.
-        final int savedScope=savedSelection(saved,"scope",3,3);
+        // Preserve explicitly saved selections. New installs use M1; M5 remains
+        // selectable as the user's backup/test host.
+        final int savedScope=savedSelection(saved,"scope",3,2);
         lastLanAddress=savedAddress(saved,"lan_address",LanUdpContract.LAN_SCOPE,DEFAULT_LAN_ADDRESS);
         String restoredAddress=savedScope>=2?publicAddress(savedScope):savedAddress(saved,"address",selectedScope(savedScope),
             savedScope==0?lastLanAddress:LanUdpContract.TAILNET_HOST+":"+LanUdpContract.HTTPS_PORT);
@@ -74,7 +74,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         box.addView(loginHeader(pageRevision));
         TextView summary=new TextView(activity);summary.setText("公网 M1/M5 认证 UDP · 机主体验（公网单次 1 小时，届时提醒休息）\n可选局域网或 Tailnet；断线不会改用 TCP 媒体");box.addView(summary);
         TextView installed=new TextView(activity);installed.setText("已安装版本 v"+BuildConfig.VERSION_NAME+" · 版本码 "+BuildConfig.VERSION_CODE+"\n更新通道：实验版（独立于正式版）");box.addView(installed);
-        scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 机主试用", "公网 UDP · M5 · 机主试用（新安装默认）"},savedScope);
+        scope=choice(box,"连接范围（请手动选择）",new String[]{"物理局域网 · 手填 M1 IP","Tailnet · M1 100.65.0.2", "公网 UDP · M1 · 默认", "公网 UDP · M5 · 备用测试"},savedScope);
         address=field(box,"HTTPS 控制地址；公网节点使用固定地址",restoredAddress);address.setEnabled(savedScope<2);
         user=field(box,"现有安卓账号",savedText(saved,usernamePreference(savedScope),defaultUsername(savedScope),128));
         password=field(box,"现有账号密码（可在本机加密保存）","");password.setInputType(129);

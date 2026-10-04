@@ -1,0 +1,312 @@
+{
+  "schema": "M1-primary-installed-app-import-20261004-v1",
+  "source_host": "M5 read-only APK extraction",
+  "destination_host": "M1",
+  "missing_apps_installed": 16,
+  "apps": [
+    {
+      "label": "讯飞输入法",
+      "package": "com.iflytek.inputmethod",
+      "version_code": 15952,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "aa5c9fea6657a979f28475802a1e191d7862e5f0b95e35ee459927fbe8b85631",
+          "bytes": 78263214,
+          "signer_sha256": [
+            "8e28b81d19efb0065cf017a31f1e86af48c652e4b88cc51e27f592fd3b2c4fc3"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "剪映",
+      "package": "com.lemon.lv",
+      "version_code": 216101600,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "8c0ee208c292a9e6dd9ae6197491b7366aabd0bd38a53908c39abb97a05b66d5",
+          "bytes": 469187961,
+          "signer_sha256": [
+            "9c73eb6548209f24aa0fca09eb463ac42777ca9734151a31a17935fe2b640b9c"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "汽水音乐",
+      "package": "com.luna.music",
+      "version_code": 100211030,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "4b3615c90b5e4262de7bd023c0d7c68e0149bfb81b40f75d91c4d20f57c85076",
+          "bytes": 200192414,
+          "signer_sha256": [
+            "6491ec50293dd3dee7a03b74800e09af118fdd0f008725d08b911f850b7d79f4"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "红果免费短剧",
+      "package": "com.phoenix.read",
+      "version_code": 73932,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "fef69b1ae7d079656d915209482af1d2b81a6cab0a295f987d3c4e9e3e7b5836",
+          "bytes": 145240577,
+          "signer_sha256": [
+            "1fe01f1425c72dc1cd158e05cb696cb9fc17259a70f9d233fc48e8e42e6510ec"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "爱奇艺",
+      "package": "com.qiyi.video",
+      "version_code": 800170955,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "29671e7b81aa425da5fbf742e8758b21e1bd3840eceabb87686c2103e5cb3e67",
+          "bytes": 105691682,
+          "signer_sha256": [
+            "bf46eae985c1ab0d636833670c3686bc443e49f37d75dec5909adcb587a80ab4"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "快手",
+      "package": "com.smile.gifmaker",
+      "version_code": 50423,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "043adefaea130e960c1231e7c1d8484911c923fe57a2e88c2b21322a47bb8487",
+          "bytes": 187232973,
+          "signer_sha256": [
+            "aedeeb75bf14f0827adb8cb415c1d16ad1be8f03e4e4d1087ab06e46e8032ff4"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "抖音",
+      "package": "com.ss.android.ugc.aweme.mobile",
+      "version_code": 320206,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "46a3ebd3cf4b9a5020ebcea3aee02facaa80a7baae492b2c12090e5e0999baf0",
+          "bytes": 270981537,
+          "signer_sha256": [
+            "5182ae3b1b85337bb182cf24882449f84447ded18e296a747a9f6a0a2622512e"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "腾讯视频",
+      "package": "com.tencent.qqlive",
+      "version_code": 32321,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "9193560a6cd4e7990f6072d9a2ce65047fc2da6cf7b62a17b66d71115fd7e3f9",
+          "bytes": 161193377,
+          "signer_sha256": [
+            "d0cc12cd7c250ff62b6c21580be8be276760ca09c7507dc791c56a3fb9b887de"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "豌豆荚",
+      "package": "com.wandoujia.phoenix2",
+      "version_code": 803110002,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "1f4079c506927aa94aae52baecb82099f1c3fb6eaa803cfd452b8d062f5edb4f",
+          "bytes": 39778232,
+          "signer_sha256": [
+            "1bb6854e6a5dac4c08afde8167ac513bc994d9e7775a795c8b882fded334fe9e"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "优酷视频",
+      "package": "com.youku.phone",
+      "version_code": 920,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "d9d9eeebb29a7e828a8aff0fe206c48fbf8b0ba5cc7bb1013d9e9350023d9216",
+          "bytes": 123741719,
+          "signer_sha256": [
+            "c7dfd19f8199b80615ea6e70ab46f85d87f36af26501f4e02d5c2cba85e802fb"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "TikTok",
+      "package": "com.zhiliaoapp.musically",
+      "version_code": 2024700030,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "028ece4dab2eeeb1ba1b67c621de7851c95be0050d94070648d429a859203a6a",
+          "bytes": 342279696,
+          "signer_sha256": [
+            "9041803e91bcb814b4b4399fb5c85a91640b755e5e8ba76813814bf4cf2ab5ba"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "FanqieHook",
+      "package": "dev.operit.fanqiehook",
+      "version_code": 28,
+      "launcher_present": false,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "ef70b7a907ce99a7d11196152681b52ebc4061f1c6ed0931a86f5d403b0d2d46",
+          "bytes": 489957,
+          "signer_sha256": [
+            "032bcce45a401cf5946057b3d37042b40417a003c5fd5cd7ac4f791e8dc8daf3"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "KernelSU",
+      "package": "me.weishu.kernelsu",
+      "version_code": 32601,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "c197060ecb89702e7d54a4c95e29cf5e8d97369bbbb436979ab7fd6bcde7b077",
+          "bytes": 10777987,
+          "signer_sha256": [
+            "c371061b19d8c7d7d6133c6a9bafe198fa944e50c1b31c9d8daa8d7f1fc2d2d6"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "Vector",
+      "package": "org.matrix.vector.manager",
+      "version_code": 3080,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "101eaeec360106f9e8aa156b3f2c7695630ff918b0d56c416782ab62985cb005",
+          "bytes": 3195898,
+          "signer_sha256": [
+            "b10b03393e1f7df49a6dcd97cdb6478fb19cb5efd2024841be1129fd807697ed"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "NewPipe",
+      "package": "org.schabi.newpipe",
+      "version_code": 1015,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "18447bfb1e06d113edc88df93f471827280de06f6f3d4dc42f56f28b9c1bab79",
+          "bytes": 11507122,
+          "signer_sha256": [
+            "cb84069bd68116bafae5ee4ee5b08a567aa6d898404e7cb12f9e756df5cf5cab"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "哔哩哔哩",
+      "package": "tv.danmaku.bili",
+      "version_code": 9130500,
+      "launcher_present": true,
+      "APK_files": [
+        {
+          "name": "base.apk",
+          "sha256": "32bbe9cd9c559ec9594ff511a663b218c7670e34a260232d966d5aa7720bced3",
+          "bytes": 218480895,
+          "signer_sha256": [
+            "93ba270f5521139ecafe4bb638ac5b1198bc548f62d9fd8f8580a079faf5910e"
+          ]
+        }
+      ]
+    }
+  ],
+  "original_M1_app_versions_preserved": true,
+  "existing_apps_replaced": false,
+  "M5_account_or_private_data_copied": false,
+  "root_grants_hooks_modules_activated": false,
+  "storage": {
+    "virtual_data_disk_GiB_before": 10,
+    "virtual_data_disk_GiB_after": 32,
+    "filesystem_blocks_4KiB_after": 8388608,
+    "free_KiB_after_installs": 21122488,
+    "RAM_MiB": 8192,
+    "CPU_cores": 6,
+    "physical_resolution": [
+      1080,
+      1920
+    ],
+    "density": 480,
+    "active_refresh_Hz": 30.000002,
+    "HWUI": "skiavk",
+    "offline_backup_verified": true,
+    "pre_resize_logical_contents_equal": true,
+    "normal_unmount_only": true,
+    "all_observed_namespaces_unmounted": true,
+    "observed_namespaces_checked": 244,
+    "fsck_resize_postcheck_completed": true,
+    "normal_launch_job_restored": true,
+    "original_launch_plist_unchanged": true
+  },
+  "TikTok": {
+    "version": "47.0.3",
+    "startup_and_foreground_verified": true,
+    "first_run_birthday_page_seen": true,
+    "birthday_or_account_entered": false,
+    "login_state_transferred": false,
+    "video_playback_verified": false
+  },
+  "protection": {
+    "exclusive_UDP_reservation": true,
+    "original_gateway_identity_and_roles_checked": true,
+    "formal_TCP_checked": true,
+    "formal_TCP_admission_atomic": false,
+    "authenticated_media_lease_claimed": false,
+    "original_gateway_signals": 0,
+    "M5_mutations": 0,
+    "NPS_mutations": 0,
+    "phone_mutations_this_migration": 0
+  },
+  "artifact_release_changed": false,
+  "performance_acceptance": false
+}
