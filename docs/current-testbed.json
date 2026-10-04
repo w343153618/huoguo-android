@@ -3258,7 +3258,18 @@
       "run": 37198085659,
       "error": "required_frozen_dd43_source_unavailable",
       "fixture_repaired": true,
-      "cloud_repair_verified": false
+      "cloud_repair_verified": true
+    },
+    "exact_repair_CI": {
+      "SHA": "84b98ead9a11972cdce83b2e18bdbbc9f361bf2f",
+      "run": 37198802511,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1937,
+      "Linux_seconds": 82.971,
+      "existing_skips": 11
     }
   },
   "frozen_dd43_CI_fixture_repair_20261004": {
@@ -3290,8 +3301,79 @@
       "No-Git/source-only prerequisite fixture",
       "Missing/corrupt/foreign snapshot rejection"
     ],
-    "cloud_repair_result": "pending_own_new_SHA; failed4f is not accepted and will not be re-run",
+    "cloud_repair_result": {
+      "SHA": "84b98ead9a11972cdce83b2e18bdbbc9f361bf2f",
+      "run": 37198802511,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success",
+      "Linux_tests": 1937,
+      "Linux_seconds": 82.971,
+      "existing_skips": 11
+    },
     "live_service_phone_operations": 0,
     "new_App_release": false
+  },
+  "owner_native_single_window_candidate_20261004": {
+    "schema": 1,
+    "candidate": "default_OFF_local_M1_LAN_single_native_window",
+    "checked_at_utc": "2026-10-04T12:04:19.508188+00:00",
+    "new_checks": 11,
+    "affected_checks": 128,
+    "affected_elapsed_seconds": 7.887,
+    "checks_passed": true,
+    "actual_API37_full_sources_fixture_passed": true,
+    "helper_artifact": {
+      "sha256": "28db54c6582fa6c855cb20eeb2163b2aa9bcccf8d4d675d111a8c98f54a9e425",
+      "bytes": 86419,
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+      "helper_target_package": "local.remoteandroid.direct.experiment",
+      "apksigner_exit": 0,
+      "AAPT_exit": 0
+    },
+    "matching_App_class_count": 106,
+    "App_sha256": "f97b3e3735eb729bf28c086c92cb9a4147093cd0ed05a3aeb456456c42419779",
+    "JNI_sha256": "447f4928515aa851520ec02b2f2b2efe9cfea1dc475dc29d3413145611743dc5",
+    "descriptor_seconds_required": 30,
+    "sample_default_seconds": 5,
+    "sample_seconds_bounds": [
+      1,
+      10
+    ],
+    "close_margin_seconds": 8,
+    "helper_first_media_wait_seconds": 8,
+    "native_export_rows_max": 64,
+    "whole_report_bytes_max": 65536,
+    "native_ring": 256,
+    "Java_ring": 8192,
+    "LAN_saved_credential_actual_phone_verified": false,
+    "helper_installed": false,
+    "App_installed_or_published": false,
+    "native_events_or_ART_report_observed": false,
+    "overhead_measured": false,
+    "finite_gateway_coordinator_implemented": false,
+    "no_CLI_HTTP_environment_selection": true,
+    "no_source_input_UiAutomation_SF_or_reconnect": true,
+    "no_old_phase_markers_owned": true,
+    "no_failure_global_force_stop": true,
+    "metadata_not_permission_or_server_lease": true,
+    "counter_stall_does_not_reject_numeric_observation": true,
+    "old_frame_only_freeze_unchanged": true,
+    "phone_get_state": "device_not_found",
+    "device_queries_this_turn": 1,
+    "source_pins": {
+      "experiments/moonlight-v2/authenticated-lan/LanUiAcceptance.java": "3746096222813e28f39f7f5cbaf8dc3c1e6cf570c4198e05da8e7af7315bd6d2",
+      "scripts/probes/run_authenticated_lan_ui.py": "6059172c25281b0fcdaeadba8a7d9d6aff16c7379232c978f0ad523ae8a099e2",
+      "scripts/probes/owner_native_window.py": "1b8c21f39a9538e1581ea47b1c3ddf5a5ff1cf9a8bb23b1cd1aa0ee931de23de",
+      "tests/test_owner_native_window.py": "bc7f27ee41b2bedd410f53fdb5d7c257f149654bb78103d29dff6c24e7a968dd",
+      "tests/test_lan_ui_saved_credentials.py": "4e7bfeeba7b4ac624f9a58349e91c033b7176c65da0c6f6ae862c65ae3c92a02"
+    },
+    "initial_failures_preserved": [
+      "wrong_unittest_class_name",
+      "fixture_EditText_String_shadow",
+      "AAPT_namespace_pattern_mismatch"
+    ],
+    "cloud_CI_for_this_source": "not_pushed_yet"
   }
 }

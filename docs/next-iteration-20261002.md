@@ -1,5 +1,34 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW default-OFF M1 LAN saved-UI/single-window helper/driver is implemented.
+11new/128affected/API37/JVM PASS7.887s; original-signed helper28db54c6/86419B
+against106 unchanged exact3d App classes, not installed. Actual LAN restore only;
+public stored secrets cannot be copied/fallback. Local Window object only, no
+CLI/HTTP/env opt-in. Descriptor30s, first media wait8s, window1–10/default5s,
+phone click-before-READY conservative deadline plus8s close margin; an earlier
+server process ceiling/current Attempt loss fails coverage. No source input,
+UiAutomation/SF/marker/reconnect/microbench. Exact completed-App bytes digest,
+unique instrumentation finish, normal captured-UI exit/audio/native numeric
+readback required; failures do not force-stop later UI or become zero events.
+Not server atomic hold/quiescence/performance/ART overhead. Finite gateway/factory
+coordinator still next; read owner-native-single-window-candidate-20261004.md/json.
+Dedicated phone one get-state device-not-found; no install/auth/media/RPC/service
+operation. Old reviewed f0/d043 frame-only first when fresh phone returns, then
+new helper/artifact/LAN saved entry/current Attempt/admission qualification.
+Exact new source needs its own CI; accepted84b run is only historical evidence.
+
+Exact repair84b98ead9a11972cdce83b2e18bdbbc9f361bf2f/run37198802511 is now
+independently completed/overall/build/UDPsuccess. Linux1937tests/82.971s/11existing
+skips; no skip/guard/workflow removal. Failed4f remains a historical prerequisite
+failure. Cloud result appended locally, include in the next meaningful source
+push rather than start a doc-only CI. No phone/media/agent/exec running. Fresh
+original exact26875/start/source215a/runtimeb708/fullroleszero and bothformalTCP
+clear read only, not permission/guest lease. NEW source-only freeze/private next
+coordinator design exist but no runnable gateway/helper/driver integration is
+qualified. Continue the explicit LAN saved-UI/single-window adapter compatibility
+work; old public saved credentials/frame-only source scopes cannot be transplanted
+to LAN. Phone remains unavailable; old reviewed f0/d043 first when available.
+
 Exact4f882/run37198085659 failed only the original dd43 fixture prerequisite:
 canonical registry changed and shallow CI lacks its old git object.1931 tests/
 79.273s/one setup error/11existing skips; UDP skipped. NEW repair bundles four

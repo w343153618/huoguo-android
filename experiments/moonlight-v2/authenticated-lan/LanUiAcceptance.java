@@ -54,6 +54,34 @@ public final class LanUiAcceptance extends Instrumentation {
         }
     }
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    /** Local coordinator only. This helper selection is not a server/operator lease. */
+    private boolean ownerNativeWindow(){
+        String mode=arguments.getString("owner_native_window","off");
+        if(!mode.equals("off")&&!mode.equals("single"))throw new IllegalArgumentException("native_window_mode");
+        if(mode.equals("off"))return false;
+        if(!networkScope().equals("lan")||!node().isEmpty()||!mediaOnly()||!v50Profile()
+                ||!arguments.getString("credential_source","private-file").equals("saved-ui")
+                ||credentialSave()||!arguments.getString("source_input","off").equals("off")
+                ||!arguments.getString("pcm_queue","off").equals("off")||codecStartup()
+                ||stageDiagnostics()||surfaceLeadMsUnchecked()!=0)
+            throw new IllegalArgumentException("native_window_scope");
+        nativeWindowSeconds();return true;
+    }
+    private int surfaceLeadMsUnchecked(){return Integer.parseInt(arguments.getString("surface_submit_lead_ms","0"));}
+    private int nativeWindowSeconds(){int n=Integer.parseInt(arguments.getString("owner_native_window_seconds","5"));
+        if(n<1||n>10)throw new IllegalArgumentException("native_window_seconds");return n;}
+    /** Start-click precedes READY: deliberately earlier than the descriptor lease.
+     * The server process ceiling may be earlier still; continuous checks can only
+     * fail a shortened window, not establish a server-side ownership hold. */
+    private static long nativeWindowBudgetEnd(long clickNs,long nowNs,int descriptorSeconds,int sampleSeconds){
+        if(clickNs<=0||nowNs<clickNs||descriptorSeconds!=30||sampleSeconds<1||sampleSeconds>10
+                ||clickNs>Long.MAX_VALUE-30_000_000_000L)
+            throw new IllegalStateException("native_window_lease_unknown");
+        long end=clickNs+30_000_000_000L;
+        if(end-nowNs<(sampleSeconds+8L)*1_000_000_000L)
+            throw new IllegalStateException("native_window_lease_insufficient");
+        return end;
+    }
     /** Helper-only opt-in; never enabled by the App, saved preferences or defaults. */
     private boolean sourceInput(){String value=arguments.getString("source_input","off");
         boolean enabled=OwnerSourceTap.enabled(value);
@@ -110,7 +138,7 @@ public final class LanUiAcceptance extends Instrumentation {
     private boolean savedUiCredentials(){
         String value=arguments.getString("credential_source","private-file");
         if(!value.equals("private-file")&&!value.equals("saved-ui"))throw new IllegalArgumentException("credential_source_bound");
-        if(value.equals("saved-ui")&&(!networkScope().equals("nps_owner")||credentialSave()))
+        if(value.equals("saved-ui")&&((!networkScope().equals("nps_owner")&&!ownerNativeWindow())||credentialSave()))
             throw new IllegalArgumentException("saved_UI_exact_public_read_only_required");
         return value.equals("saved-ui");
     }
@@ -447,10 +475,14 @@ public final class LanUiAcceptance extends Instrumentation {
     }
     /** Actual Back dialog and button listeners; never bypass positive action with backend cancel. */
     private void leaveThroughConfirmation(MainActivity target,JSONObject report,String stage)throws Exception{
+        leaveThroughConfirmation(target,report,stage,null);
+    }
+    private void leaveThroughConfirmation(MainActivity target,JSONObject report,String stage,Object requiredOwned)throws Exception{
         Object ui=target.lanUdpEntry;Object captured;long generation;
         synchronized(field(ui,"lock")){
             captured=field(ui,"current");generation=(Long)field(ui,"generation");
-            if(captured==null||(Boolean)field(captured,"cancelled"))throw new IllegalStateException("exit_attempt_missing");
+            if(captured==null||(Boolean)field(captured,"cancelled")||(requiredOwned!=null&&captured!=requiredOwned))
+                throw new IllegalStateException("exit_attempt_missing");
         }
         final AlertDialog[] dialogs={null,null};final Throwable[] problem={null};
         runOnMainSync(()->{try{
@@ -528,6 +560,58 @@ public final class LanUiAcceptance extends Instrumentation {
         if(owned==null)return false;
         synchronized(field(ui,"lock")){return field(ui,"current")==owned||field(ui,"retiring")==owned;}
     }
+    /** Observe one captured Attempt. No inputs, accessibility session, SF sampler,
+     * marker barrier or reconnect; counts are not presented/unique-content FPS. */
+    private void observeNativeWindow(MainActivity target,Object owned,long clickNs,JSONObject report)throws Exception{
+        Object ui=target.lanUdpEntry;final Object[] receiver={null},surface={null};
+        final long[] uiGeneration={0};final int[] activityGeneration={0},descriptorSeconds={0};
+        final Throwable[] failure={null};
+        runOnMainSync(()->{try{synchronized(field(ui,"lock")){
+            if(owned==null||field(ui,"current")!=owned||(Boolean)field(owned,"cancelled")
+                    ||(Boolean)field(owned,"stopped")||!target.running)
+                throw new IllegalStateException("native_window_attempt_changed");
+            receiver[0]=field(owned,"receiver");if(receiver[0]==null)throw new IllegalStateException("native_window_attempt_changed");
+            Object session=field(receiver[0],"appSession");
+            descriptorSeconds[0]=(Integer)field(session,"seconds");
+            if(!Boolean.TRUE.equals(field(session,"diagnosticEvents"))
+                    ||!Boolean.TRUE.equals(field(receiver[0],"diagnosticEvents")))
+                throw new IllegalStateException("native_window_events_unavailable");
+            uiGeneration[0]=(Long)field(ui,"generation");activityGeneration[0]=target.generation;
+            surface[0]=target.screen.getHolder().getSurface();
+            if(surface[0]==null||!((android.view.Surface)surface[0]).isValid())
+                throw new IllegalStateException("native_window_attempt_changed");
+        }}catch(Throwable problem){failure[0]=problem;}});
+        if(failure[0]!=null)throw new IllegalStateException("native_window_qualification",failure[0]);
+        long started=System.nanoTime(),leaseEnd=nativeWindowBudgetEnd(clickNs,started,descriptorSeconds[0],nativeWindowSeconds());
+        long end=started+nativeWindowSeconds()*1_000_000_000L,last=started;JSONArray samples=new JSONArray();
+        while(true){
+            failure[0]=null;
+            runOnMainSync(()->{try{synchronized(field(ui,"lock")){
+                if(field(ui,"current")!=owned||(Long)field(ui,"generation")!=uiGeneration[0]
+                        ||(Boolean)field(owned,"cancelled")||(Boolean)field(owned,"stopped")
+                        ||field(owned,"receiver")!=receiver[0]||target.generation!=activityGeneration[0]
+                        ||!target.running||target.screen.getHolder().getSurface()!=surface[0]
+                        ||!((android.view.Surface)surface[0]).isValid())
+                    throw new IllegalStateException("native_window_attempt_changed");
+            }}catch(Throwable problem){failure[0]=problem;}});
+            if(failure[0]!=null)throw new IllegalStateException("native_window_attempt_changed",failure[0]);
+            long now=System.nanoTime();
+            if(now<last||now>leaseEnd-8_000_000_000L||samples.length()>=44)
+                throw new IllegalStateException("native_window_coverage_unknown");
+            if(samples.length()==0){started=now;end=started+nativeWindowSeconds()*1_000_000_000L;
+                nativeWindowBudgetEnd(clickNs,started,descriptorSeconds[0],nativeWindowSeconds());}
+            samples.put(new JSONObject().put("phone_ns",now).put("worker_received_frames",target.receivedFrames.get())
+                .put("codec_callback_count",target.presentedFrames.get()));last=now;
+            if(now>=end)break;Thread.sleep(250);
+        }
+        report.put("native_window_started_ns",started).put("native_window_finished_ns",last)
+            .put("native_window_click_ns",clickNs).put("native_window_budget_end_ns",leaseEnd)
+            .put("native_window_descriptor_seconds",descriptorSeconds[0]).put("native_window_close_margin_ns",8_000_000_000L)
+            .put("native_window_current_attempt_observed",true).put("native_window_server_atomic_hold_verified",false)
+            .put("native_window_diagnostic_events_observed",true).put("native_window_samples",samples)
+            .put("native_window_is_presented_FPS",false).put("native_window_no_reconnect",true)
+            .put("native_window_no_source_input",true).put("native_window_no_UiAutomation",true);
+    }
     private void waitReport(File report)throws Exception{
         long deadline=SystemClock.elapsedRealtime()+20000;
         while((report.length()<1||field(field(getCurrentActivity(),"lanUdpEntry"),"retiring")!=null)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
@@ -541,6 +625,11 @@ public final class LanUiAcceptance extends Instrumentation {
             if(read!=bytes.length)throw new IllegalStateException("surface_readback_file_short");
         }
         JSONObject report;
+        if(arguments.getString("owner_native_window","off").equals("single")){
+            byte[] digest=java.security.MessageDigest.getInstance("SHA-256").digest(bytes);
+            StringBuilder hex=new StringBuilder(64);for(byte part:digest)hex.append(String.format(java.util.Locale.ROOT,"%02x",part&255));
+            result.put(stage+"_App_report_sha256",hex.toString());
+        }
         try{report=new JSONObject(new String(bytes,StandardCharsets.UTF_8));}finally{java.util.Arrays.fill(bytes,(byte)0);}
         java.util.Map<String,Object> fields=new java.util.HashMap<>();
         for(String key:new String[]{"surface_submit_lead_ms","surface_submit_status_code","surface_submit_wait_count","surface_submit_applications"}){
@@ -671,7 +760,9 @@ public final class LanUiAcceptance extends Instrumentation {
         final Object[] ownedAttempt={null};
         File credential=null;Window.Callback original=null;
         try{
-            final boolean savedMode=savedUiCredentials();
+            final boolean nativeWindow=ownerNativeWindow(),savedMode=savedUiCredentials();
+            report.put("requested_owner_native_window",nativeWindow)
+                .put("requested_owner_native_window_seconds",nativeWindow?nativeWindowSeconds():JSONObject.NULL);
             report.put("requested_credential_source",savedMode?"saved-ui":"private-file")
                 .put("helper_owned_attempt_started",false);
             if(savedMode)report.put("saved_UI_private_input_touched",false).put("saved_UI_secret_exported",false);
@@ -679,15 +770,15 @@ public final class LanUiAcceptance extends Instrumentation {
             report.put("requested_surface_submit_lead_ms",surfaceLeadMs());
             report.put("requested_stage_diagnostics_enabled",stageDiagnostics());
             report.put("requested_codec_startup_ready_enabled",codecStartup());
-            report.put("requested_steady_seconds",steadySeconds());
+            report.put("requested_steady_seconds",nativeWindow?JSONObject.NULL:steadySeconds());
             final boolean sourceWindow=sourceInput();report.put("requested_authenticated_source_input",sourceWindow);
             report.put("source_pause_only_recovery",sourcePauseOnly());
             report.put("requested_network_scope",networkScope()).put("requested_node",node())
                 .put("requested_scope_index",scopeIndex()).put("physical_FPS_acceptance",false);
-            bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
+            if(!nativeWindow){bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
             for(boolean enabled:new boolean[]{false,true,true,false})rows.put(new JSONObject()
                 .put("diagnostics_enabled",enabled).put("iterations",100000).put("elapsed_ns",bench(enabled,100000)));
-            report.put("audio_diagnostics_ART_microbench",rows).put("microbench_scope","Numeric histogram operations only; not real codec, concurrent snapshot or PCM scheduling overhead");
+            report.put("audio_diagnostics_ART_microbench",rows).put("microbench_scope","Numeric histogram operations only; not real codec, concurrent snapshot or PCM scheduling overhead");}
             final JSONObject login;
             if(savedMode)login=null;
             else{
@@ -718,13 +809,14 @@ public final class LanUiAcceptance extends Instrumentation {
                     }
                     try{return method.invoke(delegate,values);}catch(java.lang.reflect.InvocationTargetException failure){throw failure.getCause();}
                 })));
-            final Throwable[] problem={null};int oldGeneration=target.generation;
+            final Throwable[] problem={null};final long[] ownedClickNs={0};int oldGeneration=target.generation;
             if(savedMode)prepareSavedUi(target,report,"first");
             runOnMainSync(()->{try{
                 assertIdleUi(target.lanUdpEntry);
                 if(!savedMode)prepareUi(target,login.getString("username"),login.getString("password"));
                 else{String validation=savedUiValidation(target.lanUdpEntry);if(!validation.isEmpty())throw new IllegalStateException(validation);}
                 android.view.ViewGroup decor=(android.view.ViewGroup)target.getWindow().getDecorView();
+                if(nativeWindow)ownedClickNs[0]=System.nanoTime();
                 if(!clickStart(decor))throw new IllegalStateException("normal_UI_start_button_missing");
                 ownedAttempt[0]=field(target.lanUdpEntry,"current");
             }catch(Throwable e){problem[0]=e;}});
@@ -732,24 +824,36 @@ public final class LanUiAcceptance extends Instrumentation {
             if(login!=null){login.remove("password");login.remove("username");}
             report.put("helper_owned_attempt_started",ownedAttempt[0]!=null);
             throwUiStartFailure(problem[0],"normal_UI_start");
-            long deadline=SystemClock.elapsedRealtime()+25000;
+            long deadline=SystemClock.elapsedRealtime()+(nativeWindow?8000:25000);
             while((target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10)&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(100);
             if(target.generation<=oldGeneration||target.receivedFrames.get()<15||target.presentedFrames.get()<10){
                 try{report.put("connection_failure_code",(Integer)field(target.lanUdpEntry,"lastConnectionFailureCode"));}catch(NoSuchFieldException olderCandidate){}
                 throw new IllegalStateException("no_authenticated_media");
             }
-            report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");Thread.sleep(3000);
+            report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");
+            if(!nativeWindow)Thread.sleep(3000);
             if(sourceWindow)sourceInputPhase(target,ownedAttempt[0],1,report);
-            if(sourcePauseOnly()||sourceFrameOnly()){
+            if(nativeWindow||sourcePauseOnly()||sourceFrameOnly()){
+                if(nativeWindow)observeNativeWindow(target,ownedAttempt[0],ownedClickNs[0],report);
                 // Pause-only needs the independently observed transition. The
                 // separate frame-only mode performs no input or transition.
                 // Both leave without a steady marker or reconnect.
-                report.put("source_recovery_no_steady_window",true).put("source_recovery_no_reconnect",true);
+                if(!nativeWindow)report.put("source_recovery_no_steady_window",true).put("source_recovery_no_reconnect",true);
                 if(sourceFrameOnly())report.put("source_frame_only_observation",true)
                     .put("source_observation_input_sent",false);
-                leaveThroughConfirmation(target,report,"first");
+                if(nativeWindow)leaveThroughConfirmation(target,report,"first",ownedAttempt[0]);
+                else leaveThroughConfirmation(target,report,"first");
                 File recoveryReport=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");
-                waitReport(recoveryReport);verifySurfaceReadback(recoveryReport,report,"first");
+                waitReport(recoveryReport);
+                if(nativeWindow){Object ui=target.lanUdpEntry;synchronized(field(ui,"lock")){
+                    if(field(ui,"current")!=null||field(ui,"retiring")!=null
+                            ||!(Boolean)field(ownedAttempt[0],"cancelled")
+                            ||(Long)field(ui,"generation")!=(Long)field(ownedAttempt[0],"generation")+1)
+                        throw new IllegalStateException("native_window_completed_attempt_changed");
+                    // No later Attempt may enter its start lock while this bounded
+                    // completed-report byte digest/readback is associated.
+                    verifySurfaceReadback(recoveryReport,report,"first");
+                }}else verifySurfaceReadback(recoveryReport,report,"first");
                 waitAudioThreadsGone(report,"first_leave");
                 report.put("left_through_App_back",true).put("activity_running_after_leave",target.running);
             }else{
@@ -840,7 +944,16 @@ public final class LanUiAcceptance extends Instrumentation {
                 if(!report.has("failure_class"))report.put("failure_class","IllegalStateException").put("bounded_failure_label","source_owned_marker_cleanup");
             }catch(Exception ignored){}
             if(credential!=null)credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);
-            if(target.lanUdpEntry!=null)try{if(ownsAttempt(target.lanUdpEntry,ownedAttempt[0]))target.lanUdpEntry.cancel(true);}catch(Exception ignored){}
+            if(target.lanUdpEntry!=null)try{
+                if(arguments.getString("owner_native_window","off").equals("single")){
+                    // current-only under its own lock: a retiring old owner must
+                    // never turn this cleanup into cancelling a newer Attempt.
+                    synchronized(field(target.lanUdpEntry,"lock")){
+                        if(ownedAttempt[0]!=null&&field(target.lanUdpEntry,"current")==ownedAttempt[0])
+                            target.lanUdpEntry.cancel(true);
+                    }
+                }else if(ownsAttempt(target.lanUdpEntry,ownedAttempt[0]))target.lanUdpEntry.cancel(true);
+            }catch(Exception ignored){}
         });}}
         result.putString("numeric_result",report.toString());finish(report.has("failure_class")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);
     }

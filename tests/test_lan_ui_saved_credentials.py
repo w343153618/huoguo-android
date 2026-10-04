@@ -189,16 +189,16 @@ class SavedUiActualJavaChecks(unittest.TestCase):
         source = r'''
 import java.lang.reflect.Field;import java.util.*;
 public final class SavedUiSequenceCheck{
- static long now;static Runnable queued;static int mediaOptions;static final String address="146.56.249.175:49556";
+ static long now;static Runnable queued;static int mediaOptions,expectedScope=2;static String address="146.56.249.175:49556";
  static final class SystemClock{static long elapsedRealtime(){now+=20;if(queued!=null&&now>=60){Runnable task=queued;queued=null;task.run();}return now;}}
  interface CallbackPause{void sleep(long millis)throws InterruptedException;}
  static final class Text{String value;int secretLength;final boolean secret;Text(String value){this.value=value;secret=false;}Text(int length){secretLength=length;secret=true;}int length(){return secret?secretLength:value.length();}public String toString(){if(secret)throw new AssertionError("secret converted to String");return value;}}
  static final class EditText{Text text;EditText(Text text){this.text=text;}Text getText(){return text;}void setText(String value){throw new AssertionError("saved UI field written before its normal restore");}}
- static final class Spinner{int selection=3;Ui ui;int getSelectedItemPosition(){return selection;}void setSelection(int index){selection=index;queued=()->{ui.address.text.value=address;ui.user.text.value=ui.savedUser;ui.password.text.secretLength=ui.savedLength;ui.restoringFields=false;};ui.restoringFields=true;}}
- static final class Ui{final Object lock=new Object();Object current,retiring;boolean restoringFields;final Spinner scope=new Spinner();final EditText address=new EditText(new Text("146.56.249.175:49558")),user=new EditText(new Text("huoguo")),password=new EditText(new Text(0));String savedUser="huoguo";int savedLength=8;Ui(){scope.ui=this;}}
+ static final class Spinner{int selection=3;Ui ui;int getSelectedItemPosition(){return selection;}void setSelection(int index){selection=index;queued=()->{ui.address.text.value=address;ui.user.text.value=ui.savedUser;ui.password.text.secretLength=address.equals(ui.savedAddress)?ui.savedLength:0;ui.restoringFields=false;};ui.restoringFields=true;}}
+ static final class Ui{final Object lock=new Object();Object current,retiring;boolean restoringFields;final Spinner scope=new Spinner();final EditText address=new EditText(new Text("146.56.249.175:49558")),user=new EditText(new Text("huoguo")),password=new EditText(new Text(0));String savedUser="huoguo",savedAddress=SavedUiSequenceCheck.address;int savedLength=8;Ui(){scope.ui=this;}}
  static final class MainActivity{final Ui lanUdpEntry=new Ui();}
  static final class JSONObject{final Map<String,Object> values=new HashMap<>();JSONObject put(String key,Object value){if(!(value instanceof Boolean))throw new AssertionError("nonboolean report");values.put(key,value);return this;}}
- void runOnMainSync(Runnable task){task.run();}void waitForIdleSync(){}int scopeIndex(){return 2;}String controlAddress(){return address;}void applyMediaOptions(MainActivity target,Object ui){mediaOptions++;}
+ void runOnMainSync(Runnable task){task.run();}void waitForIdleSync(){}int scopeIndex(){return expectedScope;}String controlAddress(){return address;}void applyMediaOptions(MainActivity target,Object ui){mediaOptions++;}
  METHODS
  static void ok(boolean value){if(!value)throw new AssertionError("check failed");}
  public static void main(String[] args)throws Exception{
@@ -206,6 +206,9 @@ public final class SavedUiSequenceCheck{
   if(mode.equals("bounds")){ok(savedUiValidationFailure(2,2,address,address,"huoguo",1).isEmpty());ok(savedUiValidationFailure(2,2,address,address,"wyw",1024).isEmpty());ok(savedUiValidationFailure(3,2,address,address,"huoguo",8).equals("saved_UI_route_unverified"));ok(savedUiValidationFailure(2,2,address+"/wrong",address,"huoguo",8).equals("saved_UI_route_unverified"));ok(savedUiValidationFailure(2,2,address,address,"another",8).equals("saved_UI_account_unavailable"));for(int length:new int[]{0,1025,-1})ok(savedUiValidationFailure(2,2,address,address,"huoguo",length).equals("saved_UI_credential_unavailable"));}
   else if(mode.equals("restore")){test.prepareSavedUi(target,report,"first");ok(now>=60&&queued==null&&mediaOptions==1&&report.values.size()==4);target.lanUdpEntry.password.text.secretLength=0;test.prepareSavedUi(target,report,"second");ok(mediaOptions==2&&report.values.size()==8);}
   else if(mode.equals("missing")||mode.equals("account")){if(mode.equals("missing"))target.lanUdpEntry.savedLength=0;else target.lanUdpEntry.savedUser="another";try{test.prepareSavedUi(target,report,"first");throw new AssertionError("unavailable accepted");}catch(IllegalStateException expected){ok(expected.getMessage().equals(mode.equals("missing")?"saved_UI_credential_unavailable":"saved_UI_account_unavailable"));}ok(mediaOptions==0&&report.values.isEmpty()&&now<=1600);}
+  else if(mode.equals("LAN")||mode.equals("LAN_public_secret")){address="192.168.9.128:45560";expectedScope=0;if(mode.equals("LAN"))target.lanUdpEntry.savedAddress=address;
+   if(mode.equals("LAN")){test.prepareSavedUi(target,report,"first");ok(mediaOptions==1&&report.values.size()==4&&target.lanUdpEntry.password.text.secretLength==8);}
+   else{try{test.prepareSavedUi(target,report,"first");throw new AssertionError("public secret copied to LAN");}catch(IllegalStateException expected){ok(expected.getMessage().equals("saved_UI_credential_unavailable"));}ok(mediaOptions==0&&report.values.isEmpty()&&target.lanUdpEntry.password.text.secretLength==0);}}
   else if(mode.equals("busy")){Object existing=new Object();target.lanUdpEntry.current=existing;try{test.prepareSavedUi(target,report,"first");throw new AssertionError("busy accepted");}catch(IllegalStateException expected){ok(expected.getMessage().equals("existing_UI_attempt_busy"));}ok(target.lanUdpEntry.current==existing&&target.lanUdpEntry.scope.selection==3&&queued==null&&report.values.isEmpty());}
   else throw new AssertionError("mode");System.out.println("actual saved-ui fixture passed");
  }
@@ -230,6 +233,8 @@ public final class SavedUiSequenceCheck{
     def test_missing_saved_entry_is_bounded_and_does_not_convert_or_rewrite_secret(self): self.run_case('missing')
     def test_unlisted_saved_account_is_bounded_unavailable(self): self.run_case('account')
     def test_busy_preparation_preserves_existing_attempt_and_route(self): self.run_case('busy')
+    def test_LAN_requires_its_own_normally_restored_destination_entry(self): self.run_case('LAN')
+    def test_LAN_cannot_copy_the_public_destination_secret_or_fall_back(self): self.run_case('LAN_public_secret')
 
 
 if __name__ == '__main__': unittest.main()

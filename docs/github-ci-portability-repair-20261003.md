@@ -157,3 +157,13 @@ focused checks passed0.583s locally. Production selection, live admission safety
 workflow and platform skip policy are unchanged. Exact byte pins and actual
 failed-run evidence are in `frozen-dd43-CI-fixture-repair-20261004.json`. The
 repair requires its own new-SHA cloud result; failed4f is not re-run or accepted.
+
+The pushed repair84b98ead9a11972cdce83b2e18bdbbc9f361bf2f completed its own
+[run37198802511](https://github.com/w343153618/huoguo-android/actions/runs/37198802511)
+with overall/build/udp_candidate all successful. Linux discovery ran1937 tests
+in82.971s, `OK (skipped=11)`; these are the same existing platform skips. Exact
+SHA/job results and the completed build log were independently read. A NEW
+source-only freeze of1063 tracked files/341 Python files without Git history
+also passed36 targeted checks in0.042s; all tracked hashes remained unchanged.
+Neither cloud compilation nor that source-only check is phone/ART/native sampling
+acceptance. No App package, manifest, device or live service was changed.

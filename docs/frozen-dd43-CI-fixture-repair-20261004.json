@@ -27,7 +27,17 @@
     "No-Git/source-only prerequisite fixture",
     "Missing/corrupt/foreign snapshot rejection"
   ],
-  "cloud_repair_result": "pending_own_new_SHA; failed4f is not accepted and will not be re-run",
+  "cloud_repair_result": {
+    "SHA": "84b98ead9a11972cdce83b2e18bdbbc9f361bf2f",
+    "run": 37198802511,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success",
+    "Linux_tests": 1937,
+    "Linux_seconds": 82.971,
+    "existing_skips": 11
+  },
   "live_service_phone_operations": 0,
   "new_App_release": false
 }

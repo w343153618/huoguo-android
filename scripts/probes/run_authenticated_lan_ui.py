@@ -5,6 +5,7 @@ Does not create accounts, read a host credential or provision a UDP key. Outputs
 only bounded numeric test reports, never instrumentation/system raw logs.
 """
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -44,6 +45,7 @@ from scripts.probes import owner_source_stats_gate, source_window_control
 from scripts.probes import source_authenticated_driver, source_authenticated_observation
 from scripts.probes import source_remote_observation, source_phone_markers, source_snapshot_selection
 from scripts.probes import source_frame_coordinator, source_grpc_frame
+from scripts.probes import owner_native_window as native_window
 from scripts.probes.owner_trace_prefix import TracePrefixReader, SourceTraceError, LABELS as TRACE_LABELS
 
 
@@ -520,7 +522,7 @@ def instrumentation_budget_seconds(steady_seconds):
     return max(120,steady_seconds+90)
 
 
-def parse_arguments(argv=None):
+def parse_arguments(argv=None, *, owner_native_window=None):
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phone', default='f7fc9469')
     p.add_argument('--guest', default=None,
@@ -568,6 +570,10 @@ def parse_arguments(argv=None):
     p.add_argument('--source-frame-deployment', type=Path, default=None,
                    help='Frame-only: private exact emulator identity and private pixel destination; no input or accessibility')
     args = p.parse_args(argv)
+    try:
+        args.owner_native_window = native_window.select(args, owner_native_window)
+    except ValueError:
+        p.error('Native window requires the explicit trusted local M1 saved-LAN selection')
     source_options = (args.source_listener_monotonic_ns, args.source_expected_pid,
                       args.source_expected_uid, args.source_expected_start_ticks, args.source_trace_root)
     if args.owner_source_guard == 'off':
@@ -592,7 +598,7 @@ def parse_arguments(argv=None):
         args.stage_diagnostics = 'off'
     if (args.network_scope == 'nps_owner') != (args.node is not None):
         p.error('Public owner scope requires explicit node; existing scopes do not accept node')
-    if args.credential_source == 'saved-ui' and (args.network_scope != 'nps_owner' or args.credential_save != 'off'):
+    if args.credential_source == 'saved-ui' and ((args.network_scope != 'nps_owner' and not args.owner_native_window) or args.credential_save != 'off'):
         p.error('Saved-UI credentials require an exact public owner node and credential-save off')
     if args.phone_only_sampler and not args.media_only:
         p.error('Phone-only sampler requires media-only; no remote source touch setup')
@@ -634,8 +640,8 @@ def parse_arguments(argv=None):
     return args
 
 
-def main():
-    args = parse_arguments()
+def main(*, owner_native_window=None):
+    args = parse_arguments(owner_native_window=owner_native_window)
     args.output.mkdir(parents=True, exist_ok=True)
 
     def adb(serial, command, check=True):
@@ -652,6 +658,8 @@ def main():
         return adb(args.phone,'cmd package list packages -U '+TARGET_PACKAGE).stdout.split('uid:',1)[1].split(',',1)[0].strip()
 
     flags=['udp-ui-phase-ready-touch','udp-ui-phase-touch-ready','udp-ui-phase-touch-ready.tmp','udp-ui-phase-steady-media','udp-ui-phase-steady-sampled','udp-ui-phase-steady-sampled.tmp','udp-ui-phase-adb-tap','udp-ui-phase-adb-tap-done','udp-ui-phase-adb-tap-done.tmp']
+    if args.owner_native_window:
+        flags=[]  # This mode owns no old sampler/input markers, even on failure.
     proc = None
     source_reader = source_gate = source_stats_before = None
     source_native = source_frame = source_frame_reader = source_markers = snapshot_selection = None
@@ -682,6 +690,12 @@ def main():
         source_freshness_scope='first_owned_session_capture_only_not_reconnect_or_presentation')
     report['source_stats_window_enabled'] = args.source_stats_window == 'on'
     report['requested_authenticated_source_input'] = args.source_input
+    report['owner_native_window_selected'] = args.owner_native_window
+    if args.owner_native_window:
+        report.update(source_SF_sampled_by_this_driver=False, reconnect_acceptance_exercised=False,
+                      steady_media_progress_verified=None, steady_window_readback_verified=None,
+                      requested_steady_seconds=None, native_window_helper_App_cleanup_verified=None,
+                      source="M1 source not qualified by this driver; native ingress observation only")
     adb_tap_done=False
     try:
         gate=subprocess.run(['lsof','-nP','-iTCP:15556','-sTCP:ESTABLISHED','-t'],
@@ -696,6 +710,19 @@ def main():
             raise RuntimeError('target_App_process_active_skip' if state == 'active'
                                else 'target_App_process_check_unavailable_skip')
         report['preinstrument_target_process_absent_verified'] = True
+        if args.owner_native_window:
+            # Same original-signed local build: no credential/input file access.
+            # This actual byte comparison is still not the caller's admission lease.
+            for package, digest in ((TARGET_PACKAGE, owner_native_window.plan.app_sha256),
+                                    ('local.huoguo.lanuitest', owner_native_window.plan.helper_sha256)):
+                path_result = adb(args.phone, 'pm path --user 0 '+package)
+                match = re.fullmatch(r'package:(/data/app/[A-Za-z0-9_/+~=.-]+/base[.]apk)\s*', path_result.stdout)
+                if path_result.returncode or path_result.stderr or match is None:
+                    raise ValueError('native_window_installed_artifact_unknown')
+                actual = root('sha256sum '+shlex.quote(match[1]), False)
+                if (actual.returncode or actual.stderr or actual.stdout.strip() != digest+'  '+match[1]):
+                    raise ValueError('native_window_installed_artifact_mismatch')
+            report['native_window_installed_App_helper_bytes_verified'] = True
         if args.source_input != 'off':
             if args.source_snapshot_deployment is not None:
                 snapshot_selection = source_snapshot_selection.Selection(
@@ -787,17 +814,22 @@ def main():
                 owner_source_stats_gate.require_fresh(source_stats_before, launch_ns)
             report.update(source_launch_freshness_verified=True,
                           source_instrumentation_launch_monotonic_ns=launch_ns)
-        if source_native is not None or source_frame is not None:
+        if source_native is not None or source_frame is not None or args.owner_native_window:
             state = target_process_state(adb(args.phone, 'pidof '+TARGET_PACKAGE, False))
             if state != 'absent':
                 raise RuntimeError('target_App_process_active_skip' if state == 'active'
                                    else 'target_App_process_check_unavailable_skip')
             report['source_input_final_target_absence_verified'] = True
         proc = subprocess.Popen(['adb','-s',args.phone,'shell','su -c '+shlex.quote(
-            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e credential_source '+args.credential_source+' -e source_input '+args.source_input+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
+            'am instrument -w -e touch_mode '+args.touch_mode+' -e rate_index '+str(args.rate_index)+' -e network_scope '+args.network_scope+(' -e node '+args.node if args.node else '')+' -e v50_profile '+args.v50_profile+' -e pcm_queue '+args.pcm_queue+' -e stage_diagnostics '+args.stage_diagnostics+' -e codec_startup '+args.codec_startup+' -e credential_save '+args.credential_save+' -e credential_source '+args.credential_source+' -e source_input '+args.source_input+' -e surface_submit_lead_ms '+str(args.surface_submit_lead_ms)+' -e steady_seconds '+str(args.steady_seconds)+' -e media_only '+str(args.media_only).lower()+(' -e owner_native_window single -e owner_native_window_seconds '+str(owner_native_window.seconds) if args.owner_native_window else '')+' local.huoguo.lanuitest/local.remoteandroid.direct.LanUiAcceptance')],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         deadline=time.monotonic()+instrumentation_budget_seconds(args.steady_seconds)+(20 if args.credential_save=='on' else 0)
         while proc.poll() is None and time.monotonic()<deadline:
+            if args.owner_native_window:
+                # Helper itself observes its finite current-Attempt window.
+                # Old markers cannot select a sampler, input or reconnect here.
+                time.sleep(.1)
+                continue
             if source_frame is not None:
                 source_frame.advance()
                 time.sleep(.1)
@@ -939,6 +971,15 @@ def main():
         else:
             report['numeric_result_missing']=True
         ui_result = report.get('ui_result')
+        if args.owner_native_window:
+            receipt = instrumentation_cleanup_diagnostic((stdout, stderr))
+            report['native_window_instrumentation_output_receipt'] = receipt
+            if (receipt['numeric_result_status'] != 'valid' or receipt['numeric_result_count'] != 1
+                    or receipt['stderr_numeric_marker_count'] != 0
+                    or receipt['instrumentation_code_status'] != 'valid' or receipt['instrumentation_code'] != -1
+                    or any(receipt[k] != 0 for k in ('instrumentation_failed_marker_count',
+                            'instrumentation_aborted_marker_count','security_exception_line_count'))):
+                raise ValueError('native_window_helper_finish_unverified')
         if isinstance(ui_result, dict) and ui_result.get('bounded_failure_label') == 'existing_UI_attempt_busy':
             # The normal UI helper declined before owning an attempt. Its
             # failure must not turn into a force-stop of somebody else's App.
@@ -949,7 +990,7 @@ def main():
             report['saved_UI_unavailable_skip'] = True
             report['saved_UI_declined_before_owned_attempt'] = ui_result.get('helper_owned_attempt_started') is False
             raise RuntimeError(ui_result['bounded_failure_label'])
-        stages = ('first',) if args.source_input in ('pause-only','frame-only') else ('first', 'second')
+        stages = ('first',) if args.owner_native_window or args.source_input in ('pause-only','frame-only') else ('first', 'second')
         report['v50_profile_readback_verified']=verify_v50_profile_readback(report.get('ui_result'),args.v50_profile=='on',stages=stages)
         report['credential_save_readback_verified']=verify_credential_save_readback(report.get('ui_result'),args.credential_save=='on')
         report['credential_source_readback_verified']=verify_credential_source_readback(report.get('ui_result'),args.credential_source,stages=stages)
@@ -960,7 +1001,39 @@ def main():
                 and source_authenticated_driver.helper_readback(ui_source, mode=args.source_input))
             if not report['authenticated_source_phases_complete']:
                 raise source_authenticated_driver.Rejected('source_input_transition_unverified')
-        if args.source_input in ('pause-only','frame-only'):
+        if args.owner_native_window:
+            result = report.get('ui_result')
+            common = (proc.returncode == 0 and native_window.helper_readback(result, owner_native_window)
+                and verify_credential_source_readback(result, 'saved-ui', stages=stages)
+                and verify_credential_save_readback(result, False)
+                and verify_v50_profile_readback(result, True, stages=stages)
+                and verify_exit_confirmation_readback(result, stages=stages)
+                and verify_surface_submit_readback(result, 0, stages=stages)
+                and verify_stage_diagnostics_readback(result, False, stages=stages)
+                and verify_codec_startup_readback(result, False, stages=stages))
+            route = result if type(result) is dict else {}
+            for key, expected in (('first_actual_network_scope', 'lan'), ('first_actual_node', ''),
+                    ('first_actual_control_host', '192.168.9.128'), ('first_actual_control_port', 45560),
+                    ('first_actual_media_peer_host', '192.168.9.128'), ('first_actual_media_peer_port', 45963),
+                    ('first_network_readback_verified', True), ('first_media_transport_code', 1),
+                    ('first_leave_audio_threads_alive', 0)):
+                common = common and type(route.get(key)) is type(expected) and route[key] == expected
+            report['native_window_helper_session_verified'] = bool(common)
+            if not common:
+                raise ValueError('native_window_helper_session_unverified')
+            result = root('cat '+PRIVATE+'udp-app-last-report.json', False)
+            if result.returncode or result.stderr or not 0 < len(result.stdout.encode('utf-8')) <= 65536:
+                raise ValueError('native_window_App_report_unverified')
+            actual = json.loads(result.stdout)
+            digest = hashlib.sha256(result.stdout.encode('utf-8')).hexdigest()
+            if type(route.get('first_App_report_sha256')) is not str or route['first_App_report_sha256'] != digest:
+                raise ValueError('native_window_App_report_changed')
+            report.update(native_window.numeric_report(actual))
+            (args.output/'App-report.json').write_text(json.dumps(actual,indent=2)+'\n')
+            report['App_report_read'] = True
+            report['App_actual_json_bytes'] = len(result.stdout.encode('utf-8'))
+            report['native_window_helper_App_cleanup_verified'] = True
+        elif args.source_input in ('pause-only','frame-only'):
             if source_frame is not None:
                 if proc.returncode != 0:
                     raise source_frame_coordinator.Rejected('source_frame_instrumentation_failed')
@@ -1060,6 +1133,10 @@ def main():
                        'source_frame_dependencies_unavailable',
                        'source_frame_helper_readback_rejected','source_frame_instrumentation_failed',
                        'source_frame_incomplete','source_frame_descriptor_rejected'))
+        labels.update(('native_window_installed_artifact_unknown','native_window_installed_artifact_mismatch',
+                       'native_window_helper_session_unverified','native_window_App_report_unverified',
+                       'native_window_App_report_cleanup_unknown','native_window_App_events_unavailable',
+                       'native_window_App_report_changed','native_window_helper_finish_unverified'))
         if str(failure) in labels:report['driver_failure_label']=str(failure)
     finally:
         failed='driver_failure_class' in report
@@ -1069,7 +1146,7 @@ def main():
             attempt_cleanup(report, 'pause_owned_source_window',
                 lambda: report.update(source_pause_receipt=source_window_control.transition(
                     'adb', args.guest, source_stats_before['identity'], 'paused')))
-        if (source_native is None and source_frame is None and proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
+        if (not args.owner_native_window and source_native is None and source_frame is None and proc is not None and failed and not report.get('existing_phone_UI_attempt_busy_skip')
                 and not report.get('saved_UI_unavailable_skip')):
             # Terminating the local adb client alone does not end Android
             # instrumentation. Stop only these two known isolated packages.
@@ -1081,8 +1158,8 @@ def main():
             # its finally cancel only the captured Attempt. Never force-stop a
             # later UI session to compensate for an observer failure.
             cleanup_output = reap_owned_process(proc, report, 'instrumentation',
-                args.steady_seconds+25 if (source_native is not None or source_frame is not None) and failed else 2,
-                terminate=failed and source_native is None and source_frame is None)
+                args.steady_seconds+25 if (source_native is not None or source_frame is not None or args.owner_native_window) and failed else 2,
+                terminate=failed and source_native is None and source_frame is None and not args.owner_native_window)
             report['instrumentation_exit_code']=proc.returncode
             if failed:
                 try:
@@ -1112,8 +1189,9 @@ def main():
         # A pre-instrument saved-mode refusal owns no App markers or input.
         if args.credential_source == 'private-file' or proc is not None:
             cleanup_paths.extend(PRIVATE+f for f in flags)
-            attempt_cleanup(report, 'remove_private_test_input' if args.credential_source == 'private-file' else 'remove_owned_phase_markers',
-                            lambda: root('rm -f '+' '.join(cleanup_paths),False))
+            if cleanup_paths:
+                attempt_cleanup(report, 'remove_private_test_input' if args.credential_source == 'private-file' else 'remove_owned_phase_markers',
+                                lambda: root('rm -f '+' '.join(cleanup_paths),False))
     (args.output/'ui-acceptance.json').write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report))
     return 1 if 'driver_failure_class' in report or report.get('cleanup_failures') else 0
