@@ -1,0 +1,965 @@
+{
+  "new_APK_released": false,
+  "default_or_persistent_runtime_changed": false,
+  "path": "same-home WiFi physical LAN authenticated App UDP; no public NPS or Tailnet",
+  "nonisolated_owner": true,
+  "phone": "limited OnePlus12, not actual MTK V50",
+  "source_commit": "9ea78de544b56810df6555386d095e16a5481c8e",
+  "gateway_sha256": "9f4110da2d3edc2f3a1640237ea61fe6d4b7acc9d6423e8b2ad80020358bd6cb",
+  "worker_sha256": "0bf4d410d77ef6abbaf241fcfe343db2854cc12483f465b73f69d1809981f49a",
+  "APK_sha256": "a663c4d046f1048ae32b23875f8614039c73227a484835d6af024d71a8744f51",
+  "encoder_sha256": "59264ab7cd9d6e76ed3328a117bbf3c866513bc505244203c2328d6808879ecf",
+  "packetizer_sha256": "567231ae8165bd09c46e343f436db647210e70d7f60d74a144950c8ca84c8142",
+  "whole_counters_not_attributed_to_steady": true,
+  "callback_is_requested_target_echo_not_presentation": true,
+  "source_overlay_ON_and_overhead_unmeasured": true,
+  "continuous_content_and_unique_FPS_unverified": true,
+  "CPU_readback_after_cleanup_not_exact_sampler_end": true,
+  "CPU_caps_not_written": true,
+  "physical_touch_or_audio_latency_measured": false,
+  "WAN_cellular_Tailnet_V50_or_friend_isolation_accepted": false,
+  "schema": "owner-raw-budget30-reversal-real-LAN-v1",
+  "status": "actual_owned_natural_cleanup_and_root_readback_complete",
+  "supervisor_sha256": "930079170a2ebfa4f0c9e5e106f099f8aaa7c41dac00e8052a33b97354893213",
+  "source_before": {
+    "schema": "owner-source-stats-gate-v1",
+    "evidence_kind": "fresh_player_Stats_UI_descriptor",
+    "native_clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "native_started_ns": 317670105874000,
+    "native_finished_ns": 317672536491000,
+    "collector_clock_domain": "python_time_monotonic_ns",
+    "collector_started_ns": 317675140651500,
+    "collector_finished_ns": 317677571206291,
+    "listener_ready_ns": 317668210391000,
+    "identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "required_state": "paused",
+    "video_id": "aqz-KE-bpKQ",
+    "video_format": {
+      "itag": 299,
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "descriptor_fps": 60.0
+    },
+    "audio_format": {
+      "itag": 251,
+      "codec": "opus"
+    },
+    "position_ui_seconds": 310,
+    "position_before_ms": 309601,
+    "position_after_ms": 309601,
+    "dropped_frames_cumulative": {
+      "dropped": 271,
+      "total": 18072
+    },
+    "process_session_focus_bracket_verified": true,
+    "visual_motion_observed": null,
+    "decoded_or_presented_fps": null,
+    "continuous_content_coverage_verified": false,
+    "collection_or_overlay_overhead_measured": false
+  },
+  "source_after": {
+    "schema": "owner-source-stats-gate-v1",
+    "evidence_kind": "fresh_player_Stats_UI_descriptor",
+    "native_clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "native_started_ns": 317713945711000,
+    "native_finished_ns": 317716267556000,
+    "collector_clock_domain": "python_time_monotonic_ns",
+    "collector_started_ns": 317718980360708,
+    "collector_finished_ns": 317721302134500,
+    "listener_ready_ns": 317668210391000,
+    "identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "required_state": "paused",
+    "video_id": "aqz-KE-bpKQ",
+    "video_format": {
+      "itag": 299,
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "descriptor_fps": 60.0
+    },
+    "audio_format": {
+      "itag": 251,
+      "codec": "opus"
+    },
+    "position_ui_seconds": 353,
+    "position_before_ms": 352626,
+    "position_after_ms": 352626,
+    "dropped_frames_cumulative": {
+      "dropped": 364,
+      "total": 19405
+    },
+    "process_session_focus_bracket_verified": true,
+    "visual_motion_observed": null,
+    "decoded_or_presented_fps": null,
+    "continuous_content_coverage_verified": false,
+    "collection_or_overlay_overhead_measured": false
+  },
+  "endpoint_match": {
+    "endpoint_content_matches": true,
+    "reported_position_progress_ms": 43025,
+    "continuous_content_coverage_verified": false,
+    "visual_motion_observed": null,
+    "decoded_or_presented_fps": null
+  },
+  "settings": {
+    "dimensions": [
+      540,
+      960
+    ],
+    "guest_Hz": 30,
+    "native_FPS_arg": 30,
+    "phone_FPS_limit": 30,
+    "owner_raw_submit_fps": 30,
+    "raw_queue_policy": "fifo",
+    "bitrate_bps": 4000000,
+    "mode": "VBR",
+    "buffer_ms": 80,
+    "lead_ms": 0,
+    "AAC": true,
+    "PCM_queue": false,
+    "stage": false,
+    "startup": false,
+    "wait_and_guard_retained": true
+  },
+  "window_host_MONOTONIC_ns": [
+    317683415409000,
+    317713600585000
+  ],
+  "analysis": {
+    "schema": "host-region-analysis-v1",
+    "scope": "observed_host_regions_not_phone_or_network_latency",
+    "clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "window": {
+      "explicit": true,
+      "start_ns": 317683415409000,
+      "end_ns": 317713600585000,
+      "half_open": true
+    },
+    "streams": {
+      "capture": {
+        "role": "capture",
+        "available": true,
+        "read_error": false,
+        "regular_file": true,
+        "byte_bound_exceeded": false,
+        "record_bound_exceeded": false,
+        "line_bound_exceeded": false,
+        "changed_during_read": false,
+        "truncated_final_line": false,
+        "lines_read": 6434,
+        "accepted_rows": 6434,
+        "malformed_rows": 0,
+        "schema_rejected_rows": 0,
+        "clock_contract_rejected_rows": 0,
+        "clock_contract_accepted": true,
+        "clock_start_end_bracketed": true,
+        "clock_start_before_ns": 317675733573000,
+        "clock_end_after_ns": 317717767461000,
+        "sink_summary_count": 1,
+        "observation_summary_count": 1,
+        "sink_counts_consistent": true,
+        "sink_coverage_complete": true,
+        "producer_quiescence_known": true,
+        "producer_quiescent": true,
+        "producer_coverage_complete": true,
+        "clock_errors": 0,
+        "emit_errors": 0,
+        "schema_errors": 0,
+        "dropped_records": 0,
+        "byte_capped": false
+      },
+      "native": {
+        "role": "native",
+        "available": true,
+        "read_error": false,
+        "regular_file": true,
+        "byte_bound_exceeded": false,
+        "record_bound_exceeded": false,
+        "line_bound_exceeded": false,
+        "changed_during_read": false,
+        "truncated_final_line": false,
+        "lines_read": 3175,
+        "accepted_rows": 3175,
+        "malformed_rows": 0,
+        "schema_rejected_rows": 0,
+        "clock_contract_rejected_rows": 0,
+        "clock_contract_accepted": false,
+        "clock_start_end_bracketed": false,
+        "clock_start_before_ns": 317678931673000,
+        "clock_end_after_ns": 0,
+        "sink_summary_count": 0,
+        "observation_summary_count": 0,
+        "sink_counts_consistent": false,
+        "sink_coverage_complete": false,
+        "producer_quiescence_known": false,
+        "producer_quiescent": false,
+        "producer_coverage_complete": false,
+        "clock_errors": 0,
+        "emit_errors": 0,
+        "schema_errors": 0,
+        "dropped_records": 0,
+        "byte_capped": false
+      },
+      "feed": {
+        "role": "feed",
+        "available": true,
+        "read_error": false,
+        "regular_file": true,
+        "byte_bound_exceeded": false,
+        "record_bound_exceeded": false,
+        "line_bound_exceeded": false,
+        "changed_during_read": false,
+        "truncated_final_line": false,
+        "lines_read": 4248,
+        "accepted_rows": 4248,
+        "malformed_rows": 0,
+        "schema_rejected_rows": 0,
+        "clock_contract_rejected_rows": 0,
+        "clock_contract_accepted": true,
+        "clock_start_end_bracketed": true,
+        "clock_start_before_ns": 317675457343000,
+        "clock_end_after_ns": 317717810537000,
+        "sink_summary_count": 1,
+        "observation_summary_count": 1,
+        "sink_counts_consistent": true,
+        "sink_coverage_complete": true,
+        "producer_quiescence_known": true,
+        "producer_quiescent": true,
+        "producer_coverage_complete": true,
+        "clock_errors": 0,
+        "emit_errors": 0,
+        "schema_errors": 0,
+        "dropped_records": 0,
+        "byte_capped": false
+      }
+    },
+    "stages_ms": {
+      "raw_loop_ms": {
+        "count": 905,
+        "p50": 33.183,
+        "p95": 36.7154,
+        "p99": 39.2506,
+        "max": 49.664,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_condition_region_ms": {
+        "count": 905,
+        "p50": 32.548,
+        "p95": 35.8926,
+        "p99": 38.5262,
+        "max": 47.894,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_condition_wait_ms": {
+        "count": 905,
+        "p50": 32.541,
+        "p95": 35.8866,
+        "p99": 38.5242,
+        "max": 47.889,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_control_write_ms": {
+        "count": 0
+      },
+      "raw_budget_check_ms": {
+        "count": 906,
+        "p50": 0.004,
+        "p95": 0.008,
+        "p99": 0.011,
+        "max": 0.073,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_budget_wait_ms": {
+        "count": 0
+      },
+      "raw_budget_wait_overshoot_ms": {
+        "count": 0
+      },
+      "raw_budget_consume_ms": {
+        "count": 906,
+        "p50": 0.001,
+        "p95": 0.002,
+        "p99": 0.004,
+        "max": 0.547,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_header_rgba_flush_attempt_ms": {
+        "count": 906,
+        "p50": 0.578,
+        "p95": 1.4463,
+        "p99": 2.4446,
+        "max": 5.053,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_empty_flush_ms": {
+        "count": 0
+      },
+      "raw_inter_loop_gap_ms": {
+        "count": 905,
+        "p50": 0.043,
+        "p95": 0.0736,
+        "p99": 0.1659,
+        "max": 0.347,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "raw_after_write_to_loop_ms": {
+        "count": 905,
+        "p50": 0.064,
+        "p95": 0.1028,
+        "p99": 0.2337,
+        "max": 0.401,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "capture_enqueue_to_raw_dequeue_ms": {
+        "count": 906,
+        "p50": 0.089,
+        "p95": 0.1557,
+        "p99": 0.3013,
+        "max": 1.955,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "native_header_read_ms": {
+        "count": 0
+      },
+      "native_payload_read_ms": {
+        "count": 0
+      },
+      "native_slot_wait_ms": {
+        "count": 0
+      },
+      "native_conversion_ms": {
+        "count": 0
+      },
+      "native_vt_call_ms": {
+        "count": 0
+      },
+      "native_submit_to_callback_ms": {
+        "count": 0
+      },
+      "native_stdout_lock_wait_ms": {
+        "count": 0
+      },
+      "native_stdout_write_ms": {
+        "count": 0
+      },
+      "encoded_socket_write_ms": {
+        "count": 905,
+        "p50": 0.027,
+        "p95": 0.3418,
+        "p99": 0.6566,
+        "max": 4.418,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "feed_fill_segment_ms": {
+        "count": 2714,
+        "p50": 0.063,
+        "p95": 35.1655,
+        "p99": 37.5362,
+        "max": 50.7,
+        "over_50_ms": 1,
+        "over_100_ms": 0
+      },
+      "feed_media_write_region_attempt_ms": {
+        "count": 905,
+        "p50": 0.007,
+        "p95": 0.015,
+        "p99": 0.022,
+        "max": 0.044,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "feed_media_flush_attempt_ms": {
+        "count": 905,
+        "p50": 0.008,
+        "p95": 0.0648,
+        "p99": 0.9981,
+        "max": 2.14,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "feed_media_publish_attempt_ms": {
+        "count": 905,
+        "p50": 0.018,
+        "p95": 0.078,
+        "p99": 1.0231,
+        "max": 2.175,
+        "over_50_ms": 0,
+        "over_100_ms": 0
+      },
+      "feed_nonmedia_publish_ms": {
+        "count": 0
+      },
+      "raw_pipe_native_payload_overlap_ms": {
+        "count": 0
+      },
+      "native_stdout_feed_publish_overlap_ms": {
+        "count": 0
+      }
+    },
+    "mixed_gaps_ms": {
+      "raw_mixed_loop_begin_to_condition_begin_ms": {
+        "count": 905,
+        "p50": 0.004,
+        "p95": 0.007,
+        "p99": 0.01,
+        "max": 0.353,
+        "over_50_ms": 0,
+        "over_100_ms": 0,
+        "status": "observed_subset"
+      },
+      "raw_mixed_budget_wait_end_to_dequeue_ms": {
+        "count": 0,
+        "status": "unknown"
+      },
+      "raw_mixed_consume_end_to_write_begin_ms": {
+        "count": 906,
+        "p50": 0.002,
+        "p95": 0.004,
+        "p99": 0.005,
+        "max": 0.012,
+        "over_50_ms": 0,
+        "over_100_ms": 0,
+        "status": "observed_subset"
+      },
+      "raw_mixed_write_end_to_loop_end_ms": {
+        "count": 906,
+        "p50": 0.02,
+        "p95": 0.043,
+        "p99": 0.0805,
+        "max": 0.149,
+        "over_50_ms": 0,
+        "over_100_ms": 0,
+        "status": "observed_subset"
+      },
+      "raw_mixed_prior_end_to_next_begin_ms": {
+        "count": 905,
+        "p50": 0.043,
+        "p95": 0.0736,
+        "p99": 0.1659,
+        "max": 0.347,
+        "over_50_ms": 0,
+        "over_100_ms": 0,
+        "status": "observed_subset"
+      }
+    },
+    "mixed_gap_exclusions": {
+      "raw_mixed_loop_begin_to_condition_begin_ms": {
+        "clock_not_accepted": 0,
+        "missing_endpoint": 0,
+        "zero_endpoint": 0,
+        "reversed_interval": 0,
+        "window_boundary_excluded": 164,
+        "outside_trace_clock_bracket": 0,
+        "unmatched_prior_loop": 0,
+        "no_budget_wait": 0,
+        "budget_not_consumed": 0,
+        "raw_identity_conflict": 0,
+        "no_prior_endpoint": 0,
+        "raw_triplet_not_unique_or_complete": 0
+      },
+      "raw_mixed_budget_wait_end_to_dequeue_ms": {
+        "clock_not_accepted": 0,
+        "missing_endpoint": 0,
+        "zero_endpoint": 0,
+        "reversed_interval": 0,
+        "window_boundary_excluded": 3,
+        "outside_trace_clock_bracket": 0,
+        "unmatched_prior_loop": 0,
+        "no_budget_wait": 1066,
+        "budget_not_consumed": 0,
+        "raw_identity_conflict": 0,
+        "no_prior_endpoint": 0,
+        "raw_triplet_not_unique_or_complete": 0
+      },
+      "raw_mixed_consume_end_to_write_begin_ms": {
+        "clock_not_accepted": 0,
+        "missing_endpoint": 0,
+        "zero_endpoint": 0,
+        "reversed_interval": 0,
+        "window_boundary_excluded": 152,
+        "outside_trace_clock_bracket": 0,
+        "unmatched_prior_loop": 0,
+        "no_budget_wait": 0,
+        "budget_not_consumed": 11,
+        "raw_identity_conflict": 0,
+        "no_prior_endpoint": 0,
+        "raw_triplet_not_unique_or_complete": 0
+      },
+      "raw_mixed_write_end_to_loop_end_ms": {
+        "clock_not_accepted": 0,
+        "missing_endpoint": 0,
+        "zero_endpoint": 11,
+        "reversed_interval": 0,
+        "window_boundary_excluded": 152,
+        "outside_trace_clock_bracket": 0,
+        "unmatched_prior_loop": 0,
+        "no_budget_wait": 0,
+        "budget_not_consumed": 0,
+        "raw_identity_conflict": 0,
+        "no_prior_endpoint": 0,
+        "raw_triplet_not_unique_or_complete": 0
+      },
+      "raw_mixed_prior_end_to_next_begin_ms": {
+        "clock_not_accepted": 0,
+        "missing_endpoint": 0,
+        "zero_endpoint": 0,
+        "reversed_interval": 0,
+        "window_boundary_excluded": 163,
+        "outside_trace_clock_bracket": 0,
+        "unmatched_prior_loop": 0,
+        "no_budget_wait": 0,
+        "budget_not_consumed": 0,
+        "raw_identity_conflict": 0,
+        "no_prior_endpoint": 1,
+        "raw_triplet_not_unique_or_complete": 0
+      }
+    },
+    "excluded_intervals": {
+      "clock_not_accepted": 8464,
+      "missing_endpoint": 0,
+      "zero_endpoint": 0,
+      "reversed_interval": 0,
+      "window_boundary_excluded": 2515,
+      "outside_trace_clock_bracket": 0,
+      "unmatched_prior_loop": 0
+    },
+    "joins": {
+      "complete_observed_frame_chains": 0,
+      "raw_iterations_complete": 1069,
+      "raw_iterations_partial": 0,
+      "raw_identity_conflicts": 0,
+      "idle_repeats_excluded": 3,
+      "non_success_raw_excluded": 0,
+      "config_publications_separate": 1,
+      "duplicate_records": 0,
+      "exclusions": {
+        "duplicate_fresh_pts": 0,
+        "missing_capture": 0,
+        "missing_or_duplicate_downstream": 0,
+        "identity_size_or_status_conflict": 0,
+        "clock_not_accepted": 1055,
+        "unobserved_or_outside_window": 0
+      },
+      "bounded_examples": []
+    },
+    "counter_anchors": {
+      "raw": {
+        "available": true,
+        "snapshots": 906,
+        "first_ns": 317683431593000,
+        "last_ns": 317713600578000,
+        "elapsed_ns": 30168985000,
+        "first": {
+          "raw_frames": 183,
+          "frames_submitted": 132,
+          "pending_frames_replaced": 51,
+          "idle_repeats": 0
+        },
+        "last": {
+          "raw_frames": 1088,
+          "frames_submitted": 1037,
+          "pending_frames_replaced": 51,
+          "idle_repeats": 0
+        },
+        "delta": {
+          "raw_frames": 905,
+          "frames_submitted": 905,
+          "pending_frames_replaced": 0,
+          "idle_repeats": 0
+        },
+        "rates_per_second": {
+          "raw_frames": 29.9977,
+          "frames_submitted": 29.9977,
+          "pending_frames_replaced": 0.0,
+          "idle_repeats": 0.0
+        },
+        "counter_regressions": 0,
+        "same_frame_cohort": false,
+        "interval_not_full_session": true
+      },
+      "feed": {
+        "available": true,
+        "snapshots": 905,
+        "first_ns": 317683439012000,
+        "last_ns": 317713572061000,
+        "elapsed_ns": 30133049000,
+        "first": {
+          "codec_records": 1,
+          "geometry_records": 1,
+          "config_records": 1,
+          "media_records": 132,
+          "published_bytes": 2013116,
+          "publish_failures": 0
+        },
+        "last": {
+          "codec_records": 1,
+          "geometry_records": 1,
+          "config_records": 1,
+          "media_records": 1036,
+          "published_bytes": 11463546,
+          "publish_failures": 0
+        },
+        "delta": {
+          "codec_records": 0,
+          "geometry_records": 0,
+          "config_records": 0,
+          "media_records": 904,
+          "published_bytes": 9450430,
+          "publish_failures": 0
+        },
+        "rates_per_second": {
+          "codec_records": 0.0,
+          "geometry_records": 0.0,
+          "config_records": 0.0,
+          "media_records": 30.0003,
+          "published_bytes": 313623.4239,
+          "publish_failures": 0.0
+        },
+        "counter_regressions": 0,
+        "same_frame_cohort": false,
+        "interval_not_full_session": true
+      }
+    },
+    "whole_pipeline_coverage_accepted": false,
+    "regions_are_not_additive": true,
+    "limits": {
+      "input_bytes_per_role": 16777216,
+      "input_rows_per_role": 24002,
+      "input_line_bytes": 8192,
+      "input_fields_per_row": 64,
+      "joined_examples": 8
+    },
+    "limitations": [
+      "Intervals are observed subsets; missing/drop/cap/zero values never mean zero cost",
+      "Condition region contains condition wait; raw write and native payload read overlap",
+      "Native stdout and feed publication overlap; do not sum them as serialized CPU costs",
+      "Inter-loop gap can include previous diagnostic emit and thread scheduling",
+      "Mixed raw gaps include bookkeeping, observer work, lock acquisition and scheduling; no single cause is attributed",
+      "Mixed gaps are observed subsets, not additive serialized CPU cost; no-wait dequeue uses no substituted endpoint",
+      "Counter anchors are non-atomic snapshots, not the same-frame cohort or full-session FPS",
+      "Source screenshot PTS is identity only; no wall/UPTIME/phone/budget epoch subtraction",
+      "File roles/clock declarations cannot independently prove the same host or frozen attempt identity",
+      "Native trace alone does not establish pending-at-end producer quiescence",
+      "No end-to-end, optical, acoustic, touch, phone presentation or WAN latency is calculated"
+    ]
+  },
+  "sampler_exit_codes": [
+    0,
+    0
+  ],
+  "raw_burst_observation": {
+    "dequeues": 906,
+    "intervals": 905,
+    "gap_ms": {
+      "count": 905,
+      "p50": 33.256,
+      "p95": 36.6032,
+      "p99": 39.4058,
+      "max": 48.63,
+      "over_50_ms": 0,
+      "over_100_ms": 0
+    },
+    "intervals_less_than_16_667ms": 2,
+    "maximum_dequeues_in_half_open_100ms": 4,
+    "steady_budget_waits": 0,
+    "clock_domain": "host_clock_gettime_CLOCK_MONOTONIC_ns",
+    "window_half_open": [
+      317683415409000,
+      317713600585000
+    ],
+    "not_sustained60_output_or_end_to_end_latency": true
+  },
+  "independent_SF": {
+    "source": {
+      "seconds": 30.01,
+      "display_vsync_ns": 33333333,
+      "presented_frames": 886,
+      "fps": 29.523,
+      "cadence_fps": 30.0,
+      "gaps_ms": {
+        "p50": 33.19,
+        "p95": 37.082,
+        "p99": 38.962,
+        "max": 61.972709,
+        "over_50": 2,
+        "over_100": 0
+      },
+      "ring_coverage": {
+        "schema_version": 1,
+        "poll_count": 52,
+        "baseline_observed": 1,
+        "same_selected_layer_all_polls": 1,
+        "overlap_comparisons": 51,
+        "full_ring_no_overlap_risk": 0,
+        "nonfull_ring_no_overlap_unverified": 0,
+        "empty_ring_polls": 0,
+        "layer_missing_polls": 0,
+        "layer_changed_polls": 0,
+        "adb_failure_polls": 0,
+        "malformed_polls": 0,
+        "actual_endpoint_regression_polls": 0,
+        "blocked_adb_calls": 0,
+        "observed_slots_max": 64,
+        "poll_interval_max_ms": 603.249,
+        "adb_call_max_ms": 61.254,
+        "sampling_invalid_observed": 0,
+        "continuity_unverified": 0,
+        "continuity_complete_observed": 1,
+        "requested_window_ms": 30000.0,
+        "first_poll_elapsed_ms": 76.0,
+        "last_poll_elapsed_ms": 29613.0,
+        "trailing_unobserved_host_ms": 397.628,
+        "tail_poll_skipped_count": 0,
+        "tail_budget_at_skip_ms": 0,
+        "tail_remaining_at_skip_ms": 0,
+        "tail_coverage_unknown": 1
+      },
+      "limitations": "continuity_complete_observed covers only the observed poll chain, not every instant of the requested window. Tail budget can prevent a new short-budget call; skipped or trailing time stays unknown and no observed timeout is forgiven. Coverage verifies exact selected list-name and numeric ring overlap, not native layer generation. Observed output slots are not configured capacity. Disjoint or empty rings remain unverified; no missing frame count is invented. FPS remains observed lower-bound cadence if coverage is incomplete. No content hash, media file frame-rate, optical or cross-device clock assertion."
+    },
+    "phone": {
+      "seconds": 30.003,
+      "display_vsync_ns": 16666666,
+      "presented_frames": 880,
+      "fps": 29.331,
+      "cadence_fps": 29.971,
+      "gaps_ms": {
+        "p50": 33.149,
+        "p95": 49.717,
+        "p99": 49.725,
+        "max": 82.865937,
+        "over_50": 1,
+        "over_100": 0
+      },
+      "ring_coverage": {
+        "schema_version": 1,
+        "poll_count": 45,
+        "baseline_observed": 1,
+        "same_selected_layer_all_polls": 1,
+        "overlap_comparisons": 44,
+        "full_ring_no_overlap_risk": 0,
+        "nonfull_ring_no_overlap_unverified": 0,
+        "empty_ring_polls": 0,
+        "layer_missing_polls": 0,
+        "layer_changed_polls": 0,
+        "adb_failure_polls": 0,
+        "malformed_polls": 0,
+        "actual_endpoint_regression_polls": 0,
+        "blocked_adb_calls": 0,
+        "observed_slots_max": 127,
+        "poll_interval_max_ms": 690.944,
+        "adb_call_max_ms": 101.521,
+        "sampling_invalid_observed": 0,
+        "continuity_unverified": 0,
+        "continuity_complete_observed": 1,
+        "requested_window_ms": 30000.0,
+        "first_poll_elapsed_ms": 139.0,
+        "last_poll_elapsed_ms": 29525.0,
+        "trailing_unobserved_host_ms": 477.453,
+        "tail_poll_skipped_count": 0,
+        "tail_budget_at_skip_ms": 0,
+        "tail_remaining_at_skip_ms": 0,
+        "tail_coverage_unknown": 1
+      },
+      "limitations": "continuity_complete_observed covers only the observed poll chain, not every instant of the requested window. Tail budget can prevent a new short-budget call; skipped or trailing time stays unknown and no observed timeout is forgiven. Coverage verifies exact selected list-name and numeric ring overlap, not native layer generation. Observed output slots are not configured capacity. Disjoint or empty rings remain unverified; no missing frame count is invented. FPS remains observed lower-bound cadence if coverage is incomplete. No content hash, media file frame-rate, optical or cross-device clock assertion."
+    }
+  },
+  "actual_host_config_readback_two_sessions": [
+    {
+      "owner_raw_queue_policy_requested": "fifo",
+      "owner_raw_submit_fps_requested": 30,
+      "owner_raw_submit_budget_readback": {
+        "requested_raw_submit_fps": 30,
+        "effective_raw_submit_fps": 30,
+        "native_encoder_fps_arg": 30,
+        "grpc_fps_limit_applied": false,
+        "scope": "raw_frame_submit_token_budget_only_not_grpc_sampling_or_display_fps"
+      },
+      "tcp_media_used": false,
+      "cleanup_confirmed": true,
+      "failure_class": ""
+    },
+    {
+      "owner_raw_queue_policy_requested": "fifo",
+      "owner_raw_submit_fps_requested": 30,
+      "owner_raw_submit_budget_readback": {
+        "requested_raw_submit_fps": 30,
+        "effective_raw_submit_fps": 30,
+        "native_encoder_fps_arg": 30,
+        "grpc_fps_limit_applied": false,
+        "scope": "raw_frame_submit_token_budget_only_not_grpc_sampling_or_display_fps"
+      },
+      "tcp_media_used": false,
+      "cleanup_confirmed": true,
+      "failure_class": ""
+    }
+  ],
+  "CPU_before": {
+    "policy0": [
+      364800,
+      672000,
+      672000
+    ],
+    "policy2": [
+      499200,
+      960000,
+      960000
+    ],
+    "policy5": [
+      499200,
+      960000,
+      499200
+    ],
+    "policy7": [
+      480000,
+      902400,
+      480000
+    ]
+  },
+  "CPU_after": {
+    "policy0": [
+      364800,
+      672000,
+      672000
+    ],
+    "policy2": [
+      499200,
+      960000,
+      960000
+    ],
+    "policy5": [
+      499200,
+      960000,
+      499200
+    ],
+    "policy7": [
+      480000,
+      902400,
+      480000
+    ]
+  },
+  "whole_App_counters": {
+    "received_media_frames": 1058,
+    "queued_media_frames": 1039,
+    "codec_callback_count": 1037,
+    "source_width": 540,
+    "source_height": 960,
+    "decoder_input_timeouts": 1,
+    "late_discarded_count": 1,
+    "video_worker_expired_frames": 0,
+    "audio_cleanup_confirmed": 1,
+    "hardware_video": 1
+  },
+  "whole_App_inbox": {
+    "capacity_frames": 4,
+    "capacity_bytes": 2097152,
+    "maximum_depth": 4,
+    "maximum_bytes": 204297,
+    "admitted_frames": 1048,
+    "overflow_events": 2,
+    "overflow_rejected_frames": 2,
+    "queue_cleared_frames": 8,
+    "waiting_idr_admission_drops": 8,
+    "oversize_admission_drops": 0,
+    "closing_drops": 0,
+    "recovery_epochs": 2,
+    "recovery_idrs_completed": 1,
+    "needs_idr": 0,
+    "pending_frames": 0,
+    "pending_bytes": 0,
+    "epoch_event_capacity": 256,
+    "epoch_events_evicted": 0
+  },
+  "whole_App_FEC": {
+    "packets": 15704,
+    "wire_bytes": 16115590,
+    "invalid": 0,
+    "duplicate": 1418,
+    "settled_packets": 2116,
+    "expired_packets": 0,
+    "frames_expired": 0,
+    "frames_delivered": 1058,
+    "recovered_shards": 0,
+    "reference_lost": 0,
+    "keyframe_requests": 0,
+    "dependency_dropped": 0,
+    "memory_rejected": 0,
+    "clock_mapping_rejected": 0,
+    "clock_mappings_active": 0,
+    "clock_mapping_evictions": 0,
+    "clock_mapping_expired": 0,
+    "logical_body_rejected": 0,
+    "completed_bodies": 1058,
+    "needs_keyframe": 0,
+    "max_assembly_latency_us": 64397
+  },
+  "hardware_ready_two_sessions": {
+    "using_hardware": true,
+    "hardware_property_readback": true,
+    "width": 540,
+    "height": 960,
+    "expected_frame_rate_readback": 30,
+    "ready_logs_do_not_report_actual_FPS": true
+  },
+  "cleanup": {
+    "driver_exit": 0,
+    "gateway_natural_exit": 0,
+    "supervisor_exit": 0,
+    "actual_unique_quiescence": true,
+    "stop_failures": 0,
+    "owned_and_original_signals": 0,
+    "root_original_helper_input_target_ports_clear": true,
+    "root_readback": {
+      "original_preserved": true,
+      "original": {
+        "gateway_pid": 26875,
+        "gateway_start_id": "Sat_Oct_3_17:37:47_2026",
+        "gateway_source_sha256": "215a0a254d3f91e87c600c1455c8239f6d1e2d0208011612a43bd6e1370b3a9a",
+        "runtime_manifest_sha256": "b708399680cc9b4ff19a5cd2048e04dd70dbb75502c1a22cb3eae8419967844f",
+        "coverage_complete": true,
+        "owned_descendants": 0,
+        "hardware_process_groups": 0,
+        "packetizer_processes": 0,
+        "guest_control_processes": 0
+      },
+      "helper_uninstalled": true,
+      "private_input_absent": true,
+      "target_and_helper_PIDs_absent": true,
+      "ports_clear": [
+        45560,
+        45963,
+        45965
+      ],
+      "actual_supervisor_exit": 0,
+      "actual_owned_quiescence": true,
+      "signals": 0,
+      "initial_root_pm_path_nonzero_classification_retained": true
+    }
+  },
+  "interpretation": {
+    "no_raw60_necessity_demonstrated_by_these_two_observations": true,
+    "not_controlled_ABBA": true,
+    "position_compressed_output_and_scheduling_vary": true,
+    "public_default_FIFO_and_session_FPS_budget_retained": true,
+    "source_drops_endpoint_increment": 93,
+    "same_exact_sampler_drop_count_unknown": true
+  }
+}

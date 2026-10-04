@@ -727,6 +727,8 @@ public final class UdpVideoProbe extends Instrumentation {
                 double seconds=(now-previous[0])/1e9;
                 if(keepDetail(samples))samples.put(new JSONObject().put("t_ns",now).put("media_receive_fps",(receivedMedia-previous[1])/seconds)
                     .put("codec_callback_fps",(a.presentedFrames.get()-previous[2])/seconds)
+                    .put("udp_packets",packets).put("received_media_frames",receivedMedia)
+                    .put("codec_callback_count",a.presentedFrames.get()).put("authenticated_video_packets",authenticatedVideoPackets)
                     .put("authenticated_packets",authenticated).put("udp_payload_mbps",(udpBytes-previous[3])*8/seconds/1e6)
                     .put("late_discarded_fps",(a.lateDiscardedFrames.get()-previous[4])/seconds).put("native_fec",nativeStats(handle)));
                 previous[0]=now;previous[1]=receivedMedia;previous[2]=a.presentedFrames.get();previous[3]=udpBytes;previous[4]=a.lateDiscardedFrames.get();
@@ -1207,8 +1209,63 @@ public final class UdpVideoProbe extends Instrumentation {
         // Object-array events deliberately bypass numericTree's 128-number
         // truncation. Only this closed, bounded numeric schema may cross App mode.
         out.put("inbox_epoch_events_numeric",numericInboxEpochEvents(report));
+        out.put("transport_samples_numeric",numericTransportSamples(report));
         if(out.toString().getBytes(StandardCharsets.UTF_8).length>64*1024)throw new IOException("numeric_app_report_limit");
         return out;
+    }
+    /** Existing RX-owned one-second samples; export after receive ends only.
+     * No live cross-thread sampling or per-packet clocks/JSON are introduced.
+     * t_ns is the iteration-start clock, before its receive/processing calls;
+     * it is NOT the exact arrival timestamp of the counters below.
+     */
+    static JSONObject numericTransportSamples(JSONObject report)throws Exception{
+        final int capacity=64;
+        final String[] counters={"udp_packets","authenticated_packets","authenticated_video_packets",
+            "received_media_frames","codec_callback_count"};
+        final String[] fec={"packets","frames_expired","reference_lost","dependency_dropped","keyframe_requests"};
+        JSONObject out=new JSONObject().put("schema_version",1).put("available",0).put("capacity",capacity)
+            .put("recorded_count",0).put("exported_count",0).put("omitted_prefix_following_count",0)
+            .put("all_recorded_samples_exported",0).put("all_session_observations_covered",0)
+            .put("timestamp_is_exact_packet_arrival",0).put("physical_route_or_latency_verified",0);
+        JSONArray times=new JSONArray();out.put("t_ns",times);
+        JSONArray[] columns=new JSONArray[counters.length+fec.length];
+        for(int i=0;i<columns.length;i++){
+            columns[i]=new JSONArray();out.put(i<counters.length?counters[i]:"FEC_"+fec[i-counters.length],columns[i]);
+        }
+        Object value=report.opt("samples");if(!(value instanceof JSONArray))return out;
+        JSONArray rows=(JSONArray)value;
+        if(rows.length()>3600)throw new IOException("transport_sample_record_bound");
+        out.put("recorded_count",rows.length());
+        // A legacy sample lacking the new integral counters is unavailable.
+        // Never turn a missing count into zero or copy arbitrary source fields.
+        if(rows.length()>0){Object first=rows.get(0);if(!(first instanceof JSONObject))throw new IOException("transport_sample_object_required");
+            for(String name:counters)if(!((JSONObject)first).has(name))return out;}
+        int retained=Math.min(capacity,rows.length());long previousTime=Long.MIN_VALUE;
+        long[] previous=new long[columns.length];
+        for(int i=0;i<retained;i++){
+            Object raw=rows.get(i);if(!(raw instanceof JSONObject))throw new IOException("transport_sample_object_required");
+            JSONObject row=(JSONObject)raw;Object stats=row.opt("native_fec");
+            if(!(stats instanceof JSONObject))throw new IOException("transport_sample_FEC_required");
+            long time=transportSampleLong(row,"t_ns");
+            if(i>0&&time<=previousTime)throw new IOException("transport_sample_clock_order");
+            long[] numeric=new long[columns.length];
+            for(int j=0;j<numeric.length;j++){
+                numeric[j]=j<counters.length?transportSampleLong(row,counters[j]):transportSampleLong((JSONObject)stats,fec[j-counters.length]);
+                if(numeric[j]<0||(i>0&&numeric[j]<previous[j]))throw new IOException("transport_sample_counter_order");
+            }
+            if(numeric[1]>numeric[0]||numeric[2]>numeric[1])throw new IOException("transport_sample_auth_count_contract");
+            times.put(time);for(int j=0;j<numeric.length;j++)columns[j].put(numeric[j]);
+            previousTime=time;previous=numeric;
+        }
+        return out.put("available",1).put("exported_count",retained)
+            .put("omitted_prefix_following_count",rows.length()-retained)
+            .put("all_recorded_samples_exported",rows.length()<=capacity?1:0);
+    }
+    private static long transportSampleLong(JSONObject object,String key)throws IOException{
+        Object value=object.opt(key);
+        if(!(value instanceof Byte||value instanceof Short||value instanceof Integer||value instanceof Long))
+            throw new IOException("transport_sample_integral_field_required");
+        return ((Number)value).longValue();
     }
     /** Report-time only: codes are stable; zero means an unknown event/reason. */
     private static int inboxEventCode(Object value){

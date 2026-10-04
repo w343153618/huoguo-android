@@ -1081,7 +1081,7 @@
     "reported_source_format": "itag299 avc1 1920x1080@60 before and after each case",
     "same_home_tailnet_outer_path_verified": false
   },
-  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30\u219219 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
+  "next_source_task": "Auto5 protected real LAN trace completed: same-clock steady capture/submit25.1264/s, historical30→19 not reproduced; current actual format and unique content FPS unknown. Independently fix/verify desired source selection and review missing native producer end before a bounded same-pipeline follow-up. Keep source/global CPU/phone data, original owner/M5/NPS protected; no buffer/queue expansion or blind source repeats.",
   "formal_nps_udp_task_preparation": {
     "date": "2026-10-03",
     "source_doc": "docs/nps-dual-udp-tasks-20261003.md",
@@ -2106,5 +2106,79 @@
     "to_ms": 268111,
     "source_final_after_media_ms": 309601,
     "real_phone_media_during_seek": false
+  },
+  "M1_owner_raw_budget30_reversal_20261004": {
+    "report": "docs/owner-raw-budget30-reversal-real-LAN-20261004.md",
+    "evidence": "docs/owner-raw-budget30-reversal-real-LAN-20261004.json",
+    "scope": "real limited OnePlus12 plus nonisolated M1 RAM8 physical LAN authenticated UDP; not public/cellular/V50/physical or acoustic",
+    "source_commit": "9ea78de544b56810df6555386d095e16a5481c8e",
+    "raw_budget_requested_and_actual": 30,
+    "native_and_phone_fps_arg": 30,
+    "queue_policy": "fifo",
+    "queue_age_p50_p99_max_ms": [
+      0.089,
+      0.3013,
+      1.955
+    ],
+    "steady_budget_waits": 0,
+    "capture_submit_FPS": 29.9977,
+    "feed_FPS": 30.0003,
+    "phone_SFcadence": 29.971,
+    "phone_max_gap_ms": 82.865937,
+    "phone_observed_gaps_over100ms": 0,
+    "phone_unknown_tail_ms": 477.453,
+    "source_descriptor_fps_not_presented": 60,
+    "source_drop_endpoint_increment_not_exact_window": 93,
+    "default_changed": false,
+    "raw60_necessity_demonstrated": false,
+    "actual_cleanup_and_root_original_verification": true,
+    "native_final_coverage_accepted": false
+  },
+  "M1_existing_public_sampling_candidate_20261004": {
+    "source_only_reservation_released_before_public_media": true,
+    "uses_original_gateway_no_restart_or_replacement": true,
+    "inert_checks": 27,
+    "actual_public_acceptance": false,
+    "next": "resume actual private exec/checkpoint, do not duplicate",
+    "actual_completed": true,
+    "driver_exit": 1,
+    "supervisor_exit": 2,
+    "failure": "steady_media_progress_stalled_or_unverified",
+    "evidence": "docs/existing-public-M1-progress-stall-20261004.json",
+    "phone_SFcadence": 20.381,
+    "source_SFcadence": 29.964,
+    "phone_max_gap_ms": 5030.632081,
+    "complete_frame_and_callback_max_idle_ns": 4768971769,
+    "public_performance_accepted": false,
+    "service_restarted_or_replaced": false,
+    "original_and_cleanup_root_verified": true
+  },
+  "CI_raw_budget60_evidence_verification_20261004": {
+    "sha": "b853ee22c26bfbab6bc3fe9ac56bf380aa1c8915",
+    "run": 37161375290,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  },
+  "M1_UDP_header_parser_candidate_20261004": {
+    "source_sha256": "ba8d955a39fddc845853baadfe09e2b0f9db438ac2a7b4f944894bee540bc37e",
+    "focused_checks": 16,
+    "actual_capture_run": false,
+    "Mac_BPF_access": "denied",
+    "phone_tcpdump_discovered_path": "not executable/readable under UID0 or shell; path discovery is not availability",
+    "global_security_modified": false,
+    "gate": "inert parser only; no arrival/route/overhead acceptance"
+  },
+  "M1_App_transport_progress_candidate_20261004": {
+    "source_sha256": "5f77969d503936198666b40f7e99247f1f6c32e0e7731597a6ab6a4d36c877e9",
+    "status": "source/JVM verified; no new build/install/deployment/release",
+    "focused_JVM_checks": 6,
+    "related_Inbox_JVM_checks": 10,
+    "related_completion_checks": 8,
+    "fields": "existing one-second RX samples; UDP/authenticated/video packets, complete frames/callbacks, FEC recovery counters",
+    "retention": "64 initial columns; explicit recording/export counts; no whole-session coverage",
+    "timestamp": "iteration-start System.nanoTime before receive, not exact arrival",
+    "previous_local_code40_APK_matches_new_source": false,
+    "next": "new matched candidate/helper build and owner public real acceptance; preserve published alpha8"
   }
 }
