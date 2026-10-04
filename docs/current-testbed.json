@@ -2472,6 +2472,40 @@
       "overall": "success",
       "build": "success",
       "udp_candidate": "success"
+    },
+    "exact_CI": {
+      "SHA": "cb258b8ab7cff295dfd67ccf116e2a489137dbbb",
+      "run": 37184629915,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
     }
+  },
+  "owned_source_scope_journal_candidate_20261004": {
+    "schema": "owned-source-scope-journal-local-v1",
+    "source": "scripts/probes/source_owned_scope_journal.py",
+    "new_local_filesystem_checks": 9,
+    "focused_checks": 43,
+    "focused_seconds": 2.942,
+    "record_limit_bytes": 2048,
+    "record_limit_count": 128,
+    "constructor_IO": false,
+    "device_operations": 0,
+    "UI_sessions_started": 0,
+    "phone_media_sessions": 0,
+    "runtime_adapter_integrated": false,
+    "App_artifact_changed": false,
+    "preceding_binding_exact_CI": {
+      "SHA": "cb258b8ab7cff295dfd67ccf116e2a489137dbbb",
+      "run": 37184629915,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    },
+    "remote_UI_quiescence_verified": false,
+    "permission_lease_verified": false,
+    "journal_is_cleanup_authority": false
   }
 }

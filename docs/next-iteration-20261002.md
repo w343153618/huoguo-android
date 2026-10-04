@@ -45,6 +45,13 @@ success verified, not a result for later binding source. Read
 source-owned-snapshot-binding-20261004.md/json. Next integrate exact scope
 journal/five-file lifecycle, retaining unknown remote cleanup and lease gates.
 
+New explicit local private scope journal implemented;9 filesystem checks and
+43 focused checks /2.942s PASS. Constructor inert, no deletion/remote operations;
+possible scope stays uncertain even after a consistent receipt. cb258/run37184629915
+independently verified overall/build/UDPsuccess. Read source-owned-scope-journal-20261004.md/json.
+Next NEW frozen five-file owned adapter, real exec-parent binding/current lease,
+not repeated host fixtures or old source witnesses. No new Android UI/App/media.
+
 ## 2026-10-04 latest: explicit playing-source Pause/direct reader integration; no runtime UI/input yet
 
 Exactddcf05a962df0a2a7519db4ede83298cd4a4547a/run37175124505 independently
