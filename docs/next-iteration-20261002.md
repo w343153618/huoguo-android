@@ -1,5 +1,19 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Exact4f882/run37198085659 failed only the original dd43 fixture prerequisite:
+canonical registry changed and shallow CI lacks its old git object.1931 tests/
+79.273s/one setup error/11existing skips; UDP skipped. NEW repair bundles four
+exact hash-pinned source-only inputs, private namespaces/no fallback/skip;2new
+integrity+4original locking tests and234focused PASS0.583s. Workflow/production
+guards unchanged. Repair must have its own cloud result; do not re-run failed4f.
+Read frozen-dd43-CI-fixture-repair-20261004.json and github-ci-portability-repair.
+No phone/guest/service action. The next LAN coordinator also needs a NEW helper
+and driver qualification: current saved-ui and frame-only helper scope is
+public nps_owner, not LAN, and public saved credentials cannot be copied to LAN.
+Normal helper reconnect/20s+2s preparation must not be assumed to fit a30s
+READY-started lease. Private explicit next design is in iteration-state; old
+f0/d043 frame-only remains unchanged and first after phone is available.
+
 NEW default-OFF trusted M1 LAN diagnostic selection is implemented at registry
 and worker constructors, without a CLI or live coordinator.14new/232affected
 checks PASS0.600s including an actual host pending-factory thread/reap race,

@@ -1,16 +1,16 @@
 """Exact dd43 registry locking checks; no socket, password, guest or service.
 
-Load hash-pinned legacy Python bytes in private module namespaces. The current
-files still match these pins; if they change, require the exact local Git object
-rather than silently substituting a new registry or skipping coverage.
+Load bundled hash-pinned legacy Python bytes in private module namespaces.
+The exact snapshot is independent of newer canonical files and shallow Git
+history. Missing or changed snapshot bytes fail rather than substitute or skip.
 """
 import builtins
 from contextlib import contextmanager
 import hashlib
 from pathlib import Path
-import subprocess
 import sys
 import threading
+import tempfile
 import types
 import unittest
 from unittest import mock
@@ -18,12 +18,25 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMIT = 'dd43a39f49f6dceb55854fbc6e43367d34f381c3'
+SNAPSHOT = ROOT / 'tests/fixtures/frozen-dd43'
 PINS = {
     'stream_settings': 'd5bf38e20dd8e0c5367755ad08d2c276dd156832203e8d31eac1c7f536db0406',
     'udp_network_scope': '0d610954e1d84f4fdd29f5b7772a00485c31657c7e60d995c17b8e79b8dae305',
     'udp_nps_profile': 'ae552dad51da32d7abf57a72538c173f2f21297602d19ef0477a97e1d5dba9dd',
     'udp_lan_sessions': '8e3afce002c9eab223e47df5535069fa63f1748038fe0a658b03dc9db041e2b6',
 }
+
+
+def legacy_source(name):
+    if name not in PINS:
+        raise ValueError('closed_frozen_dd43_module_required')
+    try:
+        source = (SNAPSHOT / (name + '.py.txt')).read_bytes()
+    except OSError:
+        raise RuntimeError('required_frozen_dd43_source_unavailable') from None
+    if hashlib.sha256(source).hexdigest() != PINS[name]:
+        raise RuntimeError('frozen_dd43_source_hash_mismatch')
+    return source
 
 
 def legacy_modules():
@@ -36,26 +49,39 @@ def legacy_modules():
         return ordinary_import(name, globals, locals, fromlist, level)
 
     for name, digest in PINS.items():
-        path = ROOT / (name + '.py')
-        source = path.read_bytes()
-        if hashlib.sha256(source).hexdigest() != digest:
-            try:
-                result = subprocess.run(['git', 'show', COMMIT+':'+name+'.py'],
-                    cwd=ROOT, check=True, stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL, timeout=5)
-                source = result.stdout
-            except (OSError, subprocess.SubprocessError):
-                raise RuntimeError('required_frozen_dd43_source_unavailable') from None
-        if hashlib.sha256(source).hexdigest() != digest:
-            raise RuntimeError('frozen_dd43_source_hash_mismatch')
+        source = legacy_source(name)
         private_name = 'tests._owner_lan_legacy_dd43.' + name
         module = types.ModuleType(private_name)
-        module.__file__ = 'frozen-git:'+COMMIT+':'+name+'.py'
+        module.__file__ = 'frozen-dd43:'+COMMIT+':'+name+'.py'
         module.__dict__['__builtins__'] = dict(vars(builtins), __import__=legacy_import)
         sys.modules[private_name] = module  # Required by the actual dataclasses.
         loaded[name] = module
         exec(compile(source, module.__file__, 'exec'), module.__dict__)
     return loaded
+
+
+class FrozenSourceIntegrityTests(unittest.TestCase):
+    def test_source_only_snapshot_has_exact_bytes_without_git_or_current_files(self):
+        with mock.patch('subprocess.run', side_effect=AssertionError('no Git/subprocess')):
+            loaded = legacy_modules()
+        self.assertEqual(set(loaded), set(PINS))
+        self.assertNotEqual(loaded['udp_lan_sessions'].__name__, 'udp_lan_sessions')
+        # The old registry remains the exact original contract, not current code.
+        import inspect
+        self.assertNotIn('owner_native_diagnostic_plan',
+                         inspect.signature(loaded['udp_lan_sessions'].UdpLanSessions).parameters)
+
+    def test_changed_missing_and_foreign_snapshot_fail_without_fallback(self):
+        with tempfile.TemporaryDirectory() as directory, mock.patch.dict(
+                globals(), SNAPSHOT=Path(directory)), mock.patch('subprocess.run',
+                side_effect=AssertionError('no fallback Git/subprocess')):
+            with self.assertRaisesRegex(RuntimeError, '^required_frozen_dd43_source_unavailable$'):
+                legacy_source('udp_lan_sessions')
+            (SNAPSHOT / 'udp_lan_sessions.py.txt').write_bytes(b'changed snapshot')
+            with self.assertRaisesRegex(RuntimeError, '^frozen_dd43_source_hash_mismatch$'):
+                legacy_source('udp_lan_sessions')
+            with self.assertRaisesRegex(ValueError, '^closed_frozen_dd43_module_required$'):
+                legacy_source('../foreign')
 
 
 class ControlledWorker:

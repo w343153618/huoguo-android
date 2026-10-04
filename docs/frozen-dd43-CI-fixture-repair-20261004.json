@@ -1,0 +1,33 @@
+{
+  "schema": "frozen-dd43-CI-fixture-repair-v1",
+  "actual_failed_SHA": "4f882eb112089879b91241392c83885a80f0f167",
+  "actual_failed_run": 37198085659,
+  "actual_failed_step": "Check gateway syntax and endpoint parser",
+  "actual_error": "required_frozen_dd43_source_unavailable",
+  "actual_cloud_tests": 1931,
+  "actual_cloud_seconds": 79.273,
+  "actual_existing_skips": 11,
+  "cause": "Canonical udp_lan_sessions changed, so pinned witness fixture first needed git show dd43; shallow cloud checkout lacks the historical object. The error was a fixture prerequisite, not an App/guest/runtime failure.",
+  "repair": "Bundle four exact hash-pinned dd43 source-only test inputs and load in private namespaces. No current source substitution, Git/network fallback, production/guard/workflow change or new skip.",
+  "snapshot_commit": "dd43a39f49f6dceb55854fbc6e43367d34f381c3",
+  "snapshot_sha256": {
+    "stream_settings": "d5bf38e20dd8e0c5367755ad08d2c276dd156832203e8d31eac1c7f536db0406",
+    "udp_network_scope": "0d610954e1d84f4fdd29f5b7772a00485c31657c7e60d995c17b8e79b8dae305",
+    "udp_nps_profile": "ae552dad51da32d7abf57a72538c173f2f21297602d19ef0477a97e1d5dba9dd",
+    "udp_lan_sessions": "8e3afce002c9eab223e47df5535069fa63f1748038fe0a658b03dc9db041e2b6"
+  },
+  "source_SHA256": "f813ecbf641018a01451658e8c0e9a7f458c1b2f402d9f54841a5c1f80b8d007",
+  "new_integrity_checks": 2,
+  "original_actual_registry_checks": 4,
+  "focused_total": 234,
+  "focused_seconds": 0.583,
+  "layers": [
+    "Actual local hash-pinned old source compiled in private Python namespaces",
+    "Host pending-stop/cleanup race in original registry",
+    "No-Git/source-only prerequisite fixture",
+    "Missing/corrupt/foreign snapshot rejection"
+  ],
+  "cloud_repair_result": "pending_own_new_SHA; failed4f is not accepted and will not be re-run",
+  "live_service_phone_operations": 0,
+  "new_App_release": false
+}

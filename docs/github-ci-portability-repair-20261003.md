@@ -129,3 +129,31 @@ NPC identities or operate a phone. Published alpha8/code39 and stable
 1.31/code32 remain separate from this CI repair. Neither local nor cloud test
 success constitutes real-phone FPS, acoustic/optical latency, WAN/V50 or
 friend/public isolation acceptance.
+
+## 2026-10-04: shallow checkout lacks the exact original registry fixture
+
+The diagnostic-selection source4f882eb112089879b91241392c83885a80f0f167
+failed its own [run37198085659](https://github.com/w343153618/huoguo-android/actions/runs/37198085659).
+Linux discovery ran1931 tests in79.273s with one setup error and the existing11
+platform skips; the UDP job was skipped after build failed. The exact failing
+fixture was `FrozenRegistryWitnessTests.setUpClass`, with
+`required_frozen_dd43_source_unavailable`. This is a new prerequisite failure,
+not one of the earlier repaired path/socket/helper errors.
+
+Before4f882, the canonical registry matched the original dd43 pinned bytes.
+After the intentional default-OFF constructor addition, the fixture needed its
+`git show dd43:udp_lan_sessions.py` fallback for the first time. The shallow CI
+checkout has no such historical object. Local focused checks had the full object
+and therefore did not expose the cloud prerequisite. No phone, guest or live
+gateway failed or changed in this CI run.
+
+The fixture now bundles all four exact dd43 source-only inputs and verifies
+their existing immutable SHA256 pins before compiling private module namespaces.
+Missing or corrupted bytes still fail; foreign module paths are refused. It
+does not substitute current source, fetch history, remove assertions or add a
+skip. Two integrity checks and the four original registry concurrency checks
+are retained. With selection/registry/worker/gateway/admission fixtures,234
+focused checks passed0.583s locally. Production selection, live admission safety,
+workflow and platform skip policy are unchanged. Exact byte pins and actual
+failed-run evidence are in `frozen-dd43-CI-fixture-repair-20261004.json`. The
+repair requires its own new-SHA cloud result; failed4f is not re-run or accepted.
