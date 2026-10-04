@@ -5575,6 +5575,24 @@
     "API37_actual_compile": true,
     "ART_PM_lease_release": false,
     "phone_manual_old82f_cleanup": "unchanged_unknown_no_poll",
-    "next": "Actual cooperative UdpVideoProbe and UdpAudioReceiver resource ownership/normal-close adapters, same native-process bridge and whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway gates. Past input drain observation never releases."
+    "next": "Actual cooperative UdpVideoProbe and UdpAudioReceiver resource ownership/normal-close adapters, same native-process bridge and whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway gates. Past input drain observation never releases.",
+    "failed_exact_source_CI": {
+      "run": 37240961009,
+      "source": "b4f1b2a1492f61e0e4caf968a92eb859d7b7c124",
+      "build": "failure",
+      "UDP": "skipped",
+      "overall": "failure",
+      "log_sha256": "6dc68c431d884dd777dda400f8d3453ae957929942bdd3a3ec87a8c32c267551",
+      "status": "completed",
+      "Linux_tests": 2320,
+      "Linux_seconds": 135.652,
+      "errors": 1,
+      "existing_skips": 11,
+      "Android_compile_lint": "success",
+      "cause": "old hour completion fixture extracted actual Attempt, new nested OwnerInputObservation type missing in that narrow fixture; no Android/App/runtime failure"
+    },
+    "hour_fixture_repair_checks": 9,
+    "hour_fixture_repair_seconds": 4.95,
+    "new_CI_pending": true
   }
 }

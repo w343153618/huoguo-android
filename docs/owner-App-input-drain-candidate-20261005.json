@@ -83,12 +83,35 @@
   "old_artifact_pins": "old local3d App/helper106-class match belongs to those old bytes only; new source/classes require separately built exact artifacts",
   "phone_manual_and_old82f_cleanup": "unknown unchanged; no poll, screenshot, install, auth, media, RPC, UI, input or cleanup action",
   "original_guards_deadlines_buffers_defaults_changed": false,
-  "next": "Actual cooperative UdpVideoProbe and UdpAudioReceiver resource ownership/normal-close adapters, same native-process bridge and whole independent host/operator/source/phone/admission/PM/absence/privileged-writer/gateway gates. Past input drain observation never releases.",
+  "next": "Actual Probe/audio owner-close associations, retaining normal separate reconnect policy; resource worker/lifecycle association and genuine native bridge plus whole independent host/phone/admission/PM/cleanup/release gates.",
   "early_resource_read_counterexample": {
     "checks": 1,
     "failures": 1,
     "seconds": 3.707,
     "actual_monitor_wait_ms": 3100,
     "cause": "capture constructor read Surface after exhausted original caller budget; now budget checked before first actual resource read"
+  },
+  "failed_exact_source_CI": {
+    "run": 37240961009,
+    "source": "b4f1b2a1492f61e0e4caf968a92eb859d7b7c124",
+    "build": "failure",
+    "UDP": "skipped",
+    "overall": "failure",
+    "log_sha256": "6dc68c431d884dd777dda400f8d3453ae957929942bdd3a3ec87a8c32c267551",
+    "status": "completed",
+    "Linux_tests": 2320,
+    "Linux_seconds": 135.652,
+    "errors": 1,
+    "existing_skips": 11,
+    "Android_compile_lint": "success",
+    "cause": "old hour completion fixture extracted actual Attempt, new nested OwnerInputObservation type missing in that narrow fixture; no Android/App/runtime failure"
+  },
+  "hour_fixture_repair": {
+    "checks": 9,
+    "seconds": 4.95,
+    "new_inertness_check": 1,
+    "type_only_dependency": "unconstructible fixture-only OwnerInputObservation, hour-policy methods never activate it; actual observer implementation remains separately tested in39 and API37 compile",
+    "workflow_guards_production_source_deadlines_skips_changed": false,
+    "new_CI_required": true
   }
 }

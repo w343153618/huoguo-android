@@ -38,6 +38,12 @@ final class AuthenticatedLanUdpUi {
  final MainActivity activity;final Object lock=new Object();long generation=10;
  Attempt current,retiring;Text status=new Text();int remoteFinishCalls,loginCalls;
  AuthenticatedLanUdpUi(MainActivity a){activity=a;}
+ // Type-only dependency of the actual extracted Attempt. This hour-policy
+ // fixture never constructs or invokes it; the actual App/queue implementation
+ // is exercised by test_owner_input_observation.py and Android compilation.
+ private static final class OwnerInputObservation {
+  private OwnerInputObservation(){throw new AssertionError("hour fixture cannot activate observer");}
+ }
  static final class Text {String text="";void setText(String s){text=s;}}
  void showLogin(){loginCalls++;}boolean active(){synchronized(lock){return current!=null&&!current.stopped;}}
  void finishRemote(Attempt a){remoteFinishCalls++;}
@@ -65,6 +71,7 @@ public final class HourCompletionCheck {
   try{
    MainActivity a=new MainActivity(directory.toFile());AuthenticatedLanUdpUi ui=new AuthenticatedLanUdpUi(a);
    var old=new AuthenticatedLanUdpUi.Attempt(10,"","","","",null,false,0,false,false);ui.current=old;
+   if(old.ownerInputObservation!=null)throw new AssertionError("ordinary Attempt must leave observer inert");
    if(scenario.equals("cancelled")||scenario.equals("new_generation"))ui.cancelOwned(old,false);
    if(scenario.equals("late_old_after_new")){
     ui.current=new AuthenticatedLanUdpUi.Attempt(++ui.generation,"","","","",null,false,0,false,false);
@@ -86,7 +93,8 @@ public final class HourCompletionCheck {
     .put("reminders",a.reminders).put("status_hour",ui.status.text.contains("休息一下")?1:0)
     .put("current_present",ui.current==null?0:1).put("current_is_old",ui.current==old?1:0)
     .put("retiring_present",ui.retiring==null?0:1).put("retiring_is_old",ui.retiring==old?1:0)
-    .put("stored_completion",stored.contains("completion_receipt")?1:0));
+    .put("stored_completion",stored.contains("completion_receipt")?1:0)
+    .put("input_observer_created",old.ownerInputObservation==null?0:1));
   }finally{try(var files=java.nio.file.Files.list(directory)){for(var f:files.toList())java.nio.file.Files.deleteIfExists(f);}java.nio.file.Files.deleteIfExists(directory);}
  }
 }
@@ -154,6 +162,11 @@ class HourCompletionReasonChecks(unittest.TestCase):
                 self.assertEqual(value['reminders'],1)
                 self.assertEqual(value['status_hour'],1)
                 self.assertEqual(value['stored_completion'],int(status!='accepted'))
+
+    def test_normal_hour_and_cancel_leave_input_observer_inert(self):
+        for scenario in ('active','cancelled','new_generation','late_old_after_new'):
+            with self.subTest(scenario=scenario):
+                self.assertEqual(self.case(scenario=scenario)['input_observer_created'],0)
 
     def test_request_or_report_fields_cannot_fake_local_hour(self):
         for reason,reached,cancelled,failed,expected in [(0,False,False,False,0),(0,False,True,False,4),
