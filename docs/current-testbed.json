@@ -3014,7 +3014,124 @@
     "new_APK_JNI_helper_or_manifest": false,
     "previous_frame_only_frozen_candidate_changed": false,
     "dedicated_phone_current_status": "device-not-found, no repeated polling or inferred process absence",
-    "this_candidate_CI": "requires_new_exact_source_SHA",
+    "this_candidate_CI": {
+      "SHA": "3d476566ee8b4f2c9126713f0f3559e637a0958a",
+      "run": 37194838068,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    },
     "next": "When phone is actually available, use the unchanged reviewed f0 frame-only freeze after all fresh eligibility and normal saved-UI auth/current Attempt; one readonly frame only. Independently qualify how a bounded owner-only native-event descriptor would reach a new matching signed App and preserve OFF/default/64KiB limits before any live diagnostic. Do not enable events or treat these fixtures as moving public evidence."
+  },
+  "native_diagnostic_descriptor_source_review_20261004": {
+    "scope": "canonical_source_only_not_fresh_running_descriptor_or_deployment",
+    "source": "udp_lan_sessions.py",
+    "SHA256": "8e3afce002c9eab223e47df5535069fa63f1748038fe0a658b03dc9db041e2b6",
+    "NPS_owner_HTTP_closed_fields_exclude_diagnostic_events": true,
+    "registry_source_creates_diagnostic_events_false": true,
+    "direct_run_phone_udp_diagnostic_option_is_normal_App_route": false,
+    "source_or_runtime_modified": false,
+    "new_live_events_or_media": false,
+    "next": "Design a dedicated owner-only bounded process/high-port diagnostic selection plus matching new App qualification. Keep original default false and existing HTTP closed fields. No account-equals-operator assumption, original/public restart or45965 during original media."
+  },
+  "owner_native_diagnostic_preflight_candidate_20261004": {
+    "schema": "owner-native-diagnostic-preflight-candidate-v1",
+    "status": "inert_local_plan_and_artifact_comparison_not_gateway_integration",
+    "source_SHA256": {
+      "scripts/probes/owner_native_diagnostic_preflight.py": "6dc5334f7919246dd37254c059c140278408e3c1c34b8f8fa683d20e037a4b7d",
+      "tests/test_owner_native_diagnostic_preflight.py": "df26b0e4a147eb5373f96d603d3295b5d76bd31574d129cc7c060275c7bf2331"
+    },
+    "new_checks": 14,
+    "affected_checks": 90,
+    "affected_seconds": 0.388,
+    "final_new_checks": 14,
+    "final_new_seconds": 0.002,
+    "validation_layers": [
+      "Pure synthetic local plan and pin comparisons",
+      "Existing in-memory LAN/NPS registry fixtures"
+    ],
+    "bound": {
+      "network_scope": "lan",
+      "node": "m1",
+      "guest_serial": "emulator-5556",
+      "guest_avd": "RemoteAndroid17Compare",
+      "https_port": 45560,
+      "udp_port": 45963,
+      "process_budget_seconds_min": 30,
+      "process_budget_seconds_max": 3600,
+      "sample_seconds_max": 30,
+      "report_bytes_max": 65536,
+      "native_export_rows_max": 64,
+      "native_ring_capacity": 256,
+      "java_ring_capacity": 8192
+    },
+    "artifact_matching_requires_caller_readback_provenance": true,
+    "valid_JSON_is_permission": false,
+    "numeric_export_schema_verified_by_metadata": false,
+    "private_evidence_verified": false,
+    "current_App_attempt_or_server_guest_lease_verified": false,
+    "preflight_can_enable_collection": false,
+    "registry_or_gateway_changed": false,
+    "host_trace_forced_by_native_preflight": false,
+    "phone_installed_APK_latest_prior_verified": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "phone_current_status": "device-not-found; no second polling or inferred process absence",
+    "new_local_build_record": "native-frame-numeric-local-build-20261004.json",
+    "live_operations": {
+      "phone_media": 0,
+      "helper_install": 0,
+      "source_input": 0,
+      "UiAutomation": 0,
+      "framebuffer_RPC": 0,
+      "service_signals": 0
+    },
+    "next": "Integrate only a separate explicit bounded M1 LAN coordinator/trusted descriptor selection after actual permission/admission/private evidence/current Attempt qualification and the new matching signed phone artifacts. Persistent/NPS/Tailnet defaults stay OFF. Phone unavailable: continue independent source work; do not execute or poll repeatedly."
+  },
+  "native_frame_numeric_local_build_20261004": {
+    "schema": 1,
+    "source_commit": "3d476566ee8b4f2c9126713f0f3559e637a0958a",
+    "freeze_unchanged_files": 1048,
+    "gradle_assemble_debug_release_lint_exit": 0,
+    "helper_builder_exit": 0,
+    "compiled_numericNativeFrameEvents_present": true,
+    "matching_debug_App_class_count": 106,
+    "installed": false,
+    "published": false,
+    "native_collection_or_report_ART_verified": false,
+    "sampling_overhead_measured": false,
+    "artifacts": {
+      "release_App": {
+        "sha256": "f97b3e3735eb729bf28c086c92cb9a4147093cd0ed05a3aeb456456c42419779",
+        "bytes": 7245582,
+        "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+        "application_id": "local.remoteandroid.direct.experiment",
+        "version_code": "40",
+        "version_name": "1.31-alpha.9",
+        "jni_sha256": "447f4928515aa851520ec02b2f2b2efe9cfea1dc475dc29d3413145611743dc5"
+      },
+      "debug_App": {
+        "sha256": "2707f430b899f3d0589b47dba9c60b2c91696cb88907f2ba372dbe83cfb36712",
+        "bytes": 7892228,
+        "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+        "application_id": "local.remoteandroid.direct.experiment",
+        "version_code": "40",
+        "version_name": "1.31-alpha.9",
+        "jni_sha256": "447f4928515aa851520ec02b2f2b2efe9cfea1dc475dc29d3413145611743dc5"
+      },
+      "matching_ui_helper": {
+        "sha256": "ec805aedd85f9ab282666d1e5fb772b1cce66205ca232aff7b5c57b402a32171",
+        "bytes": 82323,
+        "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+        "application_id": "local.huoguo.lanuitest",
+        "version_code": "",
+        "version_name": ""
+      }
+    },
+    "scope": "offline exact frozen3d build only; no install, release, collection or phone readback",
+    "source_and_dependency_lock_unchanged_from_prior22f": true,
+    "native_full_bytes_not_claimed_reproducible": true,
+    "old_installed_d043_and_public_alpha8_unchanged": true,
+    "old_reviewed_frame_only_controller_unchanged": true,
+    "helper_late_typed_observer_boundary_remains": true
   }
 }

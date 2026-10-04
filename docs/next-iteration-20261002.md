@@ -1,5 +1,25 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+NEW inert native diagnostic preflight and exact3d local artifact are complete.
+14new/90affected in-memory checks PASS0.388s; final14PASS0.002s. The pure local
+plan rejects wrong scope/guest/formal ports, unbounded budgets, old App bytes and
+foreign/coercible fields. Exact artifact matching remains pins-only; no permission,
+current Attempt, private evidence, server lease, native schema or collection is
+promoted. No gateway/registry integration; every path leaves events/sample OFF.
+Read owner-native-diagnostic-preflight-candidate-20261004.md/json. Exact3d source
+freeze1048 files built debug/release/lint0, helper against106 classes, original
+signer verified. NEW local App f97b3e37/7245582B/JNI447f4928/helper ec805aed/82323B
+was NOT installed or published. Installed22f/d043/JNI4bf and public39 remain
+separate; old reviewed f0 frame-only freeze/pins unchanged. No new phone poll,
+RPC/UI/input/media/service operation. Read native-frame-numeric-local-build-20261004.json.
+The exact3d/run37194838068 is now independently overall/build/UDPsuccess, not
+future-SHA or live acceptance. Next bounded M1 LAN coordinator/descriptor wiring
+requires real permission/admission/private evidence/current Attempt and exact new
+phone pins; persistent NPS/Tailnet/public defaults remain false. Do not force host
+raw trace for native-only overhead, reuse LAN45965 to block public, or enlarge
+report/rings/Inbox/TTL. Phone unavailable, continue independent source work.
+
+
 NEW pure offline native event/RX/worker consumer is implemented.14new+16existing
 checks30PASS1.683s including actual Java projection/typed-JSON schema roundtrip;
 bounded-schema review29affectedPASS0.004s. No default reads, collection toggle,

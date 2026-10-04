@@ -1,0 +1,52 @@
+{
+  "schema": "owner-native-diagnostic-preflight-candidate-v1",
+  "status": "inert_local_plan_and_artifact_comparison_not_gateway_integration",
+  "source_SHA256": {
+    "scripts/probes/owner_native_diagnostic_preflight.py": "6dc5334f7919246dd37254c059c140278408e3c1c34b8f8fa683d20e037a4b7d",
+    "tests/test_owner_native_diagnostic_preflight.py": "df26b0e4a147eb5373f96d603d3295b5d76bd31574d129cc7c060275c7bf2331"
+  },
+  "new_checks": 14,
+  "affected_checks": 90,
+  "affected_seconds": 0.388,
+  "final_new_checks": 14,
+  "final_new_seconds": 0.002,
+  "validation_layers": [
+    "Pure synthetic local plan and pin comparisons",
+    "Existing in-memory LAN/NPS registry fixtures"
+  ],
+  "bound": {
+    "network_scope": "lan",
+    "node": "m1",
+    "guest_serial": "emulator-5556",
+    "guest_avd": "RemoteAndroid17Compare",
+    "https_port": 45560,
+    "udp_port": 45963,
+    "process_budget_seconds_min": 30,
+    "process_budget_seconds_max": 3600,
+    "sample_seconds_max": 30,
+    "report_bytes_max": 65536,
+    "native_export_rows_max": 64,
+    "native_ring_capacity": 256,
+    "java_ring_capacity": 8192
+  },
+  "artifact_matching_requires_caller_readback_provenance": true,
+  "valid_JSON_is_permission": false,
+  "numeric_export_schema_verified_by_metadata": false,
+  "private_evidence_verified": false,
+  "current_App_attempt_or_server_guest_lease_verified": false,
+  "preflight_can_enable_collection": false,
+  "registry_or_gateway_changed": false,
+  "host_trace_forced_by_native_preflight": false,
+  "phone_installed_APK_latest_prior_verified": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+  "phone_current_status": "device-not-found; no second polling or inferred process absence",
+  "new_local_build_record": "native-frame-numeric-local-build-20261004.json",
+  "live_operations": {
+    "phone_media": 0,
+    "helper_install": 0,
+    "source_input": 0,
+    "UiAutomation": 0,
+    "framebuffer_RPC": 0,
+    "service_signals": 0
+  },
+  "next": "Integrate only a separate explicit bounded M1 LAN coordinator/trusted descriptor selection after actual permission/admission/private evidence/current Attempt qualification and the new matching signed phone artifacts. Persistent/NPS/Tailnet defaults stay OFF. Phone unavailable: continue independent source work; do not execute or poll repeatedly."
+}

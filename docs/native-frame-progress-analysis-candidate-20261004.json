@@ -61,6 +61,13 @@
   "new_APK_JNI_helper_or_manifest": false,
   "previous_frame_only_frozen_candidate_changed": false,
   "dedicated_phone_current_status": "device-not-found, no repeated polling or inferred process absence",
-  "this_candidate_CI": "requires_new_exact_source_SHA",
+  "this_candidate_CI": {
+    "SHA": "3d476566ee8b4f2c9126713f0f3559e637a0958a",
+    "run": 37194838068,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  },
   "next": "When phone is actually available, use the unchanged reviewed f0 frame-only freeze after all fresh eligibility and normal saved-UI auth/current Attempt; one readonly frame only. Independently qualify how a bounded owner-only native-event descriptor would reach a new matching signed App and preserve OFF/default/64KiB limits before any live diagnostic. Do not enable events or treat these fixtures as moving public evidence."
 }

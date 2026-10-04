@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "source_commit": "3d476566ee8b4f2c9126713f0f3559e637a0958a",
+  "freeze_unchanged_files": 1048,
+  "gradle_assemble_debug_release_lint_exit": 0,
+  "helper_builder_exit": 0,
+  "compiled_numericNativeFrameEvents_present": true,
+  "matching_debug_App_class_count": 106,
+  "installed": false,
+  "published": false,
+  "native_collection_or_report_ART_verified": false,
+  "sampling_overhead_measured": false,
+  "artifacts": {
+    "release_App": {
+      "sha256": "f97b3e3735eb729bf28c086c92cb9a4147093cd0ed05a3aeb456456c42419779",
+      "bytes": 7245582,
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+      "application_id": "local.remoteandroid.direct.experiment",
+      "version_code": "40",
+      "version_name": "1.31-alpha.9",
+      "jni_sha256": "447f4928515aa851520ec02b2f2b2efe9cfea1dc475dc29d3413145611743dc5"
+    },
+    "debug_App": {
+      "sha256": "2707f430b899f3d0589b47dba9c60b2c91696cb88907f2ba372dbe83cfb36712",
+      "bytes": 7892228,
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+      "application_id": "local.remoteandroid.direct.experiment",
+      "version_code": "40",
+      "version_name": "1.31-alpha.9",
+      "jni_sha256": "447f4928515aa851520ec02b2f2b2efe9cfea1dc475dc29d3413145611743dc5"
+    },
+    "matching_ui_helper": {
+      "sha256": "ec805aedd85f9ab282666d1e5fb772b1cce66205ca232aff7b5c57b402a32171",
+      "bytes": 82323,
+      "signer_sha256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+      "application_id": "local.huoguo.lanuitest",
+      "version_code": "",
+      "version_name": ""
+    }
+  },
+  "scope": "offline exact frozen3d build only; no install, release, collection or phone readback",
+  "source_and_dependency_lock_unchanged_from_prior22f": true,
+  "native_full_bytes_not_claimed_reproducible": true,
+  "old_installed_d043_and_public_alpha8_unchanged": true,
+  "old_reviewed_frame_only_controller_unchanged": true,
+  "helper_late_typed_observer_boundary_remains": true
+}

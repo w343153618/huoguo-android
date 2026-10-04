@@ -87,3 +87,8 @@ The normal source/runtime defaults remain OFF,80ms/FIFO/sessionFPS/lead0/AAC,
 wait/guard. Old failed global UI retirement and public moving source30/phone20
 causal diagnosis remain separate gates. This tool does not establish phone FPS,
 MTK/V50, cellular/remote, optical/acoustic or one-hour soak acceptance.
+
+Exact consumer source3d476566ee8b4f2c9126713f0f3559e637a0958a was pushed.
+Its own run37194838068 was independently read completed with overall/build/
+UDP success. This validates that source only, not a signed artifact or real
+phone/native collection. Do not re-run this accepted run or old failed jobs.
