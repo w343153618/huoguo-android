@@ -54,6 +54,12 @@ public final class LanUiAcceptance extends Instrumentation {
         }
     }
     private boolean mediaOnly(){return arguments.getString("media_only","false").equals("true");}
+    /** Helper-only opt-in; never enabled by the App, saved preferences or defaults. */
+    private boolean sourceInput(){String value=arguments.getString("source_input","off");
+        if(!value.equals("off")&&!value.equals("native"))throw new IllegalArgumentException("source_input_bound");
+        if(value.equals("native")&&(!mediaOnly()||!networkScope().equals("nps_owner")
+                ||!node().equals("m1")||!savedUiCredentials()))throw new IllegalArgumentException("source_input_owner_scope");
+        return value.equals("native");}
     private String networkScope(){String value=arguments.getString("network_scope","lan");
         if(!value.equals("lan")&&!value.equals("tailnet")&&!value.equals("nps_owner"))throw new IllegalArgumentException("scope_bound");return value;}
     private String node(){String value=arguments.getString("node","");
@@ -215,6 +221,125 @@ public final class LanUiAcceptance extends Instrumentation {
     private static volatile long sink;
     private static Object field(Object target,String name)throws Exception{
         Field field=target.getClass().getDeclaredField(name);field.setAccessible(true);return field.get(target);
+    }
+    private final java.util.HashSet<File> sourceMarkers=new java.util.HashSet<>();
+    private File sourceMarker(String name){return new File(getTargetContext().getFilesDir(),"udp-ui-source-"+name);}
+    private void writeSourceMarker(File file,String data)throws Exception{
+        if(!file.createNewFile())throw new IllegalStateException("source_marker_preexisting");
+        sourceMarkers.add(file);android.system.Os.chmod(file.getPath(),0600);
+        try(FileOutputStream out=new FileOutputStream(file)){out.write(data.getBytes(StandardCharsets.US_ASCII));}
+    }
+    /** Bounded, no-follow actual descriptor read; exact inode checked before removal. */
+    private byte[] readSourceMarker(File file,int bound)throws Exception{
+        java.io.FileDescriptor fd=android.system.Os.open(file.getPath(),android.system.OsConstants.O_RDONLY
+            |android.system.OsConstants.O_NOFOLLOW|android.system.OsConstants.O_NONBLOCK,0);
+        try(FileInputStream in=new FileInputStream(fd)){
+            android.system.StructStat stat=android.system.Os.fstat(fd);
+            if(!android.system.OsConstants.S_ISREG(stat.st_mode)||stat.st_uid!=getTargetContext().getApplicationInfo().uid
+                    ||(stat.st_mode&0777)!=0600||stat.st_size<1||stat.st_size>bound)
+                throw new IllegalStateException("source_marker_descriptor_bound");
+            byte[] raw=new byte[(int)stat.st_size];int used=0,count;
+            while(used<raw.length&&(count=in.read(raw,used,raw.length-used))!=-1)used+=count;
+            if(used!=raw.length||in.read()!=-1)throw new IllegalStateException("source_marker_changed_size");
+            android.system.StructStat current=android.system.Os.lstat(file.getPath());
+            if(current.st_dev!=stat.st_dev||current.st_ino!=stat.st_ino)
+                throw new IllegalStateException("source_marker_changed_inode");
+            return raw;
+        }
+    }
+    private byte[] awaitSourceMarker(File file,int bound)throws Exception{
+        long started=SystemClock.elapsedRealtime();
+        for(int polls=0;polls<251;polls++){
+            if(SystemClock.elapsedRealtime()-started>=10000)break;
+            if(file.exists())return readSourceMarker(file,bound);
+            Thread.sleep(40);
+        }throw new IllegalStateException("source_marker_timeout");
+    }
+    /** One phase inside the already authenticated captured Attempt. The external
+     * observer qualifies source identity/target and verifies actual playback;
+     * no guest ADB command is sent here and no local return is called playback. */
+    private void sourceInputPhase(MainActivity target,Object ownedAttempt,int phase,JSONObject report)throws Exception{
+        Object ui=target.lanUdpEntry;final Object[] receiver={null},touch={null};
+        final android.view.SurfaceView[] surface={null};final long[] uiGen={0};final int[] appGen={0};
+        final OwnerSourceTap.Geometry[] geometry={null};final Throwable[] failure={null};
+        runOnMainSync(()->{try{synchronized(field(ui,"lock")){
+            if(field(ui,"current")!=ownedAttempt||ownedAttempt==null||(Boolean)field(ownedAttempt,"cancelled")
+                    ||(Boolean)field(ownedAttempt,"stopped")||!target.running)throw new IllegalStateException("source_owned_attempt_missing");
+            uiGen[0]=(Long)field(ui,"generation");appGen[0]=target.generation;
+            receiver[0]=field(ownedAttempt,"receiver");if(receiver[0]==null)throw new IllegalStateException("source_receiver_missing");
+            touch[0]=field(receiver[0],"touchControl");if(touch[0]==null)throw new IllegalStateException("source_native_touch_missing");
+            synchronized(field(touch[0],"lock")){
+                surface[0]=target.screen;
+                if(field(touch[0],"surface")!=surface[0]||(Boolean)field(touch[0],"closed")
+                        ||(Integer)field(touch[0],"rotation")!=0
+                        ||!((java.util.Map<?,?>)field(touch[0],"contacts")).isEmpty())
+                    throw new IllegalStateException("source_native_surface_or_contacts");
+                geometry[0]=new OwnerSourceTap.Geometry(surface[0].getWidth(),surface[0].getHeight(),
+                    (Integer)field(touch[0],"streamWidth"),(Integer)field(touch[0],"streamHeight"));
+            }
+        }}catch(Throwable error){failure[0]=error;}});
+        if(failure[0]!=null)throw new IllegalStateException("source_input_capture",failure[0]);
+        long nonce;do{nonce=new java.security.SecureRandom().nextLong()&Long.MAX_VALUE;}while(nonce==0);
+        File ready=sourceMarker(phase+"-ready"),command=sourceMarker(phase+"-command"),verified=sourceMarker(phase+"-verified"),dispatched=sourceMarker(phase+"-dispatched");
+        if(ready.exists()||command.exists()||verified.exists()||dispatched.exists())throw new IllegalStateException("source_phase_preexisting");
+        writeSourceMarker(ready,new JSONObject().put("phase",phase).put("nonce",nonce).put("app_generation",appGen[0])
+            .put("ui_generation",uiGen[0]).put("surface_width",geometry[0].surfaceWidth).put("surface_height",geometry[0].surfaceHeight)
+            .put("image_width",geometry[0].imageWidth).put("image_height",geometry[0].imageHeight).toString());
+        byte[] raw=awaitSourceMarker(command,128);OwnerSourceTap.Command input=OwnerSourceTap.Command.parse(raw,phase,nonce);
+        if(!command.delete())throw new IllegalStateException("source_command_cleanup");
+        final long sourceNonce=nonce;OwnerSourceTap.Receipt receipt=new OwnerSourceTap.Receipt();
+        class OwnedHooks implements OwnerSourceTap.Hooks{
+            boolean check()throws Exception{
+                return field(ui,"current")==ownedAttempt&&(Long)field(ui,"generation")==uiGen[0]
+                    &&!(Boolean)field(ownedAttempt,"cancelled")&&!(Boolean)field(ownedAttempt,"stopped")
+                    &&field(ownedAttempt,"receiver")==receiver[0]&&field(receiver[0],"touchControl")==touch[0]
+                    &&target.running&&target.generation==appGen[0]&&target.screen==surface[0]
+                    &&field(touch[0],"surface")==surface[0]&&!(Boolean)field(touch[0],"closed")
+                    &&(Integer)field(touch[0],"rotation")==0
+                    &&surface[0].getHolder().getSurface().isValid()
+                    &&surface[0].getWidth()==geometry[0].surfaceWidth&&surface[0].getHeight()==geometry[0].surfaceHeight
+                    &&(Integer)field(touch[0],"streamWidth")==geometry[0].imageWidth
+                    &&(Integer)field(touch[0],"streamHeight")==geometry[0].imageHeight;
+            }
+            public boolean owns()throws Exception{
+                final boolean[] result={false};final Throwable[] error={null};
+                runOnMainSync(()->{try{synchronized(field(ui,"lock")){synchronized(field(touch[0],"lock")){result[0]=check();}}}
+                    catch(Throwable e){error[0]=e;}});
+                if(error[0]!=null)throw new IllegalStateException("source_input_ownership",error[0]);return result[0];
+            }
+            public long uptimeMillis(){return SystemClock.uptimeMillis();}
+            public void pause(long millis)throws Exception{Thread.sleep(millis);}
+            public void dispatch(int action,long downTime,float x,float y)throws Exception{
+                final Throwable[] error={null};
+                runOnMainSync(()->{try{synchronized(field(ui,"lock")){synchronized(field(touch[0],"lock")){
+                    if(!check())throw new IllegalStateException("source_input_changed_before_dispatch");
+                    if(action==OwnerSourceTap.DOWN&&!((java.util.Map<?,?>)field(touch[0],"contacts")).isEmpty())
+                        throw new IllegalStateException("source_input_contacts_busy");
+                    MotionEvent event=MotionEvent.obtain(downTime,SystemClock.uptimeMillis(),action,x,y,0);
+                    event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);
+                    long beforeEvents=(Long)field(touch[0],"motionEvents");
+                    try{if(!surface[0].dispatchTouchEvent(event))throw new IllegalStateException("source_input_View_rejected");
+                        if((Long)field(touch[0],"motionEvents")!=beforeEvents+1
+                                ||((java.util.Map<?,?>)field(touch[0],"contacts")).size()!=(action==OwnerSourceTap.DOWN?1:0))
+                            throw new IllegalStateException("source_input_native_contact_not_observed");}
+                    finally{event.recycle();}
+                }}}catch(Throwable e){error[0]=e;}});
+                if(error[0]!=null)throw new IllegalStateException("source_input_dispatch",error[0]);
+            }
+        }
+        try{OwnerSourceTap.run(new OwnedHooks(),input,geometry[0],receipt);}
+        finally{report.put("source_phase_"+phase+"_local_tap",new JSONObject().put("down_attempted",receipt.downAttempted)
+            .put("down_returned",receipt.downReturned).put("up_attempted",receipt.upAttempted).put("up_returned",receipt.upReturned)
+            .put("cancel_attempted",receipt.cancelAttempted).put("cancel_returned",receipt.cancelReturned)
+            .put("cancel_skipped_for_changed_owner",receipt.cancelSkippedForChangedOwner)
+            .put("remote_playback_verified_by_helper",false));}
+        writeSourceMarker(dispatched,sourceNonce+"\n");
+        byte[] confirmation=awaitSourceMarker(verified,32);
+        if(!java.util.Arrays.equals(confirmation,(sourceNonce+"\n").getBytes(StandardCharsets.US_ASCII)))
+            throw new IllegalStateException("source_observer_nonce_changed");
+        if(!verified.delete())throw new IllegalStateException("source_verified_marker_cleanup");
+        report.put("source_phase_"+phase+"_external_observer_confirmation",true)
+            .put("source_phase_"+phase+"_external_observer_is_helper_independent_measurement",false);
     }
     /** Actual in-flight App attempt and parsed receiver tuple, not a request echo.
      * No credential, key, tag, session id or arbitrary server text is read/exported.
@@ -531,6 +656,7 @@ public final class LanUiAcceptance extends Instrumentation {
             report.put("requested_stage_diagnostics_enabled",stageDiagnostics());
             report.put("requested_codec_startup_ready_enabled",codecStartup());
             report.put("requested_steady_seconds",steadySeconds());
+            final boolean sourceWindow=sourceInput();report.put("requested_authenticated_source_input",sourceWindow);
             report.put("requested_network_scope",networkScope()).put("requested_node",node())
                 .put("requested_scope_index",scopeIndex()).put("physical_FPS_acceptance",false);
             bench(true,10000);bench(false,10000);JSONArray rows=new JSONArray();
@@ -588,12 +714,14 @@ public final class LanUiAcceptance extends Instrumentation {
                 throw new IllegalStateException("no_authenticated_media");
             }
             report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");Thread.sleep(3000);
+            if(sourceWindow)sourceInputPhase(target,ownedAttempt[0],1,report);
             long steadyStart=System.nanoTime();report.put("steady_media_started_ns",steadyStart);
             try(FileOutputStream out=new FileOutputStream(new File(getTargetContext().getFilesDir(),"udp-ui-phase-steady-media"))){out.write(1);}
             waitSteady(target,report,steadyStart);
             long steadyEnd=System.nanoTime();report.put("steady_media_finished_ns",steadyEnd)
                 .put("steady_media_wait_ms",(steadyEnd-steadyStart)/1e6)
                 .put("steady_sampler_completion_observed",true);
+            if(sourceWindow)sourceInputPhase(target,ownedAttempt[0],2,report);
             report.put("before_touch_received_frames",target.receivedFrames.get()).put("before_touch_callback_count",target.presentedFrames.get());
             if(!mediaOnly()){
             File phase=new File(getTargetContext().getFilesDir(),"udp-ui-phase-ready-touch");
@@ -668,7 +796,11 @@ public final class LanUiAcceptance extends Instrumentation {
             waitAudioThreadsGone(report,"second_leave");
             report.put("disconnect_with_two_contacts_still_down",!mediaOnly()).put("running_after_second_leave",target.running);
         }catch(Throwable failure){try{report.put("failure_class",failure.getClass().getSimpleName());if(failure.getMessage()!=null&&failure.getMessage().matches("[a-zA-Z_]+"))report.put("bounded_failure_label",failure.getMessage());if(failure.getCause()!=null)report.put("failure_cause_class",failure.getCause().getClass().getSimpleName());}catch(Exception ignored){}}
-        finally{if(credential!=null)credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);
+        finally{for(File marker:sourceMarkers)if(marker.exists()&&!marker.delete())try{
+                report.put("source_owned_marker_cleanup_failed",true);
+                if(!report.has("failure_class"))report.put("failure_class","IllegalStateException").put("bounded_failure_label","source_owned_marker_cleanup");
+            }catch(Exception ignored){}
+            if(credential!=null)credential.delete();if(a!=null){MainActivity target=a;Window.Callback restore=original;runOnMainSync(()->{if(restore!=null)target.getWindow().setCallback(restore);
             if(target.lanUdpEntry!=null)try{if(ownsAttempt(target.lanUdpEntry,ownedAttempt[0]))target.lanUdpEntry.cancel(true);}catch(Exception ignored){}
         });}}
         result.putString("numeric_result",report.toString());finish(report.has("failure_class")?Activity.RESULT_CANCELED:Activity.RESULT_OK,result);

@@ -36,10 +36,22 @@ def parse_target(raw, *, expected_video_id, required_state, display_width, displ
         return _unknown('unique_player_control_required')
     node = nodes[0]
     label = 'Play video' if required_state == 'paused' else 'Pause video'
-    if (node.get('package') != stats.PACKAGE or node.get('class') != 'android.widget.ImageButton'
+    control_flags = {'package_matches': node.get('package') == stats.PACKAGE,
+                     'is_ImageButton': node.get('class') == 'android.widget.ImageButton',
+                     'is_ImageView': node.get('class') == 'android.widget.ImageView',
+                     'label_matches': node.get('content-desc') == label,
+                     'clickable': node.get('clickable') == 'true',
+                     'enabled': node.get('enabled') == 'true'}
+    # Live paused Morphe exposes the actionable control as an ImageView, not
+    # ImageButton. Keep the two closed native classes; never accept an arbitrary
+    # clickable node or parent based only on its bounds.
+    if (node.get('package') != stats.PACKAGE
+            or node.get('class') not in ('android.widget.ImageButton', 'android.widget.ImageView')
             or node.get('content-desc') != label or node.get('clickable') != 'true'
             or node.get('enabled') != 'true'):
-        return _unknown('enabled_native_player_control_required')
+        rejected = _unknown('enabled_native_player_control_required')
+        rejected['control_flags'] = control_flags
+        return rejected
     match = re.fullmatch(r'\[(\d{1,5}),(\d{1,5})\]\[(\d{1,5}),(\d{1,5})\]', node.get('bounds', ''))
     if match is None:
         return _unknown('player_control_bounds')
@@ -49,6 +61,7 @@ def parse_target(raw, *, expected_video_id, required_state, display_width, displ
     # Integer half-up normalized image coordinates; the later actual touch path
     # must fit the current Surface/rotation and require the same owned attempt.
     return {'schema': 'owner-source-remote-target-v1', 'available': True,
+            'native_control_class_code': 1 if control_flags['is_ImageButton'] else 2,
             'required_state': required_state,
             'action_code': 1 if required_state == 'paused' else 2,
             'reference_width': display_width, 'reference_height': display_height,

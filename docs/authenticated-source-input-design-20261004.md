@@ -1,7 +1,10 @@
 # Owner source input through the authenticated App attempt
 
-This is the next narrow owner-test candidate, not a deployed input helper or a
-new APK. The phone now has the frozen22f original-signer code40 diagnostic App;
+The default-off helper path and same-snapshot target collector are now implemented
+and have offline/source-only preflight, described in
+[the current preflight](authenticated-source-input-preflight-20261004.md).
+They have not sent input or been integrated with the driver; this is not a
+deployed input helper or new APK. The phone has the frozen22f original-signer code40 diagnostic App;
 the publicly released alpha8 and both services are unchanged. The preceding
 [paused public observation](code40-paused-public-ingress-readback-20261004.md)
 verified normal saved-UI login, cancellation/reconnect and report/audio cleanup,
@@ -23,7 +26,7 @@ by a caller. It requires a specific expected video ID, the requested visible
 paused/playing state and actual display geometry. The existing bounded Stats
 parser validates format, closed resource IDs, UTF-8, duplicates, depth/size and
 DTD/entity rejection. The target must be the unique enabled, clickable Morphe
-ImageButton labelled exactly `Play video` or `Pause video`; Replay, another
+ImageButton or the actually observed native ImageView labelled exactly `Play video` or `Pause video`; Replay, another
 package, unknown state and out-of-screen bounds stay unavailable. Its integer
 normalized center is a proposed image coordinate, not a hardcoded live tap.
 
@@ -32,7 +35,10 @@ transition verification false. The parser neither collects UI nor sends input,
 opens a menu, authenticates, accesses a store or obtains a lease. Successful
 fixture parsing is not provenance, a touch receipt or a phone acceptance.
 
-## Next helper/driver integration, not implemented yet
+## Required helper/driver choreography
+
+The helper-only transaction/adapter and signed build are implemented; the next
+driver and actual authenticated input/playback acceptance remain pending.
 
 1. Freeze a NEW original-signer helper compiled against the installed code40
    source and pin all actual dependencies. Require a free dedicated phone and
@@ -72,9 +78,10 @@ physical touch/audio delay and friend isolation remain separate release gates.
 
 ## Validation layers
 
-Eight target fixtures plus the existing Stats parser fixtures verify only the
-inert extraction contract. No live target readback, authenticated play/pause
-input, new helper build or moving-video window has been performed for this
-component. The preceding666e39f source was independently verified by GitHub
-run37166297284 with overall/build/udp_candidate success; that result cannot be
-borrowed by the subsequent source revision containing this component.
+The initial25 fixtures verified only inert extraction. The current preflight has
+51 focused checks, an original-signer matched helper build and one qualified
+read-only target after retaining the initial native-class rejection. Actual
+authenticated play/pause input, the driver and a moving-video window remain
+unverified. The preceding2ec2bf7 source was independently verified by GitHub
+run37166743386 with overall/build/udp_candidate success; that result cannot be
+borrowed by the subsequent helper/collector source revision.

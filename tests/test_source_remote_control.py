@@ -32,6 +32,16 @@ class SourceRemoteControlTests(unittest.TestCase):
         for label in ('Replay video', 'Next video', 'Add to queue', ''):
             self.assertFalse(self.target(snapshot(label))['available'])
 
+    def test_live_native_ImageView_variant_requires_same_enabled_exact_control(self):
+        raw = snapshot().replace(b'android.widget.ImageButton', b'android.widget.ImageView')
+        result = self.target(raw)
+        self.assertTrue(result['available'])
+        self.assertEqual(result['native_control_class_code'], 2)
+        self.assertFalse(result['input_executed'])
+        for widget in (b'android.widget.Button', b'android.widget.TextView', b'foreign.CustomView'):
+            self.assertFalse(self.target(raw.replace(b'android.widget.ImageView', widget))['available'])
+        self.assertFalse(self.target(raw.replace(b'clickable="true"', b'clickable="false"'))['available'])
+
     def test_hidden_disabled_nonclickable_foreign_or_duplicate_control_is_refused(self):
         for kwargs in ({'enabled':'false'}, {'clickable':'false'}, {'package':'foreign.package'}):
             self.assertFalse(self.target(snapshot(**kwargs))['available'])

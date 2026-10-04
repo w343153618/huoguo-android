@@ -1,0 +1,104 @@
+{
+  "schema": "owner-authenticated-source-input-preflight-v1",
+  "scope": "helper source and signed offline build plus read-only source target; not App input/media or phone acceptance",
+  "checks": {
+    "focused_count": 51,
+    "focused_passed": true,
+    "elapsed_seconds": 1.561
+  },
+  "helper": {
+    "helper_sha256": "a575abeda09383b247043fe5bb8c90c1d90229f7cd117ca22d6522f60bfe67b0",
+    "helper_bytes": 78227,
+    "target_artifact_source": "22f16fa892180901911200cbdc7a2558439be1e8",
+    "target_APK_SHA256": "d0437e51e8c2d0d27c89458b3a5e6467ee421f25337551d19ecc0992d18ecf08",
+    "target_JNI_SHA256": "4bf34fc53d2865ca1ce42a69df88d3973a256121a17d4799791765882d0cc280",
+    "source_SHA256": {
+      "LanUiAcceptance.java": "6cc20367ac6194d88e4d547099044a9ba18abaad5874292feb5fd98165326def",
+      "OwnerSourceTap.java": "4e7694c1668a470382ab88cf787c53df484e8479a5715c756110c61967865850"
+    },
+    "classpath_files_count": 106,
+    "compile_passed": true,
+    "dex_passed": true,
+    "original_signer_verified": true,
+    "installed": false,
+    "input_executed": false,
+    "new_media_executed": false
+  },
+  "live_target": {
+    "source_identity": {
+      "pid": 3470,
+      "uid": 10235,
+      "start_ticks": 1952
+    },
+    "exact_prior_identity_matches": true,
+    "target_qualified": true,
+    "target": {
+      "schema": "owner-source-remote-target-v1",
+      "available": true,
+      "native_control_class_code": 2,
+      "required_state": "paused",
+      "action_code": 1,
+      "reference_width": 1080,
+      "reference_height": 1920,
+      "bounds": [
+        456,
+        348,
+        624,
+        516
+      ],
+      "x_u16": 32768,
+      "y_u16": 14745,
+      "process_identity_or_attempt_verified": false,
+      "input_executed": false,
+      "playback_transition_verified": false
+    },
+    "source_format": {
+      "itag": 299,
+      "codec": "avc1",
+      "width": 1920,
+      "height": 1080,
+      "descriptor_fps": 60.0
+    },
+    "source_audio_format": {
+      "itag": 251,
+      "codec": "opus"
+    },
+    "source_player_state": "paused",
+    "same_source_process_and_session_bracket": true,
+    "all_children_reaped": true,
+    "owned_UI_removal_completed": true,
+    "remote_UI_completed": true,
+    "raw_bytes": 169211,
+    "elapsed_ms": 2369.741916,
+    "source_sha256": {
+      "scripts/probes/source_remote_observation.py": "788c73dc965f0135b1a0436f2536c525fdc7ab4977a1bbaa66ec8293546efc6c",
+      "scripts/probes/source_remote_control.py": "20aa0e5d467abd1bcfa9b36e57707411bae6433540cec8787260757cc1d98430",
+      "scripts/probes/source_stats_observation.py": "90625243270bb68a2e303173f9e0a8ad899c77f30cf96011b303bc276fa2cf2a",
+      "scripts/probes/source_decoder_observation.py": "8a76822a9678c71166b71ea5e87b9898826c3cf861937ebd25234f9a81a88606"
+    }
+  },
+  "first_live_target_rejected": {
+    "reason": "enabled_native_player_control_required",
+    "actual_class_variant": "closed native ImageView",
+    "diagnostic_flags": {
+      "package_matches": true,
+      "is_ImageButton": false,
+      "is_ImageView": true,
+      "label_matches": true,
+      "clickable": true,
+      "enabled": true
+    },
+    "no_input_or_media": true
+  },
+  "driver_integrated": false,
+  "helper_or_input_device_acceptance": false,
+  "new_APK_release": false,
+  "M5_NPS_service_changes": false,
+  "exact_previous_CI": {
+    "sha": "2ec2bf7191629b659e72bae779c83c9173e51d59",
+    "run": 37166743386,
+    "overall": "success",
+    "build": "success",
+    "udp_candidate": "success"
+  }
+}

@@ -42,7 +42,8 @@ def main():
                 capture_output=True, text=True, timeout=45)
             if result.returncode:
                 raise RuntimeError('Helper build failed in '+Path(values[0]).name+': '+result.stderr[:4096])
-        run([java_home/'bin/javac','-source','8','-target','8','-cp',str(android)+os.pathsep+str(classes),'-d',out/'classes',source])
+        additional = [source.parent/'OwnerSourceTap.java'] if name == 'ui' else []
+        run([java_home/'bin/javac','-source','8','-target','8','-cp',str(android)+os.pathsep+str(classes),'-d',out/'classes',source,*additional])
         run([tools/'d8','--lib',android,'--classpath',classes,'--output',out/'dex',*sorted((out/'classes').rglob('*.class'))])
         run([tools/'aapt2','link','-I',android,'--manifest',manifest,'-o',out/'unsigned.apk'])
         with zipfile.ZipFile(out/'unsigned.apk','a') as apk:
