@@ -78,3 +78,25 @@ Default80ms/FIFO/sessionFPS/lead0/off and all domestic/NPS protections remain.
 Exact preceding85619e49610196c093f937fa5a9934ea93f4d236/run37190843471 is
 independently completed with overall/build/UDP success; this later source
 requires its own CI.
+
+The following actual local runtime check found no grpc/protobuf in the default
+Python3.14.7 interpreter. An initial unguarded dependency-find command also
+raised a missing-google import; it started no device operation. The existing
+hardware venv, also Python3.14.7, successfully loads both pinned proto snapshots
+with grpc1.84.0/protobuf7.36.2 and passes the actual explicit reader preflight.
+That preflight opens no discovery/token/channel and makes zero RPCs. The driver
+now performs it before instrumentation, so an unavailable dependency cannot
+consume a phone Attempt while waiting for a guaranteed failing observer.
+Two new dependency-failure checks plus69 affected checks passed0.084s; no Java
+or signed helper changed after the prior79/API37/JVM run. No global packages or
+import paths were changed. Real execution should use the existing qualified
+`/Users/wyw/Documents/ChatGPT/others/android-remote/m1-compare/hardware/venv/bin/python`.
+
+A fresh availability read preserved the original gateway identity and full
+role-zero state, with formal TCP clear. Both phone process-absence probes were
+unavailable; an independent exact device-state read confirmed that the dedicated
+OP12 ADB device is currently not found. This is not evidence that an App or
+helper process is absent, and did not authorize installation or instrumentation.
+No helper, media or gRPC session was started. Next get fresh full pins and
+actual absence when that dedicated device is available; do not reuse these
+snapshots as permission or cached source/playback qualification.

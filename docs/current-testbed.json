@@ -2838,8 +2838,8 @@
     "whole_pipeline_or_motion_or_FPS_acceptance": false,
     "old_failed_UI_retirement_gate_completed": false,
     "source_SHA256": {
-      "scripts/probes/source_grpc_frame.py": "a79382a7618aa1c57cb22d3e456bfe7d2b6aac6ca8b000ea888480fecd6b9690",
-      "scripts/probes/run_authenticated_lan_ui.py": "810153f9fb2c0dc30599ee46bf55ae8c090f8121218f2a165becba8022478688",
+      "scripts/probes/source_grpc_frame.py": "4815374cf8a9a08a465178e7fba4ea65cb5d0691b79937de7e7fc570ce025092",
+      "scripts/probes/run_authenticated_lan_ui.py": "75a09799e520f90466101f8b21e918b7a72245170026f99f17f9f1bfb15c9f85",
       "scripts/probes/source_phone_markers.py": "66d7142afb3f69319b3191eba6bac0999bc0b0b8c5fe9b53b27706288f6cf182"
     },
     "preceding_exact_CI": {
@@ -2849,6 +2849,26 @@
       "build": "success",
       "udp_candidate": "success"
     },
-    "next": "NEW exact frozen candidate, fresh phone/App/formal availability, matching owned user0 helper and normal saved-UI authenticated Attempt; one readonly frame with independent root pixels review. No cached source PID/format or source commands."
+    "next": "NEW exact frozen candidate, fresh phone/App/formal availability, matching owned user0 helper and normal saved-UI authenticated Attempt; one readonly frame with independent root pixels review. No cached source PID/format or source commands.",
+    "local_dependency_followup": {
+      "explicit_preinstrument_dependency_gate": true,
+      "new_checks": 2,
+      "affected_checks": 69,
+      "affected_seconds": 0.084,
+      "default_python_missing_grpc_protobuf": true,
+      "initial_find_spec_command_missing_google": true,
+      "installed_hardware_venv_preflight_accepted": true,
+      "Python_version": "3.14.7",
+      "grpc_version": "1.84.0",
+      "protobuf_version": "7.36.2",
+      "actual_proto_load": true,
+      "channel_or_token_or_RPC_operations": 0,
+      "phone_ADB_state": "unavailable_device_not_found",
+      "original_identity_and_roles_zero_readback": true,
+      "formal_TCP_clear_readback": true,
+      "snapshot_does_not_establish_permission": true,
+      "helper_or_media_started": false,
+      "next": "When phone ADB is available, use the existing qualified hardware venv for a NEW frozen coordinator; require fresh device/App/helper/formal/process pins, then one normal saved-UI frame-only Attempt. No UiAutomation/source input."
+    }
   }
 }

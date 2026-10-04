@@ -165,5 +165,14 @@ class FrameReaderTests(unittest.TestCase):
             reader=m.Reader(deployment(folder))
             with self.assertRaisesRegex(m.Rejected,'pin'):reader._proto()
 
+    def test_explicit_dependency_preflight_has_no_channel_token_or_pixel_action(self):
+        reader,folder,calls=self.fixture()
+        reader.preflight()
+        self.assertEqual(calls,[]);self.assertFalse(reader.used)
+        self.assertTrue(reader.status['local_dependencies_verified'])
+        with patch.object(reader,'_proto',side_effect=ImportError('opaque host dependency')):
+            with self.assertRaisesRegex(m.Rejected,'dependencies_unavailable'):reader.preflight()
+        self.assertFalse((folder/'source-frame.png').exists())
+
 
 if __name__=='__main__':unittest.main()

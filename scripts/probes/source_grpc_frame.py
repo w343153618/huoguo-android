@@ -194,6 +194,28 @@ class Reader:
                 if sys.modules.get(name) is module: sys.modules.pop(name)
             raise
 
+    def preflight(self):
+        """Explicit local runtime qualification before starting phone UI.
+
+        No discovery/token/channel/RPC. Importing protobuf classes is local
+        execution and has cost; this is not an inert constructor or a lease.
+        """
+        modules = {}
+        try:
+            if sys.platform != 'darwin' or os.getuid() != OWNER_UID:
+                raise Rejected('source_frame_owner_platform_rejected')
+            modules = self._proto()
+            import grpc
+            if (not callable(getattr(grpc, 'insecure_channel', None))
+                    or not callable(getattr(grpc, 'channel_ready_future', None))):
+                raise Rejected('source_frame_dependencies_unavailable')
+            self.status['local_dependencies_verified'] = True
+        except Exception:
+            raise Rejected('source_frame_dependencies_unavailable') from None
+        finally:
+            for name, module in modules.items():
+                if sys.modules.get(name) is module: sys.modules.pop(name)
+
     def observe(self, ready):
         if self.used: raise Rejected('source_frame_reader_no_retry')
         self.used = True

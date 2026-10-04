@@ -1,5 +1,16 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+Actual host dependency qualification found the default Python has no grpc/
+protobuf; the existing hardware venv (Python3.14.7/grpc1.84.0/protobuf7.36.2)
+loads both pinned proto snapshots and passes explicit preflight, zero token/
+channel/RPC. A new pre-instrument gate fails before phone UI when dependencies
+are absent:2new/69affected checks PASS0.084s. Dedicated OP12 ADB currently
+reports device-not-found, so no helper/media attempt was started. Original
+identity/fullroleszero and formal TCP clear were independently read, not lease
+proof. Use the existing qualified venv, not package installation/global path
+injection. Next NEW freeze and fresh full phone/artifact/formal/emulator pins
+when the dedicated device is available. No M5/NPS/source input/UIAutomation.
+
 Default-OFF unary frame reader now integrated into frame-only driver.17 new/
 79 focused/API37/JVM checks PASS3.293s; actual current emulator process parser
 accepted after narrowing the SDK headless @AVD form. No gRPC/media/helper install

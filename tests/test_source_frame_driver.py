@@ -53,6 +53,8 @@ class FrameDriverTests(unittest.TestCase):
             def cleanup(self):return {'owned_marker_cleanup_confirmed':True,'cleanup_failures':0}
         class Reader:
             status={'executed':True,'channel_closed':True}
+            def preflight(self):
+                if mode=='dependency':raise driver.source_grpc_frame.Rejected('source_frame_dependencies_unavailable')
             def observe(self,ready):
                 observers.append(ready)
                 if mode=='observer':raise ValueError('opaque reader failure')
@@ -113,6 +115,11 @@ class FrameDriverTests(unittest.TestCase):
         self.assertEqual(observers,[])
         code,report,*_=self.case('audio')
         self.assertEqual(code,1);self.assertFalse(report.get('source_recovery_audio_cleanup_verified',False))
+
+    def test_unavailable_local_dependencies_decline_before_instrumentation_and_markers(self):
+        code,report,calls,popen,publications,observers=self.case('dependency')
+        self.assertEqual(code,1);self.assertEqual(popen,0);self.assertEqual(publications,[]);self.assertEqual(observers,[])
+        self.assertEqual(report['driver_failure_label'],'source_frame_dependencies_unavailable')
 
     def test_cleanup_projection_preserves_only_typed_frame_receipt_without_pixels(self):
         row=result();row['raw_pixels']='must not export'

@@ -747,6 +747,7 @@ def main():
                 return value
             if args.source_input == 'frame-only':
                 source_frame_reader = source_grpc_frame.Reader(source_grpc_frame.read_deployment(args.source_frame_deployment))
+                source_frame_reader.preflight()
                 source_frame = source_frame_coordinator.Coordinator(source_markers, source_frame_reader.observe)
                 report['source_SF_sampled_by_this_driver'] = False
             else:
@@ -1056,6 +1057,7 @@ def main():
                        'source_recovery_audio_cleanup_unverified', 'snapshot_selection_rejected'))
         labels.update(source_authenticated_driver.LABELS)
         labels.update(('source_frame_reader_failed','source_frame_reader_budget',
+                       'source_frame_dependencies_unavailable',
                        'source_frame_helper_readback_rejected','source_frame_instrumentation_failed',
                        'source_frame_incomplete','source_frame_descriptor_rejected'))
         if str(failure) in labels:report['driver_failure_label']=str(failure)
