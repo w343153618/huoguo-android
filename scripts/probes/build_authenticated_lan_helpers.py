@@ -14,12 +14,14 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--app-classes', type=Path,
+        help='Explicit compiled App class directory; does not rebuild or change that App')
     args = parser.parse_args()
     sdk = Path(os.environ.get('ANDROID_HOME', Path.home()/'Library/Android/sdk'))
     tools = sdk/'build-tools/36.0.0'
     android = sdk/'platforms/android-37.0/android.jar'
     java_home = Path(os.environ.get('JAVA_HOME', '/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home'))
-    classes = ROOT/'app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes'
+    classes = args.app_classes or ROOT/'app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes'
     if not (classes/'local/remoteandroid/direct/UdpAudioReceiver.class').is_file():
         parser.error('Build the opt-in authenticatedLanUdp debug candidate first')
     definitions = [
@@ -42,7 +44,7 @@ def main():
                 capture_output=True, text=True, timeout=45)
             if result.returncode:
                 raise RuntimeError('Helper build failed in '+Path(values[0]).name+': '+result.stderr[:4096])
-        additional = [source.parent/'OwnerSourceTap.java'] if name == 'ui' else []
+        additional = [source.parent/file for file in ('OwnerSourceTap.java','OwnerSourceFrame.java')] if name == 'ui' else []
         run([java_home/'bin/javac','-source','8','-target','8','-cp',str(android)+os.pathsep+str(classes),'-d',out/'classes',source,*additional])
         run([tools/'d8','--lib',android,'--classpath',classes,'--output',out/'dex',*sorted((out/'classes').rglob('*.class'))])
         run([tools/'aapt2','link','-I',android,'--manifest',manifest,'-o',out/'unsigned.apk'])

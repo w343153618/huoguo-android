@@ -9,11 +9,12 @@ import java.nio.charset.StandardCharsets;
 final class OwnerSourceTap {
     static final int DOWN=0,UP=1,CANCEL=3;
     static boolean enabled(String mode){
-        if(!"off".equals(mode)&&!"native".equals(mode)&&!"pause-only".equals(mode))
+        if(!"off".equals(mode)&&!"native".equals(mode)&&!"pause-only".equals(mode)&&!"frame-only".equals(mode))
             throw new IllegalArgumentException("source_input_bound");
         return !"off".equals(mode);
     }
     static boolean pauseOnly(String mode){enabled(mode);return "pause-only".equals(mode);}
+    static boolean frameOnly(String mode){enabled(mode);return "frame-only".equals(mode);}
     interface Hooks {
         boolean owns() throws Exception;
         long uptimeMillis();

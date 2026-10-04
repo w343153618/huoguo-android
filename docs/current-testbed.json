@@ -2751,6 +2751,60 @@
       "build": "success",
       "udp_candidate": "success"
     },
-    "next": "Actual held cleanup/source authority and failed UI retirement boundary; separately assess gRPC pixels under a normal current App Attempt. No device UI until qualification."
+    "next": "Actual held cleanup/source authority and failed UI retirement boundary; separately assess gRPC pixels under a normal current App Attempt. No device UI until qualification.",
+    "exact_CI": {
+      "SHA": "2607f10c4455cf199df03cee6ad09ec3be8ee8db",
+      "run": 37189631859,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    }
+  },
+  "source_frame_observation_candidate_20261004": {
+    "schema": "owner-source-frame-observation-candidate-v1",
+    "source_SHA256": {
+      "experiments/moonlight-v2/authenticated-lan/LanUiAcceptance.java": "44bf420a8897721f8084d1241ebcff0da3d3ac4d1e0dee4a694a2d383eaf7938",
+      "experiments/moonlight-v2/authenticated-lan/OwnerSourceTap.java": "e2efd7560afb6e540842c366bb76edcc0b9d0c18248f9f0e43b9a0b9a2e051d3",
+      "experiments/moonlight-v2/authenticated-lan/OwnerSourceFrame.java": "756d600d6049398c0dee91479d193c122f7ef09b14061f1b7c261f497f1302e7",
+      "scripts/probes/source_frame_coordinator.py": "5dae0b5403ca8fae029de54d3e1ad777dd8aae88777f6ef5662dedc6d0114f74",
+      "scripts/probes/build_authenticated_lan_helpers.py": "13d9c4fa0a68fc1f1e10b2951c7608f669eb6d8a596b76f7ed42a51f5d354d7f"
+    },
+    "scope": "default-OFF helper-only M1 nps_owner saved-UI media-only observation; not integrated into runtime driver",
+    "new_checks": 14,
+    "focused_checks": 69,
+    "focused_seconds": 6.755,
+    "final_schema_tightening_checks": 7,
+    "final_schema_tightening_seconds": 0.003,
+    "actual_API37_all_source_compile": true,
+    "actual_JVM_helper_order_fixtures": true,
+    "actual_D8_align_sign_verify_build": true,
+    "helper_SHA256": "82f4614679e828bdd2738838270a97f188bed11dc19d04ecd2dc2fa0203968d7",
+    "helper_bytes": 82323,
+    "helper_signer_SHA256": "0d54d7cedd794e5beb96a27a69fbc57ae6453013a240dd3c5c7804baeff682da",
+    "helper_build_seconds": 6.816,
+    "matching_existing_code40_class_count": 106,
+    "matching_existing_code40_classes_unchanged": true,
+    "helper_installed": false,
+    "helper_instrumentation_executed": false,
+    "App_APK_changed": false,
+    "published_manifest_changed": false,
+    "default_driver_changed": false,
+    "gRPC_observer_implemented": false,
+    "gRPC_or_UI_session_started": false,
+    "source_or_phone_input_operations": 0,
+    "phone_media_sessions": 0,
+    "service_signals": 0,
+    "actual_current_App_attempt_checks_verified": false,
+    "actual_server_lease_independently_verified": false,
+    "source_identity_or_format_qualified": false,
+    "input_or_performance_acceptance": false,
+    "preceding_CI": {
+      "SHA": "2607f10c4455cf199df03cee6ad09ec3be8ee8db",
+      "run": 37189631859,
+      "overall": "success",
+      "build": "success",
+      "udp_candidate": "success"
+    },
+    "document": "docs/source-frame-observation-candidate-20261004.md"
   }
 }

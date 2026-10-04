@@ -39,6 +39,7 @@ public final class OwnerSourceTapCheck {
    ok(!OwnerSourceTap.enabled("off")&&!OwnerSourceTap.pauseOnly("off"));
    ok(OwnerSourceTap.enabled("native")&&!OwnerSourceTap.pauseOnly("native"));
    ok(OwnerSourceTap.enabled("pause-only")&&OwnerSourceTap.pauseOnly("pause-only"));
+   ok(OwnerSourceTap.enabled("frame-only")&&OwnerSourceTap.frameOnly("frame-only")&&!OwnerSourceTap.pauseOnly("frame-only"));
    for(String bad:new String[]{null,"", "on", "pause", "native ", "PAUSE-ONLY"}){
     try{OwnerSourceTap.enabled(bad);throw new AssertionError("accepted mode");}catch(IllegalArgumentException expected){}
    }

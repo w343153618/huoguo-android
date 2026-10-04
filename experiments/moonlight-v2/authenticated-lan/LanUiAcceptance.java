@@ -61,6 +61,7 @@ public final class LanUiAcceptance extends Instrumentation {
                 ||!node().equals("m1")||!savedUiCredentials()))throw new IllegalArgumentException("source_input_owner_scope");
         return enabled;}
     private boolean sourcePauseOnly(){return OwnerSourceTap.pauseOnly(arguments.getString("source_input","off"));}
+    private boolean sourceFrameOnly(){return OwnerSourceTap.frameOnly(arguments.getString("source_input","off"));}
     private String networkScope(){String value=arguments.getString("network_scope","lan");
         if(!value.equals("lan")&&!value.equals("tailnet")&&!value.equals("nps_owner"))throw new IllegalArgumentException("scope_bound");return value;}
     private String node(){String value=arguments.getString("node","");
@@ -237,7 +238,7 @@ public final class LanUiAcceptance extends Instrumentation {
         try(FileInputStream in=new FileInputStream(fd)){
             android.system.StructStat stat=android.system.Os.fstat(fd);
             if(!android.system.OsConstants.S_ISREG(stat.st_mode)||stat.st_uid!=getTargetContext().getApplicationInfo().uid
-                    ||(stat.st_mode&0777)!=0600||stat.st_size<1||stat.st_size>bound)
+                    ||(stat.st_mode&0777)!=0600||stat.st_nlink!=1||stat.st_size<1||stat.st_size>bound)
                 throw new IllegalStateException("source_marker_descriptor_bound");
             byte[] raw=new byte[(int)stat.st_size];int used=0,count;
             while(used<raw.length&&(count=in.read(raw,used,raw.length-used))!=-1)used+=count;
@@ -286,8 +287,6 @@ public final class LanUiAcceptance extends Instrumentation {
         writeSourceMarker(ready,new JSONObject().put("phase",phase).put("nonce",nonce).put("app_generation",appGen[0])
             .put("ui_generation",uiGen[0]).put("surface_width",geometry[0].surfaceWidth).put("surface_height",geometry[0].surfaceHeight)
             .put("image_width",geometry[0].imageWidth).put("image_height",geometry[0].imageHeight).toString());
-        byte[] raw=awaitSourceMarker(command,128);OwnerSourceTap.Command input=OwnerSourceTap.Command.parse(raw,phase,nonce);
-        if(!command.delete())throw new IllegalStateException("source_command_cleanup");
         final long sourceNonce=nonce;OwnerSourceTap.Receipt receipt=new OwnerSourceTap.Receipt();
         class OwnedHooks implements OwnerSourceTap.Hooks{
             boolean check()throws Exception{
@@ -328,6 +327,30 @@ public final class LanUiAcceptance extends Instrumentation {
                 if(error[0]!=null)throw new IllegalStateException("source_input_dispatch",error[0]);
             }
         }
+        if(sourceFrameOnly()){
+            byte[] raw=awaitSourceMarker(command,32);
+            if(!command.delete())throw new IllegalStateException("source_frame_command_cleanup");
+            OwnerSourceFrame.Receipt observation=new OwnerSourceFrame.Receipt();
+            OwnedHooks current=new OwnedHooks();
+            try{OwnerSourceFrame.observe(raw,phase,sourceNonce,new OwnerSourceFrame.Hooks(){
+                public boolean owns()throws Exception{return current.owns();}
+                public void published(byte[] body)throws Exception{
+                    writeSourceMarker(dispatched,new String(body,StandardCharsets.US_ASCII));
+                }
+                public byte[] confirmation()throws Exception{return awaitSourceMarker(verified,32);}
+            },observation);}
+            finally{report.put("source_frame_observation",new JSONObject()
+                .put("owned_before",observation.ownedBefore).put("publication_attempted",observation.publicationAttempted)
+                .put("publication_returned",observation.publicationReturned).put("confirmation_matched",observation.confirmationMatched)
+                .put("owned_after",observation.ownedAfter).put("input_sent",false)
+                .put("nonce",sourceNonce)
+                .put("remote_pixels_verified_by_helper",false).put("source_identity_verified_by_helper",false)
+                .put("server_lease_independently_verified_by_helper",false).put("atomic_hold",false));}
+            if(!verified.delete())throw new IllegalStateException("source_frame_verified_cleanup");
+            return;
+        }
+        byte[] raw=awaitSourceMarker(command,128);OwnerSourceTap.Command input=OwnerSourceTap.Command.parse(raw,phase,nonce);
+        if(!command.delete())throw new IllegalStateException("source_command_cleanup");
         try{OwnerSourceTap.run(new OwnedHooks(),input,geometry[0],receipt);}
         finally{report.put("source_phase_"+phase+"_local_tap",new JSONObject().put("down_attempted",receipt.downAttempted)
             .put("down_returned",receipt.downReturned).put("up_attempted",receipt.upAttempted).put("up_returned",receipt.upReturned)
@@ -717,11 +740,13 @@ public final class LanUiAcceptance extends Instrumentation {
             }
             report.put("normal_UI_login_received_media",true);verifyNetworkReadback(target,report,"first");Thread.sleep(3000);
             if(sourceWindow)sourceInputPhase(target,ownedAttempt[0],1,report);
-            if(sourcePauseOnly()){
-                // Phase1 is a fresh native Pause target in this explicit mode.
-                // The host independently confirms the remote transition before
-                // this branch can leave; no steady marker or reconnect follows.
+            if(sourcePauseOnly()||sourceFrameOnly()){
+                // Pause-only needs the independently observed transition. The
+                // separate frame-only mode performs no input or transition.
+                // Both leave without a steady marker or reconnect.
                 report.put("source_recovery_no_steady_window",true).put("source_recovery_no_reconnect",true);
+                if(sourceFrameOnly())report.put("source_frame_only_observation",true)
+                    .put("source_observation_input_sent",false);
                 leaveThroughConfirmation(target,report,"first");
                 File recoveryReport=new File(getTargetContext().getFilesDir(),"udp-app-last-report.json");
                 waitReport(recoveryReport);verifySurfaceReadback(recoveryReport,report,"first");

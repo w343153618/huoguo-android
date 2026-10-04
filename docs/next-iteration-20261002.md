@@ -1,5 +1,19 @@
 ## 2026-10-04 current human steering: M1 primary, UDP stable policy, app migration
 
+New default-OFF helper `frame-only` and standalone non-input coordinator are
+implemented:14new/69focused/API37/JVM checks PASS6.755s, final strict report
+schema7checks PASS0.003s. Original-signer helper82f46146/82323B built6.816s
+against exact unchanged106 frozen22f/code40 App classes; not installed. No
+source input/UI runner/gRPC/phone media, driver defaults and App unchanged.
+Read source-frame-observation-candidate-20261004.md/json. Next integrate one
+bounded pinned unary framebuffer reader under the actual captured normal App
+Attempt; independently fresh emulator/source context after migration. Avoid
+UiAutomation for this observation without claiming old failed retirement is
+complete. Existing touch/source target mode and lifetime candidate stay separate.
+Actual permission provenance and lifecycle are not established by valid JSON.
+Exact2607f10/run37189631859 is now independently overall/build/UDPsuccess;
+it does not validate this later candidate.
+
 Explicit failed-runner lifetime observer now implemented: only an existing
 registered scope/actual exec header/current cleanup authority can request the
 two C receipts, including after nonzero launcher return.9 new/46 focused checks
