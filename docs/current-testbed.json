@@ -5733,6 +5733,104 @@
     ],
     "phone_actions_this_round": false,
     "App_helper_JNI_build_install_publish": false,
-    "own_CI": "new source not yet pushed; must verify its exact run; old accepted runs not reused"
+    "own_CI": "exact d4257be independently accepted completed/overall/build/UDP success; do not repoll or borrow for later source",
+    "exact_source_CI_accepted": {
+      "schema": "owner-resource-exact-CI-d425-accepted-v1",
+      "source_sha": "d4257be7c95652c7690c5b8372dc08c84d545603",
+      "run_id": 37245114663,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "UDP": "success",
+      "build_job_id": 111561359570,
+      "UDP_job_id": 111562264791,
+      "url": "https://github.com/w343153618/huoguo-android/actions/runs/37245114663",
+      "verified_exact_head_and_jobs": true,
+      "log_fetch_exit": 0,
+      "log_bytes": 76710,
+      "log_sha256": "eabb0cb57d595c589d53539b5fd4194a7c553e39c408b2f47f6ff8d9f57570fa",
+      "actual_tests": [
+        [
+          "2387",
+          "190.784"
+        ]
+      ],
+      "actual_skips": [
+        "11"
+      ],
+      "signed_APK_release": false
+    }
+  },
+  "owner_App_rendezvous_candidate_20261005": {
+    "schema": "owner-App-rendezvous-candidate-v1",
+    "default_off": true,
+    "source_base": "d4257be7c95652c7690c5b8372dc08c84d545603",
+    "new_checks": 33,
+    "focused_checks": 166,
+    "focused_seconds": 29.281,
+    "focused_exit": 0,
+    "API37": {
+      "full_exit": 0,
+      "changed_exit": 0,
+      "sources": 45,
+      "classes": 126,
+      "seconds": 2.245,
+      "pins_after_match": true,
+      "compile_only": true
+    },
+    "source_pins": {
+      "app/src/udp/java/local/remoteandroid/direct/AuthenticatedLanUdpUi.java": "3a0bb107e76541c1670298742ad1e6252433024967e377edaab055805e8021ad",
+      "app/src/main/java/local/remoteandroid/direct/OwnerMediaObservation.java": "bd9ec26cbca482bc16f34e10e91bcef136aafb0c3de78de75836c039e8cbeb65",
+      "experiments/nps-transport/phone/UdpVideoProbe.java": "908f85746a65892c51f048c47b34fdb9931424635401454ea7103a9e71abf95c",
+      "tests/test_owner_App_rendezvous.py": "8c8dadd019cca9e98ade892a9883c46f3b126f43c62d498711ab2ca77e13afaf",
+      "tests/fixtures/OwnerRendezvousFixture.java": "d372ef6e9cdf9cbbe829148787865c0139b909314c6e551c38f4da90ffc42dfe",
+      "tests/fixtures/OwnerRendezvousProbe.java.txt": "66640b098de005874ee5a63e87e61ad4fc5b4fcfe1ec2fb9a10063c245c0cb13",
+      "tests/test_owner_input_observation.py": "9f8686cb5dfc3525d6ed7d98bce0872168184b9634eb525a0fde978c7c9fbebb",
+      "tests/test_owner_media_observation.py": "fb9a20fd149ef4ec1c42f9a2c3a5e246b21f103aafe502e514f1319954c805c4",
+      "tests/test_udp_hour_completion_reason.py": "e16ca641896ef804997b60a0c84c083711c056b4f43adb0f9496d687b61603e8",
+      "tests/test_udp_completion_observer_boundary.py": "15eb1771c6bbe85ed848e765708397790e47bada11d61af8cfee2a18fb68e0b7"
+    },
+    "attempt_qualified": false,
+    "codec_audio_input_qualified": false,
+    "release_eligible": false,
+    "App_helper_JNI_build_install_publish": false,
+    "phone_actions_this_round": false,
+    "actual_evidence": "Actual extracted UI/factory and ledger code, owned JVM threads/input Work; Android state, Surface and resources synthetic. Compile is not ART.",
+    "activation": "Explicit packageprivate ownerPrepareRendezvous only; no caller/helper/UI/Intent/HTTP/env/account/native transport activation. Public startApp delegates null.",
+    "constraints": {
+      "phase_seconds": 3,
+      "original_total_seconds_max": 30,
+      "original_close_join_policy_unchanged": true,
+      "five_field_release_guard_unchanged": true
+    },
+    "known_failures_preserved": [
+      {
+        "kind": "new fixture auxiliary class lint setup refusal",
+        "tests": 0,
+        "production_failure": false
+      },
+      {
+        "kind": "reentrant Surface getter swallowed inner refusal",
+        "tests": 1,
+        "failures": 1,
+        "seconds": 0.666,
+        "fixed": "sticky UNKNOWN checked before every subsequent phase advance",
+        "production_failure": false
+      },
+      {
+        "kind": "affected fixture source spelling and wrong test module",
+        "tests": 37,
+        "errors": 2,
+        "seconds": 9.287,
+        "production_failure": false
+      }
+    ],
+    "remaining": [
+      "Genuine Android/ART association and independent resource release qualification",
+      "Audio generation/actual native-parent qualifier and cooperative AppUID/root boundary",
+      "Whole host selectedenv/dependencies/operator/source/phone/admission/gateway and native PM/package/driver/helper/input/absence/privilegedwriter/FD-retirement",
+      "Phone manual restriction/normal exit and old82f unknown remote instrumentation cleanup; no polling or blind uninstall"
+    ],
+    "own_CI": "Pending new source SHA; old accepted runs not borrowed"
   }
 }

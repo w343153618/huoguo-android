@@ -1,0 +1,28 @@
+package local.remoteandroid.direct;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+final class JSONObject { String getString(String key){return "synthetic";} }
+final class NpsPhysicalNetwork {static void validateScope(String scope,NpsPhysicalNetwork n){}int httpsBindings(){return 1;}}
+final class UdpVideoProbe {
+    interface AppListener { void complete(); }
+    static final class Session {boolean boundedPcmQueueEnabled;}
+    MainActivity appActivity;Session appSession;AppListener appListener;NpsPhysicalNetwork appPhysicalNetwork;
+    boolean stageDiagnosticsEnabled,codecStartupReadyEnabled;
+/* PREPARATION */
+/* FACTORY */
+/* WRAPPER */
+    static Session parseSession(JSONObject json,boolean app){return new Session();}
+    final CountDownLatch entered=new CountDownLatch(1),permit=new CountDownLatch(1);
+    static int nextPublicationGeneration=5;
+    int publicationGeneration=nextPublicationGeneration;
+    volatile Thread actualThread;
+    private void runOwnerStart(){
+        actualThread=Thread.currentThread();OwnerMediaObservation value=ownerResources.get();
+        if(value!=null)value.published(this,appActivity,publicationGeneration,new Object(),7,null,null,null,null);
+        entered.countDown();
+        try{if(!permit.await(7,TimeUnit.SECONDS))throw new AssertionError("fixture release");}
+        catch(InterruptedException error){Thread.currentThread().interrupt();throw new AssertionError(error);}
+        if(value!=null){value.closing(this);value.closeReturns(this,true,1,true);value.nativeDestroyed(this,7);value.listener(this,false);value.listener(this,true);}
+    }
+}

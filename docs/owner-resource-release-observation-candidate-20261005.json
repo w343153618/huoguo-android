@@ -73,5 +73,31 @@
   ],
   "phone_actions_this_round": false,
   "App_helper_JNI_build_install_publish": false,
-  "own_CI": "new source not yet pushed; must verify its exact run; old accepted runs not reused"
+  "own_CI": "exact d4257be independently accepted completed/overall/build/UDP success; do not repoll or borrow for later source",
+  "exact_source_CI_accepted": {
+    "schema": "owner-resource-exact-CI-d425-accepted-v1",
+    "source_sha": "d4257be7c95652c7690c5b8372dc08c84d545603",
+    "run_id": 37245114663,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP": "success",
+    "build_job_id": 111561359570,
+    "UDP_job_id": 111562264791,
+    "url": "https://github.com/w343153618/huoguo-android/actions/runs/37245114663",
+    "verified_exact_head_and_jobs": true,
+    "log_fetch_exit": 0,
+    "log_bytes": 76710,
+    "log_sha256": "eabb0cb57d595c589d53539b5fd4194a7c553e39c408b2f47f6ff8d9f57570fa",
+    "actual_tests": [
+      [
+        "2387",
+        "190.784"
+      ]
+    ],
+    "actual_skips": [
+      "11"
+    ],
+    "signed_APK_release": false
+  }
 }

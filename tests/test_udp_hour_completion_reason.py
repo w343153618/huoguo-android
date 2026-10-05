@@ -41,6 +41,9 @@ final class AuthenticatedLanUdpUi {
  // Type-only dependency of the actual extracted Attempt. This hour-policy
  // fixture never constructs or invokes it; the actual App/queue implementation
  // is exercised by test_owner_input_observation.py and Android compilation.
+ private static final class OwnerRendezvous {
+  private OwnerRendezvous(){throw new AssertionError("hour fixture cannot activate rendezvous");}
+ }
  private static final class OwnerInputObservation {
   private OwnerInputObservation(){throw new AssertionError("hour fixture cannot activate observer");}
  }

@@ -346,6 +346,15 @@ public final class UdpVideoProbe extends Instrumentation {
         return startApp(activity,descriptor,boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled,null,listener);
     }
     public static UdpVideoProbe startApp(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,boolean stageDiagnosticsEnabled,boolean codecStartupReadyEnabled,NpsPhysicalNetwork physicalNetwork,AppListener listener)throws Exception {
+        return startAppObserved(activity,descriptor,boundedPcmQueueEnabled,stageDiagnosticsEnabled,codecStartupReadyEnabled,physicalNetwork,listener,null);
+    }
+    // Same-App object rendezvous only. Ordinary public overloads always pass null.
+    interface OwnerBeforeStart { void prepare(UdpVideoProbe receiver,Thread thread); }
+    private Thread ownerAppThread;
+    boolean ownerMatchesPreparation(OwnerMediaObservation value,Thread thread){
+        return value!=null && ownerResources.get()==value && thread!=null && ownerAppThread==thread;
+    }
+    static UdpVideoProbe startAppObserved(MainActivity activity,JSONObject descriptor,boolean boundedPcmQueueEnabled,boolean stageDiagnosticsEnabled,boolean codecStartupReadyEnabled,NpsPhysicalNetwork physicalNetwork,AppListener listener,OwnerBeforeStart preparation)throws Exception {
         NpsPhysicalNetwork.validateScope(descriptor.getString("network_scope"),physicalNetwork);
         if(physicalNetwork!=null&&physicalNetwork.httpsBindings()<1)throw new IOException("public_nps_authenticated_control_network_required");
         UdpVideoProbe runner=new UdpVideoProbe();runner.appActivity=activity;
@@ -353,7 +362,9 @@ public final class UdpVideoProbe extends Instrumentation {
         runner.appPhysicalNetwork=physicalNetwork;
         runner.stageDiagnosticsEnabled=stageDiagnosticsEnabled;
         runner.codecStartupReadyEnabled=codecStartupReadyEnabled;
-        new Thread(runner::onStart,"authenticated-lan-udp").start();return runner;
+        Thread thread=new Thread(runner::onStart,"authenticated-lan-udp");
+        if(preparation!=null){runner.ownerAppThread=thread;preparation.prepare(runner,thread);}
+        thread.start();return runner;
     }
     public void cancelApp(){
         appCancelled=true;

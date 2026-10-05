@@ -50,6 +50,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         volatile String sessionId;volatile boolean stopped;
         // Null in ordinary sessions. No helper, UI, Intent or transport callsite.
         OwnerInputObservation ownerInputObservation;
+        OwnerRendezvous ownerRendezvous;
         Attempt(long generation,String endpoint,String credential,String scope,String node,NpsPhysicalNetwork physicalNetwork,boolean pcmQueue,int surfaceLeadMs,boolean stages,boolean startup){this.generation=generation;this.endpoint=endpoint;this.credential=credential;networkScope=scope;this.node=node;this.physicalNetwork=physicalNetwork;boundedPcmQueueEnabled=pcmQueue;surfaceSubmitLeadMs=surfaceLeadMs;stageDiagnosticsEnabled=stages;codecStartupReadyEnabled=startup;}
     }
     public AuthenticatedLanUdpUi(MainActivity activity){
@@ -168,6 +169,129 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
                     inputObservation=found; phase=OBSERVED; return true;
                 } catch(RuntimeException | Error failure) { unknown(); throw failure; }
                 finally { outstanding=false; }
+            }
+        }
+    }
+    /** Explicit same-App two-phase observation. No helper, UI, saved setting,
+     * transport or native callback can create it. Preparation precedes Thread.start;
+     * Surface/input capture is a separate actual UI phase with the original end. */
+    OwnerRendezvous ownerPrepareRendezvous(long originalEndNs) {
+        final long begin=System.nanoTime();
+        synchronized(lock) {
+            final long now=System.nanoTime();
+            if(now<begin || now-begin>=3_000_000_000L || now>=originalEndNs
+                    || originalEndNs-begin>30_000_000_000L || Looper.myLooper()!=Looper.getMainLooper()
+                    || activity.isFinishing() || activity.isDestroyed() || current==null || retiring!=null
+                    || current.cancelled || current.stopped || current.receiver!=null
+                    || current.ownerInputObservation!=null || current.ownerRendezvous!=null
+                    || generation!=current.generation || generation==Long.MAX_VALUE
+                    || activity.generation<0 || activity.generation>Integer.MAX_VALUE-3)
+                throw new IllegalStateException("owner_rendezvous_preparation_refused");
+            OwnerRendezvous value=new OwnerRendezvous(this,current,originalEndNs);
+            current.ownerRendezvous=value; // Retain actual Attempt even after unknown post-check.
+            try { value.budget(begin); value.current(); }
+            catch(RuntimeException | Error failure){value.unknown();throw failure;}
+            return value;
+        }
+    }
+    static final class OwnerRendezvous implements UdpVideoProbe.OwnerBeforeStart {
+        private static final int PREPARED=0, RECEIVER=1, LIVE=2, SEALED=3, OBSERVED=4, UNKNOWN=5;
+        private final AuthenticatedLanUdpUi ui;
+        private final Attempt attempt;
+        private final long uiGeneration,endNs;
+        private final int beforeActivityGeneration;
+        private UdpVideoProbe receiver;
+        private Thread thread;
+        private OwnerMediaObservation media;
+        private OwnerInputObservation input;
+        private int phase=PREPARED;
+        private boolean outstanding,inputObserved;
+        private OwnerRendezvous(AuthenticatedLanUdpUi ui,Attempt attempt,long endNs){
+            this.ui=ui;this.attempt=attempt;this.endNs=endNs;
+            uiGeneration=ui.generation;beforeActivityGeneration=ui.activity.generation;
+        }
+        private void budget(long begin){long now=System.nanoTime();
+            if(phase==UNKNOWN || media!=null && media.isUnknown() || now<begin || now-begin>=3_000_000_000L || now>=endNs)
+                throw new IllegalStateException("owner_rendezvous_original_deadline");}
+        private void current(){
+            if(attempt.ownerRendezvous!=this || ui.current!=attempt || ui.retiring!=null
+                    || ui.generation!=uiGeneration || attempt.generation!=uiGeneration
+                    || attempt.cancelled || attempt.stopped || ui.activity.isFinishing() || ui.activity.isDestroyed())
+                throw new IllegalStateException("owner_rendezvous_attempt_changed");}
+        private void unknown(){phase=UNKNOWN;if(media!=null)media.invalidate();if(input!=null)input.unknown();}
+        @Override public void prepare(UdpVideoProbe actual,Thread actualThread){
+            final long begin=System.nanoTime();
+            synchronized(ui.lock){try{
+                if(phase!=PREPARED || outstanding)throw new IllegalStateException("owner_rendezvous_phase");
+                outstanding=true;budget(begin);current();
+                if(actual==null || actualThread==null || actualThread.getState()!=Thread.State.NEW
+                        || attempt.receiver!=null || ui.activity.generation!=beforeActivityGeneration)
+                    throw new IllegalStateException("owner_rendezvous_before_start_changed");
+                receiver=actual;thread=actualThread; // Actual factory objects, never adopted from a receipt.
+                media=actual.ownerPrepareResources(endNs);
+                attempt.receiver=actual;budget(begin);current();
+                if(actualThread.getState()!=Thread.State.NEW || !actual.ownerMatchesPreparation(media,thread))
+                    throw new IllegalStateException("owner_rendezvous_started_early");
+                phase=RECEIVER;
+            }catch(RuntimeException | Error failure){unknown();throw failure;}
+            finally{outstanding=false;}}
+        }
+        /** Called explicitly after the normal UI has created a valid Surface.
+         * No polling, replacement Surface, new timeout or wait for worker cleanup. */
+        void captureLive(){
+            final long begin=System.nanoTime();
+            synchronized(ui.lock){try{
+                if(phase!=RECEIVER || outstanding)throw new IllegalStateException("owner_rendezvous_phase");
+                outstanding=true;budget(begin);current();
+                if(Looper.myLooper()!=Looper.getMainLooper() || attempt.receiver!=receiver
+                        || !receiver.ownerMatchesPreparation(media,thread) || !thread.isAlive()
+                        || ui.activity.generation!=beforeActivityGeneration+2 || media.isUnknown())
+                    throw new IllegalStateException("owner_rendezvous_live_changed");
+                input=ui.ownerCaptureInput(endNs);input.observeLive();budget(begin);current();phase=LIVE;
+            }catch(RuntimeException | Error failure){unknown();throw failure;}
+            finally{outstanding=false;}}
+        }
+        void sealAfterNormalCancel(){
+            final long begin=System.nanoTime();
+            synchronized(ui.lock){try{
+                if(phase!=LIVE || outstanding)throw new IllegalStateException("owner_rendezvous_phase");
+                outstanding=true;budget(begin);objects();input.sealAfterNormalCancel();budget(begin);objects();phase=SEALED;
+            }catch(RuntimeException | Error failure){unknown();throw failure;}
+            finally{outstanding=false;}}
+        }
+        private void objects(){
+            if(attempt.ownerRendezvous!=this || receiver==null || attempt.receiver!=receiver
+                    || !receiver.ownerMatchesPreparation(media,thread) || input==null
+                    || attempt.ownerInputObservation!=input)
+                throw new IllegalStateException("owner_rendezvous_objects_changed");}
+        /** Past observations of the same retained graph. They do not qualify
+         * resource release, current Attempt lease, remote input, PM or admission. */
+        Past observeRetired(){
+            final long begin=System.nanoTime();
+            synchronized(ui.lock){try{
+                if(phase!=SEALED || outstanding)throw new IllegalStateException("owner_rendezvous_phase");
+                outstanding=true;budget(begin);objects();input.retiredState(true);
+                if(!inputObserved){boolean drained=input.observeRetiredInput();budget(begin);objects();input.retiredState(true);if(!drained)return null;inputObserved=true;}
+                OwnerMediaObservation.Snapshot found=media.observe(receiver);
+                OwnerResourceObservation.Past[] calls=media.resourceCalls.snapshot();
+                budget(begin);objects();input.retiredState(true);
+                if(media.isUnknown() || media.resourceCalls.isUnknown())throw new IllegalStateException("owner_rendezvous_media_unknown");
+                if(found==null || calls==null || !found.runnerTerminated)return null;
+                if(found.activity!=ui.activity || found.generation!=input.activityGeneration || found.runner!=thread)
+                    throw new IllegalStateException("owner_rendezvous_media_changed");
+                phase=OBSERVED;return new Past(receiver,thread,media,input,found,calls);
+            }catch(RuntimeException | Error failure){unknown();throw failure;}
+            finally{outstanding=false;}}
+        }
+        static final class Past {
+            final UdpVideoProbe receiver;final Thread thread;final OwnerMediaObservation media;
+            final OwnerInputObservation input;final OwnerMediaObservation.Snapshot mediaPast;
+            final OwnerResourceObservation.Past[] resourcePast;
+            final boolean attemptQualified=false,codecAudioInputQualified=false,releaseEligible=false;
+            Past(UdpVideoProbe receiver,Thread thread,OwnerMediaObservation media,OwnerInputObservation input,
+                    OwnerMediaObservation.Snapshot mediaPast,OwnerResourceObservation.Past[] resourcePast){
+                this.receiver=receiver;this.thread=thread;this.media=media;this.input=input;
+                this.mediaPast=mediaPast;this.resourcePast=resourcePast;
             }
         }
     }
@@ -366,7 +490,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             validateDescriptor(descriptor,login.host,login.port,attempt.networkScope,attempt.node,attempt.surfaceSubmitLeadMs);
             synchronized(lock){
                 if(attempt.cancelled||current!=attempt||generation!=attempt.generation)throw new IOException("cancelled");
-                attempt.receiver=UdpVideoProbe.startApp(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,attempt.physicalNetwork,(report,failed,completion)->finished(attempt,report,failed,completion));
+                attempt.receiver=UdpVideoProbe.startAppObserved(activity,descriptor,attempt.boundedPcmQueueEnabled,attempt.stageDiagnosticsEnabled,attempt.codecStartupReadyEnabled,attempt.physicalNetwork,(report,failed,completion)->finished(attempt,report,failed,completion),attempt.ownerRendezvous);
             }
         }catch(Exception failure){
             String failureLabel=failure.getMessage();

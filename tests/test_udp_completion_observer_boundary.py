@@ -152,11 +152,12 @@ final class UdpVideoProbe {
         self.assertIn('private Session appSession; private AppListener appListener;', source)
         self.assertNotIn('volatile AppListener appListener', source)
         self.assertLess(source.index('runner.appListener=listener;'),
-                        source.index('new Thread(runner::onStart,"authenticated-lan-udp").start();'))
+                        source.index('thread.start();return runner;'))
         authenticate = UI.read_text().split('    private void authenticate(', 1)[1].split(
             '    private static String connectionFailureMessage(', 1)[0]
         self.assertIn('synchronized(lock)', authenticate)
-        self.assertIn('attempt.receiver=UdpVideoProbe.startApp(', authenticate)
+        self.assertIn('attempt.receiver=UdpVideoProbe.startAppObserved(', authenticate)
+        self.assertIn('attempt.ownerRendezvous);', authenticate)
         self.assertIn('(report,failed,completion)->finished(attempt,report,failed,completion)', authenticate)
         self.assertNotIn('observer', authenticate)
 

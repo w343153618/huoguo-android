@@ -19,7 +19,7 @@ class OwnedInputChecks(unittest.TestCase):
         cls.env={'PATH':str(Path(javac).parent)+':/usr/bin:/bin','LANG':'C','JAVA_HOME':str(Path(javac).parent.parent)}
         source=UI.read_text()
         start=source.index('    /** Same-App candidate only.')
-        end=source.index('    @Override public boolean active()',start)
+        end=source.index('    /** Explicit same-App two-phase observation.',start)
         skeleton=(ROOT/'tests/fixtures/OwnerInputAppSkeleton.java.txt').read_text()
         generated=Path(cls.temp.name)/'AuthenticatedLanUdpUi.java'
         generated.write_text(skeleton.replace('/* ACTUAL_APP_ADAPTER */',source[start:end]))

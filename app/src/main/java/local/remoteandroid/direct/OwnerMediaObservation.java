@@ -35,6 +35,7 @@ final class OwnerMediaObservation {
             throw new IllegalArgumentException("owner_media_observation_budget");
         return new OwnerMediaObservation(owner,endNs);
     }
+    boolean isUnknown(){return unknown.get() || resourceCalls.isUnknown();}
     void invalidate(){unknown.set(true);resourceCalls.invalidate();}
     private boolean enter(){
         if(unknown.get()||resourceCalls.isUnknown()||System.nanoTime()>=endNs){invalidate();return false;}
@@ -132,11 +133,13 @@ final class OwnerMediaObservation {
      * false, even when all observed workers have actually terminated.
      */
     static final class Snapshot {
+        final Object activity;final Thread runner;
         final boolean runnerTerminated,videoTerminated,audioThreadsTerminated;
         final boolean videoCloseReturned,socketCloseReturned,nativeDestroyReturned,audioCloseReturned;
         final int generation,audioCloseClaim,audioEpochCount;
         final boolean codecAudioInputQualified=false,attemptQualified=false,releaseEligible=false;
         Snapshot(OwnerMediaObservation value){
+            activity=value.activity;runner=value.runner;
             runnerTerminated=value.runReturned&&value.runner.getState()==Thread.State.TERMINATED;
             videoTerminated=value.video==null||value.video.getState()==Thread.State.TERMINATED;
             boolean audioStopped=value.audioInput==null||value.audioInput.getState()==Thread.State.TERMINATED;

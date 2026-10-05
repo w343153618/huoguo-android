@@ -73,7 +73,8 @@ class OwnerMediaChecks(unittest.TestCase):
     def test_actual_owner_path_hooks_and_no_preparation_callsite(self):
         probe=PROBE.read_text();audio=AUDIO.read_text()
         self.assertEqual(probe.count('ownerPrepareResources('),1)
-        self.assertIn('new Thread(runner::onStart,"authenticated-lan-udp").start();',probe)
+        self.assertIn('Thread thread=new Thread(runner::onStart,"authenticated-lan-udp");',probe)
+        self.assertLess(probe.index('preparation.prepare(runner,thread)'),probe.index('thread.start();return runner;'))
         self.assertLess(probe.index('observation.published('),probe.index('            receive(activity,'))
         self.assertLess(probe.index('observation.listener(this,false)'),probe.index('            appListener.complete('))
         self.assertLess(probe.index('            appListener.complete('),probe.index('observation.listener(this,true)'))
