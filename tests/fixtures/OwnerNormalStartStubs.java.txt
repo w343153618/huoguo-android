@@ -1,0 +1,8 @@
+final class Button { boolean attached=true,enabled=true,result=true;Runnable action,attachedRead;boolean isAttachedToWindow(){if(attachedRead!=null)attachedRead.run();return attached;}boolean isEnabled(){return enabled;}boolean performClick(){if(action!=null)action.run();return result;} }
+final class EditText { String text="";Runnable changed;String getText(){return text;}void setText(String s){text=s;if(changed!=null)changed.run();} }
+final class Spinner { int selected;int getSelectedItemPosition(){return selected;} }
+final class CheckBox { boolean isChecked(){return false;} }
+final class PasswordStore { int loads;String bound="192.168.9.128:45560",account="huoguo",secret="synthetic_saved_LAN_only";boolean fail;String load(String d,String name)throws Exception{loads++;if(fail)throw new java.io.IOException("synthetic restore failure");return d.equals(bound)&&name.equals(account)?secret:"";} }
+final class Endpoint { static final class Address {String host;int port;}static String destination(String s){if(s.indexOf(':')<0)throw new IllegalArgumentException();return s;}static Address parse(String s){Address a=new Address();a.host=s.substring(0,s.indexOf(':'));a.port=Integer.parseInt(s.substring(s.indexOf(':')+1));return a;}static String identity(String s){return s;} }
+final class LanUdpContract { static final String LAN_SCOPE="lan";static void validateLogin(String host,int port,String scope,String node)throws java.io.IOException{if(!scope.equals("lan")||port!=45560)throw new java.io.IOException("synthetic route refusal");} }
+final class Text {void setText(String s){} }

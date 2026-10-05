@@ -5831,6 +5831,106 @@
       "Whole host selectedenv/dependencies/operator/source/phone/admission/gateway and native PM/package/driver/helper/input/absence/privilegedwriter/FD-retirement",
       "Phone manual restriction/normal exit and old82f unknown remote instrumentation cleanup; no polling or blind uninstall"
     ],
-    "own_CI": "Pending new source SHA; old accepted runs not borrowed"
+    "own_CI": "Exact 0842379 completed/overall/build/UDP success, independently checked; do not repoll/borrow green",
+    "exact_source_CI_accepted": {
+      "schema": "owner-App-rendezvous-exact-CI-v1",
+      "source_sha": "0842379ffe8611c2cfff56ee884b52ccd6b07da8",
+      "run_id": 37246994286,
+      "status": "completed",
+      "overall": "success",
+      "build": "success",
+      "UDP": "success",
+      "build_job_id": 111566719413,
+      "UDP_job_id": 111567503336,
+      "url": "https://github.com/w343153618/huoguo-android/actions/runs/37246994286",
+      "verified_exact_head_and_jobs": true,
+      "log_fetch_exit": 0,
+      "log_bytes": 76733,
+      "log_sha256": "513827289bb2b8704b57b736c3e7dc7ee6194c9fb4841c076e56387f502e6e8d",
+      "actual_tests": [
+        [
+          "2420",
+          "153.761"
+        ]
+      ],
+      "actual_skips": [
+        "11"
+      ],
+      "signed_APK_release": false
+    }
+  },
+  "owner_normal_start_candidate_20261005": {
+    "schema": "owner-normal-start-candidate-v1",
+    "source_base": "0842379ffe8611c2cfff56ee884b52ccd6b07da8",
+    "default_OFF": true,
+    "activation": "packageprivate explicit same-App operation only; no caller/helper/UI/Intent/HTTP/env/account/native bridge enables it",
+    "new_checks": 30,
+    "affected_checks": 145,
+    "affected_seconds": 36.833,
+    "affected_exit": 0,
+    "previous_29new": {
+      "seconds": 8.818,
+      "exit": 0
+    },
+    "previous_144affected": {
+      "seconds": 33.836,
+      "exit": 0,
+      "before_final_deadline_repair": true
+    },
+    "API37": {
+      "full_exit": 0,
+      "changed_exit": 0,
+      "sources": 45,
+      "classes": 127,
+      "seconds": 1.997,
+      "pins_after_match": true,
+      "compile_only": true
+    },
+    "source_pins": {
+      "app/src/udp/java/local/remoteandroid/direct/AuthenticatedLanUdpUi.java": "44edbcf89463c6b41a3e7173d46b58f70e3b03cc27ac86fe5b83d1b8ac409fc6",
+      "tests/test_owner_normal_start.py": "70056a4a0c002f0be96f3e4e18f97c9e3a14c04371a0a00fbe542c5d2441f7a2",
+      "tests/fixtures/OwnerNormalStartFixture.java": "23827dd92418cbdf01dbeedfc85a4394dabee103b9af7fdac5bb6bd82dc805e7",
+      "tests/fixtures/OwnerNormalStartShell.java.txt": "639d3e01976707fc7a834ad17b5c97135f3fc3dfe208d63d83f92dd04f71b0a2",
+      "tests/fixtures/OwnerNormalStartStubs.java.txt": "86f905107496a3e1cb059ca258b6421f751bec9698f5dd5b5ac8723bacb69766",
+      "tests/test_owner_App_rendezvous.py": "bf46287a18ad4cec8d4313532c477f1f28d3e67bab0c7633a78dc748511e1d51",
+      "tests/test_owner_input_observation.py": "a1ec6c9f0c77b62f2963d1dc24e560d73c0cda96950f637add345c73444d9fdc"
+    },
+    "actual_evidence": "Actual extracted original restore, new transaction, new-Attempt creation and locked authentication factory source; owned JVM receiver/auth threads. Widget/keystore/network/auth/Android metadata are synthetic. No actual TLS/auth or ART.",
+    "constraints": {
+      "command_seconds": 3,
+      "original_end_seconds_max": 30,
+      "same_UI_monitor_spans_restore_click_prepare": true,
+      "normal_close_join_reconnect_queue_buffer_guards_unchanged": true
+    },
+    "failures_preserved": [
+      {
+        "kind": "fixture missing Socket/IOException/restore extraction and listener signature plus strict static lint",
+        "setup_errors": 1,
+        "tests": 33,
+        "other_failure": "imported old TestCase and outdated prepare-callsite count",
+        "production_failure": false
+      },
+      {
+        "kind": "actual JVM >3s button getter allowed credential restore before final refusal",
+        "tests": 1,
+        "failures": 1,
+        "seconds": 4.394,
+        "fixed": "original budget checked immediately before normal restore/click and afterward",
+        "production_failure": false
+      }
+    ],
+    "operator_qualified": false,
+    "phone_qualified": false,
+    "resource_qualified": false,
+    "release_eligible": false,
+    "phone_actions": false,
+    "APK_helper_JNI_sign_install_release": false,
+    "remaining": [
+      "Actual Android saved-LAN restore/normal UI/ART and strict phone qualification",
+      "Actual captured-generation/epoch allocation and normal resource calls; a past marker is not atomic hold or release",
+      "AppUID Java/root-native independent cooperation; full host selectedenv/dependencies/operator/source/phone/admission/gateway and native PM/package/driver/helper/input/absence/privilegedwriter/FD-retirement gates",
+      "Human phone restriction/normal exit and old82f unknown cleanup; no repeated poll or blind uninstall"
+    ],
+    "own_CI": "New source SHA must have its own CI; old084/d425 accepted results not borrowed"
   }
 }

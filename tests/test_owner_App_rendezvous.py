@@ -15,7 +15,7 @@ class RendezvousChecks(unittest.TestCase):
         cls.java=str(JDK/'java') if (JDK/'java').is_file() else shutil.which('java')
         cls.env={'PATH':str(Path(javac).parent)+':/usr/bin:/bin','LANG':'C','JAVA_HOME':str(Path(javac).parent.parent)}
         ui=(ROOT/'app/src/udp/java/local/remoteandroid/direct/AuthenticatedLanUdpUi.java').read_text()
-        adapter=ui[ui.index('    /** Same-App candidate only.'):ui.index('    @Override public boolean active()')]
+        adapter=ui[ui.index('    /** Same-App candidate only.'):ui.index('    /** Same-App future cooperative caller only.')]+ui[ui.index('    /** Explicit same-App two-phase observation.'):ui.index('    @Override public boolean active()')]
         skeleton=(ROOT/'tests/fixtures/OwnerInputAppSkeleton.java.txt').read_text()
         skeleton=skeleton.replace('final class UdpVideoProbe { }','')
         skeleton=skeleton.replace('UdpVideoProbe receiver=new UdpVideoProbe();','UdpVideoProbe receiver;')
@@ -55,7 +55,8 @@ class RendezvousChecks(unittest.TestCase):
         self.assertIn('physicalNetwork,listener,null);',source)
         self.assertLess(source.index('preparation.prepare(runner,thread)'),source.index('thread.start();return runner;'))
         ui=(ROOT/'app/src/udp/java/local/remoteandroid/direct/AuthenticatedLanUdpUi.java').read_text()
-        self.assertEqual(ui.count('ownerPrepareRendezvous('),1)
+        self.assertEqual(ui.count('ownerPrepareRendezvous('),2)
+        self.assertEqual(ui.count('ownerNormalStartRendezvous('),1)
         self.assertEqual(ui.count('void captureLive('),1)
         self.assertIn('OwnerRendezvous ownerRendezvous;',ui)
 for mode in ['normal','inert','prepare_expired','prepare_budget','prepare_late','prepare_twice','prepare_nonmain','prepare_lock_wait','receiver_later_attempt','receiver_later_generation','before_start_not_new','capture_before_start','capture_dead','capture_invalid_surface','capture_later_activity','capture_later_attempt','capture_receiver','capture_cleared_binding','capture_nonmain','capture_twice','capture_terminated','capture_expired','capture_reentrant','capture_lock_wait','retire_pending','retire_pending_runner','retire_later_attempt','retire_surface','retire_media_generation','retire_cleared_input','retire_missing_cancel','retire_repeat']:

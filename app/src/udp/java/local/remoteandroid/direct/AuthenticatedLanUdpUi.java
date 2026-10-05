@@ -38,6 +38,8 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
     private static final String DEFAULT_LAN_ADDRESS="192.168.9.128:"+LanUdpContract.HTTPS_PORT;
     private String lastLanAddress;
     private boolean restoringFields;
+    private Button ownerNormalStartButton;
+    private OwnerStartTransaction ownerStartTransaction;
     // Owner instrumentation only: no public widget, Intent extra or saved setting.
     // showLogin resets this one-attempt value; helper must explicitly opt in again.
     private int ownerSurfaceSubmitLeadMs;
@@ -169,6 +171,126 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
                     inputObservation=found; phase=OBSERVED; return true;
                 } catch(RuntimeException | Error failure) { unknown(); throw failure; }
                 finally { outstanding=false; }
+            }
+        }
+    }
+    /** Same-App future cooperative caller only. Ordinary UI does not call this
+     * method. The original UI button/restore/start paths run under the same
+     * Attempt monitor so authentication cannot reach its receiver factory first.
+     * No operator/native/PM/lease authority is returned. */
+    OwnerStartTransaction ownerNormalStartRendezvous(long originalEndNs) {
+        final long begin=System.nanoTime();
+        synchronized(lock) {
+            long now=System.nanoTime();
+            if(ownerStartTransaction!=null){
+                if(ownerStartTransaction.outstanding)ownerStartTransaction.unknown();
+                throw new IllegalStateException("owner_normal_start_repeat_or_reentrant");
+            }
+            if(now<begin || now-begin>=3_000_000_000L || now>=originalEndNs
+                    || originalEndNs-begin>30_000_000_000L || ownerStartTransaction!=null)
+                throw new IllegalStateException("owner_normal_start_deadline_or_repeat");
+            OwnerStartTransaction transaction=new OwnerStartTransaction(this,begin,originalEndNs);
+            ownerStartTransaction=transaction; // Strong references survive any possible-start failure.
+            try { transaction.runNormalClick();return transaction; }
+            catch(RuntimeException | Error failure){transaction.unknown();throw failure;}
+        }
+    }
+    static final class OwnerStartTransaction {
+        private final AuthenticatedLanUdpUi ui;
+        private final long begin,endNs,pageRevision,uiGeneration;
+        private final int activityGeneration;
+        private final Button button;
+        private final EditText address,user,password;
+        private final Spinner scope;
+        private Attempt attempt;
+        private OwnerRendezvous rendezvous;
+        private boolean outstanding,possibleStart,started,unknown,restoreMatched;
+        final boolean operatorQualified=false,phoneQualified=false,releaseEligible=false;
+        private OwnerStartTransaction(AuthenticatedLanUdpUi ui,long begin,long endNs){
+            this.ui=ui;this.begin=begin;this.endNs=endNs;pageRevision=ui.loginRevision;
+            uiGeneration=ui.generation;activityGeneration=ui.activity.generation;
+            button=ui.ownerNormalStartButton;address=ui.address;user=ui.user;password=ui.password;scope=ui.scope;
+        }
+        private void budget(){long now=System.nanoTime();
+            if(unknown || now<begin || now-begin>=3_000_000_000L || now>=endNs)
+                throw new IllegalStateException("owner_normal_start_original_deadline");}
+        private void fields(){
+            if(ui.ownerStartTransaction!=this || Looper.myLooper()!=Looper.getMainLooper()
+                    || ui.activity.isFinishing() || ui.activity.isDestroyed()
+                    || ui.loginRevision!=pageRevision || button==null || ui.ownerNormalStartButton!=button
+                    || ui.address!=address || ui.user!=user || ui.password!=password || ui.scope!=scope
+                    || address==null || user==null || password==null || scope==null)
+                throw new IllegalStateException("owner_normal_start_fields_changed");}
+        private void unknown(){unknown=true;
+            // Retain only this transaction's possible normal-start Attempt, not
+            // a later object discovered from metadata or a replacement pointer.
+            if(attempt!=null && rendezvous!=null)rendezvous.unknown();
+        }
+        private void runNormalClick(){
+            if(outstanding || started || unknown)throw new IllegalStateException("owner_normal_start_phase");
+            outstanding=true;
+            try{
+                budget();fields();
+                if(ui.current!=null || ui.retiring!=null || uiGeneration==Long.MAX_VALUE
+                        || ui.generation!=uiGeneration || ui.activity.generation!=activityGeneration
+                        || scope.getSelectedItemPosition()!=0 || !button.isAttachedToWindow()
+                        || !button.isEnabled())throw new IllegalStateException("owner_normal_start_not_idle_LAN");
+                String destination=Endpoint.destination(address.getText().toString());
+                String name=user.getText().toString();
+                if(!destination.equals(DEFAULT_LAN_ADDRESS) || !(name.equals("huoguo") || name.equals("wyw")))
+                    throw new IllegalStateException("owner_normal_start_closed_M1_destination");
+                budget();fields();budget();
+                // Invoke the existing normal native restore; never load/copy a
+                // secret in this adapter or accept a private-file/JSON fallback.
+                ui.restorePassword();budget();fields();
+                if(!destination.equals(Endpoint.destination(address.getText().toString()))
+                        || !name.equals(user.getText().toString()) || !restoreMatched || password.getText().length()==0
+                        || scope.getSelectedItemPosition()!=0 || ui.current!=null || ui.retiring!=null
+                        || ui.generation!=uiGeneration || ui.activity.generation!=activityGeneration)
+                    throw new IllegalStateException("owner_normal_start_restore_unknown");
+                budget();fields();budget();
+                possibleStart=true;
+                if(!button.performClick())throw new IllegalStateException("owner_normal_start_click_refused");
+                budget();fields();
+                if(attempt==null || ui.current!=attempt || ui.retiring!=null || attempt.cancelled || attempt.stopped
+                        || ui.generation!=uiGeneration+1 || attempt.receiver!=null
+                        || !attempt.endpoint.equals(destination) || !attempt.networkScope.equals(LanUdpContract.LAN_SCOPE)
+                        || !attempt.node.equals("") || ui.activity.generation!=activityGeneration)
+                    throw new IllegalStateException("owner_normal_start_same_attempt_unknown");
+                rendezvous=ui.ownerPrepareRendezvous(endNs);budget();fields();
+                if(ui.current!=attempt || attempt.ownerRendezvous!=rendezvous || attempt.receiver!=null)
+                    throw new IllegalStateException("owner_normal_start_post_changed");
+                started=true;
+            }finally{outstanding=false;}
+        }
+        private void restored(String identity,String account,String actualSecret){
+            // Actual normal restore output, compared only in this App's memory.
+            // No secret field, digest, report, private-file or native wire output.
+            try{
+                if(unknown || !outstanding || !Thread.holdsLock(ui.lock) || restoreMatched
+                        || !identity.equals(Endpoint.identity(DEFAULT_LAN_ADDRESS))
+                        || !account.equals(user.getText().toString()) || actualSecret==null || actualSecret.isEmpty()
+                        || !actualSecret.equals(password.getText().toString())){unknown();return;}
+                restoreMatched=true;
+            }catch(RuntimeException | Error failure){unknown();}
+        }
+        private void created(Attempt actual){
+            // Called only at the original new-Attempt allocation/assignment.
+            // Observation failure must not change the original normal start.
+            if(unknown || !outstanding || !possibleStart || attempt!=null || actual==null
+                    || actual.generation!=uiGeneration+1 || ui.current!=actual
+                    || ui.ownerStartTransaction!=this){unknown();return;}
+            attempt=actual;
+        }
+        OwnerRendezvous preparedRendezvous(){
+            final long readBegin=System.nanoTime();
+            synchronized(ui.lock){
+                long now=System.nanoTime();
+                if(now<readBegin || now-readBegin>=3_000_000_000L || now>=endNs){unknown();throw new IllegalStateException("owner_normal_start_original_end");}
+                if(unknown || !started || !possibleStart || ui.ownerStartTransaction!=this
+                        || attempt==null || attempt.ownerRendezvous!=rendezvous)
+                    throw new IllegalStateException("owner_normal_start_no_preparation");
+                return rendezvous; // Actual same-App object; not a wire permission/lease receipt.
             }
         }
     }
@@ -331,7 +453,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         pcmQueue=new CheckBox(activity);pcmQueue.setText("实验：有界 PCM 输出队列（默认关闭）");pcmQueue.setChecked(false);box.addView(pcmQueue);
         codecStartup=new CheckBox(activity);codecStartup.setText("实验：解码器准备后接收新关键帧（默认关闭）");codecStartup.setChecked(false);box.addView(codecStartup);
         TextView remembered=new TextView(activity);remembered.setText("连接地址、账号及串流参数自动记住；点击保存密码才会加密保存一组服务器和账号。本次实验开关不会保存。");box.addView(remembered);
-        Button start=new Button(activity);start.setText("启动认证 UDP 测试");box.addView(start);status=new TextView(activity);box.addView(status);
+        Button start=new Button(activity);start.setText("启动认证 UDP 测试");box.addView(start);ownerNormalStartButton=start;status=new TextView(activity);box.addView(status);
         scope.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
             private int previous=savedScope;
             public void onItemSelected(AdapterView<?> parent,android.view.View view,int position,long id){
@@ -448,7 +570,13 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
         if(restoringFields||password==null)return;
         try{String destination=Endpoint.destination(address.getText().toString());Endpoint.Address parsed=Endpoint.parse(destination);int selected=scope.getSelectedItemPosition();
             LanUdpContract.validateLogin(parsed.host,parsed.port,selectedScope(selected),selectedNode(selected));
-            password.setText(passwordStore.load(Endpoint.identity(destination),user.getText().toString()));
+            OwnerStartTransaction observation=ownerStartTransaction;
+            if(observation==null)password.setText(passwordStore.load(Endpoint.identity(destination),user.getText().toString()));
+            else{
+                String identity=Endpoint.identity(destination),account=user.getText().toString();
+                String restored=passwordStore.load(identity,account);password.setText(restored);
+                observation.restored(identity,account,restored);
+            }
         }catch(IllegalArgumentException invalid){password.setText("");}
         catch(Exception failure){password.setText("");if(status!=null)status.setText("已保存的密码无法读取，请重新输入并保存。");}
     }
@@ -477,7 +605,7 @@ public final class AuthenticatedLanUdpUi implements LanUdpEntry {
             physicalNetwork=LanUdpContract.NPS_SCOPE.equals(networkScope)?NpsPhysicalNetwork.select(activity):null;
         }catch(Exception failure){status.setText("无法启动："+failure.getMessage());return;}
         Attempt attempt;
-        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,node,physicalNetwork,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;}
+        synchronized(lock){if(current!=null&&!current.stopped)return;attempt=new Attempt(++generation,endpoint,credential,networkScope,node,physicalNetwork,pcmQueue.isChecked(),requestedSurfaceLeadMs,ownerStageDiagnosticsEnabled,codecStartup.isChecked());current=attempt;OwnerStartTransaction observation=ownerStartTransaction;if(observation!=null)observation.created(attempt);}
         password.setText("");LinearLayout wait=new LinearLayout(activity);wait.setOrientation(LinearLayout.VERTICAL);wait.setGravity(Gravity.CENTER);
         TextView text=new TextView(activity);text.setText("正在通过受信 HTTPS 登录…\n媒体不会回退 TCP");wait.addView(text);Button cancel=new Button(activity);cancel.setText("取消连接");cancel.setOnClickListener(v->cancel(true));wait.addView(cancel);activity.setContentView(wait);
         new Thread(()->authenticate(attempt,request),"udp-session-auth").start();

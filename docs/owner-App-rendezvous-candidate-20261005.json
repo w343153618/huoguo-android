@@ -68,5 +68,31 @@
     "Whole host selectedenv/dependencies/operator/source/phone/admission/gateway and native PM/package/driver/helper/input/absence/privilegedwriter/FD-retirement",
     "Phone manual restriction/normal exit and old82f unknown remote instrumentation cleanup; no polling or blind uninstall"
   ],
-  "own_CI": "Pending new source SHA; old accepted runs not borrowed"
+  "own_CI": "Exact 0842379 completed/overall/build/UDP success, independently checked; do not repoll/borrow green",
+  "exact_source_CI_accepted": {
+    "schema": "owner-App-rendezvous-exact-CI-v1",
+    "source_sha": "0842379ffe8611c2cfff56ee884b52ccd6b07da8",
+    "run_id": 37246994286,
+    "status": "completed",
+    "overall": "success",
+    "build": "success",
+    "UDP": "success",
+    "build_job_id": 111566719413,
+    "UDP_job_id": 111567503336,
+    "url": "https://github.com/w343153618/huoguo-android/actions/runs/37246994286",
+    "verified_exact_head_and_jobs": true,
+    "log_fetch_exit": 0,
+    "log_bytes": 76733,
+    "log_sha256": "513827289bb2b8704b57b736c3e7dc7ee6194c9fb4841c076e56387f502e6e8d",
+    "actual_tests": [
+      [
+        "2420",
+        "153.761"
+      ]
+    ],
+    "actual_skips": [
+      "11"
+    ],
+    "signed_APK_release": false
+  }
 }

@@ -1,0 +1,25 @@
+    static final String DEFAULT_LAN_ADDRESS="192.168.9.128:45560";
+    long loginRevision=4;
+    Button ownerNormalStartButton=new Button();
+    OwnerStartTransaction ownerStartTransaction;
+    EditText address=new EditText(),user=new EditText(),password=new EditText();Spinner scope=new Spinner();
+    PasswordStore passwordStore=new PasswordStore();boolean restoringFields;
+    Text status=new Text();CheckBox pcmQueue=new CheckBox(),codecStartup=new CheckBox();boolean ownerStageDiagnosticsEnabled;
+    Thread authThread;volatile Throwable authFailure;volatile UdpVideoProbe actualReceiver;
+    final java.util.concurrent.CountDownLatch authTrying=new java.util.concurrent.CountDownLatch(1);
+    static String selectedScope(int selection){return selection==0?"lan":"foreign";}
+    static String selectedNode(int selection){return "";}
+    void finished(Attempt a,Object report,boolean failed,Object completion){}
+/* RESTORE */
+    void fixtureNormalClick(){
+        String endpoint=address.getText(),credential="synthetic_no_authority",networkScope="lan",node="";
+        NpsPhysicalNetwork physicalNetwork=null;int requestedSurfaceLeadMs=0;JSONObject descriptor=new JSONObject();
+/* CREATE */
+        password.setText("");
+        authThread=new Thread(()->{try{
+            authTrying.countDown();
+/* AUTH */
+            actualReceiver=attempt.receiver;
+        }catch(Throwable error){authFailure=error;}});
+        authThread.start();
+    }
